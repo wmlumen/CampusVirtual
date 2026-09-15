@@ -24,7 +24,7 @@
         <div id="sidebar-user-name" class="fw-bold small" style="color: #007A33;"></div>
         <small id="sidebar-user-id" class="text-muted" style="font-size: 0.75rem;"></small>
     </div>
-    <button id="btn-logout" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-right"></i> Salir</button>
+    <button id="btn-logout" class="btn btn-sm btn-outline-secondary" onclick="sessionStorage.clear(); localStorage.removeItem('centuria_remember'); localStorage.removeItem('centuria_token'); window.location.replace('index.html')"><i class="bi bi-box-arrow-right"></i> Salir</button>
 </div>
 <script>
 if(!sessionStorage.getItem('current_cedula')){location.replace('index.html');}

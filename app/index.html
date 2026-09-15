@@ -787,32 +787,71 @@
 
     <script src="js/api.js?v=6"></script>
     <script>
-        // ═══ CARRERAS POR GRADO ═══
-        const carrerasPorGrado = {
-            'Grado': ['Administración de Empresas','Contabilidad','Administración Aduanera','Administración y Gestión Pública','Ingeniería Comercial'],
-            'Especialización': ['Auditoría Financiera','Gestión Tributaria','Logística y Comercio Internacional','Dirección de Empresas'],
-            'Maestría': ['Administración y Gestión Pública','Gerencia Empresarial','Educación Superior'],
-            'Doctorado': ['Ciencias Sociales con mención en Administración','Educación con mención en Gestión Educativa']
-        };
-        function cargarCarrerasPorGrado(){
+        // ═══ CATÁLOGOS DESDE API ═══
+        async function cargarCatalogos(){
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=grados');
+                const data = await r.json();
+                const grados = data.grados || [];
+                const gradoSelect = document.getElementById('reg-grado');
+                if(gradoSelect){
+                    gradoSelect.innerHTML = '<option value="" selected disabled>Seleccionar...</option>' +
+                        grados.map(g => `<option value="${g.nombre}">${g.nombre}</option>`).join('');
+                }
+            } catch(e) { console.error('Error cargando grados:', e); }
+        }
+
+        async function cargarCarrerasPorGrado(){
             const grado = document.getElementById('reg-grado').value;
             const select = document.getElementById('reg-carrera');
-            select.innerHTML = '';
-            if(!grado || !carrerasPorGrado[grado]){
+            if(!grado){
                 select.innerHTML = '<option value="" selected disabled>Primero selecciona un grado...</option>';
                 select.disabled = true;
                 return;
             }
-            select.innerHTML = '<option value="" selected disabled>Selecciona tu carrera...</option>';
-            carrerasPorGrado[grado].forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c;
-                select.appendChild(opt);
-            });
-            select.disabled = false;
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras');
+                const data = await r.json();
+                const carreras = (data.carreras || []).filter(c => c.grado === grado);
+                select.innerHTML = '<option value="" selected disabled>Selecciona tu carrera...</option>';
+                carreras.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.nombre; opt.textContent = c.nombre;
+                    select.appendChild(opt);
+                });
+                select.disabled = carreras.length === 0;
+                if(select.disabled){
+                    select.innerHTML = '<option value="" selected disabled>No hay carreras para este grado</option>';
+                }
+            } catch(e){
+                select.innerHTML = '<option value="" selected disabled>Error al cargar carreras</option>';
+            }
         }
 
-        // ═══ CONEXIÓN ═══
+        // ═══ CARGAR SECCIONES DESDE API ═══
+        async function cargarSecciones(){
+            const select = document.getElementById('reg-seccion');
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones');
+                const data = await r.json();
+                const secciones = data.secciones || [];
+                select.innerHTML = '<option value="" selected disabled>Selecciona tu sección...</option>';
+                secciones.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.codigo;
+                    opt.textContent = s.codigo + (s.carrera ? ' — ' + s.carrera : '');
+                    select.appendChild(opt);
+                });
+                if(select.options.length <= 1){
+                    select.innerHTML = '<option value="" selected disabled>No hay secciones creadas aún</option>';
+                }
+            } catch(e){
+                select.innerHTML = '<option value="" selected disabled>Error al cargar secciones</option>';
+            }
+        }
+
+        // Cargar grados al iniciar la página
+        document.addEventListener('DOMContentLoaded', cargarCatalogos);
         // Google Apps Script reemplazado por CenturiaAPI (js/api.js)
         // GAS_URL, gasCheckStudent, gasRegisterStudent ya están en api.js
         let cedulaActual = '';
@@ -1048,27 +1087,6 @@
                     return;
                 }
                 alert('Error al registrar: ' + err.message);
-            }
-        }
-
-        // ═══ CARGAR SECCIONES DESDE API ═══
-        async function cargarSecciones(){
-            const select = document.getElementById('reg-seccion');
-            try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'secciones.php?action=list');
-                const data = await r.json();
-                select.innerHTML = '<option value="" selected disabled>Selecciona tu sección...</option>';
-                (data.secciones || []).forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.codigo;
-                    opt.textContent = s.codigo + (s.carrera ? ' — ' + s.carrera : '');
-                    select.appendChild(opt);
-                });
-                if(select.options.length <= 1){
-                    select.innerHTML = '<option value="" selected disabled>No hay secciones creadas aún</option>';
-                }
-            } catch(e){
-                select.innerHTML = '<option value="" selected disabled>Error al cargar secciones</option>';
             }
         }
 
@@ -1349,6 +1367,8 @@
 
         function cerrarSesionRoles(){
             sessionStorage.clear();
+            localStorage.removeItem('centuria_remember');
+            localStorage.removeItem('centuria_token');
             const pasoRoles = document.getElementById('step-2-roles');
             if(pasoRoles) pasoRoles.style.display = 'none';
             document.getElementById('step-1-cedula').style.display = 'block';
@@ -1454,6 +1474,8 @@
 
         function cerrarSesionCursos(){
             sessionStorage.clear();
+            localStorage.removeItem('centuria_remember');
+            localStorage.removeItem('centuria_token');
             document.getElementById('step-3-cursos').style.display='none';
             document.getElementById('step-1-cedula').style.display='block';
             document.getElementById('inp-cedula').value='';

@@ -415,7 +415,7 @@
                     <button class="premium-btn mt-3" onclick="window.print()">
                         <i class="bi bi-printer me-2"></i>Descargar / Imprimir
                     </button>
-                    <button class="premium-btn-ghost mt-2" onclick="location.href='index.html'">
+                    <button class="premium-btn-ghost mt-2" onclick="centuriaLogout(false)">
                         <i class="bi bi-box-arrow-left me-1"></i>Volver al Login
                     </button>
                 </div>
@@ -433,6 +433,7 @@
     </div>
 
     <script src="js/api.js?v=6"></script>
+    <script src="js/logout.js"></script>
     <script>
         // ═══ CARGAR PERFIL ═══
         async function cargarPerfil() {

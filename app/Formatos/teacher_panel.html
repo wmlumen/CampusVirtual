@@ -741,7 +741,13 @@ function guardarEmergencia() {
 }
 
 // === LOGOUT ===
-function cerrarSesion() { sessionStorage.clear(); window.location.href = '../index.html'; }
+function cerrarSesion() { 
+    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return;
+    sessionStorage.clear(); 
+    localStorage.removeItem('centuria_remember');
+    localStorage.removeItem('centuria_token');
+    window.location.replace('../index.html'); 
+}
 
 // === CONFIG ===
 function toggleTemaOscuro() { document.body.classList.toggle('dark'); }

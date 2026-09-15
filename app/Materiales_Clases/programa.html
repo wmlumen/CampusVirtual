@@ -337,9 +337,10 @@
             }
             
             btnLogout.onclick = () => {
-                sessionStorage.removeItem('current_cedula');
-                sessionStorage.removeItem('current_nombre');
-                location.reload();
+                sessionStorage.clear();
+                localStorage.removeItem('centuria_remember');
+                localStorage.removeItem('centuria_token');
+                window.location.replace('../index.html');
             };
             
             applySession();

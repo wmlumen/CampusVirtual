@@ -99,8 +99,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         cerrarSesion() {
+            if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return;
             sessionStorage.clear();
-            window.location.href = '../index.html';
+            localStorage.removeItem('centuria_remember');
+            localStorage.removeItem('centuria_token');
+            window.location.replace('../index.html');
         },
 
         // ═══════════════════════════════════════

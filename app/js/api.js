@@ -52,11 +52,10 @@ function mapUser(u) {
 }
 
 const API = {
-    // Base URL según origen: si la página sale del servidor PHP (8080) usa
-    // ruta relativa; si sale de otro servidor (ej. Live Server 5500), apunta
-    // directo a la API PHP (config.php ya envía CORS abierto).
-    baseUrl: (typeof window !== 'undefined' && window.location && window.location.port === '8080')
-        ? '/api/'
+    // La aplicación y la API se sirven desde el mismo origen. Esto evita
+    // mezclar datos con otro servicio local que use un puerto diferente.
+    baseUrl: (typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol))
+        ? new URL('/api/', window.location.origin).href
         : 'http://127.0.0.1:8080/api/',
 
     // --- Authentication ---
@@ -80,12 +79,7 @@ const API = {
                     localStorage.setItem('centuria_auth_token', p.token);
                     localStorage.setItem('centuria_user', JSON.stringify(user));
                 }
-                // Sync silenciosa con Google Sheets (fire-and-forget, no bloquea)
-                gasCheckStudent(cedula).then(gas => {
-                    if (!gas.existe) {
-                        gasRegisterStudent(cedula, (user.firstname || '') + ' ' + (user.lastname || ''), user.email || '');
-                    }
-                }).catch(() => {});
+                // El inicio de sesión no crea registros ni asignaciones en otra base.
                 return { ok: true, user: user, token: p.token };
             }
 
@@ -118,9 +112,8 @@ const API = {
                 localStorage.setItem('centuria_auth_token', p.token);
                 localStorage.setItem('centuria_user', JSON.stringify(user));
             }
-            // Sync: registrar también en Google Sheets
-            const fullName = ((firstname || '') + ' ' + (lastname || '')).trim();
-            gasRegisterStudent(username, fullName, email || '').catch(() => {});
+            // Las réplicas requieren una sincronización confirmada del servidor.
+            // No registrar docentes como alumnos mediante un envío sin confirmación.
             return { ok: true, user: user, token: p.token };
         })
         .catch(() => ({ ok: false, message: 'Error de conexión con el servidor.' }));
@@ -633,9 +626,7 @@ const API = {
                 localStorage.setItem('centuria_auth_token', p.token);
                 localStorage.setItem('centuria_user', JSON.stringify(user));
             }
-            // Sync: registrar también en Google Sheets
-            const fullName = ((userData.nombre || '') + ' ' + (userData.apellido || '')).trim();
-            gasRegisterStudent(userData.cedula || '', fullName, userData.email || '').catch(() => {});
+            // No generar un rol alumno en otra base sin sincronizar el rol real.
             return { ok: true, user: user, token: p.token };
         })
         .catch(() => ({ ok: false, message: 'Error de conexión con el servidor.' }));

@@ -125,7 +125,8 @@
         /* Responsive */
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr !important; }
-            .sidebar { display: none !important; }
+            .sidebar { height: auto; max-height: 45vh; }
+            .layout.sb-hidden .sidebar { display: none; }
             .unit-grid { grid-template-columns: 1fr; }
             .topbar { flex-direction: column; gap: 6px; }
             #btn-toggle-sb { display: none; }
@@ -134,31 +135,7 @@
     </style>
 </head>
 <body>
-    <!-- Login Mask -->
-    <div id="login-mask">
-        <div class="login-box">
-            <div class="login-tabs">
-                <button id="tab-login" class="active">Ingresar</button>
-                <button id="tab-register">Registrarse</button>
-            </div>
-            <div id="form-login">
-                <h3><i class="bi bi-shield-lock me-1"></i> Acceso al Curso</h3>
-                <input type="text" id="login-cedula" placeholder="Cédula" maxlength="10">
-                <button class="btn-login" id="btn-login"><i class="bi bi-box-arrow-in-right me-1"></i> Ingresar</button>
-                <div class="login-error" id="login-error">Cédula no encontrada. Regístrate primero.</div>
-            </div>
-            <div id="form-register" style="display:none;">
-                <h3><i class="bi bi-person-plus me-1"></i> Registro</h3>
-                <input type="text" id="reg-nombre" placeholder="Nombre">
-                <input type="text" id="reg-apellido" placeholder="Apellido">
-                <input type="text" id="reg-cedula" placeholder="Cédula" maxlength="10">
-                <input type="text" id="reg-telefono" placeholder="Teléfono (opcional)">
-                <input type="email" id="reg-email" placeholder="Email (opcional)">
-                <button class="btn-login" id="btn-register"><i class="bi bi-check-lg me-1"></i> Registrarme</button>
-                <div class="login-msg" id="reg-msg"></div>
-            </div>
-        </div>
-    </div>
+    <script>if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}</script>
 
     <div class="layout">
         <!-- Sidebar -->
@@ -380,8 +357,9 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api.js?v=7"></script>
-    <script src="../js/logout.js"></script>
+    <script src="../js/logout.js?v=2"></script>
     <script>
         // Toggle Sidebar
         function toggleSidebar() {
@@ -398,74 +376,11 @@
         let currentUser = null;
 
         document.addEventListener("DOMContentLoaded", function() {
-            const mask = document.getElementById('login-mask');
-
-            // Auth tabs
-            document.getElementById('tab-login').onclick = () => {
-                document.getElementById('form-login').style.display = 'block';
-                document.getElementById('form-register').style.display = 'none';
-                document.getElementById('tab-login').classList.add('active');
-                document.getElementById('tab-register').classList.remove('active');
-            };
-            document.getElementById('tab-register').onclick = () => {
-                document.getElementById('form-register').style.display = 'block';
-                document.getElementById('form-login').style.display = 'none';
-                document.getElementById('tab-register').classList.add('active');
-                document.getElementById('tab-login').classList.remove('active');
-            };
-
-            // Register
-            document.getElementById('btn-register').onclick = () => {
-                const nom = document.getElementById('reg-nombre').value.trim();
-                const ape = document.getElementById('reg-apellido').value.trim();
-                const ced = document.getElementById('reg-cedula').value.trim();
-                if (!nom || !ape || !ced) return alert("Nombre, Apellido y Cédula son obligatorios.");
-                const users = JSON.parse(localStorage.getItem('tic_users')) || {};
-                users[ced] = { nombre: nom, apellido: ape, cedula: ced, telefono: document.getElementById('reg-telefono').value.trim(), email: document.getElementById('reg-email').value.trim() };
-                localStorage.setItem('tic_users', JSON.stringify(users));
-                document.getElementById('reg-msg').className = "login-msg text-success fw-bold";
-                document.getElementById('reg-msg').innerText = "¡Registro exitoso!";
-                setTimeout(() => { document.getElementById('tab-login').click(); document.getElementById('login-cedula').value = ced; }, 1200);
-            };
-
-            // Login
-            function doLogin(ced) {
-                const users = JSON.parse(localStorage.getItem('tic_users')) || {};
-                if (users[ced]) {
-                    sessionStorage.setItem('current_cedula', ced);
-                    sessionStorage.setItem('current_nombre', users[ced].nombre + ' ' + users[ced].apellido);
-                    applySession();
-                } else {
-                    document.getElementById('login-error').style.display = 'block';
-                }
-            }
-            document.getElementById('btn-login').onclick = () => doLogin(document.getElementById('login-cedula').value.trim());
-            document.getElementById('login-cedula').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(this.value.trim()); });
-
-            // Session
-            function applySession() {
-                const c = sessionStorage.getItem('current_cedula');
-                if (c) {
-                    currentUser = c;
-                    mask.style.display = 'none';
-                    document.body.classList.remove('locked');
-                    document.getElementById('sidebar-user-name').innerText = sessionStorage.getItem('current_nombre');
-                    document.getElementById('sidebar-user-id').innerText = "C.I: " + c;
-                    window.dispatchEvent(new Event('authReady'));
-                } else {
-                    mask.style.display = 'flex';
-                    document.body.classList.add('locked');
-                }
-            }
-
-            document.getElementById('btn-logout').onclick = () => {
-                sessionStorage.clear();
-                localStorage.removeItem('centuria_remember');
-                localStorage.removeItem('centuria_token');
-                window.location.replace('../index.html');
-            };
-
-            applySession();
+            currentUser = sessionStorage.getItem('current_cedula');
+            document.getElementById('sidebar-user-name').innerText = sessionStorage.getItem('current_nombre') || '';
+            document.getElementById('sidebar-user-id').innerText = "C.I: " + currentUser;
+            document.getElementById('btn-logout').onclick = () => centuriaLogout(false);
+            window.dispatchEvent(new Event('authReady'));
         });
 
         // Progress tracking

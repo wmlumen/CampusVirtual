@@ -23,6 +23,13 @@ header('Content-Type: application/json; charset=UTF-8');
 
 // Session configuration
 session_name('centuria_session');
+$sessionPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'centuria_sessions';
+if (!is_dir($sessionPath)) {
+    mkdir($sessionPath, 0700, true);
+}
+if (is_dir($sessionPath) && is_writable($sessionPath)) {
+    session_save_path($sessionPath);
+}
 session_start();
 
 // JWT settings

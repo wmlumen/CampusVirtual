@@ -329,7 +329,7 @@
     </div>
 
     <script src="js/api.js?v=7"></script>
-    <script src="js/logout.js"></script>
+    <script src="js/logout.js?v=2"></script>
     <script>
         // ═══ ROLE CONFIG ═══
         const roleConfig = {
@@ -399,7 +399,8 @@
             // Datos del usuario
             const nombre = user ? (user.firstname || 'Estudiante') : (localStorage.getItem('centuria_nombre') || 'Estudiante');
             const apellido = user ? (user.lastname || '') : (localStorage.getItem('centuria_apellido') || '');
-            const rol = user ? (user.role || 'alumno') : (localStorage.getItem('centuria_rol') || 'alumno');
+            const rawRole = user ? (user.role || user.rol || 'alumno') : (localStorage.getItem('centuria_rol') || 'alumno');
+            const rol = ROLE_ES[rawRole] || rawRole;
             const carrera = user ? (user.carrera || '') : (localStorage.getItem('centuria_carrera') || '');
             const filial = user ? (user.filial || '') : (localStorage.getItem('centuria_filial') || '');
             const cedulaVal = user ? (user.username || cedula || '') : (cedula || '');
@@ -448,7 +449,7 @@
                 // Solo mostrar las asignaturas que realmente tiene asignadas
                 const subjects = (data.subjects || []).filter(s => {
                     const assignments = data.assignments || [];
-                    return assignments.some(a => a.asignatura === s.codigo && a.rol === 'docente');
+                    return assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo');
                 });
 
                 document.getElementById('stat-courses').textContent = subjects.length;

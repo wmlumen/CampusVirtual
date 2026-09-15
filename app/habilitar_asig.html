@@ -69,6 +69,18 @@
         .empty i{font-size:2rem;margin-bottom:8px;display:block;color:#94a3b8}
 
         .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:5px 16px;background:var(--card);border-top:1px solid var(--bdr);font-size:.5rem;font-weight:500;color:var(--txt2)}
+        :root{--txt:#183326;--txt2:#52685a;--bg:#f3f7f4}
+        body{font-size:14px}
+        .wrap{padding-top:24px}
+        .hdr{padding:20px}.hdr-name{font-size:1.1rem}.hdr-sub{font-size:.85rem}
+        .sec{padding:22px}.sec-title{font-size:.9rem}.stat-lbl{font-size:.75rem}
+        .kit-name{font-size:1rem}.kit-desc,.kit-label{font-size:.85rem}.kit-meta{font-size:.75rem}
+        .btn,.btn-out,.back{font-size:.85rem}.empty{line-height:1.7}
+        .connection{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+        .connection p{margin:6px 0 0;color:var(--txt2);font-size:.85rem}
+        .connection[data-state="error"]{border-left:4px solid var(--naranja)}
+        .connection[data-state="ok"]{border-left:4px solid var(--verde)}
+        .btn:disabled{opacity:.6;cursor:wait}.kit-check{width:28px;height:28px}
         @media print{.footer,.btn-out,.back{display:none!important}}
         @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.kit-grid{grid-template-columns:1fr}.hdr{flex-direction:column;gap:8px}}
     </style>
@@ -85,6 +97,13 @@
     </div>
 
     <a href="dashboard.html" class="back"><i class="bi bi-arrow-left"></i> Volver al Dashboard</a>
+
+    <section class="sec connection" id="connectionPanel" aria-labelledby="connectionTitle">
+        <div><strong id="connectionTitle">Google Sheets · Asignaciones docentes</strong>
+            <p id="connectionStatus" role="status" aria-live="polite">Iniciá sesión para comprobar tus asignaciones locales y en la nube.</p>
+        </div>
+        <button type="button" class="btn btn-p" id="checkConnection" disabled>Comprobar conexión</button>
+    </section>
 
     <!-- Stats -->
     <div class="stats">
@@ -122,24 +141,88 @@
 <div class="footer">Instituto Superior Centuria © 2026 — Habilitación de Asignaturas</div>
 
 <script src="js/api.js?v=7"></script>
-<script src="js/logout.js"></script>
+<script src="js/logout.js?v=2"></script>
 <script>
 let asigActual = null;
 let kitData = {};
+let asignaturasVisibles = new Set();
+let asignacionesDocente = null;
+
+async function comprobarConexion() {
+    const button = document.getElementById('checkConnection');
+    const status = document.getElementById('connectionStatus');
+    const panel = document.getElementById('connectionPanel');
+    const user = CenturiaAPI.getCurrentUser();
+    const cedula = user?.username || sessionStorage.getItem('current_cedula');
+    if (!cedula) return;
+    button.disabled = true;
+    status.textContent = 'Consultando Google Sheets…';
+    panel.dataset.state = '';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+        const response = await fetch(GAS_URL + '?action=verificar_roles&cedula=' + encodeURIComponent(cedula), {signal:controller.signal});
+        if (!response.ok) throw new Error('Google Sheets no respondió correctamente.');
+        const data = await response.json();
+        if (!data || !Array.isArray(data.roles)) {
+            throw new Error('La conexión de estudiantes responde, pero su Apps Script necesita actualizarse para consultar asignaciones docentes. Sincronización pendiente.');
+        }
+        const codes = roles => [...new Set(roles.filter(a => ['teacher','docente'].includes(a.rol) && a.estado === 'activo' && a.asignatura).map(a => a.asignatura))].sort();
+        if (asignacionesDocente === null) throw new Error('Google Sheets conectado. Falta consultar las asignaciones locales del docente para compararlas.');
+        const same = JSON.stringify(codes(data.roles)) === JSON.stringify(codes(asignacionesDocente));
+        panel.dataset.state = same ? 'ok' : 'error';
+        status.textContent = same
+            ? 'Consulta confirmada: las asignaturas activas coinciden en la base local y Google Sheets. La sincronización automática aún no está configurada.'
+            : 'Hay diferencias entre las asignaciones locales y Google Sheets. Sincronización pendiente; no se modificaron los datos.';
+    } catch (error) {
+        panel.dataset.state = 'error';
+        status.textContent = error.name === 'AbortError' ? 'Google Sheets no respondió a tiempo. Podés volver a comprobar la conexión.' : error.message;
+    } finally {
+        clearTimeout(timeout);
+        button.disabled = false;
+    }
+}
 
 async function init() {
-    const nombre = sessionStorage.getItem('current_nombre') || 'Docente';
-    const cedula = sessionStorage.getItem('current_cedula');
+    const user = CenturiaAPI.getCurrentUser();
+    const nombre = sessionStorage.getItem('current_nombre') || [user?.firstname, user?.lastname].filter(Boolean).join(' ') || 'Sin sesión';
+    const cedula = user?.username || sessionStorage.getItem('current_cedula');
     document.getElementById('userName').textContent = nombre;
     document.getElementById('avatar').textContent = nombre.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+    if (!cedula) {
+        document.getElementById('listaAsig').innerHTML = '<div class="empty"><i class="bi bi-person-lock"></i><h2 class="h5">Iniciá sesión para ver tus asignaturas</h2><p>El panel necesita identificar tu cuenta docente.</p><a class="btn btn-p" href="index.html">Iniciar sesión</a></div>';
+        return;
+    }
+    document.getElementById('checkConnection').disabled = false;
+    document.getElementById('checkConnection').addEventListener('click', comprobarConexion);
     await cargarResumen();
 }
 
 async function cargarResumen() {
+    asignaturasVisibles.clear();
+    asignacionesDocente = null;
+    asigActual = null;
+    document.getElementById('detalleKit').style.display = 'none';
     try {
         const resp = await fetch(CenturiaAPI.baseUrl + 'kit.php?action=status');
         const data = await resp.json();
-        const asigs = data.asignaturas || [];
+        if (!resp.ok || data.success === false || !Array.isArray(data.asignaturas)) throw new Error('No se pudo consultar la base local');
+        let asigs = data.asignaturas || [];
+        const user = CenturiaAPI.getCurrentUser();
+        const role = user?.role || user?.rol || localStorage.getItem('centuria_rol') || 'docente';
+        if (['docente', 'teacher'].includes(role)) {
+            const cedula = user?.username || sessionStorage.getItem('current_cedula');
+            if (!cedula) throw new Error('No se pudo identificar al docente');
+            const assignedResponse = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=my_subjects&cedula=' + encodeURIComponent(cedula));
+            const assignedData = await assignedResponse.json();
+            if (!assignedResponse.ok || assignedData.success === false) throw new Error('No se pudieron consultar las asignaciones');
+            asignacionesDocente = assignedData.assignments || [];
+            const codes = new Set((assignedData.assignments || [])
+                .filter(a => ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo')
+                .map(a => a.asignatura));
+            asigs = asigs.filter(a => codes.has(a.codigo));
+        }
+        asignaturasVisibles = new Set(asigs.map(a => a.codigo));
 
         let hab = 0, prog = 0, pend = 0;
         asigs.forEach(a => {
@@ -155,7 +238,7 @@ async function cargarResumen() {
 
         const container = document.getElementById('listaAsig');
         if (asigs.length === 0) {
-            container.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p>No hay asignaturas registradas</p></div>';
+            container.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><h2 class="h5">Sin asignaturas asignadas</h2><p>Tu cuenta todavía no tiene materias activas para preparar.<br>Las asignaturas aparecerán cuando el administrador las asigne.</p></div>';
             return;
         }
 
@@ -187,11 +270,12 @@ async function cargarResumen() {
         }).join('');
     } catch(e) {
         console.error(e);
-        document.getElementById('listaAsig').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i><p>Error al cargar</p></div>';
+        document.getElementById('listaAsig').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i><h2 class="h5">No se pudieron consultar las asignaturas</h2><p>Verificá la conexión con el servidor local.</p><button class="btn btn-p" onclick="cargarResumen()">Reintentar</button></div>';
     }
 }
 
 async function verKit(codigo) {
+    if (!asignaturasVisibles.has(codigo)) return;
     asigActual = codigo;
     document.getElementById('detalleKit').style.display = 'block';
     document.getElementById('det-title').textContent = 'Kit: ' + codigo;
@@ -254,8 +338,9 @@ async function toggleComponente(componente, valor) {
             showToast('Asignatura habilitada correctamente', 'success');
         }
 
-        await verKit(asigActual);
+        const codigo = asigActual;
         await cargarResumen();
+        await verKit(codigo);
     } catch(e) {
         console.error(e);
     }
@@ -275,8 +360,9 @@ async function marcarTodo(valor) {
         fd.append('completado_por', por);
 
         await fetch(CenturiaAPI.baseUrl + 'kit.php', { method: 'POST', body: fd });
-        await verKit(asigActual);
+        const codigo = asigActual;
         await cargarResumen();
+        await verKit(codigo);
     } catch(e) {
         console.error(e);
     }

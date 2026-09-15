@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     $stmt = $pdo->prepare("
         SELECT ur.asignatura, ur.carrera, ur.seccion, ur.rol, ur.estado
         FROM user_roles ur
-        WHERE ur.user_id = ? AND ur.estado = 'activo'
+        WHERE ur.user_id = ? AND ur.estado = 'activo' AND ur.rol IN ('docente', 'teacher')
     ");
     $stmt->execute([$user_id]);
     $assignments = $stmt->fetchAll(PDO::FETCH_ASSOC);

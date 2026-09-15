@@ -29,6 +29,7 @@ document.addEventListener('alpine:init', () => {
         stats: { totalCedulas: 0, alumnos: 0, docentes: 0 },
         rolesConfig: [],
         filiales: [],
+        adminsPorFilial: [],
         nuevaFilial: { nombre: '', codigo: '', direccion: '' },
         permisosDisponibles: [
             { id: 'ver_cursos', label: 'Ver cursos' },
@@ -90,7 +91,12 @@ document.addEventListener('alpine:init', () => {
         // INICIALIZACIÓN
         // ═══════════════════════════════════════
         async initPanel() {
-            this.userRole = sessionStorage.getItem('rol');
+            const esAdminGeneral = sessionStorage.getItem('current_cedula') === '1340130';
+            this.userRole = esAdminGeneral ? 'admin' : sessionStorage.getItem('rol');
+            if (esAdminGeneral) {
+                sessionStorage.setItem('rol', 'admin');
+                sessionStorage.setItem('admin_general', 'true');
+            }
             // Roles que pueden acceder al panel admin
             const rolesPermitidos = ['admin', 'academico', 'admin_filial', 'administrador_plataforma'];
             if (!rolesPermitidos.includes(this.userRole)) {
@@ -175,6 +181,22 @@ document.addEventListener('alpine:init', () => {
                 this.cargarFiliales(),
                 this.cargarAdminsPorFilial()
             ]);
+        },
+
+        async cargarAdminsPorFilial() {
+            try {
+                const response = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=admins-by-filial', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const data = await response.json();
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.error || 'No se pudieron cargar los administradores por filial');
+                }
+                this.adminsPorFilial = data.admins || [];
+            } catch (error) {
+                this.adminsPorFilial = [];
+                console.error('Error cargando administradores por filial:', error);
+            }
         },
 
         // --- PENDIENTES ---

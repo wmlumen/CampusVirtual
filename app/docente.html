@@ -161,7 +161,7 @@
 <div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
 <script src="js/api.js?v=7"></script>
-<script src="js/logout.js"></script>
+<script src="js/logout.js?v=2"></script>
 <script>
 // ═══ ESTADO ═══
 let misAsignaturas = [];
@@ -194,7 +194,7 @@ async function cargarMisAsignaturas(cedula) {
         const subjects = data.subjects || [];
 
         // Solo mostrar las que tienen rol docente
-        const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && a.rol === 'docente'));
+        const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo'));
 
         misAsignaturas = docenteAsig;
 

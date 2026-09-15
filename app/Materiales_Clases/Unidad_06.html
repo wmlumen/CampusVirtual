@@ -1,396 +1,287 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unidad 6 - Infraestructura de Redes y Sistemas Empresariales | TIC Centuria</title>
-    <link rel="icon" type="image/x-icon" href="../favicon.ico">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../css/estilos.css">
-    <link rel="stylesheet" href="../prompt_unificado.css">
-    <link rel="stylesheet" href="../css/portal-layout.css">
-    <script src="../js/portal-layout.js" defer></script>
-    <link rel="stylesheet" href="../accesibilidad.css">
-    <link rel="stylesheet" href="../css/paleta-oficial.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Unidad 6 - Infraestructura de Redes y Sistemas Empresariales | TIC Centuria</title>
+<link href="../favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/estilos.css" rel="stylesheet"/>
+<link href="../css/prompt_unificado.css" rel="stylesheet"/>
+<link href="../css/portal-layout.css" rel="stylesheet"/>
+<script defer="" src="../js/portal-layout.js"></script>
+<link href="../css/accesibilidad.css" rel="stylesheet"/>
+<link href="../css/paleta-oficial.css" rel="stylesheet"/>
 </head>
 <body>
-    <script>if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}</script>
-    <div class="container-fluid">
-        <div class="row portal-layout">
-            <!-- SIDEBAR R12+R13+R16: 10 unidades exactas + 3 globales + 100vh -->
-                    <nav id="portal-menu" aria-label="NavegaciÛn del curso" class="col-md-3 col-lg-2 sidebar px-0" style="position:sticky; top:0; height:100vh; overflow-y:auto; background:#007A33;">
-            <div class="p-2">
-                <a href="programa.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-file-earmark-text me-2"></i>Programa Oficial</a>
-                <a href="../academic/glosario.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-journal-text me-2"></i>Glosario TÈcnico</a>
-                <a href="../asistencia_presencial.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-person-raised-hand me-2"></i>Asistencia Presencial</a>
-                <a href="planilla.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-graph-up me-2"></i>Planilla de Progreso</a>
-            </div>
-            <div class="px-3 pt-3 pb-2 text-uppercase small fw-bold text-white-50" style="letter-spacing:1px;">Unidades (10)</div>
-            <div class="px-2">
-                <a href="Unidad_01.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 1</a>
-                <a href="Unidad_02.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 2</a>
-                <a href="Unidad_03.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 3</a>
-                <a href="Unidad_04.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 4</a>
-                <a href="Unidad_05.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 5</a>
-                <a href="Unidad_06.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 6</a>
-                <a href="Unidad_07.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 7</a>
-                <a href="Unidad_08.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 8</a>
-                <a href="Unidad_09.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 9</a>
-                <a href="Unidad_10.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 10</a>
-            </div>
-        </nav>
+<script>if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}</script>
+<div class="container-fluid">
+<div class="row portal-layout">
 
-            
-            <main class="col-md-9 col-lg-10 content p-4">
-    <button type="button" class="portal-menu-toggle" aria-controls="portal-menu" aria-expanded="true">Ocultar men˙</button>
-    <!-- Header superior premium -->
-    <div id="top-user-bar" class="d-flex justify-content-between align-items-center gap-2 py-2 px-3 mb-3 bg-white rounded-3 shadow-sm border" style="position: sticky; top: 0; z-index: 10;">
-        <div class="d-flex align-items-center gap-3">
-            <img src="logo_centuria.png" alt="Centuria" style="height: 36px; width: auto;">
-            <div>
-                <div class="fw-bold" style="color: #007A33; font-size: .85rem; line-height: 1.1;">INSTITUTO SUPERIOR CENTURIA</div>
-                <small class="text-muted" style="font-size: .7rem; line-height: 1.1;" id="top-carrera">Carrera: <span class="fw-bold">ADE18</span></small><br>
-                <small class="text-muted" style="font-size: .7rem; line-height: 1.1;" id="top-asignatura">Asignatura: <span class="fw-bold">TIC</span></small>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <div class="text-end d-none d-md-block" style="position:relative;">
-                <div id="sidebar-user-name" class="fw-bold small" style="color: #007A33; line-height: 1.1;"></div>
-                <small id="sidebar-user-id" class="text-muted" style="font-size: 0.7rem;"></small>
-            </div>
-            <div class="vr d-none d-md-block"></div>
-            <button id="btn-logout" class="btn btn-sm btn-outline-secondary" title="Cerrar sesiÛn" onclick="sessionStorage.clear(); localStorage.removeItem('centuria_remember'); localStorage.removeItem('centuria_token'); window.location.replace('../index.html')""><i class="bi bi-box-arrow-right"></i> Salir</button>
-        </div>
-    </div>
+<nav aria-label="Navegaci√≥n del curso" class="col-md-3 col-lg-2 sidebar px-0" id="portal-menu" style="position:sticky; top:0; height:100vh; overflow-y:auto; background:#007A33;">
+<div class="p-2">
+<a class="d-block text-white text-decoration-none p-2 rounded" href="programa.html"><i class="bi bi-file-earmark-text me-2"></i>Programa Oficial</a>
+<a class="d-block text-white text-decoration-none p-2 rounded" href="../academic/glosario.html"><i class="bi bi-journal-text me-2"></i>Glosario T√©cnico</a>
+<a class="d-block text-white text-decoration-none p-2 rounded" href="../academic/asistencia_presencial.html"><i class="bi bi-person-raised-hand me-2"></i>Asistencia Presencial</a>
+<a class="d-block text-white text-decoration-none p-2 rounded" href="planilla.html"><i class="bi bi-graph-up me-2"></i>Planilla de Progreso</a>
+</div>
+<div class="px-3 pt-3 pb-2 text-uppercase small fw-bold text-white-50">Unidades (10)</div>
+<div class="px-2">
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="1" href="Unidad_01.html">Unidad 1</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="2" href="Unidad_02.html">Unidad 2</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="3" href="Unidad_03.html">Unidad 3</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="4" href="Unidad_04.html">Unidad 4</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="5" href="Unidad_05.html">Unidad 5</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="6" href="Unidad_06.html">Unidad 6</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="7" href="Unidad_07.html">Unidad 7</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="8" href="Unidad_08.html">Unidad 8</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="9" href="Unidad_09.html">Unidad 9</a>
+<a class="menu-clase d-block text-white text-decoration-none p-2 rounded" data-clase="10" href="Unidad_10.html">Unidad 10</a>
+</div>
+</nav>
+<main class="col-md-9 col-lg-10 content p-4">
+<button aria-controls="portal-menu" aria-expanded="true" class="portal-menu-toggle" type="button">Ocultar men√∫</button>
+<div class="d-flex justify-content-between align-items-center gap-2 py-2 px-3 mb-3 bg-white rounded-3 shadow-sm border" id="top-user-bar">
+<div class="d-flex align-items-center gap-3">
+<img alt="Centuria" height="36" src="logo_centuria.png" width="36"/>
+<div>
+<div class="fw-bold">INSTITUTO SUPERIOR CENTURIA</div>
+<small class="text-muted" id="top-carrera">Carrera: <span class="fw-bold"></span></small>
+</div>
+</div>
+<div class="d-flex align-items-center gap-3">
+<div class="text-end d-none d-sm-block">
+<div class="fw-bold" id="sidebar-user-name"></div>
+<div class="text-muted" id="sidebar-user-id"></div>
+</div>
+<div class="dropdown">
+<button aria-expanded="false" class="btn btn-light rounded-circle p-2 shadow-sm border" data-bs-toggle="dropdown" type="button">
+<i class="bi bi-person-fill"></i>
+</button>
+<ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+<li></li>
+<li><hr class="dropdown-divider m-0"/></li>
+<li><button class="dropdown-item text-danger" id="btn-logout" type="button"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesi√≥n</button></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+<div>
+<span class="badge mb-2">
+   UNIDAD 6
+  </span>
+<h2 class="h2-unidad">Unidad VI: Infraestructura de Redes y Sistemas Empresariales</h2>
+</div>
+</div>
 
-    <!-- TÌtulo de la Unidad -->
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
-        <div>
-            <span class="badge mb-2" style="background:#00B140; font-size:1rem; padding:8px 12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,177,64,.2);">UNIDAD 6</span>
-            <h1 class="h3 fw-bold" style="color:#007A33;">Infraestructura de Redes y Sistemas Empresariales</h1>
-        </div>
-    </div>
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-1">
+<div class="card-header"><i class="bi bi-journal-text"></i> Resumen Tem√°tico</div>
+<div class="card-body">
+<p>Comunicaci√≥n de datos. Hardware de apoyo a la comunicaci√≥n. Conectividad. Redes computacionales. Internet. Dominios de internet. Servicios en internet. Intranet. Extranet. Protocolos inal√°mbricos para internet.</p>
+</div>
+<div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="1" onclick="marcarLeido('1')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
 
-    <!-- Contenido de la Unidad -->
-    <div class="card shadow-sm border-0 mb-4" style="border-radius:16px; overflow:hidden;">
-        <div class="card-body p-4 p-md-5 bg-white">
-            <div style="font-size: 1.1rem; line-height: 1.8; color: #444;">
-                <h4 class="mb-4" style="color: #C5A55A; border-bottom: 2px solid #E6F4EA; padding-bottom: 10px;">Resumen Tem·tico</h4>
-                <p>ComunicaciÛn de datos. Hardware de apoyo a la comunicaciÛn. Conectividad. Redes computacionales. Internet. Dominios de internet. Servicios en internet. Intranet. Extranet. Protocolos inal·mbricos para internet.</p>
-                <h4 class="mb-3 mt-4" style="color:#C5A55A; border-bottom:2px solid #E6F4EA; padding-bottom:10px;">Desarrollo de contenidos</h4>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">1. ComunicaciÛn de datos</h5>
-                <p>Intercambio entre dispositivos mediante un medio y reglas comunes: <strong>emisor ? medio ? receptor</strong>, con mensaje (texto, imagen, audio, video, registros) y protocolo. Los datos viajan en <strong>bits</strong> (8 bits = 1 byte); la velocidad se mide en Kbps/Mbps/Gbps (no confundir MB con Mb). El <strong>ancho de banda</strong> es la capacidad y la <strong>latencia</strong> el retardo: son variables distintas.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">2. Hardware de apoyo y conectividad</h5>
-                <p><strong>NIC</strong> (Ethernet/Wi-Fi), <strong>switch</strong> (conecta dispositivos dentro de la red), <strong>router</strong> (comunica redes distintas), punto de acceso, mÛdem y <strong>servidores</strong> (archivos, web, correo, aplicaciones, BD). La <strong>conectividad</strong> permite que sucursales, sistemas y la base central intercambien informaciÛn consolidada.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">3. Redes: clasificaciÛn y topologÌas</h5>
-                <p><strong>PAN</strong> (personal, ej.: Bluetooth), <strong>LAN</strong> (oficina), <strong>MAN</strong> (ciudad) y <strong>WAN</strong> (paÌses). <strong>TopologÌas:</strong> estrella, bus, anillo y malla. Modelo <strong>cliente-servidor:</strong> el cliente solicita y el servidor responde.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">4. Internet, dominios y servicios</h5>
-                <p><strong>Internet</strong> es la infraestructura global; la <strong>Web</strong> es un servicio sobre ella. Direccionamiento <strong>IPv4/IPv6</strong>; <strong>dominios</strong> (ej.: ventas.empresa.com, .py en Paraguay) resueltos por <strong>DNS</strong>. <strong>Servicios:</strong> web, correo, transferencia de archivos, videoconferencia, mensajerÌa, nube y comercio electrÛnico. En la empresa: comunicaciÛn, marketing, ventas, administraciÛn, atenciÛn y trabajo remoto.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">5. Intranet, Extranet y protocolos</h5>
-                <p><strong>Intranet:</strong> entorno privado interno. <strong>Extranet:</strong> acceso controlado para proveedores/clientes autorizados. <strong>TCP/IP:</strong> direccionamiento y transporte confiable. <strong>HTTP/HTTPS:</strong> web, con TLS para proteger contraseÒas, pagos y documentos. <strong>Inal·mbricos:</strong> Wi-Fi, Bluetooth y redes mÛviles (4G/5G). <strong>Cableada</strong> (estable, predecible) vs. <strong>inal·mbrica</strong> (mÛvil, flexible): suelen combinarse. <strong>Seguridad mÌnima:</strong> autenticaciÛn, permisos, actualizaciones, cifrado, segmentaciÛn, copias y monitoreo.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">AutoevaluaciÛn: tarjetas</h5>
-                <div class="d-flex justify-content-between align-items-center mb-2"><span class="badge" id="fcCount" style="background:#007A33;">Tarjeta 1 de 5</span><button class="btn btn-sm btn-outline-secondary noprint" onclick="fcRestart()">Reiniciar</button></div>
-                <div class="flashCard" id="fcCard" onclick="fcTap()" onkeydown="if(event.key==='Enter')fcTap()" role="button" tabindex="0" title="Toca para ver la respuesta">
-                    <div class="flashQ" id="fcQ"></div>
-                    <div class="flashA" id="fcA" style="display:none"></div>
-                    <div class="flashHint" id="fcHint">Toca la tarjeta para ver la respuesta</div>
-                </div>
-                <div class="d-flex gap-2 mt-2 flashBtns noprint">
-                    <button class="btn btn-outline-secondary flex-fill" onclick="fcPrev()">? Anterior</button>
-                    <button class="btn btn-success flex-fill" onclick="fcNext()">Siguiente ?</button>
-                </div>
-                <style>.flashCard{background:#fff;border:2px solid #007A33;border-radius:14px;padding:26px;min-height:170px;cursor:pointer;transition:.2s}.flashCard:hover{box-shadow:0 4px 16px rgba(0,122,51,.15)}.flashQ{font-weight:700;font-size:.95rem;color:#2D2D2D}.flashA{margin-top:12px;background:#E6F4EA;border-left:4px solid #00B140;border-radius:8px;padding:12px;font-size:.88rem}.flashHint{margin-top:10px;font-size:.7rem;color:#999;text-align:center}@media print{.flashA{display:block!important}.flashHint,.flashBtns,.noprint{display:none!important}}</style>
-                <script>
-                const FC_DATA=[
-                    {q:'øQuÈ conecta un switch y quÈ comunica un router?',a:'Switch dentro de la red; router entre redes.'},
-                    {q:'øQuÈ red corresponde a una oficina?',a:'LAN.'},
-                    {q:'øQuÈ resuelve el DNS?',a:'Nombres de dominio a direcciones.'},
-                    {q:'Diferencie Intranet de Extranet.',a:'Interna de empleados vs. acceso controlado a externos autorizados.'},
-                    {q:'Si hay gran ancho de banda pero demora en responder, øquÈ variable falla?',a:'Latencia.'}
-                ];
-                let fcI=0,fcOpen=false;
-                function fcRender(){document.getElementById('fcQ').textContent=(fcI+1)+'. '+FC_DATA[fcI].q;const a=document.getElementById('fcA');a.innerHTML='<strong>R:</strong> '+FC_DATA[fcI].a;a.style.display=fcOpen?'block':'none';document.getElementById('fcHint').textContent=fcOpen?'Toca de nuevo para la siguiente':'Toca la tarjeta para ver la respuesta';document.getElementById('fcCount').textContent='Tarjeta '+(fcI+1)+' de '+FC_DATA.length;}
-                function fcTap(){if(!fcOpen){fcOpen=true;fcRender();}else{fcNext();}}
-                function fcNext(){fcI=(fcI+1)%FC_DATA.length;fcOpen=false;fcRender();}
-                function fcPrev(){fcI=(fcI-1+FC_DATA.length)%FC_DATA.length;fcOpen=false;fcRender();}
-                function fcRestart(){fcI=0;fcOpen=false;fcRender();}
-                document.addEventListener('DOMContentLoaded',fcRender);
-                </script>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">Mapa visual</h5>
-                <figure class="text-center my-3">
-                    <svg viewBox="0 0 660 150" width="100%" role="img" aria-label="De la red local a Internet">
-                        <defs><marker id="fl6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#C5A55A"/></marker></defs>
-                        <g font-size="10" text-anchor="middle" fill="#2D2D2D" font-family="Montserrat,Segoe UI,sans-serif">
-                            <rect x="6" y="48" width="120" height="54" rx="8" fill="#E6F4EA" stroke="#007A33" stroke-width="2"/><text x="66" y="70">Red LAN</text><text x="66" y="86" font-size="9" fill="#007A33">switch ∑ Wi-Fi</text>
-                            <rect x="186" y="48" width="120" height="54" rx="8" fill="#E6F4EA" stroke="#007A33" stroke-width="2"/><text x="246" y="70">Router</text><text x="246" y="86" font-size="9" fill="#007A33">entre redes</text>
-                            <ellipse cx="426" cy="75" rx="90" ry="42" fill="#007A33" stroke="#007A33" stroke-width="2"/><text x="426" y="72" fill="#fff" font-weight="bold">INTERNET</text><text x="426" y="88" fill="#fff" font-size="9">TCP/IP ∑ DNS</text>
-                            <rect x="536" y="28" width="118" height="40" rx="8" fill="#FFF8E1" stroke="#C5A55A" stroke-width="2"/><text x="595" y="52" font-size="9">Intranet</text>
-                            <rect x="536" y="82" width="118" height="40" rx="8" fill="#FFF8E1" stroke="#C5A55A" stroke-width="2"/><text x="595" y="106" font-size="9">Extranet</text>
-                            <g stroke="#C5A55A" stroke-width="2"><line x1="126" y1="75" x2="183" y2="75" marker-end="url(#fl6)"/><line x1="306" y1="75" x2="333" y2="75" marker-end="url(#fl6)"/></g>
-                        </g>
-                        <text x="330" y="142" font-size="10" text-anchor="middle" fill="#007A33" font-family="Montserrat,Segoe UI,sans-serif">Figura 6. De la red local a Internet, Intranet y Extranet</text>
-                    </svg>
-                </figure>
-                <p class="small"><strong>Secuencia sugerida:</strong> Datos ? Red ? Internet ? Intranet/Extranet ? Seguridad.</p>
-                <h5 class="mt-4 mb-2" style="color:#007A33;">Fuentes consultadas</h5>
-                <ol class="small" type="a">
-                    <li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li>
-                    <li>Cohen Kare, D. y AsÌn Lares, E. (2009). <em>TecnologÌa de informaciÛn en los Negocios</em>. MÈxico: McGraw-Hill.</li>
-                    <li>Caso Comercial Centuria S.A.: integraciÛn multisucursal (material de la unidad).</li>
-                </ol>
-                <div class="alert alert-success mt-4 d-flex align-items-center">
-                    <i class="bi bi-info-circle-fill me-3 fs-4"></i>
-                    <div>
-                        <strong>Nota:</strong> Este es el material de lectura de la Unidad 6. El docente ampliar· estos temas durante la clase presencial/virtual.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="d-flex justify-content-between mt-5">
-        <a href="Unidad_05.html" class="btn btn-outline-secondary "><i class="bi bi-arrow-left"></i> Unidad Anterior</a>
-        <a href="Unidad_07.html" class="btn btn-success ">Siguiente Unidad <i class="bi bi-arrow-right"></i></a>
-    </div>
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-comunicacion"><div class="card-header">Comunicaci√≥n de datos</div><div class="card-body"><h3 class="h3-tema">1. Comunicaci√≥n de datos</h3>
+<p>Intercambio entre dispositivos mediante un medio y reglas comunes: <strong>emisor ‚Üí medio ‚Üí receptor</strong>, con mensaje (texto, imagen, audio, video, registros) y protocolo. Los datos viajan en <strong>bits</strong> (8 bits = 1 byte); la velocidad se mide en Kbps/Mbps/Gbps (no confundir MB con Mb). El <strong>ancho de banda</strong> es la capacidad y la <strong>latencia</strong> el retardo: son variables distintas.</p>
+</div><div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="comunicacion" onclick="marcarLeido('comunicacion')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
 
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-hardware"><div class="card-header">Hardware de apoyo y conectividad</div><div class="card-body"><h3 class="h3-tema">2. Hardware de apoyo y conectividad</h3>
+<p><strong>NIC</strong> (Ethernet/Wi-Fi), <strong>switch</strong> (conecta dispositivos dentro de la red), <strong>router</strong> (comunica redes distintas), punto de acceso, m√≥dem y <strong>servidores</strong> (archivos, web, correo, aplicaciones, BD). La <strong>conectividad</strong> permite que sucursales, sistemas y la base central intercambien informaci√≥n consolidada.</p>
+</div><div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="hardware" onclick="marcarLeido('hardware')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-redes">
+<div class="card-header"><i class="bi bi-diagram-3"></i> 3. Redes: clasificaci√≥n y topolog√≠as</div>
+<div class="card-body">
+<h3 class="h3-tema">3. Redes: clasificaci√≥n y topolog√≠as</h3>
+<p><strong>PAN</strong> (personal, ej.: Bluetooth), <strong>LAN</strong> (oficina), <strong>MAN</strong> (ciudad) y <strong>WAN</strong> (pa√≠ses). <strong>Topolog√≠as:</strong> estrella, bus, anillo y malla. Modelo <strong>cliente-servidor:</strong> el cliente solicita y el servidor responde.</p>
+</div>
+<div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="2" onclick="marcarLeido('2')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-internet"><div class="card-header">Internet, dominios y servicios</div><div class="card-body"><h3 class="h3-tema">4. Internet, dominios y servicios</h3>
+<p><strong>Internet</strong> es la infraestructura global; la <strong>Web</strong> es un servicio sobre ella. Direccionamiento <strong>IPv4/IPv6</strong>; <strong>dominios</strong> (ej.: ventas.empresa.com, .py en Paraguay) resueltos por <strong>DNS</strong>. <strong>Servicios:</strong> web, correo, transferencia de archivos, videoconferencia, mensajer√≠a, nube y comercio electr√≥nico. En la empresa: comunicaci√≥n, marketing, ventas, administraci√≥n, atenci√≥n y trabajo remoto.</p>
+</div><div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="internet" onclick="marcarLeido('internet')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-intranet"><div class="card-header">Intranet, Extranet y protocolos</div><div class="card-body"><h3 class="h3-tema">5. Intranet, Extranet y protocolos</h3>
+<p><strong>Intranet:</strong> entorno privado interno. <strong>Extranet:</strong> acceso controlado para proveedores/clientes autorizados. <strong>TCP/IP:</strong> direccionamiento y transporte confiable. <strong>HTTP/HTTPS:</strong> web, con TLS para proteger contrase√±as, pagos y documentos. <strong>Inal√°mbricos:</strong> Wi-Fi, Bluetooth y redes m√≥viles (4G/5G). <strong>Cableada</strong> (estable, predecible) vs. <strong>inal√°mbrica</strong> (m√≥vil, flexible): suelen combinarse. <strong>Seguridad m√≠nima:</strong> autenticaci√≥n, permisos, actualizaciones, cifrado, segmentaci√≥n, copias y monitoreo.</p>
+</div><div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="intranet" onclick="marcarLeido('intranet')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-autoevaluacion">
+<div class="card-header"><i class="bi bi-lightbulb"></i> Autoevaluaci√≥n: tarjetas</div>
+<div class="card-body">
+<div class="d-flex justify-content-between align-items-center mb-2"><span class="badge" id="fcCount" style="background:#007A33;">Tarjeta 1 de 5</span><button class="btn btn-sm btn-outline-secondary noprint" onclick="fcRestart()">Reiniciar</button></div>
+<div class="flashCard" id="fcCard" onclick="fcTap()" onkeydown="if(event.key==='Enter')fcTap()" role="button" tabindex="0" title="Toca para ver la respuesta">
+<div class="flashQ" id="fcQ"></div>
+<div class="flashA" id="fcA" style="display:none"></div>
+<div class="flashHint" id="fcHint">Toca la tarjeta para ver la respuesta</div>
+</div>
+<div class="d-flex gap-2 mt-2 flashBtns noprint">
+<button class="btn btn-outline-secondary flex-fill" onclick="fcPrev()">‚Üê Anterior</button>
+<button class="btn btn-success flex-fill" onclick="fcNext()">Siguiente ‚Üí</button>
+</div>
+<style>.flashCard{background:#fff;border:2px solid #007A33;border-radius:14px;padding:26px;min-height:170px;cursor:pointer;transition:.2s}.flashCard:hover{box-shadow:0 4px 16px rgba(0,122,51,.15)}.flashQ{font-weight:700;font-size:.95rem;color:#2D2D2D}.flashA{margin-top:12px;background:#E6F4EA;border-left:4px solid #00B140;border-radius:8px;padding:12px;font-size:.88rem}.flashHint{margin-top:10px;font-size:.7rem;color:#999;text-align:center}@media print{.flashA{display:block!important}.flashHint,.flashBtns,.noprint{display:none!important}}</style>
+<script>
+const FC_DATA=[
+{q:'¬øQu√© conecta un switch y qu√© comunica un router?',a:'Switch dentro de la red; router entre redes.'},
+{q:'¬øQu√© red corresponde a una oficina?',a:'LAN.'},
+{q:'¬øQu√© resuelve el DNS?',a:'Nombres de dominio a direcciones.'},
+{q:'Diferencie Intranet de Extranet.',a:'Interna de empleados vs. acceso controlado a externos autorizados.'},
+{q:'Si hay gran ancho de banda pero demora en responder, ¬øqu√© variable falla?',a:'Latencia.'}
+];
+let fcI=0,fcOpen=false;
+function fcRender(){document.getElementById('fcQ').textContent=(fcI+1)+'. '+FC_DATA[fcI].q;const a=document.getElementById('fcA');a.innerHTML='<strong>R:</strong> '+FC_DATA[fcI].a;a.style.display=fcOpen?'block':'none';document.getElementById('fcHint').textContent=fcOpen?'Toca de nuevo para la siguiente':'Toca la tarjeta para ver la respuesta';document.getElementById('fcCount').textContent='Tarjeta '+(fcI+1)+' de '+FC_DATA.length;}
+function fcTap(){if(!fcOpen){fcOpen=true;fcRender();}else{fcNext();}}
+function fcNext(){fcI=(fcI+1)%FC_DATA.length;fcOpen=false;fcRender();}
+function fcPrev(){fcI=(fcI-1+FC_DATA.length)%FC_DATA.length;fcOpen=false;fcRender();}
+function fcRestart(){fcI=0;fcOpen=false;fcRender();}
+document.addEventListener('DOMContentLoaded',fcRender);
+</script>
+</div>
+<div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="autoevaluacion" onclick="marcarLeido('autoevaluacion')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-mapa">
+<div class="card-header"><i class="bi bi-map"></i> Mapa visual</div>
+<div class="card-body">
+<figure class="text-center my-3">
+<svg viewBox="0 0 660 150" width="100%" role="img" aria-label="De la red local a Internet">
+<defs><marker id="fl6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#C5A55A"/></marker></defs>
+<g font-size="10" text-anchor="middle" fill="#2D2D2D" font-family="Montserrat,Segoe UI,sans-serif">
+<rect x="6" y="48" width="120" height="54" rx="8" fill="#E6F4EA" stroke="#007A33" stroke-width="2"/><text x="66" y="70">Red LAN</text><text x="66" y="86" font-size="9" fill="#007A33">switch ¬∑ Wi-Fi</text>
+<rect x="186" y="48" width="120" height="54" rx="8" fill="#E6F4EA" stroke="#007A33" stroke-width="2"/><text x="246" y="70">Router</text><text x="246" y="86" font-size="9" fill="#007A33">entre redes</text>
+<ellipse cx="426" cy="75" rx="90" ry="42" fill="#007A33" stroke="#007A33" stroke-width="2"/><text x="426" y="72" fill="#fff" font-weight="bold">INTERNET</text><text x="426" y="88" fill="#fff" font-size="9">TCP/IP ¬∑ DNS</text>
+<rect x="536" y="28" width="118" height="40" rx="8" fill="#FFF8E1" stroke="#C5A55A" stroke-width="2"/><text x="595" y="52" font-size="9">Intranet</text>
+<rect x="536" y="82" width="118" height="40" rx="8" fill="#FFF8E1" stroke="#C5A55A" stroke-width="2"/><text x="595" y="106" font-size="9">Extranet</text>
+<g stroke="#C5A55A" stroke-width="2"><line x1="126" y1="75" x2="183" y2="75" marker-end="url(#fl6)"/><line x1="306" y1="75" x2="333" y2="75" marker-end="url(#fl6)"/></g>
+</g>
+<text x="330" y="142" font-size="10" text-anchor="middle" fill="#007A33" font-family="Montserrat,Segoe UI,sans-serif">Figura 6. De la red local a Internet, Intranet y Extranet</text>
+</svg>
+</figure>
+<p class="small"><strong>Secuencia sugerida:</strong> Datos ‚Üí Red ‚Üí Internet ‚Üí Intranet/Extranet ‚Üí Seguridad.</p>
+</div>
+<div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="mapa" onclick="marcarLeido('mapa')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="card shadow-sm border-start border-4 mb-3 col-12" id="card-asistencia-clase"><div class="card-header">Asistencia presencial</div>
+<div class="card-body p-4 p-md-5 bg-white">
+<h4 class="h4-subtema">
+<i class="bi bi-person-check-fill me-2"></i> Asistencia en Clase Presencial
+</h4>
+<p>Haz clic en el bot√≥n inferior para marcar tu asistencia a la sesi√≥n presencial de la Unidad 6.</p>
+<button class="btn btn-primary" id="btn-asis-clase" onclick="marcarAsistenciaClase()">
+<i class="bi bi-hand-index-thumb"></i> Poner Presente
+</button>
+</div>
+<div class="card-footer d-flex justify-content-end"><button class="btn btn-outline-success btn-sm btn-marcar-leido" data-section="asistencia-clase" onclick="marcarLeido('asistencia-clase')" type="button"><i class="bi bi-check-circle"></i> Marcar como Le√≠do</button></div></div>
+
+<div class="seccion-bibliografia">
+<h4 class="h4-subtema">Bibliograf√≠a B√°sica</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Cohen Kare, D. y As√≠n Lares, E. (2009). <em>Tecnolog√≠a de informaci√≥n en los Negocios</em>. M√©xico: McGraw-Hill.</li></ul>
+<h4 class="h4-subtema">Bibliograf√≠a Complementaria</h4><ul><li>Caso Comercial Centuria S.A.: integraci√≥n multisucursal (material de la unidad).</li></ul>
+</div>
+<div class="navegacion-unidades d-flex justify-content-between">
+<a class="btn btn-outline-secondary" href="Unidad_05.html">‚Üê Unidad Anterior</a>
+<a class="btn btn-primary" href="Unidad_07.html">Siguiente Unidad ‚Üí</a>
+</div>
+<p aria-live="polite" id="progreso-texto" role="status">0 secciones le√≠das</p><p aria-live="polite" id="estado-guardado" role="status"></p><button class="btn btn-outline-secondary mb-3" onclick="revisarPendiente()" type="button">Ver lectura pendiente</button><button class="btn btn-secondary w-100 mt-3" disabled="" id="btn-confirmar" onclick="confirmarLeccion()">Confirmar Lecci√≥n como Completada</button>
 </main>
+</div>
+</div>
 
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- R Bloqueo Secuencial - Modal -->
-    <div class="modal fade" id="modalBloqueo" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-danger"><div class="modal-header bg-danger text-white"><h5 class="modal-title"><i class="bi bi-lock-fill me-2"></i>Unidad bloqueada</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="mb-0" id="msgBloqueo">Debes completar la unidad anterior antes de continuar.</p></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button><a id="btnIrAnterior" href="Unidad_01.html" class="btn btn-primary">Ir a unidad pendiente</a></div></div></div></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // R Bloqueo Secuencial + R13 UX + R9 tooltip + R17 anti-trampa
-        const totalSecciones = 8;
-        const leidos = new Set();
-        const UNIDAD_ACTUAL = 6; // Unidad VI: Redes
-        function isUnidadCompletada(n){ const k='unidad_'+String(n).padStart(2,'0')+'_completada'; return localStorage.getItem(k)==='true' || localStorage.getItem('tic_progress_Admin_Unidad_'+n)==='finished' || localStorage.getItem('tic_progress_unidad_'+n)==='finished'; }
-        function getMaxCompletada(){ let max=0; for(let i=1;i<=10;i++){ if(isUnidadCompletada(i)) max=i; else break; } return max; }
-        function bloquearNavegacion(){
-            const max=getMaxCompletada();
-            const limite = max+1; // solo hasta la siguiente no completada se puede entrar
-            document.querySelectorAll('.menu-clase').forEach(a=>{
-                const num=parseInt(a.getAttribute('data-clase'))||99;
-                if(num>limite){
-                    a.classList.add('disabled'); a.style.opacity='0.45'; a.style.pointerEvents='none'; a.setAttribute('title','Completa la unidad anterior para desbloquear');
-                    a.addEventListener('click',e=>{e.preventDefault(); mostrarBloqueo(num, max+1);});
-                }
-            });
-            // Bloquear botÛn Siguiente Unidad si la unidad actual no est· completada
-            const btnSig=document.querySelector('.navegacion-unidades .btn-primary');
-            if(btnSig && !isUnidadCompletada(UNIDAD_ACTUAL)){
-                // No bloqueamos visual, pero interceptamos click hasta confirmar (se habilitar· al confirmar)
-                btnSig.classList.add('disabled'); btnSig.style.pointerEvents='none'; btnSig.style.opacity='0.5';
-            }
+<script>
+'use strict';
+const UNIDAD_ACTUAL = 6;
+const cedula = sessionStorage.getItem('current_cedula');
+const leidos = new Set();
+const cards = [...document.querySelectorAll('main .card')];
+const totalCards = cards.length;
+const sections = new Map(cards.map(card => [card.querySelector('[data-section]').dataset.section, card]));
+const LEIDOS_KEY = 'tic_leidos_' + cedula + '_Unidad_06';
+const COMPLETADA_KEY = 'tic_progress_' + cedula + '_Materiales_HTML_LunesViernes_clase_6';
+const ASISTENCIA_KEY = 'tic_asistencia_' + cedula + '_6';
+const confirmar = document.getElementById('btn-confirmar');
+const estado = document.getElementById('estado-guardado');
+function enfocar(element) { element.scrollIntoView({behavior:'smooth',block:'center'}); }
+function actualizarProgreso() {
+    document.getElementById('progreso-texto').textContent = leidos.size + ' / ' + totalCards + ' secciones le√≠das';
+    confirmar.disabled = leidos.size !== totalCards;
+    confirmar.classList.toggle('btn-success', !confirmar.disabled);
+    confirmar.classList.toggle('btn-secondary', confirmar.disabled);
+}
+function pintarLeido(id) {
+    const card = sections.get(id);
+    if (!card) return;
+    leidos.add(id);
+    const button = card.querySelector('[data-section]');
+    button.disabled = true;
+    button.textContent = 'Le√≠do';
+    button.classList.replace('btn-outline-success','btn-success');
+    card.classList.add('border-success');
+}
+function marcarLeido(id) {
+    if (!cedula || !sections.has(id)) return;
+    const next = new Set([...leidos,id]);
+    try { localStorage.setItem(LEIDOS_KEY,JSON.stringify([...next])); }
+    catch (_) { estado.textContent = 'No se pudo guardar la lectura en este navegador. Volv√© a intentarlo.'; return; }
+    pintarLeido(id);
+    actualizarProgreso();
+}
+function revisarPendiente() {
+    const pending = [...sections].find(([id]) => !leidos.has(id));
+    if (!pending) return;
+    enfocar(pending[1]);
+    pending[1].classList.add('border-danger');
+    setTimeout(() => pending[1].classList.remove('border-danger'),2000);
+}
+function confirmarLeccion() {
+    if (!cedula || leidos.size !== totalCards) { revisarPendiente(); return; }
+    try {
+        localStorage.setItem(COMPLETADA_KEY,'finished');
+        localStorage.setItem('unidad_06_completada_'+cedula,'true');
+        estado.textContent = 'Unidad 6 completada y guardada en este navegador.';
+        confirmar.disabled = true;
+    } catch (_) { estado.textContent = 'No se pudo guardar la confirmaci√≥n. Volv√© a intentarlo.'; }
+}
+function marcarAsistenciaClase() {
+    if (!cedula) return;
+    try {
+        if (!localStorage.getItem(ASISTENCIA_KEY)) localStorage.setItem(ASISTENCIA_KEY,new Date().toISOString());
+        const button = document.getElementById('btn-asis-clase');
+        button.disabled = true;
+        button.textContent = 'Presente registrado localmente';
+        estado.textContent = 'Asistencia guardada localmente. La confirmaci√≥n en Google Sheets est√° pendiente.';
+    } catch (_) { estado.textContent = 'No se pudo guardar la asistencia. Volv√© a intentarlo.'; }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('sidebar-user-name').textContent = sessionStorage.getItem('current_nombre') || '';
+    document.getElementById('sidebar-user-id').textContent = 'C.I: ' + (cedula || '');
+    document.getElementById('top-carrera').textContent = 'Carrera: ' + (sessionStorage.getItem('current_carrera') || 'ADE18');
+    const current_clase = location.pathname.split('/').pop();
+    const active = [...document.querySelectorAll('a[data-clase]')].find(a => a.getAttribute('href') === current_clase);
+    if (active) { active.classList.add('active'); active.setAttribute('aria-current','page'); enfocar(active); }
+    if (window.bootstrap) document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    try {
+        const saved = JSON.parse(localStorage.getItem(LEIDOS_KEY) || '[]');
+        if (Array.isArray(saved)) saved.filter(id => sections.has(id)).forEach(pintarLeido);
+        if (localStorage.getItem(ASISTENCIA_KEY)) {
+            const button = document.getElementById('btn-asis-clase');
+            button.disabled = true; button.textContent = 'Presente registrado localmente';
         }
-        function mostrarBloqueo(destino, pendiente){
-            document.getElementById('msgBloqueo').textContent='La Unidad '+destino+' est· bloqueada. Debes cerrar la Unidad '+pendiente+' (Confirmar LecciÛn como Completada) antes de avanzar.';
-            document.getElementById('btnIrAnterior').setAttribute('href','Unidad_'+String(pendiente).padStart(2,'0')+'.html');
-            new bootstrap.Modal(document.getElementById('modalBloqueo')).show();
-        }
-        document.addEventListener('DOMContentLoaded', function(){
-            // R13 auto-tracking + bloqueo
-            const cur = location.pathname.split('/').pop() || 'Unidad_01.html';
-            document.querySelectorAll('.menu-clase').forEach(a=>{
-                if(a.getAttribute('href')===cur) { a.classList.add('active'); a.scrollIntoView({behavior:'smooth',block:'center'}); }
-            });
-
+    } catch (_) { estado.textContent = 'No se pudo recuperar el progreso anterior.'; }
+    actualizarProgreso();
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        sessionStorage.removeItem('current_cedula');
+        sessionStorage.removeItem('current_nombre');
+        sessionStorage.removeItem('rol');
+        location.replace('../index.html');
     });
-    // R21 mostrar usuario en sidebar
-    // Roles vÌa API del sistema (sin dependencias externas)
-    const n=sessionStorage.getItem('current_nombre');
-    const c=sessionStorage.getItem('current_cedula');
-    const rol=sessionStorage.getItem('rol')||'alumno';
-    if(n) { const el=document.getElementById('sidebar-user-name'); if(el) el.textContent=n; }
-    if(c) { const el=document.getElementById('sidebar-user-id'); if(el) el.textContent='C.I: '+c; }
-    // Badge de rol activo + selector
-    (function(){
-        const badgeTexto=document.getElementById('rol-badge-text');
-        if(!badgeTexto) return;
-        const colores={alumno:'#007A33',docente:'#0097A7',admin:'#5C6BC0',academico:'#8E24AA'};
-        const emojis={alumno:'??',docente:'??\u200d??',admin:'??',academico:'???'};
-        const etiquetas={alumno:'ALUMNO',docente:'DOCENTE',admin:'ADMIN',academico:'ACAD…MICO'};
-        const bg=colores[rol]||'#007A33';
-        const emoji=emojis[rol]||'??';
-        const label=etiquetas[rol]||rol.toUpperCase();
-        badgeTexto.style.background=bg;
-        badgeTexto.textContent=emoji+' '+label;
-        // Cargar lista de roles disponibles
-        cargarRolesDisponibles();
-    })();
+});
+</script>
 
-    function toggleRolSelector(){
-        const dd=document.getElementById('rol-selector-dropdown');
-        dd.style.display=dd.style.display==='none'?'block':'none';
-    }
-    document.addEventListener('click',function(e){
-        const dd=document.getElementById('rol-selector-dropdown');
-        const badge=document.getElementById('rol-activo-badge');
-        if(dd && !dd.contains(e.target) && badge && !badge.contains(e.target)) dd.style.display='none';
-    });
-
-        async function cargarRolesDisponibles(){
-            const cedula=sessionStorage.getItem('current_cedula');
-            if(!cedula) return;
-            try{
-                if(window.CenturiaAPI && CenturiaAPI.getRoles){
-                    const r=await CenturiaAPI.getRoles(cedula);
-                    const roles=(r&&r.roles)||[];
-                    if(roles.length){ sessionStorage.setItem('roles',JSON.stringify(roles)); renderizarRolesDisponibles(roles); return; }
-                }
-                const stored=JSON.parse(sessionStorage.getItem('roles')||'[]');
-                if(stored.length) renderizarRolesDisponibles(stored);
-            }catch(e){console.error('Error cargando roles:',e);}
-        }
-
-    function renderizarRolesDisponibles(roles){
-        const lista=document.getElementById('rol-selector-lista');
-        if(!lista||!roles.length){return;}
-        const colores={alumno:'#007A33',docente:'#0097A7',admin:'#5C6BC0',academico:'#8E24AA'};
-        const emojis={alumno:'??',docente:'??\u200d??',admin:'??',academico:'???'};
-        const etiquetas={alumno:'Alumno',docente:'Docente',admin:'Administrador',academico:'AcadÈmico'};
-        const rolActual=sessionStorage.getItem('rol')||'alumno';
-        let html='';
-        roles.forEach(function(r){
-            if(r.estado!=='activo') return;
-            const esActual=r.rol===rolActual&&(r.carrera||'')===(sessionStorage.getItem('current_carrera')||'');
-            const color=colores[r.rol]||'#007A33';
-            const emoji=emojis[r.rol]||'??';
-            const label=etiquetas[r.rol]||r.rol;
-            const info=[r.asignatura||r.carrera||'',r.seccion?'Sec. '+r.seccion:''].filter(Boolean).join(' ∑ ');
-            const bg=esActual?color+'15':'transparent';
-            const border=esActual?'2px solid '+color:'2px solid transparent';
-            html+='<div onclick="cambiarRol(\''+r.rol+'\',\''+encodeURIComponent(r.carrera||'')+'\',\''+encodeURIComponent(r.seccion||'')+'\',\''+encodeURIComponent(r.asignatura||'')+'\')" style="padding:10px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:.15s; background:'+bg+'; border:'+border+'; border-radius:8px; margin:2px 8px;" onmouseover="this.style.background=\''+color+'10\';" onmouseout="this.style.background=\''+bg+'\';">';
-            html+='<span style="width:28px; height:28px; border-radius:50%; background:'+color+'20; color:'+color+'; display:flex; align-items:center; justify-content:center; font-size:.8rem; flex-shrink:0;">'+emoji+'</span>';
-            html+='<div style="flex:1; min-width:0;">';
-            html+='<div style="font-size:.78rem; font-weight:600; color:#333;">'+label+'</div>';
-            html+='<div style="font-size:.65rem; color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+info+'</div>';
-            html+='</div>';
-            if(esActual) html+='<i class="bi bi-check-circle-fill" style="color:'+color+'; font-size:.75rem;"></i>';
-            html+='</div>';
-        });
-        lista.innerHTML=html;
-    }
-
-    function cambiarRol(nuevoRol, carrera, seccion, asignatura){
-        carrera=decodeURIComponent(carrera||'');
-        seccion=decodeURIComponent(seccion||'');
-        asignatura=decodeURIComponent(asignatura||'');
-        sessionStorage.setItem('rol',nuevoRol);
-        if(carrera) sessionStorage.setItem('current_carrera',carrera);
-        if(seccion) sessionStorage.setItem('current_seccion',seccion);
-        if(asignatura) sessionStorage.setItem('current_asignatura',asignatura);
-        // Admin va al panel admin
-        if(nuevoRol==='admin'){ window.location.href='../admin/admin_roles.html'; return; }
-        // Recargar la misma p·gina para aplicar el nuevo rol
-        window.location.reload();
-    }
-
-            
-    // Cargar Carrera/Asignatura din·micamente (soporta m˙ltiples carreras)
-    (function(){
-        const c = sessionStorage.getItem('current_carrera') || sessionStorage.getItem('curso_nombre') || 'ADE18';
-        const s = sessionStorage.getItem('current_seccion') || '';
-        const cursos = JSON.parse(sessionStorage.getItem('cursos_disponibles') || 'null');
-        const elCar = document.getElementById('top-carrera');
-        const elAsig = document.getElementById('top-asignatura');
-        if(cursos && Array.isArray(cursos) && cursos.length>1){
-            // M˙ltiples carreras: mostrar todas
-            if(elCar) elCar.innerHTML = 'Carreras: <span class="fw-bold">'+cursos.map(x=>x.codigo||x.id).join(', ')+'</span>';
-            if(elAsig) elAsig.innerHTML = 'Asignaturas: <span class="fw-bold">'+cursos.map(x=>x.nombre).join(' | ')+'</span>';
-        } else {
-            if(elCar) elCar.innerHTML = 'Carrera: <span class="fw-bold">'+c+'</span>'+(s?' ï SecciÛn '+s:'');
-            if(elAsig && sessionStorage.getItem('curso_nombre')) elAsig.innerHTML = 'Asignatura: <span class="fw-bold">'+sessionStorage.getItem('curso_nombre')+'</span>';
-        }
-    })();
-
-            // R9 tooltip init
-            [...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(el=> new bootstrap.Tooltip(el));
-            actualizarProgreso();
-            actualizarProgresoInline();
-            restaurarLeidos();
-            marcarProgresoMenu();
-            // NavegaciÛn libre entre unidades: el avance solo se registra
-            // al leer todo el material (botÛn Confirmar LecciÛn).
-        // Progreso persistente por unidad + marca ? en el men˙ (sin bloquear navegaciÛn)
-        const LEIDOS_KEY='tic_leidos_Unidad_'+String(UNIDAD_ACTUAL).padStart(2,'0');
-        function guardarLeidos(){ try{ localStorage.setItem(LEIDOS_KEY, JSON.stringify([...leidos])); }catch(e){} }
-        function restaurarLeidos(){
-            try{
-                const arr=JSON.parse(localStorage.getItem(LEIDOS_KEY)||'[]');
-                arr.forEach(id=>{
-                    const btn=document.querySelector(`[data-section="${id}"]`);
-                    if(btn && !btn.classList.contains('btn-success')){ btn.classList.remove('btn-outline-success'); btn.classList.add('btn-success'); btn.innerHTML='<i class="bi bi-check-circle-fill me-1"></i> LeÌdo'; btn.disabled=true; const card=document.getElementById('card-'+id); if(card) card.classList.add('border-success'); }
-                    leidos.add(id);
-                });
-            }catch(e){}
-        }
-        function marcarProgresoMenu(){
-            document.querySelectorAll('.menu-clase').forEach(a=>{
-                const num=parseInt(a.getAttribute('data-clase'))||0;
-                if(num>=1 && num<=10 && isUnidadCompletada(num) && !a.querySelector('.done-badge')){
-                    const b=document.createElement('span'); b.className='done-badge'; b.textContent=' ?'; b.style.color='#00B140'; b.style.fontWeight='bold';
-                    a.appendChild(b);
-                }
-            });
-        }
-        function marcarLeido(id){
-            const btn=document.querySelector(`[data-section="${id}"]`);
-            if(btn){ btn.classList.remove('btn-outline-success'); btn.classList.add('btn-success'); btn.innerHTML='<i class="bi bi-check-circle-fill me-1"></i> LeÌdo'; btn.disabled=true; const card=document.getElementById('card-'+id); if(card) card.classList.add('border-success'); }
-            leidos.add(id); guardarLeidos(); actualizarProgreso();
-            actualizarProgresoInline();
-        }
-        function actualizarProgreso(){
-            const pct=Math.round(leidos.size/totalSecciones*100);
-            const elTxt=document.getElementById('progreso-texto'); if(elTxt) elTxt.textContent=leidos.size+' / '+totalSecciones+' secciones leÌdas';
-            const elBdg=document.getElementById('progreso-badge'); if(elBdg) elBdg.textContent=pct+'%';
-            actualizarProgresoInline(leidos.size, totalSecciones);
-            const btn=document.getElementById('btn-confirmar');
-            if(leidos.size===totalSecciones){ btn.disabled=false; btn.classList.remove('btn-secondary'); btn.classList.add('btn-success'); btn.innerHTML='<i class="bi bi-check-all me-2"></i>Confirmar LecciÛn como Completada'; }
-        }
-        function intentarConfirmar(){
-            const btn=document.getElementById('btn-confirmar');
-            if(btn.disabled){
-                const faltantes=[...document.querySelectorAll('.btn-marcar-leido:not(.btn-success)')];
-                if(faltantes.length){ faltantes[0].scrollIntoView({behavior:'smooth',block:'center'}); faltantes[0].classList.add('border-danger'); faltantes[0].classList.add('text-danger'); setTimeout(()=>{faltantes[0].classList.remove('border-danger'); faltantes[0].classList.remove('text-danger');},2000); }
-            } else {
-                localStorage.setItem('tic_progress_Admin_Unidad_6','finished'); localStorage.setItem('unidad_06_completada','true'); alert('°LecciÛn confirmada! Progreso guardado.'); location.href='Unidad_07.html';
-            }
-        }
-        // Asistencia demo
-        function marcarAsistenciaClase(){ localStorage.setItem('tic_asistencia_'+Date.now(),'presente'); document.getElementById('btn-asis-clase').textContent='? Presente registrado'; document.getElementById('btn-asis-clase').disabled=true; }
-    </script>
-    <!-- Unidad 06 validada: progreso propio + script marcar_leÌdo -->
-    <script src="../js/marcar_leido_moodle.js"></script>
+<script src="../js/marcar_leido_moodle.js"></script>
 <script src="../js/accesibilidad.js"></script>
 <script src="../js/session-guard.js"></script>
 <script src="../js/api.js?v=3"></script>
-<script>
-        // Actualizar progreso inline en el header
-        function actualizarProgresoInline(leidos, total) {
-            if (leidos === undefined) {
-                const textoEl = document.getElementById('progreso-texto');
-                if (textoEl) {
-                    const match = textoEl.textContent.match(/(\d+)\s*\/\s*(\d+)/);
-                    if (match) { leidos = parseInt(match[1]); total = parseInt(match[2]); }
-                }
-                if (leidos === undefined) { leidos = 0; total = 1; }
-            }
-            const pct = total > 0 ? Math.round((leidos / total) * 100) : 0;
-            const elTexto = document.getElementById('progreso-texto-inline');
-            const elBar = document.getElementById('progreso-bar-inline');
-            const elPct = document.getElementById('progreso-pct-inline');
-            if (elTexto) elTexto.textContent = leidos + '/' + total;
-            if (elBar) elBar.style.width = pct + '%';
-            if (elPct) elPct.textContent = pct + '%';
-        }
-</script>
+
 </body>
 </html>
-
-
-

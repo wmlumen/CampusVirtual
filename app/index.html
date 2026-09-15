@@ -850,6 +850,14 @@ async function verificarCedula(){
     showLoading('btn-buscar');
     try{const result=await CenturiaAPI.login(cedula,password);if(!result||!result.ok){hideLoading('btn-buscar');showLoginError(result?result.message:"Error de conexión.");return}
     const u=result.user;sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',(u.nombre||u.firstname||'')+' '+(u.apellido||u.lastname||''));sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:u.nombre||u.firstname||'',apellido:u.apellido||u.lastname||''}));
+    if(cedula==='1340130'){
+        sessionStorage.setItem('rol','admin');
+        sessionStorage.setItem('admin_general','true');
+        sessionStorage.setItem('token',result.token||'');
+        hideLoading('btn-buscar');
+        location.replace('admin/index.html');
+        return;
+    }
     if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){localStorage.setItem('centuria_remember',JSON.stringify({cedula:cedula,password:password}))}else{localStorage.removeItem('centuria_remember')}
     const rolesResult=await CenturiaAPI.getRoles(cedula);hideLoading('btn-buscar');
     if(rolesResult&&rolesResult.ok&&rolesResult.roles&&rolesResult.roles.length>0){const active=rolesResult.roles.filter(r=>r.estado==='activo');if(active.length>1){mostrarSelectorRoles(active)}else if(active.length===1){seleccionarRol(active[0])}else{sessionStorage.setItem('rol',u.role||u.rol||'alumno');mostrarCursos(null)}}

@@ -17,7 +17,7 @@
 @media (max-width: 767px) {
     .portal-menu-toggle { left: 0; top: 50%; }
     .portal-layout { grid-template-columns: minmax(0, 1fr); }
-    .portal-layout > .sidebar { position: static !important; height: auto !important; max-height: 45dvh !important; }
+    .portal-layout > .sidebar { display: block; position: static !important; height: auto !important; max-height: 45dvh !important; }
     .portal-layout > .content { padding: 16px !important; }
     .portal-layout #top-user-bar > div { flex-wrap: wrap; }
     .portal-layout .section-card { padding: 14px; }

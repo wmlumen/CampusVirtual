@@ -9,147 +9,660 @@
     <link rel="manifest" href="site.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        :root{--verde:#16813D;--verde-d:#0D5C2A;--verde-l:#22c55e;--dorado:#B8941F;--dorado-l:#D4A017;--azul:#2563EB;--rosa:#D94172;--naranja:#D97706;--txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;--bg:#f1f5f9;--card:#fff;--bdr:#cbd5e1}
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column}
+        :root {
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #1fa04d;
+            --verde-hover: #22c55e;
+            --verde-light: #e8f5ec;
+            --dorado: #d4a843;
+            --dorado-light: #e0b84d;
+            --azul: #2563EB;
+            --rosa: #D94172;
+            --naranja: #D97706;
+            --txt: #ffffff;
+            --txt2: #c8e6d0;
+            --txt3: #94a3b8;
+            --bg: #0d2c16;
+            --card: #ffffff;
+            --card-glass: rgba(255,255,255,0.95);
+            --bdr: rgba(255,255,255,0.12);
+            --bdr-card: #e2e8f0;
+            --shadow: 0 8px 32px rgba(0,0,0,0.25);
+            --radius: 18px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            color: var(--txt);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
 
-        .split{width:100%;max-width:960px;min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0 auto;padding:20px;gap:28px;animation:fadeUp .6s ease-out}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        /* ═══ FONDO TEXTURIZADO ═══ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(22,129,61,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212,168,67,0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(22,129,61,0.10) 0%, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
+        }
 
-        /* Branding */
-        .brand{flex:1;max-width:400px;text-align:center;display:flex;flex-direction:column;align-items:center}
-        .brand-logo{height:120px;margin-bottom:16px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.15))}
-        .brand h1{font-size:1.3rem;font-weight:800;color:var(--txt);letter-spacing:1px;margin-bottom:2px}
-        .brand .sub{font-size:.72rem;font-weight:500;color:var(--dorado);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
-        .brand-features{display:flex;gap:10px;margin-top:20px}
-        .brand-feat{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:14px 12px;text-align:center;flex:1;transition:.2s}
-        .brand-feat:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
-        .brand-feat i{font-size:1.2rem;color:var(--verde);display:block;margin-bottom:4px}
-        .brand-feat span{font-size:.55rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.3px}
+        /* ═══ BARRA ACCESIBILIDAD ═══ */
+        .a11y-bar {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 6px;
+        }
+        .a11y-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--bdr);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            color: var(--txt2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .a11y-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            transform: scale(1.05);
+        }
+        .a11y-btn.active {
+            background: var(--verde-medio);
+            color: #fff;
+            border-color: var(--verde-medio);
+        }
 
-        /* Card */
-        .card{flex:0 0 420px;max-width:420px}
-        .login-card{background:var(--card);border:1px solid var(--bdr);border-radius:18px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-        .login-card::before{content:'';display:block;height:3px;background:linear-gradient(90deg,var(--verde),var(--dorado),var(--verde))}
-        .login-body{padding:24px 24px 28px}
+        /* ═══ CONTENEDOR PRINCIPAL ═══ */
+        .main-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            gap: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: fadeUp 0.7s ease-out;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        .greeting{text-align:center;margin-bottom:20px}
-        .greeting h2{font-size:.95rem;font-weight:700;color:var(--txt)}
-        .greeting p{font-size:.7rem;color:var(--txt2);margin-top:2px}
+        /* ═══ BRAND / LADO IZQUIERDO ═══ */
+        .brand {
+            flex: 1;
+            max-width: 440px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .brand-logo {
+            height: 130px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .brand h1 {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .brand .sub {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--dorado);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
 
-        /* Form */
-        .lbl{font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt2);margin-bottom:5px;display:block}
-        .inp{width:100%;padding:11px 14px;background:#f8fafc;border:1.5px solid var(--bdr);border-radius:10px;color:var(--txt);font-family:'Montserrat';font-weight:600;font-size:.88rem;transition:.2s;outline:none}
-        .inp::placeholder{color:var(--txt3);font-weight:400}
-        .inp:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(37,99,235,.12);background:#fff}
-        .inp-select{width:100%;padding:10px 14px;background:#f8fafc;border:1.5px solid var(--bdr);border-radius:10px;color:var(--txt);font-family:'Montserrat';font-weight:500;font-size:.82rem;outline:none;appearance:none;cursor:pointer}
-        .inp-select:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+        /* Tarjetas de características */
+        .brand-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+        .brand-feat {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 16px 12px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: default;
+        }
+        .brand-feat:hover {
+            background: rgba(255,255,255,0.14);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .brand-feat i {
+            font-size: 1.4rem;
+            color: var(--verde-hover);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .brand-feat span {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--txt2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-        /* Buttons */
-        .btn-main{width:100%;padding:13px;background:linear-gradient(135deg,var(--verde),var(--verde-d));color:#fff;border:none;border-radius:12px;font-family:'Montserrat';font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
-        .btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,129,61,.3)}
-        .btn-main:disabled{opacity:.5;transform:none;cursor:not-allowed}
-        .btn-ghost{width:100%;padding:10px;background:transparent;color:var(--txt2);border:1.5px solid var(--bdr);border-radius:10px;font-family:'Montserrat';font-weight:600;font-size:.78rem;cursor:pointer;transition:.2s}
-        .btn-ghost:hover{background:#f1f5f9;border-color:var(--azul);color:var(--azul)}
+        /* ═══ TARJETA DE LOGIN (GLASSMORPHISM) ═══ */
+        .login-panel {
+            flex: 0 0 440px;
+            max-width: 440px;
+        }
+        .login-card {
+            background: var(--card-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .login-card::before {
+            content: '';
+            display: block;
+            height: 4px;
+            background: linear-gradient(90deg, var(--verde-medio), var(--dorado), var(--verde-medio));
+        }
+        .login-body {
+            padding: 28px 28px 32px;
+            color: #1a1a2e;
+        }
 
-        /* Alerts */
-        .alert-error{background:#FEF2F2;border:1px solid #FECACA;border-left:3px solid #DC2626;border-radius:8px;color:#991B1B;font-size:.75rem;padding:10px 12px;margin-bottom:14px;display:none}
-        .alert-success{background:#F0FDF4;border:1px solid #BBF7D0;border-left:3px solid #16A34A;border-radius:8px;color:#166534;font-size:.75rem;padding:10px 12px;margin-bottom:14px;display:none}
-        .alert-info{background:#EFF6FF;border:1px solid #BFDBFE;border-left:3px solid #2563EB;border-radius:8px;color:#1E40AF;font-size:.72rem;padding:10px 12px;margin-bottom:14px}
+        /* Título del login */
+        .greeting {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .greeting h2 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0d2c16;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .greeting h2 i {
+            color: var(--dorado);
+            font-size: 1.1rem;
+        }
+        .greeting p {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Formularios */
+        .lbl {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .inp {
+            width: 100%;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: #0f172a;
+            font-family: 'Montserrat';
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .inp::placeholder { color: #94a3b8; font-weight: 400; }
+        .inp:focus {
+            border-color: var(--verde-medio);
+            box-shadow: 0 0 0 3px rgba(22,129,61,0.12);
+            background: #fff;
+        }
+        .inp-select {
+            width: 100%;
+            padding: 11px 14px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: #0f172a;
+            font-family: 'Montserrat';
+            font-weight: 500;
+            font-size: 0.82rem;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        /* Botones */
+        .btn-main {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Montserrat';
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(22,129,61,0.35);
+        }
+        .btn-main:active { transform: translateY(0); }
+        .btn-main:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+        .btn-ghost {
+            width: 100%;
+            padding: 11px;
+            background: transparent;
+            color: #64748b;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: 'Montserrat';
+            font-weight: 600;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover {
+            background: #f1f5f9;
+            border-color: var(--verde-medio);
+            color: var(--verde-medio);
+        }
+
+        /* Alertas */
+        .alert-error {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-left: 3px solid #DC2626;
+            border-radius: 10px;
+            color: #991B1B;
+            font-size: 0.75rem;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .alert-success {
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-left: 3px solid #16A34A;
+            border-radius: 10px;
+            color: #166534;
+            font-size: 0.75rem;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .alert-info {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-left: 3px solid #2563EB;
+            border-radius: 10px;
+            color: #1E40AF;
+            font-size: 0.72rem;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+        }
 
         /* Links */
-        .links-row{display:flex;justify-content:center;gap:12px;margin-top:12px;flex-wrap:wrap}
-        .link-btn{background:none;border:none;color:var(--txt3);font-size:.68rem;font-family:'Montserrat';font-weight:600;cursor:pointer;transition:.2s;padding:4px 8px;border-radius:6px}
-        .link-btn:hover{color:var(--azul);background:#EFF6FF}
+        .links-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .link-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 0.68rem;
+            font-family: 'Montserrat';
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .link-btn:hover {
+            color: var(--verde-medio);
+            background: var(--verde-light);
+        }
 
-        /* Separator */
-        .sep{border:none;height:1px;background:var(--bdr);margin:16px 0}
+        /* Separador */
+        .sep {
+            border: none;
+            height: 1px;
+            background: #e2e8f0;
+            margin: 16px 0;
+        }
 
-        /* Section wrapper */
-        .sec-wrap{background:#f8fafc;border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:10px}
-        .sec-head{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--dorado);letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-        .sec-head .num{background:var(--dorado);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800}
+        /* Secciones internas */
+        .sec-wrap {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+        .sec-head {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--dorado);
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sec-head .num {
+            background: var(--dorado);
+            color: #fff;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 800;
+        }
 
-        /* Course cards */
-        .curso-btn{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none;color:var(--txt);width:100%;text-align:left}
-        .curso-btn:hover{border-color:var(--verde);background:#F0FDF4;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
-        .curso-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0}
-        .curso-info{flex:1}
-        .curso-name{font-size:.82rem;font-weight:700}
-        .curso-meta{font-size:.62rem;color:var(--txt3);margin-top:1px}
+        /* Tarjetas de cursos */
+        .curso-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #0f172a;
+            width: 100%;
+            text-align: left;
+        }
+        .curso-btn:hover {
+            border-color: var(--verde-medio);
+            background: #f0fdf4;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .curso-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .curso-info { flex: 1; }
+        .curso-name { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
+        .curso-meta { font-size: 0.62rem; color: #64748b; margin-top: 1px; }
 
         /* Footer */
-        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:5px 16px;background:var(--card);border-top:1px solid var(--bdr);font-size:.5rem;font-weight:500;color:var(--txt3)}
+        .footer {
+            position: relative;
+            z-index: 1;
+            background: #091f0f;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 24px;
+            color: #c8e6d0;
+        }
+        .footer-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 20px;
+            font-size: 0.68rem;
+        }
+        .footer-col h4 {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--dorado);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .footer-col p, .footer-col a {
+            color: #94a3b8;
+            font-size: 0.65rem;
+            line-height: 1.6;
+            text-decoration: none;
+        }
+        .footer-col a:hover { color: var(--verde-hover); }
+        .footer-social {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .footer-social a {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .footer-social a:hover {
+            background: var(--verde-medio);
+            color: #fff;
+            border-color: var(--verde-medio);
+        }
+        .footer-bottom {
+            max-width: 1100px;
+            margin: 12px auto 0;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            text-align: center;
+            font-size: 0.58rem;
+            color: #64748b;
+        }
 
         /* QR Modal */
-        .qr-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
-        .qr-box{background:var(--card);border-radius:16px;padding:24px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+        .qr-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-box {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            color: #0f172a;
+        }
 
         /* Password modal */
-        .modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center}
-        .modal-box{background:var(--card);border-radius:18px;padding:28px 24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px 24px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            color: #0f172a;
+        }
 
-        @media print{.footer,.btn-out{display:none!important}}
-        @media(max-width:768px){.split{flex-direction:column;gap:0;padding:12px;min-height:auto}.brand{display:none}.card{flex:0 0 auto;width:100%;max-width:100%}.login-body{padding:20px 16px 24px}.brand-features{display:none}}
+        /* ═══ RESPONSIVE ═══ */
+        @media print {
+            .footer, .a11y-bar { display: none !important; }
+        }
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; gap: 20px; padding: 16px; }
+            .brand { display: none; }
+            .login-panel { flex: 0 0 auto; width: 100%; max-width: 100%; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .login-body { padding: 20px 16px 24px; }
+            .brand-features { grid-template-columns: 1fr 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-<div class="split">
-    <!-- Branding -->
+
+<!-- ═══ BARRA DE ACCESIBILIDAD ═══ -->
+<div class="a11y-bar">
+    <button class="a11y-btn" onclick="a11yFontSize(1)" title="Aumentar letra (+A)" aria-label="Aumentar tamaño de letra">
+        <i class="bi bi-type"></i>
+    </button>
+    <button class="a11y-btn" onclick="a11yFontSize(-1)" title="Reducir letra (-A)" aria-label="Reducir tamaño de letra">
+        <i class="bi bi-type" style="font-size:0.65rem"></i>
+    </button>
+    <button class="a11y-btn" onclick="a11yContrast()" id="btn-contrast" title="Alto contraste" aria-label="Alternar alto contraste">
+        <i class="bi bi-circle-half"></i>
+    </button>
+</div>
+
+<!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+<div class="main-container">
+
+    <!-- LADO IZQUIERDO: BRAND -->
     <div class="brand">
-        <img src="images/logo_centuria_blanco_1.png" alt="Instituto Superior Centuria" class="brand-logo">
-        <h1>Campus Virtual Centuria</h1>
+        <img src="images/logo_centuria_blanco_1.png" alt="Instituto Superior Centuria" class="brand-logo" onerror="this.style.display='none'">
+        <h1>Campus Virtual</h1>
         <p class="sub">Portal Académico Institucional</p>
         <div class="brand-features">
-            <div class="brand-feat"><i class="bi bi-laptop"></i><span>Clases</span></div>
+            <div class="brand-feat"><i class="bi bi-laptop"></i><span>Clases en Vivo</span></div>
             <div class="brand-feat"><i class="bi bi-journal-bookmark"></i><span>Materiales</span></div>
             <div class="brand-feat"><i class="bi bi-clipboard-check"></i><span>Evaluaciones</span></div>
-            <div class="brand-feat"><i class="bi bi-graph-up"></i><span>Notas</span></div>
+            <div class="brand-feat"><i class="bi bi-graph-up"></i><span>Notas y Progreso</span></div>
         </div>
     </div>
 
-    <!-- Login Card -->
-    <div class="card">
+    <!-- LADO DERECHO: LOGIN -->
+    <div class="login-panel">
         <div class="login-card">
             <div class="login-body">
 
                 <!-- PASO 1: Login -->
                 <div id="step-1-cedula">
                     <div class="greeting">
-                        <h2><i class="bi bi-shield-lock" style="color:var(--dorado);margin-right:6px;"></i>Acceso Seguro</h2>
-                        <p>Ingrese su cédula y contraseña para acceder</p>
+                        <h2><i class="bi bi-shield-lock"></i> Acceso Seguro</h2>
+                        <p>Ingrese su cédula y contraseña para acceder al portal</p>
                     </div>
 
-                    <div id="login-error" class="alert-error"><i class="bi bi-exclamation-circle me-1"></i><span id="login-error-text"></span></div>
-                    <div id="login-success" class="alert-success"><i class="bi bi-check-circle me-1"></i><span id="login-success-text"></span></div>
+                    <div id="login-error" class="alert-error" role="alert" aria-live="polite">
+                        <i class="bi bi-exclamation-circle me-1"></i><span id="login-error-text"></span>
+                    </div>
+                    <div id="login-success" class="alert-success" role="status" aria-live="polite">
+                        <i class="bi bi-check-circle me-1"></i><span id="login-success-text"></span>
+                    </div>
 
-                    <label class="lbl">Cédula de Identidad</label>
-                    <input type="text" class="inp text-center" id="inp-cedula" placeholder="SIN PUNTOS" style="font-size:1rem;letter-spacing:3px;" oninput="this.value=this.value.replace(/\./g,'');if(loginFase==='pass')resetLoginFase()">
+                    <label class="lbl" for="inp-cedula">Cédula de Identidad</label>
+                    <input type="text" class="inp text-center" id="inp-cedula" placeholder="SIN PUNTOS"
+                        style="font-size:1rem;letter-spacing:3px;"
+                        aria-label="Número de cédula de identidad"
+                        oninput="this.value=this.value.replace(/\./g,'');if(loginFase==='pass')resetLoginFase()">
 
                     <div id="password-section" style="display:none">
-                        <label class="lbl" style="margin-top:12px">Contraseña</label>
+                        <label class="lbl" for="inp-password" style="margin-top:14px">Contraseña</label>
                         <div style="position:relative">
-                            <input type="password" class="inp" id="inp-password" placeholder="Tu contraseña" style="font-size:.85rem;letter-spacing:.5px;padding-right:40px" onkeydown="if(event.key==='Enter')verificarCedula()">
-                            <button type="button" onclick="togglePassword()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txt3);font-size:1rem;cursor:pointer"><i id="pwd-icon" class="bi bi-eye"></i></button>
+                            <input type="password" class="inp" id="inp-password" placeholder="Tu contraseña"
+                                style="font-size:0.88rem;letter-spacing:0.5px;padding-right:42px"
+                                aria-label="Contraseña de acceso"
+                                onkeydown="if(event.key==='Enter')verificarCedula()">
+                            <button type="button" onclick="togglePassword()"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;font-size:1rem;cursor:pointer"
+                                aria-label="Mostrar u ocultar contraseña">
+                                <i id="pwd-icon" class="bi bi-eye"></i>
+                            </button>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-                            <input type="checkbox" id="chk-recordar" style="accent-color:var(--verde);width:15px;height:15px;cursor:pointer">
-                            <label for="chk-recordar" style="color:var(--txt3);font-size:.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Guardar contraseña</label>
+                            <input type="checkbox" id="chk-recordar" style="accent-color:var(--verde-medio);width:15px;height:15px;cursor:pointer">
+                            <label for="chk-recordar" style="color:#64748b;font-size:0.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Guardar contraseña</label>
                         </div>
                     </div>
 
-                    <button id="btn-buscar" class="btn-main mt-3" onclick="verificarCedula()">
+                    <button id="btn-buscar" class="btn-main mt-3" onclick="verificarCedula()" aria-label="Buscar registro o ingresar">
                         <i class="bi bi-search me-2"></i><span id="btn-buscar-texto">Buscar mi registro</span>
                     </button>
 
                     <div class="links-row">
                         <button class="link-btn" onclick="abrirRecuperarContrasena()"><i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?</button>
-                        <span style="color:var(--bdr)">|</span>
+                        <span style="color:#e2e8f0">|</span>
                         <button class="link-btn" onclick="mostrarRegistro()"><i class="bi bi-person-plus me-1"></i>Registrarse</button>
-                        <span style="color:var(--bdr)">|</span>
-                        <a href="perfil.html" class="link-btn" style="text-decoration:none"><i class="bi bi-person-badge me-1"></i>Ver Perfil</a>
                     </div>
 
                     <hr class="sep">
@@ -158,7 +671,7 @@
 
                 <!-- PASO 2: Registro -->
                 <div id="step-2-register" style="display:none">
-                    <div style="background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:8px;color:#92400E;font-size:.72rem;padding:10px 12px;margin-bottom:14px">
+                    <div style="background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:10px;color:#92400E;font-size:0.72rem;padding:10px 12px;margin-bottom:14px">
                         <i class="bi bi-exclamation-triangle me-1"></i>Complete sus datos <strong>una única vez</strong> para acceder.
                     </div>
 
@@ -166,31 +679,31 @@
                     <div id="reg-paso-1">
                         <div class="sec-wrap">
                             <div class="sec-head"><span class="num">1</span> Datos Personales</div>
-                            <div class="mb-2"><label class="lbl">Cédula <span style="color:#DC2626">*</span></label><input type="text" class="inp text-center" id="reg-cedula" placeholder="SIN PUNTOS" style="font-size:.92rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')"></div>
+                            <div class="mb-2"><label class="lbl" for="reg-cedula">Cédula <span style="color:#DC2626">*</span></label><input type="text" class="inp text-center" id="reg-cedula" placeholder="SIN PUNTOS" style="font-size:0.92rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')"></div>
                             <div class="row g-2 mb-2">
-                                <div class="col-6"><label class="lbl">Nombre <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-nombre" placeholder="Ej: JUAN" style="text-transform:uppercase;font-size:.82rem" required></div>
-                                <div class="col-6"><label class="lbl">Apellido <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-apellido" placeholder="Ej: PÉREZ" style="text-transform:uppercase;font-size:.82rem" required></div>
+                                <div class="col-6"><label class="lbl" for="reg-nombre">Nombre <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-nombre" placeholder="Ej: JUAN" style="text-transform:uppercase;font-size:0.82rem" required></div>
+                                <div class="col-6"><label class="lbl" for="reg-apellido">Apellido <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-apellido" placeholder="Ej: PÉREZ" style="text-transform:uppercase;font-size:0.82rem" required></div>
                             </div>
-                            <div class="mb-2"><label class="lbl">Correo electrónico</label><input type="email" class="inp" id="reg-email" placeholder="ejemplo@gmail.com" style="font-size:.82rem"></div>
-                            <div class="mb-2"><label class="lbl">Teléfono</label><input type="text" class="inp" id="reg-telefono" placeholder="0981 123456" style="font-size:.82rem"></div>
+                            <div class="mb-2"><label class="lbl" for="reg-email">Correo electrónico</label><input type="email" class="inp" id="reg-email" placeholder="ejemplo@gmail.com" style="font-size:0.82rem"></div>
+                            <div class="mb-2"><label class="lbl" for="reg-telefono">Teléfono</label><input type="text" class="inp" id="reg-telefono" placeholder="0981 123456" style="font-size:0.82rem"></div>
                             <div class="mb-2">
                                 <label class="lbl">Foto del Alumno</label>
                                 <div id="foto-container" style="text-align:center">
-                                    <div id="foto-placeholder" style="width:90px;height:90px;border-radius:50%;border:2px dashed var(--bdr);display:flex;align-items:center;justify-content:center;margin:0 auto;cursor:pointer;transition:.2s" onclick="abrirCamara()"><i class="bi bi-camera" style="font-size:1.3rem;color:var(--txt3)"></i></div>
-                                    <img id="foto-preview" src="" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid var(--verde);margin:0 auto">
-                                    <video id="foto-video" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid var(--verde);margin:0 auto"></video>
+                                    <div id="foto-placeholder" style="width:90px;height:90px;border-radius:50%;border:2px dashed #e2e8f0;display:flex;align-items:center;justify-content:center;margin:0 auto;cursor:pointer;transition:0.2s" onclick="abrirCamara()"><i class="bi bi-camera" style="font-size:1.3rem;color:#94a3b8"></i></div>
+                                    <img id="foto-preview" src="" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid var(--verde-medio);margin:0 auto">
+                                    <video id="foto-video" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid var(--verde-medio);margin:0 auto"></video>
                                     <canvas id="foto-canvas" style="display:none"></canvas>
                                     <div class="d-flex justify-content-center gap-2 mt-2" id="foto-botones-camara">
-                                        <button type="button" id="btn-cambiar-camara" class="btn-ghost" onclick="cambiarCamara()" style="display:none;font-size:.6rem;padding:3px 8px"><i class="bi bi-camera-rear me-1"></i>Cambiar</button>
-                                        <button type="button" id="btn-tomar-foto" class="btn-ghost" onclick="tomarFoto()" style="display:none;font-size:.6rem;padding:3px 8px"><i class="bi bi-camera me-1"></i>Capturar</button>
-                                        <button type="button" id="btn-retomar-foto" class="btn-ghost" onclick="retomarFoto()" style="display:none;font-size:.6rem;padding:3px 8px"><i class="bi bi-arrow-repeat me-1"></i>Retomar</button>
-                                        <button type="button" id="btn-eliminar-foto" class="btn-ghost" onclick="eliminarFoto()" style="display:none;font-size:.6rem;padding:3px 8px;color:#DC2626"><i class="bi bi-trash me-1"></i>Quitar</button>
+                                        <button type="button" id="btn-cambiar-camara" class="btn-ghost" onclick="cambiarCamara()" style="display:none;font-size:0.6rem;padding:3px 8px"><i class="bi bi-camera-rear me-1"></i>Cambiar</button>
+                                        <button type="button" id="btn-tomar-foto" class="btn-ghost" onclick="tomarFoto()" style="display:none;font-size:0.6rem;padding:3px 8px"><i class="bi bi-camera me-1"></i>Capturar</button>
+                                        <button type="button" id="btn-retomar-foto" class="btn-ghost" onclick="retomarFoto()" style="display:none;font-size:0.6rem;padding:3px 8px"><i class="bi bi-arrow-repeat me-1"></i>Retomar</button>
+                                        <button type="button" id="btn-eliminar-foto" class="btn-ghost" onclick="eliminarFoto()" style="display:none;font-size:0.6rem;padding:3px 8px;color:#DC2626"><i class="bi bi-trash me-1"></i>Quitar</button>
                                     </div>
                                     <input type="hidden" id="reg-foto" value="">
                                     <input type="hidden" id="foto-facing" value="user">
                                 </div>
                             </div>
-                            <button type="button" class="btn-ghost" onclick="mostrarQR()" style="font-size:.68rem;padding:8px 12px;width:100%"><i class="bi bi-qr-code me-2"></i>Mostrar QR para celular</button>
+                            <button type="button" class="btn-ghost" onclick="mostrarQR()" style="font-size:0.68rem;padding:8px 12px;width:100%"><i class="bi bi-qr-code me-2"></i>Mostrar QR para celular</button>
                         </div>
                         <button class="btn-main mt-2" onclick="regPaso2()"><i class="bi bi-arrow-right me-2"></i>Siguiente</button>
                         <button class="btn-ghost mt-2" onclick="volverPaso1()"><i class="bi bi-arrow-left me-1"></i>Volver</button>
@@ -200,9 +713,9 @@
                     <div id="reg-paso-2" style="display:none">
                         <div class="sec-wrap">
                             <div class="sec-head"><span class="num">2</span> Datos Académicos</div>
-                            <div class="mb-2"><label class="lbl">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
-                            <div class="mb-2"><label class="lbl">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
-                            <div class="mb-2"><label class="lbl">Sección</label><select class="inp-select" id="reg-seccion"><option value="" selected disabled>Cargando secciones...</option></select></div>
+                            <div class="mb-2"><label class="lbl" for="reg-grado">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
+                            <div class="mb-2"><label class="lbl" for="reg-carrera">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
+                            <div class="mb-2"><label class="lbl" for="reg-seccion">Sección</label><select class="inp-select" id="reg-seccion"><option value="" selected disabled>Cargando secciones...</option></select></div>
                         </div>
                         <div class="d-flex gap-2 mt-2"><button class="btn-ghost" onclick="regPaso1()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button><button class="btn-main" onclick="regPaso3()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Revisar</button></div>
                     </div>
@@ -211,8 +724,8 @@
                     <div id="reg-paso-3" style="display:none">
                         <div class="sec-wrap">
                             <div class="sec-head"><span class="num">3</span> Confirmar Registro</div>
-                            <div id="reg-resumen" style="font-size:.75rem;color:var(--txt2);line-height:1.8"></div>
-                            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:8px;color:#92400E;font-size:.65rem;padding:8px 10px;margin-top:10px">
+                            <div id="reg-resumen" style="font-size:0.75rem;color:#475569;line-height:1.8"></div>
+                            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:10px;color:#92400E;font-size:0.65rem;padding:8px 10px;margin-top:10px">
                                 <i class="bi bi-info-circle me-1"></i>Tu contraseña: <strong>Primera letra Nombre(Mayús) + primera letra Apellido(minús) + cédula + *</strong>
                             </div>
                         </div>
@@ -225,9 +738,9 @@
                 <!-- PASO 3: Cursos -->
                 <div id="step-3-cursos" style="display:none">
                     <div class="greeting">
-                        <h2><i class="bi bi-mortarboard" style="color:var(--dorado);margin-right:6px;"></i>Bienvenido/a</h2>
-                        <p id="curso-nombre-alumno" style="font-weight:700;color:var(--txt);font-size:.88rem"></p>
-                        <p id="curso-info-alumno" style="margin-top:2px;font-size:.68rem;color:var(--txt3)"></p>
+                        <h2><i class="bi bi-mortarboard"></i> Bienvenido/a</h2>
+                        <p id="curso-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.9rem"></p>
+                        <p id="curso-info-alumno" style="margin-top:2px;font-size:0.68rem;color:#64748b"></p>
                     </div>
                     <div class="d-flex gap-2 mb-3" id="step3-links">
                         <a href="dashboard.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
@@ -243,9 +756,59 @@
     </div>
 </div>
 
-<div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
+<!-- ═══ FOOTER INSTITUCIONAL ═══ -->
+<footer class="footer">
+    <div class="footer-grid">
+        <div class="footer-col">
+            <h4>Instituto Superior Centuria</h4>
+            <p>Formando líderes con tecnología y excelencia desde nuestra fundación. Comprometidos con la educación de calidad y la formación integral de profesionales.</p>
+            <div class="footer-social">
+                <a href="#" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                <a href="#" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                <a href="#" title="YouTube" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                <a href="#" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Contacto</h4>
+            <p><i class="bi bi-geo-alt me-1"></i> Av. Principal s/n</p>
+            <p><i class="bi bi-telephone me-1"></i> (04) 123-4567</p>
+            <p><i class="bi bi-envelope me-1"></i> info@centuria.edu.ec</p>
+        </div>
+        <div class="footer-col">
+            <h4>Enlaces</h4>
+            <p><a href="#">Portal Académico</a></p>
+            <p><a href="#">Biblioteca Virtual</a></p>
+            <p><a href="#">Servicios al Estudiante</a></p>
+            <p><a href="#">Normativa Institucional</a></p>
+        </div>
+        <div class="footer-col">
+            <h4>Horario</h4>
+            <p>Lunes a Viernes</p>
+            <p style="font-weight:600;color:#c8e6d0">07:00 — 21:00</p>
+            <p style="margin-top:6px">Sábados</p>
+            <p style="font-weight:600;color:#c8e6d0">08:00 — 13:00</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        &copy; 2026 Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" — Todos los derechos reservados
+    </div>
+</footer>
 
 <script src="js/api.js?v=7"></script>
+<script>
+// ═══ ACCESIBILIDAD ═══
+let a11yFontLevel = 0;
+function a11yFontSize(dir) {
+    a11yFontLevel = Math.max(-2, Math.min(2, a11yFontLevel + dir));
+    document.documentElement.style.fontSize = (16 + a11yFontLevel * 2) + 'px';
+}
+function a11yContrast() {
+    document.body.classList.toggle('high-contrast');
+    document.getElementById('btn-contrast').classList.toggle('active');
+}
+</script>
+
 <script>
 // ═══ CATÁLOGOS ═══
 async function cargarCatalogos(){try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=grados');const d=await r.json();const g=d.grados||[];const s=document.getElementById('reg-grado');if(s)s.innerHTML='<option value="" selected disabled>Seleccionar...</option>'+g.map(x=>'<option value="'+x.nombre+'">'+x.nombre+'</option>').join('')}catch(e){}}
@@ -277,7 +840,7 @@ async function verificarCedula(){
         showLoading('btn-buscar');
         try{const res=await fetch(CenturiaAPI.baseUrl+'auth.php?action=find_user&cedula='+encodeURIComponent(cedula));const data=await res.json();hideLoading('btn-buscar');
         if(data.found){const n=data.user.firstname||'';const a=data.user.lastname||'';document.getElementById('login-success-text').textContent='Bienvenido(a) '+n+' '+a;showLoginSuccess();document.getElementById('password-section').style.display='block';document.getElementById('inp-password').focus();document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';loginFase='pass'}
-        else{showLoginError('La cédula '+cedula+' no está registrada.');setTimeout(()=>{const e=document.getElementById('login-error');if(e){e.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde);text-decoration:underline;font-weight:600">Registrarse ahora</a>';e.style.display='block'}},100)}}
+        else{showLoginError('La cédula '+cedula+' no está registrada.');setTimeout(()=>{const e=document.getElementById('login-error');if(e){e.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde-medio);text-decoration:underline;font-weight:600">Registrarse ahora</a>';e.style.display='block'}},100)}}
         catch(e){hideLoading('btn-buscar');showLoginError('Error de conexión con el servidor.')}
         return;
     }
@@ -311,7 +874,7 @@ async function registrarYAcceder(){
 }
 
 // ═══ QR ═══
-function mostrarQR(){const url=window.location.href.split('?')[0];let m=document.getElementById('qr-modal');if(!m){m=document.createElement('div');m.id='qr-modal';m.innerHTML='<div class="qr-overlay" onclick="cerrarQR(event)" style="display:flex"><div class="qr-box" onclick="event.stopPropagation()"><button onclick="cerrarQR()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--txt);font-size:1.2rem;cursor:pointer">&times;</button><h4 style="color:var(--dorado);font-family:Montserrat;margin-bottom:10px;font-size:.85rem"><i class="bi bi-qr-code me-2"></i>Accede desde tu celular</h4><img id="qr-img" style="width:200px;height:200px;border-radius:10px;margin:8px auto;display:block"><p style="color:var(--txt3);font-size:.65rem;margin-top:8px">Escanea para abrir en tu celular</p><p id="qr-url" style="color:var(--dorado);font-size:.58rem;word-break:break-all;margin-top:4px"></p></div></div>';document.body.appendChild(m)}
+function mostrarQR(){const url=window.location.href.split('?')[0];let m=document.getElementById('qr-modal');if(!m){m=document.createElement('div');m.id='qr-modal';m.innerHTML='<div class="qr-overlay" onclick="cerrarQR(event)" style="display:flex"><div class="qr-box" onclick="event.stopPropagation()"><button onclick="cerrarQR()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#0f172a;font-size:1.2rem;cursor:pointer">&times;</button><h4 style="color:var(--dorado);font-family:Montserrat;margin-bottom:10px;font-size:0.88rem"><i class="bi bi-qr-code me-2"></i>Accede desde tu celular</h4><img id="qr-img" style="width:200px;height:200px;border-radius:10px;margin:8px auto;display:block"><p style="color:#64748b;font-size:0.65rem;margin-top:8px">Escanea para abrir en tu celular</p><p id="qr-url" style="color:var(--dorado);font-size:0.58rem;word-break:break-all;margin-top:4px"></p></div></div>';document.body.appendChild(m)}
 document.getElementById('qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url);document.getElementById('qr-url').textContent=url;m.style.display='block'}
 function cerrarQR(e){if(e&&e.target!==e.currentTarget)return;const m=document.getElementById('qr-modal');if(m)m.style.display='none'}
 
@@ -337,21 +900,21 @@ h+='<b style="color:var(--dorado)">Cédula:</b><span>'+c+'</span>';h+='<b style=
 if(e)h+='<b style="color:var(--dorado)">Email:</b><span>'+e+'</span>';if(t)h+='<b style="color:var(--dorado)">Teléfono:</b><span>'+t+'</span>';
 if(g)h+='<b style="color:var(--dorado)">Grado:</b><span>'+g+'</span>';if(ca)h+='<b style="color:var(--dorado)">Carrera:</b><span>'+ca+'</span>';if(s)h+='<b style="color:var(--dorado)">Sección:</b><span>'+s+'</span>';
 h+='<b style="color:var(--dorado)">Contraseña:</b><span style="font-family:monospace;background:#f1f5f9;padding:2px 6px;border-radius:4px">'+p+'</span></div>';
-const f=document.getElementById('reg-foto').value;if(f)h='<div style="text-align:center;margin-bottom:10px"><img src="'+f+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--verde)"></div>'+h;
+const f=document.getElementById('reg-foto').value;if(f)h='<div style="text-align:center;margin-bottom:10px"><img src="'+f+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--verde-medio)"></div>'+h;
 document.getElementById('reg-resumen').innerHTML=h}
 
 // ═══ ROLES ═══
 function mostrarSelectorRoles(roles){
     document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='none';document.getElementById('step-3-cursos').style.display='none';
     let p=document.getElementById('step-2-roles');
-    if(!p){p=document.createElement('div');p.id='step-2-roles';p.innerHTML='<div class="greeting"><h2><i class="bi bi-person-gear" style="color:var(--dorado);margin-right:6px"></i>Selecciona tu acceso</h2><p id="roles-nombre-alumno" style="font-weight:700;color:var(--txt);font-size:.88rem"></p><p style="font-size:.68rem;color:var(--txt3);margin-top:4px">Tu cédula tiene múltiples roles. Elige con cuál deseas ingresar:</p></div><div id="lista-roles" class="d-grid gap-2 mb-3"></div><button class="btn-ghost" onclick="cerrarSesionRoles()"><i class="bi bi-arrow-left me-1"></i>Cambiar de usuario</button>';document.querySelector('.login-body').appendChild(p)}
+    if(!p){p=document.createElement('div');p.id='step-2-roles';p.innerHTML='<div class="greeting"><h2><i class="bi bi-person-gear" style="color:var(--dorado);margin-right:6px"></i>Selecciona tu acceso</h2><p id="roles-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.88rem"></p><p style="font-size:0.68rem;color:#64748b;margin-top:4px">Tu cédula tiene múltiples roles. Elige con cuál deseas ingresar:</p></div><div id="lista-roles" class="d-grid gap-2 mb-3"></div><button class="btn-ghost" onclick="cerrarSesionRoles()"><i class="bi bi-arrow-left me-1"></i>Cambiar de usuario</button>';document.querySelector('.login-body').appendChild(p)}
     p.style.display='block';document.getElementById('roles-nombre-alumno').textContent=sessionStorage.getItem('current_nombre')||'';
     const colores={alumno:'linear-gradient(135deg,#16813D,#0D5C2A)',docente:'linear-gradient(135deg,#2563EB,#1d4ed8)',admin:'linear-gradient(135deg,#7C3AED,#5B21B6)',academico:'linear-gradient(135deg,#D94172,#9F1239)'};
     const iconos={alumno:'bi-mortarboard',docente:'bi-easel',admin:'bi-gear-wide-connected',academico:'bi-building'};
     const etiquetas={alumno:'Alumno',docente:'Docente',admin:'Administrador',academico:'Académico'};
     const lista=document.getElementById('lista-roles');lista.innerHTML='';
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
-    btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:var(--txt3)"></i>';
+    btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
 function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='admin'||r.rol==='academico'){window.location.href='admin/index.html';return}mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
@@ -367,12 +930,12 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
     const info=document.getElementById('curso-info-alumno');const car=carreraFiltro||sessionStorage.getItem('current_carrera')||'';const sec=sessionStorage.getItem('current_seccion')||'';
     info.innerHTML=['Rol: '+rol.toUpperCase(),car,sec?'Sec. '+sec:''].filter(Boolean).join(' • ');
 
-    // Ocultar Libreta para docentes (solo alumnos la tienen)
+    // Ocultar Libreta para docentes
     document.querySelectorAll('.step3-student-only').forEach(el => { el.style.display = rol === 'alumno' ? '' : 'none'; });
 
     if(cursosDirectos&&Array.isArray(cursosDirectos)&&cursosDirectos.length>0){renderCursos(cursosDirectos);return}
 
-    // ═══ DOCENTE: solo sus asignaturas asignadas ═══
+    // DOCENTE: solo sus asignaturas asignadas
     if(rol === 'docente'){
         try{const cedula=localStorage.getItem('centuria_cedula')||sessionStorage.getItem('current_cedula');
         const resp=await fetch(CenturiaAPI.baseUrl+'docente.php?action=my_subjects&cedula='+encodeURIComponent(cedula));
@@ -380,9 +943,9 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
         const subjects=(data.subjects||[]).filter(s=>{const a=data.assignments||[];return a.some(x=>x.asignatura===s.codigo&&x.rol==='docente')});
         if(subjects.length>0){const cm=subjects.map(c=>({id:c.codigo,nombre:c.nombre_completo||c.nombre,codigo:c.codigo,seccion:sec||c.seccion_asignada||'',color:c.color||'#2563EB',icono:c.icono||'bi-book',rol:rol,carrera:c.carrera||'',semestre:c.semestre||'',carga_horaria:c.carga_horaria||0,unidades:c.unidades||10}));
         renderCursos(cm);return}else{
-        document.getElementById('lista-cursos').innerHTML='<div style="text-align:center;padding:20px;color:var(--txt3)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:.75rem"><strong>Sin asignaturas asignadas</strong></p><p style="font-size:.65rem;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';return}}catch(e){}}
+        document.getElementById('lista-cursos').innerHTML='<div style="text-align:center;padding:20px;color:#64748b"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:0.75rem"><strong>Sin asignaturas asignadas</strong></p><p style="font-size:0.65rem;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';return}}catch(e){}}
 
-    // ═══ ALUMNO/ADMIN: todas las asignaturas con kit completo ═══
+    // ALUMNO/ADMIN: todas las asignaturas con kit completo
     try{const rKit=await fetch(CenturiaAPI.baseUrl+'kit.php?action=habilitadas');const dKit=await rKit.json();
     const habilitadas=dKit.asignaturas||[];
     if(habilitadas.length>0){const cm=habilitadas.map(c=>({id:c.codigo,nombre:c.nombre_completo||c.nombre,codigo:c.codigo,seccion:sec||'',color:c.color||'#16813D',icono:c.icono||'bi-book',rol:rol,carrera:c.carrera||'',semestre:c.semestre||'',carga_horaria:c.carga_horaria||0,unidades:c.unidades||10}));
@@ -390,9 +953,9 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
 
     // Fallback
     renderCursos([])}
-function renderCursos(cursos){const l=document.getElementById('lista-cursos');l.innerHTML='';if(!cursos||cursos.length===0){l.innerHTML='<div style="text-align:center;padding:16px;color:var(--txt3)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:.72rem">No hay asignaturas disponibles</p></div>';return}
+function renderCursos(cursos){const l=document.getElementById('lista-cursos');l.innerHTML='';if(!cursos||cursos.length===0){l.innerHTML='<div style="text-align:center;padding:16px;color:#64748b"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:0.72rem">No hay asignaturas disponibles</p></div>';return}
 cursos.forEach(c=>{const b=document.createElement('button');b.className='curso-btn';
-b.innerHTML='<div class="curso-icon" style="background:linear-gradient(135deg,'+(c.color||'#16813D')+','+(c.color||'#0D5C2A')+')"><i class="bi '+(c.icono||'bi-book')+'"></i></div><div class="curso-info"><div class="curso-name">'+c.nombre+'</div><div class="curso-meta">'+(c.codigo||'')+(c.seccion?' • Sec. '+c.seccion:'')+(c.semestre?' • '+c.semestre:'')+(c.carrera?' • '+c.carrera:'')+'</div>'+(c.carga_horaria?'<div class="curso-meta"><i class="bi bi-clock me-1"></i>'+c.carga_horaria+'h • '+c.unidades+' unidades</div>':'')+'</div><i class="bi bi-chevron-right" style="color:var(--txt3)"></i>';b.onclick=()=>seleccionarCurso(c);l.appendChild(b)})}
+b.innerHTML='<div class="curso-icon" style="background:linear-gradient(135deg,'+(c.color||'#16813D')+','+(c.color||'#0D5C2A')+')"><i class="bi '+(c.icono||'bi-book')+'"></i></div><div class="curso-info"><div class="curso-name">'+c.nombre+'</div><div class="curso-meta">'+(c.codigo||'')+(c.seccion?' • Sec. '+c.seccion:'')+(c.semestre?' • '+c.semestre:'')+(c.carrera?' • '+c.carrera:'')+'</div>'+(c.carga_horaria?'<div class="curso-meta"><i class="bi bi-clock me-1"></i>'+c.carga_horaria+'h • '+c.unidades+' unidades</div>':'')+'</div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';b.onclick=()=>seleccionarCurso(c);l.appendChild(b)})}
 function seleccionarCurso(c){sessionStorage.setItem('curso_actual',c.id);sessionStorage.setItem('curso_nombre',c.nombre);sessionStorage.setItem('curso_codigo',c.codigo||'');if(c.rol)sessionStorage.setItem('rol',c.rol);window.location.href='Materiales_Clases/programa.html?curso='+encodeURIComponent(c.id)}
 function cerrarSesionCursos(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');document.getElementById('step-3-cursos').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
@@ -403,28 +966,28 @@ window.addEventListener('load',()=>{const c=sessionStorage.getItem('current_cedu
 <div id="modal-recuperar" class="modal-overlay">
     <div class="modal-box">
         <div style="text-align:center;margin-bottom:16px">
-            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-d));display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#fff"><i class="bi bi-key"></i></div>
-            <h3 style="font-weight:700;font-size:.95rem">Recuperar Contraseña</h3>
-            <p style="color:var(--txt3);font-size:.7rem;margin-top:2px">Ingresa tu cédula para ver tu contraseña</p>
+            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#fff"><i class="bi bi-key"></i></div>
+            <h3 style="font-weight:700;font-size:0.95rem;color:#0d2c16">Recuperar Contraseña</h3>
+            <p style="color:#64748b;font-size:0.7rem;margin-top:2px">Ingresa tu cédula para ver tu contraseña</p>
         </div>
         <div id="recuperar-paso1">
-            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:10px;padding:12px;margin-bottom:14px">
-                <p style="color:#92400E;font-size:.7rem;text-align:center;line-height:1.6"><i class="bi bi-shield-lock me-1"></i><strong>Tu contraseña se genera automáticamente:</strong><br><br><span style="font-size:.78rem">Primera letra nombre(<span style="color:var(--verde)">MAYÚS</span>) + primera letra apellido(<span style="color:var(--verde)">minúscula</span>) + cédula + <span style="color:var(--dorado)">*</span></span><br><br><span style="font-size:.65rem;opacity:.7">Ej: <strong>J</strong>uan <strong>P</strong>érez, CI 12345678 → <span style="font-family:monospace;font-weight:700">Jp12345678*</span></span></p>
+            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:12px;padding:12px;margin-bottom:14px">
+                <p style="color:#92400E;font-size:0.7rem;text-align:center;line-height:1.6"><i class="bi bi-shield-lock me-1"></i><strong>Tu contraseña se genera automáticamente:</strong><br><br><span style="font-size:0.78rem">Primera letra nombre(<span style="color:var(--verde-medio)">MAYÚS</span>) + primera letra apellido(<span style="color:var(--verde-medio)">minúscula</span>) + cédula + <span style="color:var(--dorado)">*</span></span><br><br><span style="font-size:0.65rem;opacity:0.7">Ej: <strong>J</strong>uan <strong>P</strong>érez, CI 12345678 → <span style="font-family:monospace;font-weight:700">Jp12345678*</span></span></p>
             </div>
-            <label class="lbl">Cédula de Identidad</label>
-            <input type="text" id="recuperar-cedula" class="inp text-center" placeholder="SIN PUNTOS" style="font-size:.95rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')">
+            <label class="lbl" for="recuperar-cedula">Cédula de Identidad</label>
+            <input type="text" id="recuperar-cedula" class="inp text-center" placeholder="SIN PUNTOS" style="font-size:0.95rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')">
             <button onclick="buscarContrasena()" class="btn-main" style="margin-top:14px"><i class="bi bi-search me-2"></i>Buscar mi contraseña</button>
         </div>
         <div id="recuperar-paso2" style="display:none">
             <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:18px;text-align:center">
-                <p style="color:var(--txt3);font-size:.7rem;margin-bottom:8px">Tu contraseña es:</p>
-                <div id="recuperar-password" style="background:#fff;border:1px solid var(--bdr);border-radius:8px;padding:12px;font-size:1rem;font-weight:700;color:var(--txt);letter-spacing:2px;font-family:monospace;cursor:pointer;transition:.2s" onclick="copiarContrasena()" title="Clic para copiar">---</div>
-                <p style="color:var(--txt3);font-size:.6rem;margin-top:6px">Haz clic para copiar</p>
-                <p id="recuperar-copiado" style="color:var(--verde);font-size:.7rem;font-weight:600;margin-top:4px;display:none">✓ Copiado al portapapeles</p>
+                <p style="color:#64748b;font-size:0.7rem;margin-bottom:8px">Tu contraseña es:</p>
+                <div id="recuperar-password" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:1rem;font-weight:700;color:#0f172a;letter-spacing:2px;font-family:monospace;cursor:pointer;transition:0.2s" onclick="copiarContrasena()" title="Clic para copiar">---</div>
+                <p style="color:#64748b;font-size:0.6rem;margin-top:6px">Haz clic para copiar</p>
+                <p id="recuperar-copiado" style="color:var(--verde-medio);font-size:0.7rem;font-weight:600;margin-top:4px;display:none">✓ Copiado al portapapeles</p>
             </div>
-            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-top:12px"><p style="color:#92400E;font-size:.65rem;text-align:center"><i class="bi bi-info-circle me-1"></i><strong>Recordá:</strong> Primera letra nombre(MAYÚS) + primera letra apellido(minús) + cédula + *</p></div>
+            <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-top:12px"><p style="color:#92400E;font-size:0.65rem;text-align:center"><i class="bi bi-info-circle me-1"></i><strong>Recordá:</strong> Primera letra nombre(MAYÚS) + primera letra apellido(minús) + cédula + *</p></div>
         </div>
-        <div id="recuperar-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px;text-align:center;margin-top:10px"><p style="color:#991B1B;font-size:.72rem"><i class="bi bi-exclamation-circle me-1"></i><span id="recuperar-error-text">Cédula no encontrada</span></p></div>
+        <div id="recuperar-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px;text-align:center;margin-top:10px"><p style="color:#991B1B;font-size:0.72rem"><i class="bi bi-exclamation-circle me-1"></i><span id="recuperar-error-text">Cédula no encontrada</span></p></div>
         <button onclick="cerrarRecuperar()" class="btn-ghost mt-3">Cerrar</button>
     </div>
 </div>
@@ -445,7 +1008,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarRecuperar()});
 </script>
 
 <script>
-(function(){const p=new URLSearchParams(window.location.search);if(p.get('view_as')==='admin'){var b=document.createElement('div');b.innerHTML='<a href="admin/index.html" style="position:fixed;top:12px;right:12px;z-index:99999;background:linear-gradient(135deg,var(--dorado),#92400E);color:#fff;padding:10px 18px;border-radius:12px;font-family:Montserrat;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(184,148,31,.4);transition:all .2s"><i class="bi bi-arrow-left-circle"></i> Volver al Admin</a>';document.body.appendChild(b)}})();
+(function(){const p=new URLSearchParams(window.location.search);if(p.get('view_as')==='admin'){var b=document.createElement('div');b.innerHTML='<a href="admin/index.html" style="position:fixed;top:12px;right:12px;z-index:99999;background:linear-gradient(135deg,var(--dorado),#92400E);color:#fff;padding:10px 18px;border-radius:12px;font-family:Montserrat;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(184,148,31,0.4);transition:all 0.2s"><i class="bi bi-arrow-left-circle"></i> Volver al Admin</a>';document.body.appendChild(b)}})();
 </script>
 </body>
 </html>

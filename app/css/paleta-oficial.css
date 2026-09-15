@@ -1,55 +1,57 @@
 /* ============================================================
    PALETA OFICIAL INSTITUTO SUPERIOR CENTURIA
-   Colores: #2D2D2D | #E6F4EA | #00B140 | #007A33 | #81C784
+   Fondo: #007A33 (verde oscuro institucional)
+   Cards: #ffffff (blanco puro)
+   Acento: #00B140 (verde brillante)
    ============================================================ */
 
-
 :root {
-    --c-primary: #007A33;
-    --c-secondary: #00B140;
+    --c-primary: #00B140;
+    --c-secondary: #007A33;
     --c-hover: #81C784;
     --c-light: #E6F4EA;
-    --c-dark: #2D2D2D;
+    --c-dark: #007A33;
     --c-white: #ffffff;
-    --c-gold: #C5A55A;
-    --c-bg: #E6F4EA;
+    --c-gold: #d4a843;
+    --c-bg: #007A33;
     --c-surface: #ffffff;
     --c-text: #2D2D2D;
-    --c-border: rgba(0,0,0,0.1);
+    --c-text-inv: #ffffff;
+    --c-border: rgba(200,230,201,1);
+    --c-border-card: rgba(0,0,0,0.08);
 }
 
 .dark-mode {
     --c-primary: #00B140;
     --c-secondary: #007A33;
-    --c-hover: #4CAF50;
-    --c-light: #1A1A1A;
+    --c-hover: #81C784;
+    --c-light: #003D1A;
     --c-dark: #E6F4EA;
-    --c-white: #2D2D2D;
-    --c-gold: #E5C57A;
-    --c-bg: #121212;
-    --c-surface: #1E1E1E;
-    --c-text: #F3F4F6;
-    --c-border: rgba(255,255,255,0.1);
+    --c-white: #1a1a2e;
+    --c-gold: #f0d060;
+    --c-bg: #004D20;
+    --c-surface: #003D1A;
+    --c-text: #E6F4EA;
+    --c-border: rgba(200,230,201,0.2);
 }
 
 body {
     font-family: 'Montserrat', 'Segoe UI', sans-serif;
     background-color: var(--c-bg) !important;
-    color: var(--c-text) !important;
+    color: var(--c-text-inv) !important;
     line-height: 1.6;
     transition: background-color 0.3s, color 0.3s;
 }
 
 .glass-panel, .bg-white {
     background-color: var(--c-surface) !important;
-    border-color: var(--c-border) !important;
+    border-color: var(--c-border-card) !important;
     color: var(--c-text) !important;
 }
 
-
 /* ── Header institucional ── */
 .header-centuria {
-    background-color: var(--c-primary);
+    background-color: var(--c-secondary);
     color: var(--c-white);
     padding: 1rem 1.5rem;
     text-align: center;
@@ -58,7 +60,7 @@ body {
 
 /* ── Sidebar ── */
 .sidebar {
-    background-color: var(--c-primary);
+    background-color: var(--c-secondary);
     color: var(--c-white);
 }
 .sidebar a {
@@ -76,7 +78,7 @@ body {
 
 /* ── Botones ── */
 .btn-centuria {
-    background-color: var(--c-secondary);
+    background-color: var(--c-primary);
     color: var(--c-white);
     border: none;
     padding: 0.75rem 1.5rem;
@@ -144,7 +146,7 @@ a.centuria-link:hover {
 
 /* ── Tabla ── */
 .table-centuria thead {
-    background-color: var(--c-primary);
+    background-color: var(--c-secondary);
     color: var(--c-white);
 }
 .table-centuria tbody tr:hover {

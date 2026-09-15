@@ -5,28 +5,31 @@
 
 /* === PALETA INSTITUCIONAL CENTURIA (Oficial) === */
 :root {
-    --centuria-green: #007A33;
-    --centuria-green-dark: #005c26;
+    --centuria-green: #00B140;
+    --centuria-green-dark: #007A33;
     --centuria-green-light: #E6F4EA;
     --centuria-white: #FFFFFF;
-    --centuria-black: #333333;
-    --centuria-gray: #6c757d;
+    --centuria-black: #2D2D2D;
+    --centuria-gray: #64748b;
+    --centuria-bg: #007A33;
+    --centuria-surface: #ffffff;
+    --centuria-text-inv: #ffffff;
 }
 /* === BASE - TAMAÑO DE TEXTO UNIFORME === */
 html { font-size: 16px; }
 body { 
-    background-color: var(--centuria-white); 
+    background-color: var(--centuria-bg); 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     line-height: 1.6; 
     font-size: 1rem;
-    color: var(--centuria-black);
+    color: var(--centuria-text-inv);
 }
 body.locked { overflow: hidden; }
 
 /* === LOGIN === */
 #login-mask { 
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background-color: rgba(30,43,60,0.98); z-index: 9999; 
+    background-color: rgba(0,122,51,0.98); z-index: 9999; 
     display: flex; align-items: center; justify-content: center; 
 }
 .login-box { 
@@ -39,26 +42,26 @@ body.locked { overflow: hidden; }
     background-color: #007A33; 
     height: 100vh; 
     overflow-y: auto; 
-    color: var(--centuria-white); 
+    color: var(--centuria-text-inv); 
     padding-top: 0; 
     position: sticky;
     top: 0;
 }
 .sidebar::-webkit-scrollbar { width: 6px; }
-.sidebar::-webkit-scrollbar-track { background: #005c26; }
-.sidebar::-webkit-scrollbar-thumb { background: #008050; border-radius: 4px; }
-.sidebar::-webkit-scrollbar-thumb:hover { background: var(--centuria-white); }
-.sidebar h5 { color: var(--centuria-white); font-weight: bold; padding: 15px; margin-bottom: 0; text-align: center; background: #005c26; }
-.sidebar a { color: #E6F4EA; text-decoration: none; display: block; padding: 12px 20px; border-bottom: 1px solid #005c26; transition: 0.2s; }
-.sidebar a:hover, .sidebar a.active { background-color: #005c26; color: var(--centuria-white); padding-left: 25px; border-left: 4px solid var(--centuria-white); }
+.sidebar::-webkit-scrollbar-track { background: #004D20; }
+.sidebar::-webkit-scrollbar-thumb { background: #00B140; border-radius: 4px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: #81C784; }
+.sidebar h5 { color: var(--centuria-text-inv); font-weight: bold; padding: 15px; margin-bottom: 0; text-align: center; background: #004D20; }
+.sidebar a { color: #C8E6C9; text-decoration: none; display: block; padding: 12px 20px; border-bottom: 1px solid #005C2A; transition: 0.2s; }
+.sidebar a:hover, .sidebar a.active { background-color: #005C2A; color: var(--centuria-text-inv); padding-left: 25px; border-left: 4px solid var(--centuria-green); }
 
 /* === CONTENIDO PRINCIPAL === */
-.content { padding: 50px 8%; background-color: white; min-height: 100vh; }
+.content { padding: 50px 8%; background-color: #ffffff; min-height: 100vh; color: #2D2D2D; }
 
 /* === TÍTULOS - Verde Centuria === */
 h1.page-title { 
-    color: var(--centuria-black); font-weight: 800; 
-    border-bottom: 4px solid #007A33; padding-bottom: 10px; 
+    color: #007A33; font-weight: 800; 
+    border-bottom: 4px solid #00B140; padding-bottom: 10px; 
     margin-bottom: 30px; font-size: 2rem; 
 }
 h2 { font-size: 1.5rem; font-weight: 700; }
@@ -69,10 +72,11 @@ h6 { font-size: 1rem; font-weight: 600; }
 
 /* === SECCIONES === */
 .section-card { 
-    background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; 
+    background: #fff; border: 1px solid #C8E6C9; border-radius: 10px; 
     padding: 25px; margin-bottom: 35px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
     border-left: 6px solid; 
+    color: #2D2D2D;
 }
 .border-def { border-left-color: #3498db; }
 .border-casos { border-left-color: #e74c3c; }
@@ -93,16 +97,16 @@ h6 { font-size: 1rem; font-weight: 600; }
 
 /* === TÍTULOS DE UNIDAD - Verde Centuria === */
 .content h2 { 
-    color: #005c26; font-size: 1.5rem; font-weight: 700; 
+    color: #007A33; font-size: 1.5rem; font-weight: 700; 
     margin-top: 30px; margin-bottom: 15px; 
     padding: 10px 15px; background-color: #E6F4EA; 
-    border-left: 5px solid #007A33; 
+    border-left: 5px solid #00B140; 
 }
 .content h3 { 
-    color: var(--centuria-black); font-size: 1.25rem; font-weight: 700; 
+    color: #2D2D2D; font-size: 1.25rem; font-weight: 700; 
     margin-top: 25px; margin-bottom: 12px; 
-    padding: 8px 12px; background-color: var(--centuria-gray-light); 
-    border-left: 4px solid #007A33; 
+    padding: 8px 12px; background-color: #F0FAF3; 
+    border-left: 4px solid #00B140; 
 }
 .content h4 { 
     font-size: 1.1rem; font-weight: 600; 
@@ -126,16 +130,16 @@ h6 { font-size: 1rem; font-weight: 600; }
 /* === TABLAS - Verde Centuria === */
 .table-responsive { margin: 20px 0; border-radius: 8px; overflow: hidden; }
 .table { font-size: 1rem; margin-bottom: 0; }
-.table thead th { background: #007A33; color: var(--centuria-white); font-weight: 600; padding: 12px 15px; border: none; }
-.table tbody td { padding: 10px 15px; vertical-align: middle; border-color: var(--centuria-border); }
-.table tbody tr:nth-child(even) { background-color: #E6F4EA; }
-.table tbody tr:hover { background-color: #d4e8dd; }
+.table thead th { background: #007A33; color: var(--centuria-text-inv); font-weight: 600; padding: 12px 15px; border: none; }
+.table tbody td { padding: 10px 15px; vertical-align: middle; border-color: #C8E6C9; }
+.table tbody tr:nth-child(even) { background-color: #F0FAF3; }
+.table tbody tr:hover { background-color: #E6F4EA; }
 
 /* === TEXTO - Verde Centuria === */
-p { font-size: 1rem; color: var(--centuria-black); text-align: justify; margin-bottom: 12px; line-height: 1.6; }
-.content strong { color: #005c26; font-weight: 700; }
-.content a { color: #007A33; text-decoration: none; }
-.content a:hover { color: #005c26; text-decoration: underline; }
+p { font-size: 1rem; color: #2D2D2D; text-align: justify; margin-bottom: 12px; line-height: 1.6; }
+.content strong { color: #007A33; font-weight: 700; }
+.content a { color: #00B140; text-decoration: none; }
+.content a:hover { color: #007A33; text-decoration: underline; }
 .content hr { border: none; height: 1px; background-color: #ddd; margin: 25px 0; }
 
 /* === BADGES === */
@@ -282,6 +286,7 @@ tr:target td {
     position: sticky !important;
     top: 0 !important;
     max-height: 100vh !important;
+    background-color: #007A33 !important;
 }
 
 /* Permitir que el contenido principal también crezca normalmente */

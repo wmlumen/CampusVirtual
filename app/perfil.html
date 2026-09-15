@@ -10,91 +10,128 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{
-            --verde:#16813D;--verde-d:#0D5C2A;--verde-l:#22c55e;
-            --dorado:#D4A017;--dorado-l:#F5D76E;
+            --verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;
+            --hover:#81C784;--dorado:#d4a843;
             --azul:#2563EB;--rosa:#D94172;--naranja:#D97706;
-            --txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;
-            --bg:#f1f5f9;--card:#fff;--bdr:#cbd5e1;
+            --txt:#FFFFFF;--txt2:#2D2D2D;--txt3:#64748b;
+            --bg:#007A33;--card:#FFFFFF;--border:#C8E6C9;
         }
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+        body{
+            font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;
+            background-image:radial-gradient(circle at 20% 50%,rgba(255,255,255,.04) 0%,transparent 50%),
+                             radial-gradient(circle at 80% 20%,rgba(0,177,64,.15) 0%,transparent 40%);
+        }
 
-        .wrap{max-width:800px;margin:0 auto;padding:16px 16px 50px}
+        .wrap{max-width:800px;margin:0 auto;padding:12px 16px 80px}
 
-        /* Header */
-        .hdr{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-        .hdr-left{display:flex;align-items:center;gap:10px}
-        .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-d));display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff}
-        .hdr-name{font-size:.85rem;font-weight:700}
-        .hdr-sub{font-size:.6rem;font-weight:500;color:var(--txt2)}
-        .badge-rol{padding:4px 10px;border-radius:20px;font-size:.55rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:#BBF7D0;color:var(--verde-d)}
-        .badge-rol.docente{background:#BFDBFE;color:#1E3A8A}
-        .badge-rol.admin{background:#FEF3C7;color:#92400E}
-        .btn-out{padding:5px 10px;border-radius:8px;font-size:.6rem;background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;cursor:pointer;font-family:'Montserrat';font-weight:700}
+        /* ═══ BARRA SUPERIOR FIJA ═══ */
+        .topbar{
+            position:sticky;top:0;z-index:100;
+            background:var(--verde-dark);border-bottom:2px solid var(--verde);
+            padding:10px 20px;display:flex;justify-content:space-between;align-items:center;
+            box-shadow:0 2px 12px rgba(0,0,0,.3);
+        }
+        .topbar-brand{font-size:.85rem;font-weight:700;color:#fff;letter-spacing:1px}
+        .topbar-nav{display:flex;gap:6px}
+        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.6rem;font-weight:600;padding:5px 10px;border-radius:6px;transition:.2s;letter-spacing:.5px}
+        .topbar-nav a:hover,.topbar-nav a.active{background:var(--verde);color:#fff}
 
-        .back{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:var(--azul);text-decoration:none;margin-bottom:10px}
-        .back:hover{color:var(--verde)}
+        /* ═══ BREADCRUMBS ═══ */
+        .breadcrumb-bar{font-size:.55rem;color:rgba(255,255,255,.5);margin-bottom:8px;padding:4px 0;letter-spacing:.3px}
+        .breadcrumb-bar a{color:rgba(255,255,255,.7);text-decoration:none}
+        .breadcrumb-bar a:hover{color:#fff}
 
-        /* Profile Card */
-        .profile-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        /* ═══ HEADER ═══ */
+        .hdr{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:none;border-radius:14px;padding:14px 18px;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+        .hdr-left{display:flex;align-items:center;gap:12px}
+        .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+        .hdr-name{font-size:.88rem;font-weight:800;color:var(--verde-dark)}
+        .hdr-sub{font-size:.6rem;font-weight:500;color:var(--txt3)}
+        .badge-rol{padding:5px 12px;border-radius:20px;font-size:.58rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
+        .badge-rol.docente{background:var(--verde);color:#fff;border:1px solid var(--verde-dark)}
+        .badge-rol.admin{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+        .btn-out{padding:6px 12px;border-radius:8px;font-size:.6rem;background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;cursor:pointer;font-family:'Montserrat';font-weight:700;transition:.2s}
+        .btn-out:hover{background:#FECACA;transform:translateY(-1px)}
+
+        .back{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:rgba(255,255,255,.7);text-decoration:none;margin-bottom:10px;transition:.2s}
+        .back:hover{color:#fff}
+
+        /* ═══ PROFILE CARD ═══ */
+        .profile-card{background:var(--card);border:none;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15)}
 
         /* Banner */
-        .banner{height:100px;background:linear-gradient(135deg,var(--verde-d),var(--verde),#22c55e);position:relative}
+        .banner{height:110px;background:linear-gradient(135deg,var(--verde-dark),var(--verde),#22c55e);position:relative}
         .banner::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='rgba(255,255,255,.08)'/%3E%3C/svg%3E")}
 
         /* Avatar zone */
-        .avatar-zone{text-align:center;margin-top:-50px;position:relative;z-index:2}
-        .avatar-big{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-d));display:inline-flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;border:4px solid var(--card);box-shadow:0 4px 16px rgba(0,0,0,.15)}
-        .profile-name{font-size:1.1rem;font-weight:800;margin-top:8px}
+        .avatar-zone{text-align:center;margin-top:-55px;position:relative;z-index:2}
+        .avatar-big{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:inline-flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:#fff;border:5px solid var(--card);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+        .profile-name{font-size:1.2rem;font-weight:800;margin-top:10px;color:var(--verde-dark)}
         .profile-role{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--verde)}
         .profile-cedula{font-size:.6rem;color:var(--txt3);margin-top:2px}
 
         /* Body */
-        .card-body{padding:16px 20px 24px}
+        .card-body{padding:18px 22px 26px}
 
         /* Sections */
-        .sec{background:#f8fafc;border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:10px}
-        .sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-        .sec-title i{color:var(--dorado)}
+        .sec{background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+        .sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--verde-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px;border-bottom:2px solid var(--verde);padding-bottom:8px}
+        .sec-title i{color:var(--verde)}
 
         /* Rows */
-        .row-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9}
+        .row-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
         .row-item:last-child{border-bottom:none}
         .row-label{font-size:.68rem;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.3px}
-        .row-value{font-size:.78rem;font-weight:600;color:var(--txt);text-align:right;max-width:55%}
+        .row-value{font-size:.78rem;font-weight:600;color:var(--txt2);text-align:right;max-width:55%}
 
         /* Edit mode */
         .row-value.editable{cursor:pointer;padding:4px 8px;border-radius:6px;transition:.15s}
-        .row-value.editable:hover{background:#EFF6FF;color:var(--azul)}
-        .row-input{width:100%;max-width:200px;padding:6px 10px;border:2px solid var(--azul);border-radius:8px;font-size:.78rem;font-family:'Montserrat';font-weight:600;color:var(--txt);background:#fff;outline:none;text-align:right}
+        .row-value.editable:hover{background:var(--verde-card);color:var(--verde)}
+        .row-input{width:100%;max-width:200px;padding:6px 10px;border:2px solid var(--verde);border-radius:8px;font-size:.78rem;font-family:'Montserrat';font-weight:600;color:var(--txt2);background:#fff;outline:none;text-align:right}
 
         /* Buttons */
-        .btns{display:flex;gap:8px;margin-top:12px}
+        .btns{display:flex;gap:8px;margin-top:14px}
         .btn{flex:1;padding:10px;border-radius:10px;font-size:.7rem;font-family:'Montserrat';font-weight:700;cursor:pointer;border:none;transition:.15s;display:flex;align-items:center;justify-content:center;gap:4px}
-        .btn-p{background:var(--azul);color:#fff}.btn-p:hover{background:#1d4ed8}
-        .btn-g{background:#BBF7D0;color:var(--verde-d)}.btn-g:hover{background:#86efac}
-        .btn-s{background:#F1F5F9;color:var(--txt)}.btn-s:hover{background:#e2e8f0}
+        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark);transform:translateY(-1px)}
+        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}.btn-g:hover{background:#D1FAE5}
+        .btn-s{background:#F1F5F9;color:var(--txt2)}.btn-s:hover{background:#e2e8f0}
         .btn-r{background:#FEE2E2;color:#991B1B}.btn-r:hover{background:#fca5a5}
 
         /* Stats row */
-        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
-        .stat{background:#f8fafc;border:1px solid var(--bdr);border-radius:10px;padding:10px;text-align:center}
-        .stat-val{font-size:1rem;font-weight:800;color:var(--verde)}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+        .stat{background:var(--card);border:none;border-radius:10px;padding:12px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.1)}
+        .stat-val{font-size:1.1rem;font-weight:800;color:var(--verde-dark)}
         .stat-lbl{font-size:.5rem;font-weight:600;color:var(--txt3);text-transform:uppercase}
 
         /* Toast */
         .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;animation:fadeIn .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-        .toast-success{background:#BBF7D0;color:#16813D;border:1px solid #86efac}
+        .toast-success{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
         .toast-error{background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5}
         @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 
-        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:5px 16px;background:var(--card);border-top:1px solid var(--bdr);font-size:.5rem;font-weight:500;color:var(--txt3)}
-        @media print{.footer,.btn-out,.btns{display:none!important}body{background:#fff}}
-        @media(max-width:768px){.wrap{padding:10px 10px 50px}.stats{grid-template-columns:repeat(3,1fr)}.hdr{flex-direction:column;gap:8px}.row-input{max-width:140px}}
+        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px 16px;background:var(--verde-dark);border-top:2px solid var(--verde);font-size:.5rem;font-weight:500;color:rgba(255,255,255,.6)}
+        @media print{.footer,.btn-out,.btns,.topbar{display:none!important}body{background:#fff;color:#000}}
+        @media(max-width:768px){.wrap{padding:10px 10px 80px}.stats{grid-template-columns:repeat(3,1fr)}.hdr{flex-direction:column;gap:8px;text-align:center}.row-input{max-width:140px}.topbar{flex-direction:column;gap:6px}}
     </style>
 </head>
 <body>
+    <!-- BARRA SUPERIOR FIJA -->
+    <div class="topbar">
+        <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
+        <div class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="perfil.html" class="active">Perfil</a>
+            <a href="Materiales_Clases/index.html">Materiales</a>
+        </div>
+    </div>
+
 <div class="wrap">
+    <!-- BREADCRUMBS -->
+    <div class="breadcrumb-bar">
+        <a href="dashboard.html">Inicio</a> / Mi Perfil
+    </div>
+
     <!-- Header -->
     <div class="hdr">
         <div class="hdr-left">
@@ -103,7 +140,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px">
             <span class="badge-rol" id="hdr-badge">-</span>
-            <button class="btn-out" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+            <button class="btn-out" onclick="centuriaLogout(true)" aria-label="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> Salir</button>
         </div>
     </div>
 
@@ -131,10 +168,10 @@
             <div class="sec">
                 <div class="sec-title"><i class="bi bi-person"></i> Datos Personales</div>
                 <div class="row-item"><span class="row-label">Cédula</span><span class="row-value" id="p-cedula">-</span></div>
-                <div class="row-item"><span class="row-label">Nombre</span><span class="row-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)">-</span></div>
-                <div class="row-item"><span class="row-label">Apellido</span><span class="row-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)">-</span></div>
-                <div class="row-item"><span class="row-label">Email</span><span class="row-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span></div>
-                <div class="row-item"><span class="row-label">Teléfono</span><span class="row-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)">-</span></div>
+                <div class="row-item"><span class="row-label">Nombre</span><span class="row-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)" aria-label="Editar nombre">-</span></div>
+                <div class="row-item"><span class="row-label">Apellido</span><span class="row-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)" aria-label="Editar apellido">-</span></div>
+                <div class="row-item"><span class="row-label">Email</span><span class="row-value editable" id="p-email" data-field="email" onclick="editarCampo(this)" aria-label="Editar email">-</span></div>
+                <div class="row-item"><span class="row-label">Teléfono</span><span class="row-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)" aria-label="Editar teléfono">-</span></div>
             </div>
 
             <!-- Datos Académicos -->
@@ -157,7 +194,7 @@
     </div>
 </div>
 
-<div class="footer">Instituto Superior Centuria © 2026 — Perfil Académico</div>
+<div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
 
 <script src="js/api.js?v=7"></script>
 <script src="js/logout.js"></script>
@@ -272,7 +309,7 @@ function editarCampo(el) {
     const valor = el.textContent.trim();
     const field = el.dataset.field;
     el.innerHTML = `<input class="row-input" type="${field === 'email' ? 'email' : 'text'}" value="${valor === 'No registrado' ? '' : valor}" 
-        onblur="guardarCampo(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this,'${field}')}">`;
+        onblur="guardarCampo(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this,'${field}')}" aria-label="Editar campo">`;
     el.querySelector('input').focus();
     el.querySelector('input').select();
 }

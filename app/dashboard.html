@@ -11,17 +11,20 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
-            --verde: #16813D;
-            --verde-dark: #0D5C2A;
-            --dorado: #B8941F;
+            --verde: #00B140;
+            --verde-dark: #007A33;
+            --verde-card: #E6F4EA;
+            --hover: #81C784;
+            --dorado: #d4a843;
             --azul: #2563EB;
             --rosa: #D94172;
             --naranja: #D97706;
-            --texto: #0f172a;
-            --texto-sec: #475569;
-            --bg: #f1f5f9;
-            --card-bg: #ffffff;
-            --border: #cbd5e1;
+            --texto: #FFFFFF;
+            --texto-sec: #2D2D2D;
+            --bg: #007A33;
+            --card-bg: #FFFFFF;
+            --border: #C8E6C9;
+            --txt-card: #2D2D2D;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -29,176 +32,226 @@
             min-height: 100vh;
             background: var(--bg);
             color: var(--texto);
+            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,.04) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(0,177,64,.15) 0%, transparent 40%);
         }
-        .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 50px; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 80px; }
 
-        /* Header */
+        /* ═══ BARRA SUPERIOR FIJA ═══ */
+        .topbar {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--verde-dark);
+            border-bottom: 2px solid var(--verde);
+            padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,.3);
+        }
+        .topbar-brand { font-size: .85rem; font-weight: 700; color: #fff; letter-spacing: 1px; }
+        .topbar-nav { display: flex; gap: 6px; }
+        .topbar-nav a {
+            color: rgba(255,255,255,.7); text-decoration: none;
+            font-size: .6rem; font-weight: 600; padding: 5px 10px;
+            border-radius: 6px; transition: .2s; letter-spacing: .5px;
+        }
+        .topbar-nav a:hover, .topbar-nav a.active { background: var(--verde); color: #fff; }
+
+        /* ═══ HEADER INSTITUCIONAL ═══ */
         .hdr {
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 14px; padding: 10px 16px; margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            background: var(--card-bg); border: none;
+            border-radius: 14px; padding: 16px 20px; margin: 14px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,.15);
         }
-        .hdr-left { display: flex; align-items: center; gap: 12px; }
+        .hdr-left { display: flex; align-items: center; gap: 14px; }
         .avatar {
-            width: 40px; height: 40px; border-radius: 50%;
+            width: 48px; height: 48px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: .9rem; font-weight: 700; color: #fff;
+            font-size: 1rem; font-weight: 800; color: #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,.2);
         }
         .avatar.alumno { background: linear-gradient(135deg, var(--verde), var(--verde-dark)); }
-        .avatar.docente { background: linear-gradient(135deg, var(--azul), #2a5f8f); }
+        .avatar.docente { background: linear-gradient(135deg, var(--verde), #004d20); }
         .avatar.admin { background: linear-gradient(135deg, var(--dorado), #a08530); }
         .avatar.academico { background: linear-gradient(135deg, var(--rosa), #c04070); }
         .avatar.administrador_plataforma { background: linear-gradient(135deg, var(--naranja), #c06020); }
         .avatar.admin_filial { background: linear-gradient(135deg, var(--naranja), #c06020); }
-        .hdr-name { font-size: .88rem; font-weight: 700; color: var(--texto); }
-        .hdr-sub { font-size: .62rem; font-weight: 500; color: var(--texto-sec); }
-        .hdr-right { display: flex; align-items: center; gap: 8px; }
+        .hdr-name { font-size: 1rem; font-weight: 800; color: var(--verde-dark); }
+        .hdr-sub { font-size: .65rem; font-weight: 500; color: #64748b; }
+        .hdr-right { display: flex; align-items: center; gap: 10px; }
         .badge-rol {
-            padding: 5px 12px; border-radius: 20px; font-size: .6rem;
-            font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+            padding: 6px 14px; border-radius: 20px; font-size: .6rem;
+            font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
         }
-        .badge-rol.alumno { background: #BBF7D0; color: #14532D; }
-        .badge-rol.docente { background: #BFDBFE; color: #1E3A8A; }
-        .badge-rol.admin { background: #FEF3C7; color: #92400E; }
-        .badge-rol.academico { background: #FBCFE8; color: #831843; }
-        .badge-rol.administrador_plataforma { background: #FED7AA; color: #9A3412; }
-        .badge-rol.admin_filial { background: #FED7AA; color: #9A3412; }
+        .badge-rol.alumno { background: var(--verde-card); color: var(--verde-dark); border: 1px solid var(--verde); }
+        .badge-rol.docente { background: var(--verde); color: #fff; border: 1px solid var(--verde-dark); }
+        .badge-rol.admin { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+        .badge-rol.academico { background: #FBCFE8; color: #831843; border: 1px solid #F9A8D4; }
+        .badge-rol.administrador_plataforma { background: #FED7AA; color: #9A3412; border: 1px solid #FDBA74; }
+        .badge-rol.admin_filial { background: #FED7AA; color: #9A3412; border: 1px solid #FDBA74; }
         .btn-out {
-            padding: 6px 12px; border-radius: 8px; font-size: .62rem;
+            padding: 7px 14px; border-radius: 8px; font-size: .62rem;
             background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;
             cursor: pointer; font-family: 'Montserrat'; font-weight: 700;
+            transition: .2s;
         }
-        .btn-out:hover { background: #FECACA; }
+        .btn-out:hover { background: #FECACA; transform: translateY(-1px); }
 
-        /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+        /* ═══ STATS ═══ */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
         .stat-card {
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 12px; padding: 12px; text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            background: var(--card-bg); border: none;
+            border-radius: 12px; padding: 14px; text-align: center;
+            box-shadow: 0 3px 15px rgba(0,0,0,.1);
+            transition: .2s;
         }
-        .stat-icon { width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 6px; }
-        .stat-icon.green { background: #BBF7D0; color: #16813D; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,.15); }
+        .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 6px; }
+        .stat-icon.green { background: var(--verde-card); color: var(--verde-dark); }
         .stat-icon.gold { background: #FEF3C7; color: #B8941F; }
-        .stat-icon.blue { background: #BFDBFE; color: #2563EB; }
-        .stat-icon.rose { background: #FBCFE8; color: #D94172; }
-        .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--texto); }
-        .stat-lbl { font-size: .6rem; font-weight: 600; color: var(--texto-sec); letter-spacing: .5px; text-transform: uppercase; }
+        .stat-icon.blue { background: #DBEAFE; color: #2563EB; }
+        .stat-icon.rose { background: #FCE7F3; color: #D94172; }
+        .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--verde-dark); }
+        .stat-lbl { font-size: .58rem; font-weight: 600; color: #64748b; letter-spacing: .5px; text-transform: uppercase; }
 
-        /* Section */
+        /* ═══ SECTION ═══ */
         .section {
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 12px; padding: 14px; margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            background: var(--card-bg); border: none;
+            border-radius: 12px; padding: 16px; margin-bottom: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,.1);
         }
         .sec-title {
-            font-size: .75rem; font-weight: 700; letter-spacing: .5px;
-            text-transform: uppercase; color: var(--texto); margin-bottom: 10px;
+            font-size: .72rem; font-weight: 700; letter-spacing: .5px;
+            text-transform: uppercase; color: var(--verde-dark); margin-bottom: 12px;
             display: flex; align-items: center; gap: 6px;
+            border-bottom: 2px solid var(--verde); padding-bottom: 8px;
         }
-        .sec-title i { color: var(--dorado); }
+        .sec-title i { color: var(--verde); font-size: .9rem; }
 
-        /* Quick Links */
-        .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+        /* ═══ QUICK LINKS ═══ */
+        .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
         .link {
-            background: #f8fafc; border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 6px; text-align: center;
-            cursor: pointer; transition: .2s; text-decoration: none; color: var(--texto);
+            background: var(--verde-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 8px; text-align: center;
+            cursor: pointer; transition: .2s; text-decoration: none; color: var(--verde-dark);
         }
-        .link:hover { background: #DCFCE7; border-color: var(--verde); transform: translateY(-1px); }
-        .link i { font-size: 1.2rem; margin-bottom: 4px; display: block; color: var(--verde); }
-        .link span { font-size: .55rem; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: var(--texto); }
+        .link:hover { background: var(--verde); color: #fff; border-color: var(--verde); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,177,64,.3); }
+        .link i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
+        .link span { font-size: .55rem; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
 
-        /* Subject Card — Lista */
+        /* ═══ SUBJECT CARD ═══ */
         .subj {
-            background: #f8fafc; border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+            background: var(--verde-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 6px;
             display: flex; justify-content: space-between; align-items: center;
             transition: .2s;
         }
-        .subj:hover { background: #DCFCE7; border-color: var(--verde); }
+        .subj:hover { background: #D1FAE5; border-color: var(--verde); transform: translateX(4px); }
         .subj-info { flex: 1; }
-        .subj-name { font-size: .78rem; font-weight: 600; color: var(--texto); }
-        .subj-meta { font-size: .58rem; font-weight: 500; color: var(--texto-sec); }
+        .subj-name { font-size: .78rem; font-weight: 700; color: var(--verde-dark); }
+        .subj-meta { font-size: .58rem; font-weight: 500; color: #64748b; }
+        .subj-meta i { margin-right: 3px; }
         .subj-btn {
-            padding: 5px 12px; border-radius: 8px; font-size: .6rem;
+            padding: 6px 14px; border-radius: 8px; font-size: .6rem;
             background: var(--verde); color: #fff; text-decoration: none;
-            font-weight: 700; transition: .2s;
+            font-weight: 700; transition: .2s; border: none;
         }
-        .subj-btn:hover { background: var(--verde-dark); }
+        .subj-btn:hover { background: var(--verde-dark); transform: translateY(-1px); }
 
-        /* Subject Card — Cuadrícula */
-        .subj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+        /* ═══ GRID VIEW ═══ */
+        .subj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
         .subj-grid .subj {
-            flex-direction: column; text-align: center; padding: 14px 10px;
-            gap: 6px;
+            flex-direction: column; text-align: center; padding: 16px 12px; gap: 8px;
+            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
         }
-        .subj-grid .subj-btn { width: 100%; text-align: center; }
+        .subj-grid .subj-btn { width: 100%; text-align: center; padding: 8px; }
+        .subj-grid .subj-name { font-size: .82rem; }
+        .subj-grid .subj-meta { font-size: .6rem; }
 
-        /* Toggle */
+        /* ═══ TOGGLE ═══ */
         .view-toggles { display: flex; gap: 4px; margin-left: auto; }
         .view-btn {
-            width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
-            background: var(--card-bg); color: var(--texto-sec); cursor: pointer;
+            width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card-bg); color: #64748b; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            font-size: .8rem; transition: .15s;
+            font-size: .85rem; transition: .15s;
         }
-        .view-btn:hover { border-color: var(--azul); color: var(--azul); }
-        .view-btn.active { background: var(--azul); color: #fff; border-color: var(--azul); }
+        .view-btn:hover { border-color: var(--verde); color: var(--verde); }
+        .view-btn.active { background: var(--verde); color: #fff; border-color: var(--verde); }
 
-        /* Empty State */
-        .empty {
-            text-align: center; padding: 24px; color: var(--texto-sec);
-        }
-        .empty i { font-size: 2rem; margin-bottom: 8px; display: block; color: #94a3b8; }
+        /* ═══ EMPTY STATE ═══ */
+        .empty { text-align: center; padding: 28px; color: #94a3b8; }
+        .empty i { font-size: 2.2rem; margin-bottom: 8px; display: block; }
         .empty p { font-size: .72rem; }
 
-        /* Event */
+        /* ═══ EVENT ═══ */
         .ev {
-            background: #f8fafc; border: 1px solid var(--border);
+            background: var(--verde-card); border: 1px solid var(--border);
             border-radius: 10px; padding: 10px; margin-bottom: 6px;
             display: flex; gap: 10px; align-items: center;
         }
         .ev-date {
-            width: 38px; height: 38px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--rosa), var(--naranja));
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--verde), var(--verde-dark));
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: #fff; flex-shrink: 0;
         }
-        .ev-date .day { font-size: .9rem; font-weight: 800; line-height: 1; }
-        .ev-date .month { font-size: .45rem; text-transform: uppercase; letter-spacing: .5px; }
+        .ev-date .day { font-size: .95rem; font-weight: 800; line-height: 1; }
+        .ev-date .month { font-size: .42rem; text-transform: uppercase; letter-spacing: .5px; }
         .ev-info { flex: 1; }
-        .ev-title { font-size: .72rem; font-weight: 600; color: var(--texto); }
-        .ev-desc { font-size: .58rem; font-weight: 500; color: var(--texto-sec); }
+        .ev-title { font-size: .72rem; font-weight: 700; color: var(--verde-dark); }
+        .ev-desc { font-size: .58rem; font-weight: 500; color: #64748b; }
         .ev-tag {
-            padding: 3px 8px; border-radius: 8px; font-size: .5rem;
+            padding: 3px 8px; border-radius: 8px; font-size: .48rem;
             font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
         }
         .ev-tag.exam { background: #FEE2E2; color: #991B1B; }
         .ev-tag.assignment { background: #FEF3C7; color: #92400E; }
-        .ev-tag.meeting { background: #BFDBFE; color: #1E3A8A; }
+        .ev-tag.meeting { background: #DBEAFE; color: #1E3A8A; }
 
-        /* Footer */
+        /* ═══ FOOTER ═══ */
         .footer {
             position: fixed; bottom: 0; left: 0; right: 0;
-            text-align: center; padding: 5px 16px; z-index: 10;
-            background: var(--card-bg); border-top: 1px solid var(--border);
-            font-size: .5rem; font-weight: 500; color: var(--texto-sec);
+            text-align: center; padding: 8px 16px; z-index: 10;
+            background: var(--verde-dark); border-top: 2px solid var(--verde);
+            font-size: .5rem; font-weight: 500; color: rgba(255,255,255,.6);
         }
 
-        /* Print */
-        @media print { .footer, .btn-out { display: none; } body { background: #fff; } }
-        /* Responsive */
+        /* ═══ BREADCRUMBS ═══ */
+        .breadcrumb-bar {
+            font-size: .55rem; color: rgba(255,255,255,.5); margin-bottom: 8px;
+            padding: 4px 0; letter-spacing: .3px;
+        }
+        .breadcrumb-bar a { color: rgba(255,255,255,.7); text-decoration: none; }
+        .breadcrumb-bar a:hover { color: #fff; }
+
+        /* ═══ PRINT ═══ */
+        @media print { .footer, .btn-out, .topbar { display: none; } body { background: #fff; color: #000; } }
+        /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
             .stats { grid-template-columns: repeat(2, 1fr); }
-            .hdr { flex-direction: column; gap: 8px; }
+            .hdr { flex-direction: column; gap: 10px; text-align: center; }
+            .topbar { flex-direction: column; gap: 6px; }
         }
     </style>
 </head>
 <body>
+    <!-- BARRA SUPERIOR FIJA -->
+    <div class="topbar">
+        <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
+        <div class="topbar-nav">
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="Materiales_Clases/index.html">Materiales</a>
+        </div>
+    </div>
+
     <div class="wrap">
-        <!-- Header -->
+        <!-- BREADCRUMBS -->
+        <div class="breadcrumb-bar">
+            <a href="dashboard.html">Inicio</a> / Dashboard
+        </div>
+
+        <!-- HEADER INSTITUCIONAL -->
         <div class="hdr">
             <div class="hdr-left">
                 <div class="avatar" id="dash-avatar">E</div>
@@ -209,13 +262,13 @@
             </div>
             <div class="hdr-right">
                 <span class="badge-rol" id="dash-badge">-</span>
-                <button class="btn-out" onclick="centuriaLogout(true)">
+                <button class="btn-out" onclick="centuriaLogout(true)" aria-label="Cerrar sesión">
                     <i class="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
             </div>
         </div>
 
-        <!-- Stats -->
+        <!-- STATS -->
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-icon green"><i class="bi bi-book"></i></div>
@@ -239,25 +292,25 @@
             </div>
         </div>
 
-        <!-- Quick Links -->
+        <!-- ACCESO RÁPIDO -->
         <div class="section">
             <div class="sec-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div>
             <div class="links" id="dash-links"></div>
         </div>
 
-        <!-- Asignaturas -->
+        <!-- ASIGNATURAS -->
         <div class="section" id="section-courses">
             <div class="sec-title">
                 <i class="bi bi-mortarboard-fill"></i> Mis Asignaturas
                 <div class="view-toggles">
-                    <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Cuadrícula"><i class="bi bi-grid-3x3-gap-fill"></i></button>
-                    <button class="view-btn" id="btn-list" onclick="setView('list')" title="Lista"><i class="bi bi-list-ul"></i></button>
+                    <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Cuadrícula" aria-label="Vista cuadrícula"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                    <button class="view-btn" id="btn-list" onclick="setView('list')" title="Lista" aria-label="Vista lista"><i class="bi bi-list-ul"></i></button>
                 </div>
             </div>
             <div id="dash-courses">Cargando...</div>
         </div>
 
-        <!-- Eventos -->
+        <!-- EVENTOS -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="section">
                 <div class="sec-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div>
@@ -270,7 +323,7 @@
         </div>
     </div>
 
-    <!-- Footer -->
+    <!-- FOOTER -->
     <div class="footer">
         Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026
     </div>
@@ -362,7 +415,7 @@
             // Quick links
             const cfg = roleConfig[rol] || roleConfig.alumno;
             document.getElementById('dash-links').innerHTML = cfg.links.map(l =>
-                `<a href="${l.href}" class="link"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
+                `<a href="${l.href}" class="link" aria-label="${l.label}"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
             ).join('');
 
             // ═══ CARGAR ASIGNATURAS SEGÚN ROL ═══
@@ -504,16 +557,16 @@
             const isGrid = currentView === 'grid';
             container.className = isGrid ? 'subj-grid' : '';
             container.innerHTML = subjects.map(s => `
-                <div class="subj" style="${!isGrid ? 'border-left:3px solid ' + (s.color || '#16813D') : ''}">
+                <div class="subj" style="${!isGrid ? 'border-left:3px solid ' + (s.color || '#00B140') : ''}">
                     <div class="subj-info">
                         <div class="subj-name">
-                            <i class="bi ${s.icono || 'bi-book'}" style="color:${s.color || '#16813D'};margin-right:4px;"></i>
+                            <i class="bi ${s.icono || 'bi-book'}" style="color:${s.color || '#00B140'};margin-right:4px;"></i>
                             ${s.nombre || s.nombre_completo || 'Asignatura'}
                         </div>
-                        <div class="subj-meta">${s.codigo || ''} • ${s.carrera || ''} • ${s.semestre || ''}</div>
+                        <div class="subj-meta"><i class="bi bi-tag"></i>${s.codigo || ''} • <i class="bi bi-building"></i>${s.carrera || ''} • <i class="bi bi-calendar3"></i>${s.semestre || ''}</div>
                     </div>
                     <a href="Materiales_Clases/programa.html?curso=${s.codigo}" class="subj-btn">
-                        <i class="bi bi-arrow-right"></i> Ver
+                        <i class="bi bi-arrow-right"></i> Ver curso
                     </a>
                 </div>
             `).join('');

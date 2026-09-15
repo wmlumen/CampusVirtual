@@ -48,7 +48,7 @@
             <div class="p-2">
                 <a href="../dashboard.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
                 <a href="../perfil.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-person me-2"></i>Mi Perfil</a>
-                <a href="../libreta.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-book me-2"></i>Libreta</a>
+                <a href="../libreta.html" id="sidebar-libreta" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-book me-2"></i>Libreta</a>
                 <hr style="border-color:rgba(255,255,255,.2);">
                 <a href="programa.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-file-earmark-text me-2"></i>Programa Oficial</a>
                 <a href="../academic/glosario.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-journal-text me-2"></i>Glosario Técnico</a>
@@ -142,7 +142,16 @@
                 if(users[ced]) {
                     sessionStorage.setItem('current_cedula', ced);
                     sessionStorage.setItem('current_nombre', users[ced].nombre + ' ' + users[ced].apellido);
-                    applySession();
+            applySession();
+
+            // Ocultar Libreta para docentes
+            const libretaLink = document.getElementById('sidebar-libreta');
+            if (libretaLink) {
+                const rol = sessionStorage.getItem('rol') || 'alumno';
+                if (rol === 'docente') {
+                    libretaLink.style.display = 'none';
+                }
+            }
                 } else {
                     document.getElementById('login-error').style.display = 'block';
                 }

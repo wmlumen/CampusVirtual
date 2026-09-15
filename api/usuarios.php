@@ -25,7 +25,12 @@ function ensureUserColumns($pdo) {
         'carrera'  => "ALTER TABLE users ADD COLUMN carrera TEXT DEFAULT ''",
         'seccion'  => "ALTER TABLE users ADD COLUMN seccion TEXT DEFAULT ''",
         'foto'     => "ALTER TABLE users ADD COLUMN foto TEXT DEFAULT ''",
-        'estado'   => "ALTER TABLE users ADD COLUMN estado TEXT DEFAULT 'activo'"
+        'estado'   => "ALTER TABLE users ADD COLUMN estado TEXT DEFAULT 'activo'",
+        'uuid'        => "ALTER TABLE users ADD COLUMN uuid TEXT DEFAULT ''",
+        'last_login'  => "ALTER TABLE users ADD COLUMN last_login DATETIME",
+        'deleted_at'  => "ALTER TABLE users ADD COLUMN deleted_at DATETIME",
+        'sync_version'=> "ALTER TABLE users ADD COLUMN sync_version INTEGER DEFAULT 1",
+        'sync_status' => "ALTER TABLE users ADD COLUMN sync_status TEXT DEFAULT 'sincronizado'"
     ];
     foreach ($extras as $col => $sql) {
         if (!in_array($col, $cols)) {

@@ -108,6 +108,17 @@ function gasDeletePhoto(cedula) {
     }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
+// Helper: roles de una cédula desde Google Sheets vía GAS v05+ (GET verificar_roles)
+// Devuelve {roles:[{cedula,nombre,rol,carrera,seccion,asignatura,estado}]}. Nunca lanza.
+function gasGetRoles(cedula) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    return fetch(GAS_URL + '?action=verificar_roles&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .then(d => ({ roles: (d && d.roles) || [] }))
+        .catch(() => { clearTimeout(timeout); return { roles: [] }; });
+}
+
 // Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
     u = u || {};

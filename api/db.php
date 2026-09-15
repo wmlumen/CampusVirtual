@@ -67,6 +67,11 @@ class Database {
                 estado TEXT DEFAULT 'activo' CHECK(estado IN ('activo','pendiente','inactivo')),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_login DATETIME,
+                uuid TEXT DEFAULT '',
+                deleted_at DATETIME,
+                sync_version INTEGER DEFAULT 1,
+                sync_status TEXT DEFAULT 'sincronizado',
                 FOREIGN KEY (course_id) REFERENCES courses(id)
             )",
             
@@ -454,6 +459,23 @@ class Database {
         foreach ($schema as $sql) {
             $this->pdo->exec($sql);
         }
+
+        // ═══ Migración: columnas que el login y la sync necesitan en users ═══
+        // (el UPDATE de last_login en auth.php daba 500 si la columna no existía)
+        try {
+            $cols = [];
+            foreach ($this->pdo->query("PRAGMA table_info(users)") as $r) { $cols[] = $r['name']; }
+            $faltantes = [
+                'uuid'        => "ALTER TABLE users ADD COLUMN uuid TEXT DEFAULT ''",
+                'last_login'  => "ALTER TABLE users ADD COLUMN last_login DATETIME",
+                'deleted_at'  => "ALTER TABLE users ADD COLUMN deleted_at DATETIME",
+                'sync_version'=> "ALTER TABLE users ADD COLUMN sync_version INTEGER DEFAULT 1",
+                'sync_status' => "ALTER TABLE users ADD COLUMN sync_status TEXT DEFAULT 'sincronizado'",
+            ];
+            foreach ($faltantes as $c => $sql) {
+                if (!in_array($c, $cols)) { $this->pdo->exec($sql); }
+            }
+        } catch (Exception $e) {}
     }
 }
 

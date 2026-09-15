@@ -65,7 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
 
     if ($tipo && isset($tablas[$tipo])) {
         $stmt = $pdo->query("SELECT * FROM {$tablas[$tipo]} WHERE activa = 1 ORDER BY id");
-        api_response(['items' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'tipo' => $tipo]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // 'items' para compatibilidad + clave nombrada (grados/carreras/...) que espera el frontend
+        api_response(['items' => $rows, 'tipo' => $tipo, $tipo => $rows]);
     } else {
         // Devolver todos
         $resultado = [];

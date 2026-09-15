@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Virtual Centuria — Portal Académico Institucional</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -54,11 +58,16 @@
             z-index: -1;
         }
 
-        /* ── Contenedor principal ── */
-        .premium-wrapper {
+        /* ── Layout 2 columnas (PC) / 1 columna (Móvil) ── */
+        .premium-split {
             width: 100%;
-            max-width: 520px;
-            padding: 20px;
+            max-width: 980px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            gap: 48px;
             animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
         }
 
@@ -67,14 +76,18 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── Hero: Logo + Título ── */
-        .premium-hero {
+        /* ── Columna Izquierda: Branding ── */
+        .premium-left {
+            flex: 1;
+            max-width: 420px;
             text-align: center;
-            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .premium-logo {
-            height: 130px;
-            margin-bottom: 20px;
+            height: 160px;
+            margin-bottom: 24px;
             filter: drop-shadow(0 4px 20px rgba(0,0,0,.4));
             animation: logoFloat 4s ease-in-out infinite;
         }
@@ -372,31 +385,130 @@
             color: var(--blanco);
         }
 
-        /* ── Responsive ── */
-        @media (max-width: 540px) {
+        /* ── Columna Derecha: Login ── */
+        .premium-right {
+            flex: 0 0 440px;
+        }
+
+        /* ── Features debajo del logo ── */
+        .premium-features {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 12px;
+            margin-top: 28px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        .premium-feature {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px;
+            padding: 16px 12px;
+            text-align: center;
+            transition: .3s;
+            flex: 1;
+            min-width: 90px;
+            max-width: 120px;
+        }
+        .premium-feature:hover {
+            background: rgba(255,255,255,.10);
+            transform: translateY(-2px);
+        }
+        .premium-feature i {
+            font-size: 1.4rem;
+            color: var(--dorado);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .premium-feature span {
+            font-size: .62rem;
+            color: rgba(255,255,255,.6);
+            letter-spacing: .5px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* ── Footer fuera del split ── */
+        .premium-footer-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 16px 20px;
+            z-index: 1;
+        }
+
+        /* ── Responsive: Móvil ── */
+        @media (max-width: 860px) {
+            .premium-split {
+                flex-direction: column;
+                gap: 0;
+                max-width: 480px;
+                padding: 20px;
+            }
+            .premium-left {
+                display: none;
+            }
+            .premium-right {
+                flex: 0 0 auto;
+                width: 100%;
+            }
             .premium-card-body { padding: 28px 24px 32px; }
             .premium-hero h1 { font-size: 1.2rem; letter-spacing: 3px; }
             .premium-logo { height: 100px; }
+            .premium-footer-wrapper { position: relative; }
         }
     </style>
 </head>
 <body>
 
-    <div class="premium-wrapper">
-        <!-- ═══ Hero Institucional ═══ -->
-        <div class="premium-hero">
-            <img src="images/logo_centuria_blanco_1.png" alt="Instituto Superior Centuria" class="premium-logo">
-            <h1>Campus Virtual Centuria</h1>
-            <p class="subtitle">Portal Académico Institucional</p>
-            <div class="premium-divider">
-                <div class="line"></div>
-                <div class="diamond"></div>
-                <div class="line"></div>
+    <div class="premium-split">
+        <!-- ═══ Columna Izquierda: Branding (PC) ═══ -->
+        <div class="premium-left">
+            <div class="premium-hero">
+                <img src="images/logo_centuria_blanco_1.png" alt="Instituto Superior Centuria" class="premium-logo">
+                <h1>Campus Virtual Centuria</h1>
+                <p class="subtitle">Portal Académico Institucional</p>
+                <div class="premium-divider">
+                    <div class="line"></div>
+                    <div class="diamond"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+            <div class="premium-features">
+                <div class="premium-feature">
+                    <i class="bi bi-laptop"></i>
+                    <span>Clases en línea</span>
+                </div>
+                <div class="premium-feature">
+                    <i class="bi bi-journal-bookmark"></i>
+                    <span>Materiales</span>
+                </div>
+                <div class="premium-feature">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>Evaluaciones</span>
+                </div>
+                <div class="premium-feature">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Notas</span>
+                </div>
             </div>
         </div>
 
-        <!-- ═══ Card de Acceso ═══ -->
-        <div class="premium-card">
+        <!-- ═══ Columna Derecha: Login ═══ -->
+        <div class="premium-right">
+            <div class="premium-card">
             <div class="premium-card-body">
 
                 <!-- PASO 1: Cédula + Contraseña -->
@@ -622,8 +734,11 @@
 
             </div>
         </div>
+    </div>
+    </div>
 
-        <!-- ═══ Footer Protocolar ═══ -->
+    <!-- ═══ Footer Protocolar ═══ -->
+    <div class="premium-footer-wrapper">
         <div class="premium-footer">
             <p class="institution">Instituto Superior Centuria</p>
             <p class="motto">"Formando líderes con tecnología y excelencia"</p>

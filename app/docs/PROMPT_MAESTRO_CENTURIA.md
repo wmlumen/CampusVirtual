@@ -1,7 +1,7 @@
-# PROMPT MAESTRO CENTURIA — Documentación Técnica v8.0
+# PROMPT MAESTRO CENTURIA — Documentación Técnica v9.0
 
 > **ÚNICO ARCHIVO FUENTE** para la arquitectura técnica del Campus Virtual Centuria.
-> Contiene: arquitectura, base de datos, APIs, sincronización, usuarios, roles, y roadmap de desarrollo.
+> Contiene: arquitectura, base de datos, APIs, sincronización, usuarios, roles, estado actual y roadmap completo.
 
 ---
 
@@ -9,85 +9,128 @@
 
 ```mermaid
 flowchart TD
-    A["Campus Virtual<br>GitHub Pages"] --> B["Google Apps Script<br>API temporal"]
-    B --> C["Google Sheets<br>Base principal temporal"]
-    C <--> D["Sincronizador en PC"]
-    D <--> E["SQLite local<br>Copia completa"]
-    E -. migración futura .-> F["Servidor PHP + SQLite/MySQL"]
+    A["Campus Virtual<br>GitHub Pages + PHP local"] --> B["PHP API<br>api/centuria.db"]
+    A --> C["Google Apps Script v05<br>API temporal en la nube"]
+    C --> D["Google Sheets<br>Base principal temporal"]
+    D <--> E["Sincronizador en PC"]
+    E <--> F["SQLite local<br>Copia completa"]
 ```
 
-- Google Sheets es la base principal accesible por internet
-- SQLite conserva una copia completa en la PC
-- El frontend no debe saber si los datos provienen de Google, SQLite o un servidor web
-- Toda funcionalidad debe estar disponible en ambas capas
-- La migración futura consistirá únicamente en cambiar la dirección de la API
+- **GitHub Pages** = frontend estático (HTML/JS/CSS)
+- **PHP local** = backend definitivo (`XAMPP en 127.0.0.1:8080`)
+- **Google Apps Script v05** = API temporal en la nube (mientras no haya servidor PHP público)
+- **Google Sheets** = base principal accesible por internet
+- **SQLite** = copia completa en la PC (`api/centuria.db`)
+- El frontend no debe saber si los datos provienen de PHP, Google o SQLite
+- La migración de GAS→PHP se hace cambiando la URL de la API en `app/js/api.js`
 
 ---
 
-## 2. Google Apps Script
+## 2. URLs Activas
 
-### URL del endpoint
+### Google Apps Script v05 (endpoint en la nube)
 ```
 https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec
 ```
 
-### Acciones disponibles
+### PHP local (XAMPP)
+```
+http://127.0.0.1:8080/api/
+```
 
-| Acción | Método | Descripción |
-|--------|--------|-------------|
-| `verificar_alumno` | GET | Verificar si una cédula existe |
-| `registrar_alumno` | POST | Registrar nuevo alumno |
-| `marcar_asistencia` | POST | Registrar asistencia |
-| `guardar_autoevaluacion` | POST | Guardar resultado de autoevaluación |
-| `matricular_alumno` | POST | Guardar formulario de matrícula |
-
-### Reglas de seguridad en Apps Script
-- Contraseñas: solo hashes, nunca texto plano
-- Validar permisos por acción
-- Registrar cada operación administrativa en hoja `Auditoria`
-- Limitar acceso a la planilla
-- Configuración en `PropertiesService`, no en JavaScript público
+### Repositorios GitHub
+| Repo | URL | Propósito |
+|------|-----|-----------|
+| CampusVirtual | `https://github.com/wmlumen/CampusVirtual` | Sistema principal (activo) |
+| Asistencia | `https://github.com/wmlumen/Asistencia` | Legacy (ya no se usa) |
 
 ---
 
-## 3. Estructura de Google Sheets
+## 3. Google Apps Script v05 — Acciones Completas
 
-| Hoja | Contenido |
-|------|-----------|
-| `Usuarios` | Datos personales, estado y acceso |
-| `Roles` | Roles activos de cada usuario |
-| `Asignaturas` | Catálogo de materias |
-| `DocenteAsignaturas` | Cátedras asignadas a docentes |
-| `Matriculaciones` | Formulario de matrícula |
-| `MatriculaPendientes` | Asignaturas y semestres pendientes |
-| `CursosSecciones` | Carreras, semestres y secciones |
-| `Notas` | Calificaciones |
-| `Asistencias` | Asistencia por evento |
-| `Progreso` | Avance por asignatura y unidad |
-| `Documentos` | Actas, planes y registros |
-| `Auditoria` | Historial de acciones |
-| `SyncControl` | Última sincronización y errores |
+### Hojas de Google Sheets (19 tablas)
 
-### Estructura de cada registro
+| # | Hoja | Propósito |
+|---|------|-----------|
+| 1 | `RegistroAlumnos` | Datos de alumnos |
+| 2 | `Roles` | Asignación de roles |
+| 3 | `Matriculaciones` | Formularios de matrícula |
+| 4 | `FormulariosCarrera` | Plantillas de formularios |
+| 5 | `FormulariosAlumno` | Respuestas de formularios |
+| 6 | `AttendanceEvents` | Eventos de asistencia |
+| 7 | `AttendanceRecords` | Registros de asistencia |
+| 8 | `CalendarEvents` | Eventos del calendario |
+| 9 | `Filiales` | Sedes/filiales |
+| 10 | `Asignaturas` | Catálogo de materias |
+| 11 | `Asistencias` | Asistencia legacy |
+| 12 | `ProgresoUnidades` | Avance por unidad |
+| 13 | `ProgresoDetalle` | Detalle de lectura |
+| 14 | `Notas` | Calificaciones |
+| 15 | `Pagos` | Pagos por módulo |
+| 16 | `Accesos` | Log de accesos |
+| 17 | `Catálogos` | Catálogos dinámicos |
+| 18 | `Planificaciones` | Planificación de clases |
+| 19 | `ProgresoG` | Progreso grupal |
 
-Cada registro debe incluir:
+### Acciones GET (12)
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `uuid` | Texto | Identificador único universal (igual en Google y SQLite) |
-| `created_at` | Fecha | Fecha de creación ISO 8601 |
-| `updated_at` | Fecha | Última actualización ISO 8601 |
-| `deleted_at` | Fecha | Fecha de eliminación lógica (null si activo) |
-| `sync_version` | Número | Versión del registro para detectar conflictos |
-| `sync_status` | Texto | `sincronizado`, `pendiente_subir`, `pendiente_descargar`, `conflicto`, `error` |
-| `origen` | Texto | `web`, `local`, `sheets` |
+| # | Acción | Descripción |
+|---|--------|-------------|
+| 1 | `verificar_alumno` | Verificar si cédula existe |
+| 2 | `verificar_roles` | Obtener roles de un usuario |
+| 3 | `listar_cursos` | Listar cursos por rol |
+| 4 | `consultar_pagos` | Consultar pagos |
+| 5 | `consultar_progreso` | Consultar progreso |
+| 6 | `resumen_admin` | Resumen administrativo |
+| 7 | `verificar_matricula` | Verificar si tiene matrícula |
+| 8 | `obtener_matricula` | Obtener mi matrícula |
+| 9 | `listar_matriculas` | Listar todas (admin) |
+| 10 | `detalle_matricula` | Detalle de matrícula |
+| 11 | `estadisticas_matricula` | Estadísticas |
+| 12 | `listar_formularios` | Listar formularios por carrera |
 
-### Resolución de conflictos
-1. Comparar `updated_at`
-2. Comparar `sync_version`
-3. Conservar ambos valores si existe duda
-4. Registrar el conflicto en `Auditoria`
-5. Permitir que Admin seleccione cuál conservar
+### Acciones GET v05 adicionales
+
+| # | Acción | Descripción |
+|---|--------|-------------|
+| 13 | `obtener_formulario` | Obtener formulario por código |
+| 14 | `mis_formularios` | Formularios de un alumno |
+| 15 | `completitud_formularios` | Resumen de completitud |
+| 16 | `listar_eventos_asistencia` | Eventos de asistencia |
+| 17 | `validar_codigo_asistencia` | Validar código de 6 caracteres |
+| 18 | `detalle_evento_asistencia` | Detalle de evento |
+| 19 | `mis_eventos_asistencia` | Eventos de un alumno |
+| 20 | `listar_eventos_calendario` | Eventos del calendario |
+| 21 | `detalle_evento_calendario` | Detalle de evento |
+| 22 | `verificar_conflictos_calendario` | Verificar conflictos de horario |
+| 23 | `listar_filiales` | Listar filiales |
+| 24 | `admins_por_filial` | Admins de una filial |
+| 25 | `listar_asignaturas` | Catálogo de asignaturas |
+| 26 | `resumen_asistencia_tic` | Resumen asistencia TIC |
+
+### Acciones POST (19)
+
+| # | Acción | Descripción |
+|---|--------|-------------|
+| 1 | `registrar_alumno` | Registrar alumno nuevo |
+| 2 | `marcar_asistencia` | Marcar asistencia |
+| 3 | `guardar_autoevaluacion` | Guardar autoevaluación |
+| 4 | `guardar_clase_tic` | Guardar clase TIC |
+| 5 | `justificar_ausencia_tic` | Justificar ausencia TIC |
+| 6 | `guardar_pago` | Guardar pago |
+| 7 | `registrar_acceso` | Registrar acceso |
+| 8 | `guardar_progreso` | Guardar progreso |
+| 9 | `guardar_progreso_detalle` | Guardar detalle de progreso |
+| 10 | `actualizar_rol` | Actualizar rol |
+| 11 | `asignar_rol` | Asignar nuevo rol |
+| 12 | `registrar_matricula` | Registrar matrícula |
+| 13 | `actualizar_matricula` | Actualizar matrícula |
+| 14 | `cambiar_estado_matricula` | Cambiar estado de matrícula |
+| 15 | `eliminar_matricula` | Eliminar matrícula |
+| 16 | `guardar_formulario_alumno` | Guardar formulario completado |
+| 17 | `crear_evento_asistencia` | Crear evento con código |
+| 18 | `registrar_asistencia_codigo` | Registrar asistencia con código |
+| 19 | `crear_evento_calendario` | Crear evento del calendario |
 
 ---
 
@@ -261,27 +304,64 @@ CREATE TABLE matriculaciones (
 );
 ```
 
-#### Otras tablas
+#### docente_asignaturas
+```sql
+CREATE TABLE docente_asignaturas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    docente_cedula TEXT NOT NULL,
+    asignatura TEXT NOT NULL,
+    carrera TEXT DEFAULT '',
+    seccion TEXT DEFAULT '',
+    semestre TEXT DEFAULT '',
+    estado TEXT DEFAULT 'activo',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
+```
+
+#### asignaturas
+```sql
+CREATE TABLE asignaturas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    nombre TEXT NOT NULL,
+    codigo TEXT UNIQUE NOT NULL,
+    carrera TEXT DEFAULT '',
+    semestre INTEGER DEFAULT 1,
+    carga_horaria INTEGER DEFAULT 0,
+    color TEXT DEFAULT '#10b981',
+    icono TEXT DEFAULT 'bi-book',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
+```
+
+#### Otras tablas implementadas
 - `courses` — Cursos
 - `grades` — Calificaciones
-- `attendance` — Asistencia
-- `calendar` — Eventos del calendario
-- `documentos` — Documentos del docente
-- `calendar_events` — Eventos extendidos del calendario
+- `attendance` — Asistencia básica
+- `calendar_events` — Eventos del calendario extendido
 - `attendance_events` — Eventos de asistencia con código único
-- `attendance_records` — Registros de asistencia
+- `attendance_records` — Registros de asistencia por evento
 - `unit_progress` — Progreso por unidad
-- `exam_questions` — Banco de preguntas
+- `exam_questions` — Banco de preguntas (50 semillas)
 - `exam_attempts` — Intentos de examen
-- `subject_kit` — Kit de materiales por asignatura
 - `formularios_carrera` — Plantillas de formularios
 - `formularios_alumno` — Datos de formularios por alumno
+- `documentos` — Documentos del docente
 
 ---
 
 ## 5. Sistema de Sincronización
 
-### Cope local en PC
+### Copia local en PC
 ```text
 Centuria/
 ├── sincronizador/
@@ -314,14 +394,14 @@ Centuria/
 ## 6. Usuarios y Roles
 
 ### Roles del sistema
-| Rol DB | Rol Español | Acceso |
-|--------|-------------|--------|
-| `student` | Alumno | Unidades de estudio, progreso |
-| `teacher` | Docente | Panel docente, asistencia, notas, actas |
-| `academic` | Académico | Coordinación académica, indicadores |
-| `admin` | Administrador | Control total del sistema |
-| `administrador_plataforma` | Admin Plataforma | Configuración del sistema |
-| `admin_filial` | Admin Filial | Gestión de una filial específica |
+| Rol DB | Rol Español | Nivel | Acceso |
+|--------|-------------|-------|--------|
+| `student` | Alumno | 1 | Unidades de estudio, progreso, exámenes |
+| `teacher` | Docente | 2 | Panel docente, asistencia, notas, actas |
+| `academic` | Académico | 3 | Coordinación académica, indicadores |
+| `admin` | Administrador | 4 | Control total del sistema |
+| `administrador_plataforma` | Admin Plataforma | 4 | Configuración del sistema |
+| `admin_filial` | Admin Filial | 3 | Gestión de una filial específica |
 
 ### Jerarquía de roles
 ```
@@ -348,6 +428,12 @@ admin (4) > academico (3) > docente (2) > alumno (1)
 Primera letra Nombre (Mayús) + primera letra Apellido (minús) + cédula(sin puntos) + *
 ```
 
+### Usuarios de demo
+| Usuario | Contraseña | Rol |
+|---------|------------|-----|
+| `1340130` | `Ck1340130*` | Admin |
+| `1340125` | `Nk1340125*` | Docente |
+
 ### Permisos disponibles
 ```javascript
 ['ver_cursos', 'editar_cursos', 'ver_notas', 'editar_notas',
@@ -358,218 +444,7 @@ Primera letra Nombre (Mayús) + primera letra Apellido (minús) + cédula(sin pu
 
 ---
 
-## 7. Docentes y Asignación de Cátedras
-
-### Tabla `docente_asignaturas`
-```sql
-CREATE TABLE docente_asignaturas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    docente_cedula TEXT NOT NULL,
-    asignatura TEXT NOT NULL,
-    carrera TEXT DEFAULT '',
-    seccion TEXT DEFAULT '',
-    semestre TEXT DEFAULT '',
-    estado TEXT DEFAULT 'activo',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado'
-);
-```
-
-### API `docente.php`
-- `my_subjects` — Asignaturas del docente autenticado
-- `list` — Listar todas las asignaciones (admin)
-- `assign` — Asignar cátedra (admin)
-- `unassign` — Desasignar cátedra (admin)
-
----
-
-## 8. Asignaturas y Unidades
-
-### Catálogo de asignaturas
-```sql
-CREATE TABLE asignaturas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    nombre TEXT NOT NULL,
-    codigo TEXT UNIQUE NOT NULL,
-    carrera TEXT DEFAULT '',
-    semestre INTEGER DEFAULT 1,
-    carga_horaria INTEGER DEFAULT 0,
-    color TEXT DEFAULT '#10b981',
-    icono TEXT DEFAULT 'bi-book',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado'
-);
-```
-
-### Unidades por asignatura
-Cada asignatura tiene 10 unidades con:
-- Programa de estudios
-- Contenido por unidad (HTML)
-- Recursos y materiales
-- Actividades
-- Evaluaciones
-- Banco de preguntas propio
-
-### Progreso por unidad
-```sql
-CREATE TABLE unit_progress (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    user_id INTEGER NOT NULL,
-    unidad INTEGER NOT NULL,
-    secciones_leidas TEXT DEFAULT '[]',
-    total_secciones INTEGER DEFAULT 10,
-    completada INTEGER DEFAULT 0,
-    asistencia INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado',
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE(user_id, unidad)
-);
-```
-
----
-
-## 9. Evaluaciones, Notas y Asistencia
-
-### Banco de preguntas
-```sql
-CREATE TABLE exam_questions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    unidad INTEGER NOT NULL,
-    indicador TEXT DEFAULT '',
-    pregunta TEXT NOT NULL,
-    opcion_a TEXT NOT NULL,
-    opcion_b TEXT NOT NULL,
-    opcion_c TEXT NOT NULL,
-    opcion_d TEXT NOT NULL,
-    respuesta INTEGER NOT NULL,
-    tipo TEXT DEFAULT 'multiple',
-    dificultad TEXT DEFAULT 'media',
-    activa INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado'
-);
-```
-
-### Intentos de examen
-```sql
-CREATE TABLE exam_attempts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    user_id INTEGER NOT NULL,
-    examen TEXT NOT NULL,
-    puntuacion INTEGER DEFAULT 0,
-    total_preguntas INTEGER DEFAULT 0,
-    respuestas TEXT DEFAULT '{}',
-    completado INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado',
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-### Calificaciones
-```sql
-CREATE TABLE grades (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    user_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL,
-    component VARCHAR(100) NOT NULL,
-    score REAL DEFAULT 0,
-    max_score REAL DEFAULT 100,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado',
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (course_id) REFERENCES courses(id)
-);
-```
-
-### Escala de calificaciones
-| Nota | Porcentaje | Descripción |
-|------|-----------|-------------|
-| 1 | 0-69% | Reprobado |
-| 2 | 70-77% | Aprobado |
-| 3 | 78-85% | Bueno |
-| 4 | 86-93% | Muy bueno |
-| 5 | 94-100% | Excelente |
-
-### Asistencia
-```sql
-CREATE TABLE attendance (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE,
-    user_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL,
-    date DATE NOT NULL,
-    status TEXT DEFAULT 'present',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    sync_version INTEGER DEFAULT 1,
-    sync_status TEXT DEFAULT 'sincronizado',
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (course_id) REFERENCES courses(id),
-    UNIQUE(user_id, course_id, date)
-);
-```
-
----
-
-## 10. Formulario de Matrícula
-
-### Variables del formulario
-| Sección | Variables |
-|---------|-----------|
-| Control | `codigo_formulario`, `legajo_numero`, `fecha_inscripcion` |
-| Identificación | `nombres`, `apellidos`, `cedula` |
-| Nacimiento | `lugar_nacimiento`, `fecha_nacimiento`, `pais` |
-| Domicilio | `direccion`, `ciudad`, `departamento`, `barrio_compania` |
-| Contacto | `telefono_fijo`, `telefono_movil`, `correo_electronico` |
-| Estudios | `titulo_bachiller`, `institucion_origen`, `ciudad_pais_estudio`, `anio_promocion` |
-| Matrícula | `semestre`, `carrera`, `tipo_alumno` |
-| Pagos | `matricula_guaranies`, `mensualidad`, `plan_pago` |
-| Académico | `asignaturas_pendientes`, `semestres_pendientes` |
-| Adicional | `informacion_adicional` |
-| Validación | `acepta_declaracion`, `firma`, `estado`, `registrado_por` |
-
-### API `matriculaciones.php`
-| Acción | Método | Descripción | Auth |
-|--------|--------|-------------|------|
-| `save` | POST | Guardar matrícula (upsert) | Sí |
-| `my` | GET | Obtener mi matrícula | Sí |
-| `check` | GET | Verificar si existe matrícula | Sí |
-| `list` | GET | Listar todas (admin) | Admin |
-| `detail` | GET | Detalle por ID o cédula | Admin |
-| `update_status` | POST | Cambiar estado | Admin |
-| `stats` | GET | Estadísticas | Admin |
-| `delete` | POST | Eliminar | Admin |
-
----
-
-## 11. Endpoints Disponibles
+## 7. Endpoints PHP Disponibles
 
 ### Base URL
 ```
@@ -594,150 +469,264 @@ Todas las escrituras requieren `Authorization: Bearer <token>`.
 | `asignaturas.php` | list, create, update, delete | Gestión de asignaturas |
 | `courses.php` | CRUD completo | Cursos |
 | `grades.php` | list, get, record, final | Calificaciones |
-| `attendance.php` | list, mark, summary | Asistencia |
-| `calendar.php` | CRUD completo | Eventos del calendario |
-| `calendar.php` (extendido) | create, list, update, delete, conflict_check | Calendario académico |
-| `attendance.php` (extendido) | create_event, close_event, validate_code, register, my_events, event_detail, report_general, export_csv | Asistencia con códigos |
+| `attendance.php` | create_event, close_event, validate_code, register, my_events, event_detail, report_general, export_csv | Asistencia con códigos |
+| `calendar.php` | create, list, update, delete, conflict_check | Calendario académico |
 | `progress.php` | save, get | Progreso de unidades |
 | `exams.php` | create, submit, seed, questions | Exámenes dinámicos |
 | `documentos.php` | get, save | Documentos del docente |
 | `upload.php` | import, health | Importación CSV |
 | `reports.php` | dashboard | Datos del dashboard |
+| `admin.php` | various | Funciones administrativas |
+| `teachers.php` | various | Gestión de docentes |
+| `subjects.php` | various | Gestión de asignaturas |
+| `secciones.php` | various | Gestión de secciones |
+| `records.php` | various | Registros |
+| `kit.php` | various | Kit de materiales |
 
 ---
 
-## 12. Seguridad y Permisos
+## 8. Páginas y Archivos Implementados
 
-### Autenticación
-- Tokens de sesión con vencimiento de 1 hora
-- Validación en cada endpoint protegido
-- Logout destruye el token
+### Páginas principales
+| Archivo | Función | Rol |
+|---------|---------|-----|
+| `app/index.html` | Login + registro | Todos |
+| `app/dashboard.html` | Panel principal adaptativo | Todos |
+| `app/perfil.html` | Perfil + "Mis Formularios" | Todos |
+| `app/formulario-matricula.html` | Formulario de matrícula completo | Alumnos |
+| `app/calendario.html` | Calendario académico | Todos |
+| `app/attendance.html` | Gestión de asistencia | Docente |
+| `app/docente.html` | Panel docente | Docente |
+| `app/libreta.html` | Libreta de notas | Alumno/Docente |
+| `app/habilitar_asig.html` | Habilitar asignaturas | Admin |
 
-### Permisos por operación
-- Lectura: cualquier usuario autenticado
-- Escritura: según permisos del rol
-- Eliminación: solo admin
-- Gestión de roles: solo admin
+### Páginas académicas (`app/academic/`)
+| Archivo | Función | Rol |
+|---------|---------|-----|
+| `index.html` | Índice de contenidos | Todos |
+| `asistencia_presencial.html` | Asistencia presencial con código | Alumno/Docente |
+| `autoevaluacion_secuencial.html` | Autoevaluación secuencial | Alumno |
+| `criterios_evaluacion.html` | Criterios de evaluación | Alumno/Docente |
+| `examen_virtual_completo.html` | Examen interactivo con temporizador | Alumno |
+| `examen_final_escrito.html` | Examen final escrito | Alumno |
+| `examen_final_virtual.html` | Examen final virtual | Alumno |
+| `examen_parcial1.html` | Parcial 1 | Alumno |
+| `examen_parcial2.html` | Parcial 2 | Alumno |
+| `examen_virtual.html` | Examen virtual básico | Alumno |
+| `glosario.html` | Glosario de términos | Alumno |
+| `indicadores_por_unidad.html` | Indicadores por unidad | Alumno/Docente |
+| `justificar_ausencia.html` | Justificar ausencia con archivos | Alumno |
+| `monografia.html` | Monografía | Alumno |
+| `panel_docente_analytics.html` | Analytics del docente con gráficos | Docente |
+| `seguimiento_asistencia.html` | Seguimiento % asistencia por alumno | Docente |
 
-### Protecciones necesarias
-- Contraseñas: hash bcrypt, nunca texto plano
-- Sesiones: expiración automática
-- CSRF: tokens en formularios
-- Validación: sanitizar todas las entradas
-- Archivos: validar extensiones y tamaño
-- Rate limiting: protección contra intentos repetidos
-- Auditoría: registrar cada operación sensible
+### Formatos (`app/Formatos/`)
+| Archivo | Función |
+|---------|---------|
+| `teacher_panel.html` | Panel del docente |
 
----
+### Admin (`app/admin/`)
+| Archivo | Función |
+|---------|---------|
+| `sections/formularios.html` | Gestión de formularios (Alpine.js SPA) |
+| `js/admin.js` | Lógica del admin panel |
 
-## 13. Convenciones de Nombres
+### JavaScript (`app/js/`)
+| Archivo | Función |
+|---------|---------|
+| `api.js` | CenturiaAPI wrapper + funciones GAS |
+| `accesibilidad.js` | Panel WCAG (tamaño fuente, alto contraste) |
+| `session-guard.js` | Control de timeout de sesión |
+| `logout.js` | Cierre de sesión |
+| `portal-layout.js` | Layout del portal |
+| `view-as-admin.js` | Vista previa como admin |
+| `centuria-plugins.js` | Plugins del sistema |
+| `devmode.js` | Modo desarrollo |
 
-### Archivos HTML
-- `Unidad_01.html`, `Unidad_02.html`, ... `Unidad_10.html`
-- `programa.html`, `planilla.html`, `glosario.html`
-- `asistencia_presencial.html`, `autoevaluacion_secuencial.html`
-
-### Archivos PHP
-- `auth.php`, `usuarios.php`, `roles.php`, `catalogos.php`
-- `matriculaciones.php`, `formularios.php`
-- `docente.php`, `asignaturas.php`
-
-### Tablas SQLite
-- snake_case: `users`, `user_roles`, `roles_config`
-- Prefijo `exam_` para exámenes
-- Prefijo `attendance_` para asistencia
-
-### Campos de sincronización
-- `uuid` — Identificador único universal
-- `created_at` — Fecha de creación
-- `updated_at` — Última actualización
-- `deleted_at` — Eliminación lógica
-- `sync_version` — Versión para conflictos
-- `sync_status` — Estado de sincronización
-
----
-
-## 14. Estado de Implementación
-
-### Implementado
-- Autenticación con cédula y contraseña
-- Sistema multi-roles con permisos
-- Panel administrativo SPA
-- Dashboards adaptativos por rol
-- Formulario de matrícula con guardado
-- Sistema de asistencia con códigos únicos
-- Calendario académico con conflictos
-- Gestión de asignaturas y docentes
-- Banco de preguntas y exámenes
-- Calificaciones y planilla de avance
-- Sincronización con Google Sheets
-- Filiales y catálogos dinámicos
-
-### Pendiente (Roadmap)
-
-#### Fase 1: Estabilizar lo existente
-1. **Cursos independientes** — Cada asignatura con programa, unidades, evaluaciones y progreso propio
-2. **Editor de cursos para docentes** — Crear, ordenar, publicar contenidos sin editar HTML
-3. **Sistema de actividades** — Tareas, entregas, foros, encuestas, lecciones
-4. **Tareas y entregas** — Tablas de actividades, entregas, retroalimentación
-5. **Banco de preguntas completo** — Categorías, versiones, tipos múltiples, importación
-6. **Exámenes seguros** — Duración, intentos, orden aleatorio, guardado automático
-7. **Libro de calificaciones** — Dinámico, con categorías, porcentajes, exportación
-8. **Matriculación real** — Legajo, periodo, sección, documentos, comprobante
-
-#### Fase 2: LMS académico básico
-- Cursos dinámicos con editor
-- Matriculaciones y grupos
-- Tareas y entregas
-- Banco de preguntas completo
-- Exámenes configurables
-- Libro de calificaciones
-- Notificaciones
-
-#### Fase 3: Equivalencia institucional
-- Foros y mensajería
-- Grupos y cohortes
-- Competencias
-- Reportes avanzados
-- Copia/restauración de cursos
-- Papelera y recuperación
-- Gestor de archivos
-- PWA y trabajo sin conexión
-
-#### Fase 4: Crecimiento
-- Extensiones
-- Videoconferencia
-- Certificados
-- Firma digital
-- Biblioteca
-- Tesorería
-- Aplicación móvil
-- Integraciones externas
+### CSS (`app/css/`)
+| Archivo | Función |
+|---------|---------|
+| `styles.css` | Estilos principales |
+| `accesibilidad.css` | Estilos de accesibilidad |
 
 ---
 
-## 15. Decisiones Técnicas Vigentes
+## 9. Decisiones Técnicas Vigentes
 
 | Decisión | Justificación |
 |----------|---------------|
-| Google Sheets como base principal temporal | Accesible por internet sin servidor PHP |
+| Google Sheets como base principal temporal | Accesible por internet sin servidor PHP público |
 | SQLite como copia local | Funciona sin internet, respaldo recuperable |
+| PHP como backend definitivo | Solo cambiar la URL de la API |
 | UUID por registro | Consistencia entre Google y SQLite |
 | `sync_version` para conflictos | Detectar quién modificó último |
-| PHP como backend definitivo | Requiere solo cambiar la URL de la API |
 | Alpine.js para interactividad | Ligero, sin build step |
 | Tailwind CSS + Bootstrap 5 | Utilidades rápidas + componentes probados |
 | GitHub Pages para frontend | Despliegue automático vía Actions |
+| CampusVirtual es EL sistema | Asistencia es legacy, todo se migra aquí |
 
 ---
 
-## 16. Metadata
+## 10. Estado de Implementación
+
+### ✅ Implementado y funcionando
+
+#### Core del sistema
+- Autenticación con cédula y contraseña (login, registro, cambio contraseña)
+- Sistema multi-roles con permisos (student, teacher, academic, admin, admin_filial)
+- Panel administrativo SPA con secciones dinámicas
+- Dashboards adaptativos por rol
+- Perfil de usuario con edición
+
+#### Matrícula y formularios
+- Formulario de matrícula completo (35+ campos, guardado DB + Google Sheets)
+- Sistema de formularios genéricos por carrera
+- CRUD de plantillas de formularios
+- Completitud de formularios por alumno
+- Admin: vista de formularios con stats y barra de progreso
+
+#### Asistencia
+- Sistema de asistencia con códigos únicos de 6 caracteres
+- Eventos de asistencia (crear, cerrar, validar código)
+- Registros de asistencia por evento
+- Reporte general y exportación CSV
+- Seguimiento de asistencia % por alumno (nuevo)
+- Justificación de ausencias con subida de archivos (nuevo)
+
+#### Calendario
+- Calendario académico con CRUD completo
+- Detección de conflictos de horario
+- Colores por tipo de evento
+
+#### Evaluaciones
+- Banco de 50 preguntas semillas (EIS, TIC)
+- Exámenes dinámicos con intentos
+- Examen virtual completo con temporizador, navegación y auto-calificación (nuevo)
+- Calificaciones y planilla de avance
+
+#### Contenido académico
+- Unidades de estudio (Unidad_01 a Unidad_10)
+- Glosario, criterios de evaluación, indicadores por unidad
+- Autoevaluación secuencial
+- Monografías
+
+#### Panel docente
+- Asignación de cátedras (docente ↔ asignatura)
+- Panel docente con analytics y gráficos (nuevo)
+- Asistencia presencial con códigos
+
+#### Gestión administrativa
+- Filiales con CRUD
+- Catálogos dinámicos
+- Gestión de usuarios (aprobar, rechazar, roles)
+- Documentos del docente
+- Kit de materiales
+
+#### Accesibilidad
+- Panel WCAG con controles de tamaño de fuente
+- Alto contraste con persistencia en localStorage
+
+#### Sincronización
+- Funciones GAS para双向 sync (api.js)
+- Matrícula sync con Google Sheets
+
+---
+
+### 🔴 PENDIENTE — Roadmap Completo
+
+#### FASE 1: Estabilizar lo existente (PRIORIDAD MÁXIMA)
+
+| # | Tarea | Estado | Dependencias | Notas |
+|---|-------|--------|--------------|-------|
+| 1.1 | **Cursos independientes por asignatura** | 🔴 No iniciado | Ninguna | Cada asignatura con programa, unidades, evaluaciones y progreso propio. Clave: separar contenido TIC genérico por materia real. Tabla `course_content` con: asignatura_id, unidad, seccion, tipo, titulo, contenido_html, orden, visible |
+| 1.2 | **Editor de cursos para docentes** | 🔴 No iniciado | 1.1 | Interfaz visual para crear/editar contenidos sin HTML. Drag & drop de secciones, preview en vivo, publicar/borrador |
+| 1.3 | **Sistema de actividades** | 🔴 No iniciado | 1.1 | Tabla `activities`: tipo (tarea, foro, encuesta, leccion), fecha_entrega, puntos_max, instrucciones |
+| 1.4 | **Tareas y entregas** | 🔴 No iniciado | 1.3 | Tabla `submissions`: activity_id, user_id, archivo_url, texto_entregado, nota, retroalimentacion, fecha_entrega |
+| 1.5 | **Banco de preguntas completo** | 🟡 Parcial (50 semillas) | 1.1 | Categorías por asignatura, versiones, tipos (multiple, verdadero_falso, ensayo), importación CSV, pregunta con imagen |
+| 1.6 | **Exámenes seguros** | 🟡 Parcial (temporizador básico) | 1.5 | Duración configurable, intentos máximos, orden aleatorio, guardado automático cada 30s, anti-copia, pantalla completa, monitoreo de pestaña |
+| 1.7 | **Libro de calificaciones** | 🟡 Parcial (grades básico) | 1.1, 1.3 | Categorías (parcial, final, tareas, participación), porcentajes configurables, promedio ponderado, exportación PDF/CSV |
+| 1.8 | **Matriculación real** | 🟡 Parcial (formulario existe) | 1.1 | Legajo número automático, periodo académico, sección real, documentos adjuntos, comprobante de pago, flujo de aprobación completo |
+
+#### FASE 2: LMS académico básico
+
+| # | Tarea | Estado | Dependencias | Notas |
+|---|-------|--------|--------------|-------|
+| 2.1 | **Contenido dinámico por materia** | 🔴 No iniciado | 1.1 | Cada asignatura carga su propio programa, no contenido genérico de TIC |
+| 2.2 | **Lecciones interactivas** | 🔴 No initiado | 1.3 | Contenido con video, audio, quizzes incrustados, progreso por sección |
+| 2.3 | **Foros de discusión** | 🔴 No iniciado | 1.3 | Hilos de discusión por tema, respuestas, votos, marcador de leído/no leído |
+| 2.4 | **Encuestas** | 🔴 No iniciado | 1.3 | Formularios con opción múltiple, escala Likert, abiertas, resultados agregados |
+| 2.5 | **Notificaciones in-app** | 🔴 No iniciado | — | Sistema de notificaciones internas: nuevas tareas, calificaciones, mensajes |
+| 2.6 | **Mensajería docente-alumno** | 🔴 No iniciado | — | Chat simple o mensajería interna por asignatura |
+
+#### FASE 3: Equivalencia institucional (Moodle-equivalente)
+
+| # | Tarea | Estado | Dependencias | Notas |
+|---|-------|--------|--------------|-------|
+| 3.1 | **Grupos y cohortes** | 🔴 No iniciado | 1.1 | Crear grupos de alumnos dentro de una asignatura, tareas por grupo |
+| 3.2 | **Competencias** | 🔴 No iniciado | 1.7 | Rúbricas de competencias, evaluación por criterios |
+| 3.3 | **Reportes avanzados** | 🔴 No iniciado | 1.7 | Reportes por asignatura, por alumno, comparativos, tendencias |
+| 3.4 | **Copia/restauración de cursos** | 🔴 No iniciado | 1.1 | Exportar/importar curso completo con contenido |
+| 3.5 | **Papelera y recuperación** | 🔴 No iniciado | — | Eliminación lógica con posibilidad de recuperar |
+| 3.6 | **Gestor de archivos** | 🔴 No iniciado | 1.4 | Subir, organizar, compartir archivos por asignatura |
+| 3.7 | **PWA y trabajo sin conexión** | 🔴 No iniciado | — | Service worker, cache de contenido, sync cuando haya red |
+| 3.8 | **Calendario mejorado** | 🔴 No iniciado | — | Vista mensual, semanal, diaria, drag & drop |
+
+#### FASE 4: Crecimiento
+
+| # | Tarea | Estado | Dependencias | Notas |
+|---|-------|--------|--------------|-------|
+| 4.1 | **Planificación de clases** | 🔴 No iniciado | — | Docente crea planes semanales/mensuales con objetivos, actividades, recursos. Hoja `Planificaciones` ya existe en GAS v05 pero sin acciones |
+| 4.2 | **Extensiones / plugins** | 🔴 No iniciado | — | Sistema de plugins para funcionalidad adicional |
+| 4.3 | **Videoconferencia** | 🔴 No iniciado | — | Integración con Jitsi/Meet para clases en vivo |
+| 4.4 | **Certificados** | 🔴 No iniciado | 1.7 | Generación de certificados de aprobación (PDF) |
+| 4.5 | **Firma digital** | 🔴 No iniciado | — | Firma de documentos académicos |
+| 4.6 | **Biblioteca digital** | 🔴 No iniciado | — | Repositorio de documentos, libros, enlaces |
+| 4.7 | **Tesorería** | 🔴 No iniciado | — | Pagos online, facturación, estados de cuenta |
+| 4.8 | **Aplicación móvil** | 🔴 No iniciado | — | PWA o app nativa |
+| 4.9 | **Integraciones externas** | 🔴 No iniciado | — | APIs de terceros, SSO, LDAP |
+
+#### TAREAS TRANSVERSALES (sin fase específica)
+
+| # | Tarea | Estado | Descripción |
+|---|-------|--------|-------------|
+| T.1 | **Integrar páginas migradas en dashboard** | 🔴 Pendiente | Las 4 páginas nuevas (examen, analytics, seguimiento, justificación) existen pero no están enlazadas desde el dashboard |
+| T.2 | **Migrar GAS → PHP** | 🔴 Pendiente | Cuando haya servidor PHP público, cambiar `API_GAS_URL` por `PHP_API_URL` en `api.js` |
+| T.3 | **Tests automatizados** | 🔴 Pendiente | PHPUnit para APIs PHP, tests de integración |
+| T.4 | **Documentación de usuario** | 🔴 Pendiente | Guías de uso para admin, docente y alumno |
+| T.5 | **Optimización de rendimiento** | 🔴 Pendiente | Lazy loading de imágenes, minificación CSS/JS, cache headers |
+| T.6 | **Responsive completo** | 🟡 Parcial | La mayoría funciona pero hay pages que necesitan ajuste móvil |
+| T.7 | **Seguridad reforzada** | 🟡 Parcial | Rate limiting, CSRF tokens, sanitización completa |
+
+---
+
+## 11. Paleta de Colores Institucional
+
+| Elemento | Color | Uso |
+|----------|-------|-----|
+| Fondo primario | `#007A33` | Headers, barras de navegación |
+| Acento | `#00B140` | Botones, enlaces, hover |
+| Tarjetas | `#ffffff` | Fondo de cards |
+| Fondo cards | `#E6F4EA` | Secciones claras |
+| Dorado | `#d4a843` | Logros, badges especiales |
+| Texto principal | `#333` | Cuerpo |
+| Texto secundario | `#666` | Labels, hints |
+
+---
+
+## 12. Metadata
 
 | Campo | Valor |
 |-------|-------|
 | **Fecha de actualización** | 2026-09-15 |
-| **Versión del sistema** | v8.0 |
-| **Último commit revisado** | `c33557b` |
-| **Funciones implementadas** | Login, roles, admin, matrícula, asistencia, calendario, asignaturas, exámenes, calificaciones, sync Google |
-| **Funciones pendientes** | Cursos independientes, editor docente, actividades, tareas, banco preguntas, exámenes seguros, libro calificaciones, matriculación completa |
-| **Decisiones técnicas vigentes** | Google Sheets temporal, SQLite local, UUID por registro, sync bidireccional, PHP como destino final |
+| **Versión del sistema** | v9.0 |
+| **Último commit** | `f3258a6` |
+| **GAS desplegado** | v05 (31 acciones, 19 hojas) |
+| **PHP endpoints** | 29 archivos, 80+ acciones |
+| **Páginas implementadas** | 30+ HTML, 8 JS, 2 CSS |
+| **Preguntas en banco** | 50 (semilla) |
+| **Funciones completadas** | Login, roles, admin, matrícula, asistencia con código, calendario, asignaturas, exámenes dinámicos, calificaciones, sync Google, formularios, analytics docente, seguimiento asistencia, justificaciones, examen virtual completo, accesibilidad |
+| **Funciones pendientes (Fase 1)** | Cursos independientes, editor docente, actividades, tareas, banco preguntas completo, exámenes seguros, libro calificaciones, matriculación real |
+| **Funciones pendientes (Fase 2)** | Contenido dinámico, lecciones, foros, encuestas, notificaciones, mensajería |
+| **Funciones pendientes (Fase 3)** | Grupos, competencias, reportes, copia cursos, papelera, archivos, PWA |
+| **Funciones pendientes (Fase 4)** | Planificación, plugins, video, certificados, firma, biblioteca, tesorería, móvil, integraciones |
+| **Tareas transversales** | Integrar páginas en dashboard, migrar GAS→PHP, tests, docs, optimización, responsive, seguridad |

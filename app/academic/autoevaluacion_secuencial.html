@@ -87,8 +87,8 @@
         /* Attempt counter */
         .attempt-counter {font-size: 0.8rem; color: var(--text-secondary);}
     </style>
-    <link rel="stylesheet" href="./accesibilidad.css">
-    <link rel="stylesheet" href="./paleta-oficial.css">
+    <link rel="stylesheet" href="../css/accesibilidad.css">
+    <link rel="stylesheet" href="../css/paleta-oficial.css">
 </head>
 <body>
     <div class="container">
@@ -126,8 +126,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // CONFIGURACIÓN DE GOOGLE SHEETS
-        const SPREADSHEET_KEY = '1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo'; // ID de tu hoja de Google Sheets
-        const SHEET_API_URL = `https://script.google.com/macros/s/${SPREADSHEET_KEY}/exec`; // URL auto-generada desde tu sheet
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec';
 
         // Preguntas de la autoevaluación (5 preguntas selección múltiple)
         const preguntas = [
@@ -180,8 +179,8 @@
             sistema.iniciarQuiz();
         });
     </script>
-<script src="./accesibilidad.js"></script>
-<script src="./session-guard.js"></script>
+<script src="../js/accesibilidad.js"></script>
+<script src="../js/session-guard.js"></script>
 </body>
 </html>
 
@@ -417,37 +416,26 @@ async guardarIntento() {
     }
 
     async enviarAGoogleSheets(intentoNum, correctas, total, porcentaje, fecha) {
-        // Si no tiene configuración real, usar modo simulado
-        if (SHEET_API_URL === 'https://script.google.com/macros/s/AKfycbyXk2YdXyLlqN8qRzPqBmMzT0p8vYQQN5aGcEk8y1AWk2q9R8I3sjZ/exec' || API_KEY === 'TU_API_KEY_AQUI') {
-            console.log('Modo simulado: Datos guardados localmente (configure la URL real de Google Sheets)');
-            return;
-        }
-
         const datos = {
+            action: 'guardar_autoevaluacion',
             timestamp: new Date().toISOString(),
             intento: intentoNum,
             correctas: correctas,
             total: total,
             porcentaje: porcentaje,
             fecha: fecha,
-            usuario: 'estudiante_tic',
-            spreadsheet_key: '1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo'
+            usuario: sessionStorage.getItem('current_cedula') || 'estudiante'
         };
 
         try {
-            const response = await fetch(SHEET_API_URL, {
+            await fetch(GAS_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(datos)
             });
-            
-            console.log('Datos enviados a Google Sheets exitosamente');
+            console.log('Autoevaluación enviada a Google Sheets');
         } catch (error) {
             console.error('Error al enviar a Google Sheets:', error);
-            // En modo offline, los datos ya están en localStorage
         }
     }
 

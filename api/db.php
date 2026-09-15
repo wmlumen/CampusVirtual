@@ -298,6 +298,60 @@ class Database {
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 FOREIGN KEY (formulario_id) REFERENCES formularios_carrera(id),
                 UNIQUE(user_id, formulario_id)
+            )",
+
+            // ═══ TABLA: Matrículas (formulario completo por alumno) ═══
+            "CREATE TABLE IF NOT EXISTS matriculaciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                -- Control
+                codigo_formulario TEXT DEFAULT 'CEN-AS-SM-AGP005',
+                legajo_numero TEXT DEFAULT '',
+                fecha_inscripcion TEXT DEFAULT '',
+                -- Identificación
+                nombres TEXT NOT NULL,
+                apellidos TEXT NOT NULL,
+                cedula TEXT NOT NULL,
+                -- Nacimiento
+                lugar_nacimiento TEXT DEFAULT '',
+                fecha_nacimiento TEXT DEFAULT '',
+                pais TEXT DEFAULT 'ECUADOR',
+                -- Domicilio
+                direccion TEXT DEFAULT '',
+                ciudad TEXT DEFAULT '',
+                departamento TEXT DEFAULT '',
+                barrio_compania TEXT DEFAULT '',
+                -- Contacto
+                telefono_fijo TEXT DEFAULT '',
+                telefono_movil TEXT DEFAULT '',
+                correo_electronico TEXT DEFAULT '',
+                -- Estudios previos
+                titulo_bachiller TEXT DEFAULT '',
+                institucion_origen TEXT DEFAULT '',
+                ciudad_pais_estudio TEXT DEFAULT '',
+                anio_promocion TEXT DEFAULT '',
+                -- Matrícula
+                semestre TEXT DEFAULT '',
+                carrera TEXT DEFAULT '',
+                tipo_alumno TEXT DEFAULT 'nuevo' CHECK(tipo_alumno IN ('nuevo','antiguo','transferencia')),
+                -- Pagos
+                matricula_guaranies TEXT DEFAULT '',
+                mensualidad TEXT DEFAULT '',
+                plan_pago TEXT DEFAULT '',
+                -- Académico
+                asignaturas_pendientes TEXT DEFAULT '',
+                semestres_pendientes TEXT DEFAULT '',
+                -- Adicional
+                informacion_adicional TEXT DEFAULT '',
+                -- Validación
+                acepta_declaracion INTEGER DEFAULT 0,
+                firma TEXT DEFAULT '',
+                estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente','completado','aprobado','rechazado')),
+                registrado_por TEXT DEFAULT '',
+                observaciones TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
             )"
         ];
 
@@ -386,6 +440,15 @@ class Database {
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_form ON formularios_alumno(formulario_id)");
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_estado ON formularios_alumno(estado)");
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_cedula ON formularios_alumno(cedula)");
+        } catch (Exception $e) {}
+
+        // ═══ Tabla matriculaciones (índices) ═══
+        try {
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_user ON matriculaciones(user_id)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_cedula ON matriculaciones(cedula)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_estado ON matriculaciones(estado)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_carrera ON matriculaciones(carrera)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_fecha ON matriculaciones(fecha_inscripcion)");
         } catch (Exception $e) {}
 
         foreach ($schema as $sql) {

@@ -1,197 +1,177 @@
-# PROMPT MAESTRO CENTURIA — Campus Virtual Unificado v7.0
-> **ÚNICO ARCHIVO FUENTE** para generar/validar cualquier módulo del Instituto Superior Centuria.
-> Reemplaza todos los prompts anteriores. v7.0: Paleta institucional #007A33, persistencia de sesión, unidades estructuradas.
+# PROMPT MAESTRO CENTURIA — Documentación Técnica v8.0
+
+> **ÚNICO ARCHIVO FUENTE** para la arquitectura técnica del Campus Virtual Centuria.
+> Contiene: arquitectura, base de datos, APIs, sincronización, usuarios, roles, y roadmap de desarrollo.
 
 ---
 
-## CÓMO USAR ESTE PROMPT
+## 1. Arquitectura General
 
-1. **Cambia** las variables `[ASIGNATURA]`, `[CODIGO]`, `[NUM_UNIDADES]`, `[CARRERA]` según la materia.
-2. **Pega** el contenido oficial de cada unidad.
-3. **Ejecuta** el agente con este prompt → genera los HTML validados.
-4. **Valida** con el checklist final.
+```mermaid
+flowchart TD
+    A["Campus Virtual<br>GitHub Pages"] --> B["Google Apps Script<br>API temporal"]
+    B --> C["Google Sheets<br>Base principal temporal"]
+    C <--> D["Sincronizador en PC"]
+    D <--> E["SQLite local<br>Copia completa"]
+    E -. migración futura .-> F["Servidor PHP + SQLite/MySQL"]
+```
+
+- Google Sheets es la base principal accesible por internet
+- SQLite conserva una copia completa en la PC
+- El frontend no debe saber si los datos provienen de Google, SQLite o un servidor web
+- Toda funcionalidad debe estar disponible en ambas capas
+- La migración futura consistirá únicamente en cambiar la dirección de la API
 
 ---
 
-## PARTE 1 — ARQUITECTURA DEL SISTEMA (v5.0)
+## 2. Google Apps Script
 
-### Estructura de Archivos
+### URL del endpoint
 ```
-CampusVirtual/
-├── index.php                          ← Router principal (sirve app/ + api/)
-├── iniciar.bat / iniciar.ps1          ← Scripts de inicio del servidor
-├── README.md                          ← Documentación del proyecto
-├── .github/workflows/deploy-pages.yml ← GitHub Actions (Pages)
-├── app/
-│   ├── index.html                     ← Login premium (glassmorphism, 2-fases)
-│   ├── dashboard.html                 ← Dashboard adaptativo por rol (NUEVO v6.0)
-│   ├── docente.html                   ← Perfil docente completo con formatos (NUEVO v6.0)
-│   ├── perfil.html                    ← Perfil de usuario (NUEVO v6.0)
-│   ├── libreta.html                   ← Libreta de calificaciones (NUEVO v6.0)
-│   ├── favicon.ico                    ← Favicon logo Centuria
-│   ├── session-guard.js               ← Logout + timeout 1hr inactividad
-│   ├── accesibilidad.js               ← Font/zoom/contraste WCAG AAA
-│   ├── images/                        ← Logo Centuria PNG (NUEVO v6.0)
-│   ├── favicon_io/                    ← Favicon package (NUEVO v6.0)
-│   ├── js/
-│   │   ├── api.js                     ← Cliente API dual (PHP + GAS)
-│   │   ├── centuria-plugins.js        ← Alpine.js plugins (theme, notifications)
-│   │   ├── marcar_leido.js            ← Marcar lecciones como leídas
-│   │   └── view-as-admin.js           ← Botón "Volver al Admin" para vista previa
-│   ├── admin/
-│   │   ├── index.html                 ← Panel administración (shell SPA)
-│   │   ├── js/admin.js                ← Lógica admin (Alpine.js)
-│   │   └── sections/
-│   │       ├── usuarios.html          ← Gestión usuarios + roles + filiales (ACTUALIZADO v6.0)
-│   │       ├── catalogos.html         ← CRUD Secciones, Carreras, Grados, Programas, Modalidades
-│   │       ├── reportes.html          ← Dashboard analítico
-│   │       ├── config.html            ← Configuración del sistema
-│   │       └── vistas.html            ← Vista previa por rol (iframe)
-│   │   ├── admin_roles.html           ← Redirect → index.html
-│   │   └── upload_alumnos.html        ← Importación CSV
-│   ├── Formatos/                      ← Formatos del docente (NUEVO v6.0)
-│   │   ├── teacher_panel.html         ← Panel docente
-│   │   ├── planilla.html              ← Planilla calificaciones
-│   │   ├── plan_clases.html           ← Planificación docente
-│   │   ├── registro_clases.html       ← Registro de clases
-│   │   ├── acta.html                  ← Acta de calificaciones
-│   │   └── documentos.html            ← Documentos del docente
-│   ├── academic/                      ← Módulos académicos
-│   │   ├── asistencia_presencial.html
-│   │   ├── autoevaluacion_secuencial.html
-│   │   ├── criterios_evaluacion.html
-│   │   ├── examen_final_escrito.html
-│   │   ├── examen_final_virtual.html
-│   │   ├── examen_parcial1.html
-│   │   ├── examen_parcial2.html
-│   │   ├── examen_virtual.html
-│   │   ├── glosario.html
-│   │   ├── indicadores_por_unidad.html
-│   │   └── monografia.html
-│   └── Materiales_Clases/             ← Contenido de clases
-│       ├── index.html                 ← Menú sidebar interno
-│       ├── programa.html              ← Programa de estudios
-│       ├── planilla.html              ← Dashboard calificaciones
-│       └── Unidad_01.html ... Unidad_10.html
-├── api/
-│   ├── config.php                     ← CORS, JWT, helpers
-│   ├── db.php                         ← SQLite connection + schema (users, user_roles, roles_config, filiales, etc.)
-│   ├── centuria.db                    ← Base de datos SQLite
-│   ├── auth.php                       ← Login, register, validate, logout, find_user
-│   ├── admin.php                      ← Gestión usuarios (CRUD, set_role, delete, import)
-│   ├── usuarios.php                   ← CRUD usuarios + multi-roles + aprobación
-│   ├── roles.php                      ← Catálogo de roles con permisos JSON
-│   ├── filiales.php                   ← CRUD filiales/sedes (NUEVO v6.0)
-│   ├── catalogos.php                  ← CRUD Secciones, Carreras, Grados, Programas, Modalidades
-│   ├── courses.php                    ← CRUD cursos
-│   ├── grades.php                     ← Calificaciones
-│   ├── attendance.php                 ← Asistencia
-│   ├── calendar.php                   ← Eventos calendario
-│   ├── documentos.php                 ← Guardar/cargar documentos
-│   └── upload.php                     ← Importación CSV
-└── Backend_Scripts/
-    └── 01_Script_Google_Completo.gs   ← Apps Script (Sheets como backup)
+https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec
 ```
 
-### Almacenamiento Dual
-| Capa | Tecnología | Velocidad | Uso |
-|------|-----------|-----------|-----|
-| **Primaria** | PHP + SQLite (`api/`) | <200ms | Login, registro, roles, notas, asistencia, catálogos |
-| **Secundaria** | Google Apps Script + Sheets | ~3-4s | Backup/sync silenciosa (fire-and-forget) |
+### Acciones disponibles
 
-### Router `index.php`
-```
-/api/*     → sirve archivos PHP del directorio api/
-/          → sirve app/index.html
-/static    → sirve archivos estáticos desde app/
-/*         → fallback a archivos root
-```
+| Acción | Método | Descripción |
+|--------|--------|-------------|
+| `verificar_alumno` | GET | Verificar si una cédula existe |
+| `registrar_alumno` | POST | Registrar nuevo alumno |
+| `marcar_asistencia` | POST | Registrar asistencia |
+| `guardar_autoevaluacion` | POST | Guardar resultado de autoevaluación |
+| `matricular_alumno` | POST | Guardar formulario de matrícula |
 
-### Paleta Institucional Oficial (v7.0)
-| Variable | Valor | Uso |
-|----------|-------|-----|
-| `--c-bg` | `#007A33` | Fondo principal (sidebar, topbar, login) |
-| `--c-primary` | `#00B140` | Botones, acentos, links |
-| `--c-surface` | `#FFFFFF` | Tarjetas, fondos de contenido |
-| `--c-light` | `#E6F4EA` | Fondos suaves, hover |
-| `--c-hover` | `#81C784` | Hover secundario |
-| `--c-dark` | `#2D2D2D` | Texto principal |
-| `--c-muted` | `#64748b` | Texto secundario |
-| `--c-border` | `#C8E6C9` | Bordes suaves |
-| `--c-gold` | `#d4a843` | Labels premium |
+### Reglas de seguridad en Apps Script
+- Contraseñas: solo hashes, nunca texto plano
+- Validar permisos por acción
+- Registrar cada operación administrativa en hoja `Auditoria`
+- Limitar acceso a la planilla
+- Configuración en `PropertiesService`, no en JavaScript público
 
 ---
 
-## PARTE 2 — SISTEMA MULTI-ROLES (v5.0)
+## 3. Estructura de Google Sheets
 
-### Roles del Sistema
-Una **misma cédula** puede tener **múltiples roles** simultáneamente:
+| Hoja | Contenido |
+|------|-----------|
+| `Usuarios` | Datos personales, estado y acceso |
+| `Roles` | Roles activos de cada usuario |
+| `Asignaturas` | Catálogo de materias |
+| `DocenteAsignaturas` | Cátedras asignadas a docentes |
+| `Matriculaciones` | Formulario de matrícula |
+| `MatriculaPendientes` | Asignaturas y semestres pendientes |
+| `CursosSecciones` | Carreras, semestres y secciones |
+| `Notas` | Calificaciones |
+| `Asistencias` | Asistencia por evento |
+| `Progreso` | Avance por asignatura y unidad |
+| `Documentos` | Actas, planes y registros |
+| `Auditoria` | Historial de acciones |
+| `SyncControl` | Última sincronización y errores |
 
-| Rol DB | Rol Español | Acceso | Icono |
-|--------|-------------|--------|-------|
-| `student` | Alumno | Unidades de estudio, progreso | `bi-mortarboard-fill` |
-| `teacher` | Docente | Panel docente, asistencia, notas, actas | `bi-person-badge-fill` |
-| `academic` | Académico | Coordinación académica, indicadores | `bi-building` |
-| `admin` | Administrador | Control total del sistema | `bi-shield-fill-check` |
+### Estructura de cada registro
 
-### Tablas de Base de Datos
+Cada registro debe incluir:
 
-#### `users` — Usuarios principales
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `uuid` | Texto | Identificador único universal (igual en Google y SQLite) |
+| `created_at` | Fecha | Fecha de creación ISO 8601 |
+| `updated_at` | Fecha | Última actualización ISO 8601 |
+| `deleted_at` | Fecha | Fecha de eliminación lógica (null si activo) |
+| `sync_version` | Número | Versión del registro para detectar conflictos |
+| `sync_status` | Texto | `sincronizado`, `pendiente_subir`, `pendiente_descargar`, `conflicto`, `error` |
+| `origen` | Texto | `web`, `local`, `sheets` |
+
+### Resolución de conflictos
+1. Comparar `updated_at`
+2. Comparar `sync_version`
+3. Conservar ambos valores si existe duda
+4. Registrar el conflicto en `Auditoria`
+5. Permitir que Admin seleccione cuál conservar
+
+---
+
+## 4. Base SQLite Local
+
+### Ubicación
+```text
+api/centuria.db
+```
+
+### Tablas principales
+
+#### users
 ```sql
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,        -- cédula
-    password TEXT NOT NULL,               -- hash bcrypt
+    uuid TEXT UNIQUE,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
     email TEXT DEFAULT '',
     course_id INTEGER,
-    role TEXT DEFAULT 'student',          -- role_sistema (el más alto)
+    role TEXT DEFAULT 'student',
     telefono TEXT DEFAULT '',
     grado TEXT DEFAULT '',
     carrera TEXT DEFAULT '',
     seccion TEXT DEFAULT '',
     foto TEXT DEFAULT '',
-    estado TEXT DEFAULT 'activo',         -- activo | pendiente | inactivo
+    estado TEXT DEFAULT 'activo',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
 );
 ```
 
-#### `user_roles` — Multi-rol por usuario
+#### user_roles
 ```sql
 CREATE TABLE user_roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
     user_id INTEGER NOT NULL,
-    rol TEXT NOT NULL,                    -- alumno, docente, academico, admin
+    rol TEXT NOT NULL,
     carrera TEXT DEFAULT '',
     seccion TEXT DEFAULT '',
     asignatura TEXT DEFAULT '',
-    estado TEXT DEFAULT 'activo',         -- activo | inactivo | pendiente
+    filial TEXT DEFAULT '',
+    estado TEXT DEFAULT 'activo',
     asignado_por TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
-#### `roles_config` — Catálogo de roles con permisos
+#### roles_config
 ```sql
 CREATE TABLE roles_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
     nombre TEXT UNIQUE NOT NULL,
     descripcion TEXT DEFAULT '',
-    permisos TEXT DEFAULT '{}',           -- JSON array de permisos
+    permisos TEXT DEFAULT '{}',
     color TEXT DEFAULT '#64748b',
     icono TEXT DEFAULT 'bi-person',
     activo INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
 );
 ```
 
-#### `usuarios_pendientes` — Cola de aprobación
+#### usuarios_pendientes
 ```sql
 CREATE TABLE usuarios_pendientes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
     cedula TEXT UNIQUE NOT NULL,
     nombre TEXT NOT NULL,
     apellido TEXT NOT NULL,
@@ -201,64 +181,395 @@ CREATE TABLE usuarios_pendientes (
     carrera TEXT DEFAULT '',
     seccion TEXT DEFAULT '',
     foto TEXT DEFAULT '',
-    estado TEXT DEFAULT 'pendiente',      -- pendiente | aprobado | rechazado
+    estado TEXT DEFAULT 'pendiente',
     observaciones TEXT DEFAULT '',
     revisado_por TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    reviewed_at DATETIME
+    reviewed_at DATETIME,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
 );
 ```
 
-### Permisos Disponibles
-```javascript
-permisos = [
-    'ver_cursos', 'editar_cursos',
-    'ver_notas', 'editar_notas',
-    'ver_asistencia', 'editar_asistencia',
-    'ver_calendario', 'editar_calendario',
-    'ver_documentos', 'editar_documentos',
-    'gestionar_usuarios', 'gestionar_roles',
-    'ver_reportes', 'ver_config'
-]
+#### filiales
+```sql
+CREATE TABLE filiales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    nombre TEXT UNIQUE NOT NULL,
+    codigo TEXT UNIQUE NOT NULL,
+    direccion TEXT DEFAULT '',
+    telefono TEXT DEFAULT '',
+    estado TEXT DEFAULT 'activo',
+    creado_por TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
 ```
 
-### Jeraría de Roles (para role_sistema en tabla users)
+#### matriculaciones
+```sql
+CREATE TABLE matriculaciones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    user_id INTEGER,
+    codigo_formulario TEXT DEFAULT 'CEN-AS-SM-AGP005',
+    legajo_numero TEXT DEFAULT '',
+    fecha_inscripcion TEXT DEFAULT '',
+    nombres TEXT NOT NULL,
+    apellidos TEXT NOT NULL,
+    cedula TEXT NOT NULL,
+    lugar_nacimiento TEXT DEFAULT '',
+    fecha_nacimiento TEXT DEFAULT '',
+    pais TEXT DEFAULT 'ECUADOR',
+    direccion TEXT DEFAULT '',
+    ciudad TEXT DEFAULT '',
+    departamento TEXT DEFAULT '',
+    barrio_compania TEXT DEFAULT '',
+    telefono_fijo TEXT DEFAULT '',
+    telefono_movil TEXT DEFAULT '',
+    correo_electronico TEXT DEFAULT '',
+    titulo_bachiller TEXT DEFAULT '',
+    institucion_origen TEXT DEFAULT '',
+    ciudad_pais_estudio TEXT DEFAULT '',
+    anio_promocion TEXT DEFAULT '',
+    semestre TEXT DEFAULT '',
+    carrera TEXT DEFAULT '',
+    tipo_alumno TEXT DEFAULT 'nuevo',
+    matricula_guaranies TEXT DEFAULT '',
+    mensualidad TEXT DEFAULT '',
+    plan_pago TEXT DEFAULT '',
+    asignaturas_pendientes TEXT DEFAULT '',
+    semestres_pendientes TEXT DEFAULT '',
+    informacion_adicional TEXT DEFAULT '',
+    acepta_declaracion INTEGER DEFAULT 0,
+    firma TEXT DEFAULT '',
+    estado TEXT DEFAULT 'pendiente',
+    registrado_por TEXT DEFAULT '',
+    observaciones TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
 ```
-admin (4) > academico (3) > docente (2) > alumno (1)
-```
-Cuando se asigna/quita un role, se recalcula automáticamente el `role` en la tabla `users`.
 
-### Flujo de Registro (v5.0)
-1. Usuario se registra en `index.html` → cédula + nombre + apellido + contraseña
-2. Si es registro nuevo → se guarda en `usuarios_pendientes` (estado: pendiente)
-3. Admin ve la cola de pendientes en el panel
-4. Admin **aprueba** → se crea en `users` + `user_roles` con la contraseña generada
-5. Admin puede **rechazar** → se marca como rechazado
-6. Admin también puede **registrar directo** (sin cola de pendientes)
-
-### Flujo de Login (v5.0)
-1. Cédula → `api/auth.php?action=find_user` → ¿existe?
-2. Si NO existe → mostrar "no registrado" + link a registro
-3. Si existe → mostrar campo contraseña + "Bienvenido, [Nombre]"
-4. Contraseña → `api/auth.php?action=login` → token
-5. Obtener roles → si 1 rol → entra directo; si múltiples → selector
-6. Sync silenciosa con Google Sheets (fire-and-forget)
-
-### Regla de Contraseñas
-```
-Primera letra Nombre (Mayús) + primera letra Apellido (minús) + cédula(sin puntos) + *
-```
-Ejemplo: Juan Pérez, cédula 12345678 → `Jp12345678*`
-
-### Usuarios Demo
-| Cédula | Nombre | Contraseña | Rol |
-|--------|--------|------------|-----|
-| `1340130` | Christhian Keim | `Ck1340130*` | admin |
-| `1340125` | Natalie Keim | `Nk1340125*` | docente |
+#### Otras tablas
+- `courses` — Cursos
+- `grades` — Calificaciones
+- `attendance` — Asistencia
+- `calendar` — Eventos del calendario
+- `documentos` — Documentos del docente
+- `calendar_events` — Eventos extendidos del calendario
+- `attendance_events` — Eventos de asistencia con código único
+- `attendance_records` — Registros de asistencia
+- `unit_progress` — Progreso por unidad
+- `exam_questions` — Banco de preguntas
+- `exam_attempts` — Intentos de examen
+- `subject_kit` — Kit de materiales por asignatura
+- `formularios_carrera` — Plantillas de formularios
+- `formularios_alumno` — Datos de formularios por alumno
 
 ---
 
-## PARTE 3 — APIs REST (v5.0)
+## 5. Sistema de Sincronización
+
+### Cope local en PC
+```text
+Centuria/
+├── sincronizador/
+│   ├── centuria_sync.py
+│   ├── config.json
+│   ├── logs/
+│   └── backups/
+└── datos/
+    └── centuria.db
+```
+
+### Frecuencia de sincronización
+- Al iniciar la PC
+- Cada 10-15 minutos
+- Manualmente mediante botón
+- Antes de cerrar el sistema
+- Cuando se recupere conexión a internet
+
+### Estados de sincronización
+| Estado | Descripción |
+|--------|-------------|
+| `sincronizado` | Registro idéntico en ambas fuentes |
+| `pendiente_subir` | Modificado localmente, pendiente de subir a Google |
+| `pendiente_descargar` | Modificado en Google, pendiente de descargar local |
+| `conflicto` | Modificado en ambas fuentes con valores diferentes |
+| `error` | Error durante la sincronización |
+
+---
+
+## 6. Usuarios y Roles
+
+### Roles del sistema
+| Rol DB | Rol Español | Acceso |
+|--------|-------------|--------|
+| `student` | Alumno | Unidades de estudio, progreso |
+| `teacher` | Docente | Panel docente, asistencia, notas, actas |
+| `academic` | Académico | Coordinación académica, indicadores |
+| `admin` | Administrador | Control total del sistema |
+| `administrador_plataforma` | Admin Plataforma | Configuración del sistema |
+| `admin_filial` | Admin Filial | Gestión de una filial específica |
+
+### Jerarquía de roles
+```
+admin (4) > academico (3) > docente (2) > alumno (1)
+```
+
+### Flujo de registro
+1. Usuario se registra con cédula, nombre, apellido y contraseña
+2. Se guarda en `usuarios_pendientes` (estado: pendiente)
+3. Admin aprueba o rechaza
+4. Al aprobar: se crea en `users` + `user_roles` con contraseña generada
+5. Sync silenciosa con Google Sheets
+
+### Flujo de login
+1. Cédula → verificar si existe
+2. Si no existe → mostrar "no registrado"
+3. Si existe → mostrar campo contraseña
+4. Contraseña → login → token
+5. Obtener roles → si múltiples → selector
+6. Sync silenciosa con Google Sheets
+
+### Regla de contraseñas
+```
+Primera letra Nombre (Mayús) + primera letra Apellido (minús) + cédula(sin puntos) + *
+```
+
+### Permisos disponibles
+```javascript
+['ver_cursos', 'editar_cursos', 'ver_notas', 'editar_notas',
+ 'ver_asistencia', 'editar_asistencia', 'ver_calendario', 'editar_calendario',
+ 'ver_documentos', 'editar_documentos', 'gestionar_usuarios', 'gestionar_roles',
+ 'ver_reportes', 'ver_config']
+```
+
+---
+
+## 7. Docentes y Asignación de Cátedras
+
+### Tabla `docente_asignaturas`
+```sql
+CREATE TABLE docente_asignaturas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    docente_cedula TEXT NOT NULL,
+    asignatura TEXT NOT NULL,
+    carrera TEXT DEFAULT '',
+    seccion TEXT DEFAULT '',
+    semestre TEXT DEFAULT '',
+    estado TEXT DEFAULT 'activo',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
+```
+
+### API `docente.php`
+- `my_subjects` — Asignaturas del docente autenticado
+- `list` — Listar todas las asignaciones (admin)
+- `assign` — Asignar cátedra (admin)
+- `unassign` — Desasignar cátedra (admin)
+
+---
+
+## 8. Asignaturas y Unidades
+
+### Catálogo de asignaturas
+```sql
+CREATE TABLE asignaturas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    nombre TEXT NOT NULL,
+    codigo TEXT UNIQUE NOT NULL,
+    carrera TEXT DEFAULT '',
+    semestre INTEGER DEFAULT 1,
+    carga_horaria INTEGER DEFAULT 0,
+    color TEXT DEFAULT '#10b981',
+    icono TEXT DEFAULT 'bi-book',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
+```
+
+### Unidades por asignatura
+Cada asignatura tiene 10 unidades con:
+- Programa de estudios
+- Contenido por unidad (HTML)
+- Recursos y materiales
+- Actividades
+- Evaluaciones
+- Banco de preguntas propio
+
+### Progreso por unidad
+```sql
+CREATE TABLE unit_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    user_id INTEGER NOT NULL,
+    unidad INTEGER NOT NULL,
+    secciones_leidas TEXT DEFAULT '[]',
+    total_secciones INTEGER DEFAULT 10,
+    completada INTEGER DEFAULT 0,
+    asistencia INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(user_id, unidad)
+);
+```
+
+---
+
+## 9. Evaluaciones, Notas y Asistencia
+
+### Banco de preguntas
+```sql
+CREATE TABLE exam_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    unidad INTEGER NOT NULL,
+    indicador TEXT DEFAULT '',
+    pregunta TEXT NOT NULL,
+    opcion_a TEXT NOT NULL,
+    opcion_b TEXT NOT NULL,
+    opcion_c TEXT NOT NULL,
+    opcion_d TEXT NOT NULL,
+    respuesta INTEGER NOT NULL,
+    tipo TEXT DEFAULT 'multiple',
+    dificultad TEXT DEFAULT 'media',
+    activa INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado'
+);
+```
+
+### Intentos de examen
+```sql
+CREATE TABLE exam_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    user_id INTEGER NOT NULL,
+    examen TEXT NOT NULL,
+    puntuacion INTEGER DEFAULT 0,
+    total_preguntas INTEGER DEFAULT 0,
+    respuestas TEXT DEFAULT '{}',
+    completado INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+### Calificaciones
+```sql
+CREATE TABLE grades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    user_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    component VARCHAR(100) NOT NULL,
+    score REAL DEFAULT 0,
+    max_score REAL DEFAULT 100,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+);
+```
+
+### Escala de calificaciones
+| Nota | Porcentaje | Descripción |
+|------|-----------|-------------|
+| 1 | 0-69% | Reprobado |
+| 2 | 70-77% | Aprobado |
+| 3 | 78-85% | Bueno |
+| 4 | 86-93% | Muy bueno |
+| 5 | 94-100% | Excelente |
+
+### Asistencia
+```sql
+CREATE TABLE attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
+    user_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    status TEXT DEFAULT 'present',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
+    sync_version INTEGER DEFAULT 1,
+    sync_status TEXT DEFAULT 'sincronizado',
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id),
+    UNIQUE(user_id, course_id, date)
+);
+```
+
+---
+
+## 10. Formulario de Matrícula
+
+### Variables del formulario
+| Sección | Variables |
+|---------|-----------|
+| Control | `codigo_formulario`, `legajo_numero`, `fecha_inscripcion` |
+| Identificación | `nombres`, `apellidos`, `cedula` |
+| Nacimiento | `lugar_nacimiento`, `fecha_nacimiento`, `pais` |
+| Domicilio | `direccion`, `ciudad`, `departamento`, `barrio_compania` |
+| Contacto | `telefono_fijo`, `telefono_movil`, `correo_electronico` |
+| Estudios | `titulo_bachiller`, `institucion_origen`, `ciudad_pais_estudio`, `anio_promocion` |
+| Matrícula | `semestre`, `carrera`, `tipo_alumno` |
+| Pagos | `matricula_guaranies`, `mensualidad`, `plan_pago` |
+| Académico | `asignaturas_pendientes`, `semestres_pendientes` |
+| Adicional | `informacion_adicional` |
+| Validación | `acepta_declaracion`, `firma`, `estado`, `registrado_por` |
+
+### API `matriculaciones.php`
+| Acción | Método | Descripción | Auth |
+|--------|--------|-------------|------|
+| `save` | POST | Guardar matrícula (upsert) | Sí |
+| `my` | GET | Obtener mi matrícula | Sí |
+| `check` | GET | Verificar si existe matrícula | Sí |
+| `list` | GET | Listar todas (admin) | Admin |
+| `detail` | GET | Detalle por ID o cédula | Admin |
+| `update_status` | POST | Cambiar estado | Admin |
+| `stats` | GET | Estadísticas | Admin |
+| `delete` | POST | Eliminar | Admin |
+
+---
+
+## 11. Endpoints Disponibles
 
 ### Base URL
 ```
@@ -268,404 +579,165 @@ http://127.0.0.1:8080/api/
 ### Autenticación
 Todas las escrituras requieren `Authorization: Bearer <token>`.
 
-### Endpoints Disponibles
+### Endpoints
 
-#### `auth.php` — Autenticación
-| Método | Action | Descripción |
-|--------|--------|-------------|
-| POST | `login` | Login con cédula + contraseña |
-| POST | `register` | Registrar usuario |
-| GET | `validate` | Validar token de sesión |
-| POST | `logout` | Cerrar sesión |
-| GET | `find_user` | Buscar usuario por cédula |
-
-#### `usuarios.php` — Gestión de Usuarios (NUEVO)
-| Método | Action | Descripción | Auth |
-|--------|--------|-------------|------|
-| GET | `list` | Listar todos los usuarios con roles | Sí |
-| GET | `pendientes` | Usuarios pendientes de aprobación | Sí |
-| GET | `get&id=X` | Detalle de usuario + roles | Sí |
-| POST | `update` | Editar datos de usuario | Admin |
-| POST | `aprobar` | Aprobar pendiente → crear user + role | Admin |
-| POST | `rechazar` | Rechazar pendiente | Admin |
-| POST | `add_role` | Asignar rol adicional | Admin |
-| POST | `remove_role` | Quitar rol | Admin |
-| POST | `update_role` | Editar rol asignado | Admin |
-| POST | `registrar_directo` | Admin registra usuario directo | Admin |
-
-#### `roles.php` — Catálogo de Roles (NUEVO)
-| Método | Action | Descripción | Auth |
-|--------|--------|-------------|------|
-| GET | `list` | Listar roles del catálogo | Sí |
-| POST | `create` | Crear nuevo rol | Admin |
-| POST | `update` | Editar rol | Admin |
-| POST | `delete` | Desactivar rol | Admin |
-
-#### `catalogos.php` — Catálogos Académicos
-| Método | Action | Descripción | Auth |
-|--------|--------|-------------|------|
-| GET | `list` | Listar todos los catálogos (o uno específico con `?tipo=X`) | No |
-| POST | `create` | Crear registro | Admin |
-| POST | `update` | Editar registro | Admin |
-| POST | `delete` | Desactivar registro | Admin |
-
-**Tipos:** `secciones`, `carreras`, `grados`, `programas`, `modalidades`
-
-#### `admin.php` — Admin Legacy
-| Método | Action | Descripción |
-|--------|--------|-------------|
-| GET | `list` | Listar usuarios |
-| GET | `get&id=X` | Detalle usuario |
-| POST | `set_role` | Asignar role_sistema |
-| POST | `delete` | Eliminar usuario |
-| POST | `import` | Importar CSV |
-
-#### Otros Endpoints
-| Archivo | Función |
-|---------|---------|
-| `courses.php` | CRUD cursos |
-| `grades.php` | Calificaciones |
-| `attendance.php` | Asistencia |
-| `calendar.php` | Eventos calendario |
-| `documentos.php` | Documentos docente |
-| `upload.php` | Importación CSV |
+| Archivo | Acciones | Descripción |
+|---------|----------|-------------|
+| `auth.php` | login, register, validate, logout, find_user, change_password, reset_password | Autenticación |
+| `usuarios.php` | list, pendientes, get, update, aprobar, rechazar, add_role, remove_role, update_role, registrar_directo, update_profile | Gestión de usuarios |
+| `roles.php` | list, create, update, delete | Catálogo de roles |
+| `catalogos.php` | list, create, update, delete | Catálogos académicos |
+| `filiales.php` | list, create, toggle, delete, assign-admin, admins-by-filial | Filiales |
+| `matriculaciones.php` | save, my, check, list, detail, update_status, stats, delete | Matrículas |
+| `formularios.php` | list_forms, create, update, delete, my_forms, save_data, completions, detail, seed | Formularios por carrera |
+| `docente.php` | my_subjects, list, assign, unassign | Asignación de cátedras |
+| `asignaturas.php` | list, create, update, delete | Gestión de asignaturas |
+| `courses.php` | CRUD completo | Cursos |
+| `grades.php` | list, get, record, final | Calificaciones |
+| `attendance.php` | list, mark, summary | Asistencia |
+| `calendar.php` | CRUD completo | Eventos del calendario |
+| `calendar.php` (extendido) | create, list, update, delete, conflict_check | Calendario académico |
+| `attendance.php` (extendido) | create_event, close_event, validate_code, register, my_events, event_detail, report_general, export_csv | Asistencia con códigos |
+| `progress.php` | save, get | Progreso de unidades |
+| `exams.php` | create, submit, seed, questions | Exámenes dinámicos |
+| `documentos.php` | get, save | Documentos del docente |
+| `upload.php` | import, health | Importación CSV |
+| `reports.php` | dashboard | Datos del dashboard |
 
 ---
 
-## PARTE 4 — PANEL ADMINISTRATIVO (v5.0)
+## 12. Seguridad y Permisos
 
-### Arquitectura SPA
-El admin es un **Single Page Application** que carga módulos dinámicamente:
-- **Shell:** `admin/index.html` (header + sidebar + loader)
-- **Lógica:** `admin/js/admin.js` (Alpine.js, 550+ líneas)
-- **Secciones:** `admin/sections/*.html` (cargadas vía `fetch()` + `Alpine.initTree()`)
+### Autenticación
+- Tokens de sesión con vencimiento de 1 hora
+- Validación en cada endpoint protegido
+- Logout destruye el token
 
-### Módulos del Admin
+### Permisos por operación
+- Lectura: cualquier usuario autenticado
+- Escritura: según permisos del rol
+- Eliminación: solo admin
+- Gestión de roles: solo admin
 
-#### 1. Alta y Roles (`sections/usuarios.html`)
-**3 sub-pestañas:**
-- **Pendientes:** Cola de registros pendientes, aprobar/rechazar, registrar directo
-- **Todos los Usuarios:** Tabla con búsqueda/filtros, editar perfil, multi-roles
-- **Roles y Permisos:** Catálogo de roles con permisos JSON, crear/editar/eliminar
-
-#### 2. Catálogos (`sections/catalogos.html`)
-**5 sub-pestañas:** Secciones, Carreras, Grados, Programas, Modalidades
-- CRUD completo para cada tipo
-- Formulario contextual (cambia según la pestaña activa)
-- Búsqueda en tabla
-
-#### 3. Reportes (`sections/reportes.html`)
-- Tarjetas resumen (usuarios, alumnos, docentes, secciones)
-- Distribución por roles (barras de progreso)
-- Carreras más asignadas
-- Accesos recientes
-- Resumen de catálogos
-
-#### 4. Configuración (`sections/config.html`)
-- Info institucional
-- Formato de contraseña
-- Estado de conexiones backend
-- Acciones del sistema
-
-#### 5. Vista Previa por Rol (`sections/vistas.html`)
-- **3 roles previsualizables:** Alumno, Docente, Acceso Académico
-- **Iframe preview** dentro del admin
-- **Abrir en pestaña nueva** para vista completa
-- **Botón flotante** "Volver al Admin" en cada página vista
-
-### Métodos de Carga Dinámica
-```javascript
-// admin.js carga secciones vía fetch
-async loadSection(tab) {
-    const urls = {
-        usuarios:  'sections/usuarios.html',
-        cursos:    'sections/catalogos.html',
-        reportes:  'sections/reportes.html',
-        config:    'sections/config.html',
-        vistas:    'sections/vistas.html'
-    };
-    container.innerHTML = await (await fetch(urls[tab])).text();
-    Alpine.initTree(container);  // Inicializar Alpine en el nuevo DOM
-}
-```
+### Protecciones necesarias
+- Contraseñas: hash bcrypt, nunca texto plano
+- Sesiones: expiración automática
+- CSRF: tokens en formularios
+- Validación: sanitizar todas las entradas
+- Archivos: validar extensiones y tamaño
+- Rate limiting: protección contra intentos repetidos
+- Auditoría: registrar cada operación sensible
 
 ---
 
-## PARTE 5 — DASHBOARD ADAPTATIVO POR ROL (v6.0)
+## 13. Convenciones de Nombres
 
-### `dashboard.html`
-Dashboard dinámico que cambia según el rol del usuario:
+### Archivos HTML
+- `Unidad_01.html`, `Unidad_02.html`, ... `Unidad_10.html`
+- `programa.html`, `planilla.html`, `glosario.html`
+- `asistencia_presencial.html`, `autoevaluacion_secuencial.html`
 
-```javascript
-const roleConfig = {
-    'Administrador General': { label: 'Administrador', icon: 'bi-shield-fill-check', color: '#007A33', links: ['admin/', 'reportes', 'usuarios'] },
-    'Administrador de Plataforma': { label: 'Admin Plataforma', icon: 'bi-gear-fill', color: '#4A90D9', links: ['admin/', 'config'] },
-    'Alumno': { label: 'Alumno', icon: 'bi-mortarboard-fill', color: '#FF8C42', links: ['libreta.html', 'perfil.html'] },
-    'Docente': { label: 'Docente', icon: 'bi-person-badge-fill', color: '#4A90D9', links: ['docente.html', 'libreta.html'] },
-    'Acceso Académico': { label: 'Académico', icon: 'bi-building', color: '#FF6B9D', links: ['admin/', 'reportes'] },
-};
-```
+### Archivos PHP
+- `auth.php`, `usuarios.php`, `roles.php`, `catalogos.php`
+- `matriculaciones.php`, `formularios.php`
+- `docente.php`, `asignaturas.php`
 
-### Funcionalidades del Dashboard
-- **Tarjetas de estadísticas:** Cursos, alumnos, eventos, asistencia
-- **Enlaces rápidos:** Según el rol del usuario
-- **Calendario:** Próximos eventos
-- **Asistencia:** Formulario rápido de registro
+### Tablas SQLite
+- snake_case: `users`, `user_roles`, `roles_config`
+- Prefijo `exam_` para exámenes
+- Prefijo `attendance_` para asistencia
 
----
-
-## PARTE 6 — PERFIL DOCENTE COMPLETO (v6.0)
-
-### `docente.html`
-Perfil del docente con todos los formatos integrados y datos de la base de datos:
-
-### Secciones del Perfil
-1. **Header:** Avatar, nombre, cédula, carrera, sección, badge de rol
-2. **Estadísticas:** Asignaturas, alumnos, eventos, asistencia
-3. **Acceso Rápido:** Links a todas las funciones
-4. **Planificación de Clases:** Formulario + lista de clases planificadas
-5. **Registro de Clases:** Asistencia por asignatura y fecha
-6. **Planilla de Calificaciones:** Tabla con todos los alumnos
-7. **Acta de Calificaciones:** Generación e impresión de actas
-8. **Documentos:** CRUD de documentos del docente
-
-### Datos desde la API
-```javascript
-// Carga datos desde la base de datos
-- courses.php?action=list     → Asignaturas del docente
-- calendar.php?action=list    → Clases planificadas
-- attendance.php?action=list  → Registros de asistencia
-- documentos.php?action=list  → Documentos del docente
-- grades.php?action=list      → Calificaciones
-```
+### Campos de sincronización
+- `uuid` — Identificador único universal
+- `created_at` — Fecha de creación
+- `updated_at` — Última actualización
+- `deleted_at` — Eliminación lógica
+- `sync_version` — Versión para conflictos
+- `sync_status` — Estado de sincronización
 
 ---
 
-## PARTE 7 — SISTEMA DE FILIALES (v6.0)
+## 14. Estado de Implementación
 
-### `filiales.php` API
-CRUD completo de sedes/filiales con asignación de administradores:
+### Implementado
+- Autenticación con cédula y contraseña
+- Sistema multi-roles con permisos
+- Panel administrativo SPA
+- Dashboards adaptativos por rol
+- Formulario de matrícula con guardado
+- Sistema de asistencia con códigos únicos
+- Calendario académico con conflictos
+- Gestión de asignaturas y docentes
+- Banco de preguntas y exámenes
+- Calificaciones y planilla de avance
+- Sincronización con Google Sheets
+- Filiales y catálogos dinámicos
 
-| Método | Action | Descripción | Auth |
-|--------|--------|-------------|------|
-| GET | `list` | Listar filiales | No |
-| POST | `create` | Crear filial | Admin |
-| POST | `toggle` | Activar/desactivar filial | Admin |
-| POST | `delete` | Eliminar filial | Admin |
-| POST | `assign-admin` | Asignar admin a filial | Admin |
-| GET | `admins-by-filial&id=X` | Ver admins de una filial | Admin |
+### Pendiente (Roadmap)
 
-### Tabla `filiales`
-```sql
-CREATE TABLE filiales (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT NOT NULL,
-    codigo TEXT UNIQUE NOT NULL,
-    direccion TEXT DEFAULT '',
-    telefono TEXT DEFAULT '',
-    estado TEXT DEFAULT 'activo',
-    creado_por TEXT DEFAULT '',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+#### Fase 1: Estabilizar lo existente
+1. **Cursos independientes** — Cada asignatura con programa, unidades, evaluaciones y progreso propio
+2. **Editor de cursos para docentes** — Crear, ordenar, publicar contenidos sin editar HTML
+3. **Sistema de actividades** — Tareas, entregas, foros, encuestas, lecciones
+4. **Tareas y entregas** — Tablas de actividades, entregas, retroalimentación
+5. **Banco de preguntas completo** — Categorías, versiones, tipos múltiples, importación
+6. **Exámenes seguros** — Duración, intentos, orden aleatorio, guardado automático
+7. **Libro de calificaciones** — Dinámico, con categorías, porcentajes, exportación
+8. **Matriculación real** — Legajo, periodo, sección, documentos, comprobante
 
-### Tabla `user_roles` (columna filial)
-```sql
--- Columna filial en user_roles vincula usuarios a filiales
-ALTER TABLE user_roles ADD COLUMN filial TEXT DEFAULT '';
-```
+#### Fase 2: LMS académico básico
+- Cursos dinámicos con editor
+- Matriculaciones y grupos
+- Tareas y entregas
+- Banco de preguntas completo
+- Exámenes configurables
+- Libro de calificaciones
+- Notificaciones
 
-### Datos sembrados
-| Código | Nombre |
-|:-------|:-------|
-| SC | Sede Central |
-| FN | Filial Norte |
-| FS | Filial Sur |
-| FE | Filial Este |
-| FO | Filial Oeste |
+#### Fase 3: Equivalencia institucional
+- Foros y mensajería
+- Grupos y cohortes
+- Competencias
+- Reportes avanzados
+- Copia/restauración de cursos
+- Papelera y recuperación
+- Gestor de archivos
+- PWA y trabajo sin conexión
 
----
-
-## PARTE 8 — CATÁLOGOS DINÁMICOS (v6.0)
-
-### Formulario de Registro Actualizado
-El formulario de registro en `index.html` ahora carga grados, carreras y secciones desde la base de datos:
-
-```javascript
-// Cargar grados desde API
-async function cargarCatalogos(){
-    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=grados');
-    const data = await r.json();
-    // Poblar select de grados
-}
-
-// Cargar carreras por grado
-async function cargarCarrerasPorGrado(){
-    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras');
-    const data = await r.json();
-    const carreras = data.carreras.filter(c => c.grado === grado);
-    // Poblar select de carreras
-}
-
-// Cargar secciones
-async function cargarSecciones(){
-    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones');
-    const data = await r.json();
-    // Poblar select de secciones
-}
-```
-
-### Ventajas sobre datos hardcodeados
-- **Actualización en tiempo real:** Los cambios en catálogos se reflejan inmediatamente
-- **Consistencia:** Todos los formularios usan los mismos datos
-- **Mantenimiento:** Solo se actualiza la base de datos, no el código
+#### Fase 4: Crecimiento
+- Extensiones
+- Videoconferencia
+- Certificados
+- Firma digital
+- Biblioteca
+- Tesorería
+- Aplicación móvil
+- Integraciones externas
 
 ---
 
-## PARTE 9 — VARIABLES PARA PERSONALIZAR
+## 15. Decisiones Técnicas Vigentes
 
-```yaml
-ASIGNATURA: "TIC"
-ASIGNATURA_COMPLETA: "Tecnología de la Información y Comunicación"
-CODIGO: "ADE18"
-CARRERA: "Administración de Empresas"
-NUM_UNIDADES: 10
-ARCHIVO_GOLD: "Unidad_05.html"
-SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec"
-SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
-```
-
----
-
-## PARTE 10 — REGLAS DE GENERACIÓN HTML
-
-### Generales
-1. **Tailwind CSS** (vía CDN) + **Bootstrap Icons** + **Montserrat**. Prohibido otro framework.
-2. **Alpine.js** para interactividad. Vanilla JS solo para helpers externos.
-3. **Encoding:** UTF-8. Sin caracteres rotos.
-
-### Estructura HTML
-4. **`<h2>`** = Título principal. **`<h3>`** = Temas. **`<h4>`** = Subtemas.
-5. **Tarjetas:** `class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"`
-6. **Botones:** `class="btn-primary"` (gradiente verde) o Tailwind equivalentes.
-
-### Navegación
-7. **Sidebar:** Siempre visible con enlaces a unidades + programa + planilla + glosario.
-8. **Header:** Logo + Nombre + Progreso inline + Badge rol + Botón Salir.
-
-### Interactividad (v7.0)
-9. **Marcar como Leído:** Botón por card. Al final: Confirmar Lección.
-10. **Progreso inline:** Barra `✅ X/10 ▓▓▓░░ 38%`.
-11. **Bloqueo secuencial:** Unidad N+1 bloqueada hasta completar N.
-17. **Cards individuales:** Cada sección tiene `id="card-X"` y `data-section="X"`
-18. **Asistencia presencial:** Botón por unidad con registro en localStorage
-19. **Bibliografía:** Sección al final de cada unidad
-20. **Session guard:** Protección en cada página con redirección a login
-
-### Sesión (v7.0)
-12. **Guard:** `if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}`
-13. **Logout:** `sessionStorage.clear(); localStorage.removeItem('centuria_remember'); window.location.replace('../index.html');`
-14. **Solo `sessionStorage`** para sesión. `localStorage` para progreso/preferencias.
-15. **Auto-redirect:** Si ya hay sesión activa, `index.html` redirige a `dashboard.html`
-16. **Remember me:** `localStorage.centuria_remember` para auto-login al recargar
-
-### Calificaciones
-15. **Escala:** Asistencia 10% + Parciales 40% + Final 50% = 100%.
-16. **Numérica:** 1 (0-69%), 2 (70-77%), 3 (78-85%), 4 (86-93%), 5 (94-100%).
-
-### Planilla de Avance por Unidad (v7.1)
-Cada alumno tiene una vista de progreso por unidad:
-
-| Unidad | Leído | Asistencia | Estado |
-|--------|-------|------------|--------|
-| Unidad 1 | ✓ | Presente | Completada |
-| Unidad 2 | ✓ | Ausente | Completada |
-| Unidad 3 | ◐ | — | En progreso |
-| Unidad 4 | — | — | Bloqueada |
-
-**Datos que alimentan la planilla:**
-- **Leído:** `localStorage('tic_leidos_' + cedula + '_Unidad_XX')` — array de secciones leídas
-- **Completada:** `localStorage('tic_progress_' + cedula + '_Materiales_HTML_LunesViernes_clase_X')` = `finished`
-- **Asistencia por unidad:** `localStorage('tic_asistencia_' + cedula + '_X')` — fecha de asistencia presencial
-
-**Vista docente:** Tabla consolidada de todos los alumnos mostrando avance por unidad (10 columnas) + asistencia + estado general.
-
-### Exámenes Parciales (v7.1)
-Los parciales se cargan desde `grades.php?action=list` con `component`:
-- `parcial_1` o `Primer Parcial` → max 10 pts
-- `parcial_2` o `Segundo Parcial` → max 10 pts
-- `final` o `Examen Final` → max 25 pts
-- `asistencia` o `Asistencia` → max 5 pts
-
-La planilla muestra valores **reales** del sistema, no hardcodeados.
+| Decisión | Justificación |
+|----------|---------------|
+| Google Sheets como base principal temporal | Accesible por internet sin servidor PHP |
+| SQLite como copia local | Funciona sin internet, respaldo recuperable |
+| UUID por registro | Consistencia entre Google y SQLite |
+| `sync_version` para conflictos | Detectar quién modificó último |
+| PHP como backend definitivo | Requiere solo cambiar la URL de la API |
+| Alpine.js para interactividad | Ligero, sin build step |
+| Tailwind CSS + Bootstrap 5 | Utilidades rápidas + componentes probados |
+| GitHub Pages para frontend | Despliegue automático vía Actions |
 
 ---
 
-## PARTE 11 — HOJAS GOOGLE SHEETS (Backup)
+## 16. Metadata
 
-| Hoja | Columnas | Propósito |
-|------|----------|-----------|
-| `RegistroAlumnos` | Cédula, Nombre, Apellido, Email, Grado, Carrera, Sección | Datos de alumnos |
-| `Roles` | Cédula, Nombre, Rol, Carrera, Sección, Asignatura, Estado | Sistema multi-rol |
-| `Asistencias` | Fecha/Hora, Cédula, Unidad/Lugar, Observación | Control de asistencia |
-| `ProgresoUnidades` | Fecha/Hora, Cédula, Unidad Terminada, Estado | Progreso por unidad |
-| `Notas` | Cédula, Nombre, Asistencia, Parcial1, Parcial2, Final | Calificaciones |
-| `Pagos` | Cédula, Monto, Fecha, Concepto, Estado | Control de pagos |
-| `Accesos` | Fecha/Hora, Cédula, Dispositivo, IP | Log de accesos |
-| `ProgresoDetalle` | Fecha/Hora, Cédula, Unidad, Calificación, Observación | Detalle progreso |
-
----
-
-## PARTE 12 — SERVIDOR Y DESPLIEGUE
-
-### Inicio del Servidor
-```bash
-# Windows (desde la raíz del proyecto)
-iniciar.bat
-# o
-powershell -ExecutionPolicy Bypass -File iniciar.ps1
-
-# Manual
-php -S 0.0.0.0:8080 -t . index.php
-```
-
-### CORS
-- Headers: `Access-Control-Allow-Origin: *` en `config.php`
-- OPTIONS preflight: Retorna 204
-
-### PHP Requerido
-- PHP 7.4+ con extensiones: `pdo_sqlite`, `json`, `mbstring`
-
----
-
-## v7.0 Changelog
-- **Nueva paleta institucional:** Background `#007A33`, accent `#00B140`, cards `#E6F4EA`
-- **Persistencia de sesión:** Una vez logueado, no se vuelve a pedir cédula
-- **Unidades 1-10 reestructuradas:** Cards individuales con `data-section`, botón "Marcar como Leído", progreso por unidad
-- **examen_virtual.html:** 100 preguntas embebidas, sin prompt(), sin duplicación
-- **js/devmode.js:** Modo desarrollador con overlays por sección
-- **Session guard:** `if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}`
-- **Logout centralizado:** `sessionStorage.clear(); localStorage.removeItem('centuria_remember');`
-
-## v6.0 Changelog
-- **Dashboard adaptativo por rol:** Vista personalizada según el rol del usuario
-- **Perfil docente completo:** `docente.html` con todos los formatos y datos de la BD
-- **Sistema de filiales:** CRUD de sedes con asignación de administradores
-- **Catálogos dinámicos:** Formulario de registro carga grados/carreras/secciones desde la BD
-- **Perfil de usuario:** `perfil.html` con diseño premium e impresión
-- **Libreta de calificaciones:** `libreta.html` con carreras, asignaturas y progreso
-- **Logo y favicon:** Nuevos assets de imagen para el instituto
-- **Formatos integrados:** `Formatos/` contiene todos los formatos del docente
-- **Base de datos ampliada:** Tablas `filiales`, `catalogo_*`, columnas `filial` en `user_roles`
-
-## v5.0 Changelog
-- **Admin panel reconstruido como SPA** con carga dinámica de secciones
-- **Sistema multi-roles completo:** `user_roles` table, agregar/quitar roles por usuario
-- **Catálogo de roles con permisos JSON** (`roles_config` table)
-- **Cola de aprobación** para nuevos registros (`usuarios_pendientes` table)
-- **APIs REST nuevas:** `usuarios.php` (10 endpoints), `roles.php` (4 endpoints), `catalogos.php` (4 endpoints)
-- **Vista previa por rol:** iframe + redirect con `?view_as=admin`
-- **Botón "Volver al Admin"** en todas las páginas cuando se accede en modo vista previa
-- **Profile editing** completo en el admin (nombre, email, teléfono, grado, carrera, sección, estado)
-- **Dashboard de reportes** con distribución por roles, carreras, accesos recientes
-- **Configuración del sistema** visible en el admin
+| Campo | Valor |
+|-------|-------|
+| **Fecha de actualización** | 2026-09-15 |
+| **Versión del sistema** | v8.0 |
+| **Último commit revisado** | `c33557b` |
+| **Funciones implementadas** | Login, roles, admin, matrícula, asistencia, calendario, asignaturas, exámenes, calificaciones, sync Google |
+| **Funciones pendientes** | Cursos independientes, editor docente, actividades, tareas, banco preguntas, exámenes seguros, libro calificaciones, matriculación completa |
+| **Decisiones técnicas vigentes** | Google Sheets temporal, SQLite local, UUID por registro, sync bidireccional, PHP como destino final |

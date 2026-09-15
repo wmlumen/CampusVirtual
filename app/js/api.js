@@ -54,6 +54,27 @@ function gasGetGrades() {
         .catch(() => []);
 }
 
+// Helper: matricular alumno en Google Sheets (POST)
+function gasMatricular(datos) {
+    const payload = {
+        action: 'matricular_alumno',
+        cedula: datos.cedula || '',
+        nombres: datos.nombres || '',
+        apellidos: datos.apellidos || '',
+        correo_electronico: datos.correo_electronico || '',
+        carrera: datos.carrera || '',
+        semestre: datos.semestre || '',
+        tipo_alumno: datos.tipo_alumno || 'nuevo',
+        fecha_inscripcion: datos.fecha_inscripcion || new Date().toISOString().split('T')[0],
+        telefono_movil: datos.telefono_movil || '',
+        direccion: datos.direccion || ''
+    };
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
 // Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
     u = u || {};

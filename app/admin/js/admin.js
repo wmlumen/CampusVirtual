@@ -367,6 +367,30 @@ document.addEventListener('alpine:init', () => {
             finally { this.loading = false; }
         },
 
+        // --- RESET PASSWORD ---
+        async resetPasswordUsuario(usuario) {
+            if (!usuario) return;
+            if (!confirm('¿Resetear la contraseña de ' + usuario.nombre_completo + '? Se generara una nueva contrasena institucional.')) return;
+            this.loading = true;
+            this.loadingText = 'Reseteando contrasena...';
+            try {
+                const fd = new FormData();
+                fd.append('user_id', usuario.id);
+                const r = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=reset_password', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.ok || data.success) {
+                    alert('Contrasena reseteada.\nNueva contrasena: ' + (data.new_password || data.password || 'Verificar'));
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo resetear'));
+                }
+            } catch (e) { console.error(e); alert('Error de conexion.'); }
+            finally { this.loading = false; }
+        },
+
         // --- MULTI-ROLES ---
         async agregarRol() {
             if (!this.selectedUser) return;

@@ -188,7 +188,25 @@
             <!-- Botones -->
             <div class="btns">
                 <button class="btn btn-p" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+                <button class="btn btn-g" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Contraseña</button>
                 <button class="btn btn-s" onclick="centuriaLogout(false)"><i class="bi bi-box-arrow-left"></i> Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div id="modal-password" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 style="margin:0;font-size:.9rem;color:var(--txt2)"><i class="bi bi-key"></i> Cambiar Contraseña</h3>
+                <button onclick="cerrarModalPassword()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--txt3)">✕</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <input id="pw-actual" type="password" placeholder="Contraseña actual" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <input id="pw-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <input id="pw-confirmar" type="password" placeholder="Confirmar nueva contraseña" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <div id="pw-error" style="color:#991B1B;font-size:.7rem;display:none"></div>
+                <button class="btn btn-p" onclick="cambiarPassword()" style="width:100%"><i class="bi bi-check-lg"></i> Guardar Contraseña</button>
             </div>
         </div>
     </div>
@@ -401,6 +419,66 @@ async function cargarStats(user, token) {
             document.getElementById('st-asist').textContent = pct + '%';
         }
     } catch(e) {}
+}
+
+// ═══ CAMBIO DE CONTRASEÑA ═══
+function abrirModalPassword() {
+    document.getElementById('modal-password').style.display = 'flex';
+    document.getElementById('pw-actual').value = '';
+    document.getElementById('pw-nueva').value = '';
+    document.getElementById('pw-confirmar').value = '';
+    document.getElementById('pw-error').style.display = 'none';
+    document.getElementById('pw-actual').focus();
+}
+
+function cerrarModalPassword() {
+    document.getElementById('modal-password').style.display = 'none';
+}
+
+async function cambiarPassword() {
+    const actual = document.getElementById('pw-actual').value.trim();
+    const nueva = document.getElementById('pw-nueva').value.trim();
+    const confirmar = document.getElementById('pw-confirmar').value.trim();
+    const errEl = document.getElementById('pw-error');
+
+    errEl.style.display = 'none';
+
+    if (!actual || !nueva || !confirmar) {
+        errEl.textContent = 'Todos los campos son obligatorios';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (nueva.length < 6) {
+        errEl.textContent = 'La nueva contraseña debe tener mínimo 6 caracteres';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (nueva !== confirmar) {
+        errEl.textContent = 'Las contraseñas nuevas no coinciden';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        const token = CenturiaAPI.getToken();
+        const resp = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=change_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ current_password: actual, new_password: nueva })
+        });
+        const data = await resp.json();
+
+        if (data.ok || data.success) {
+            showToast('Contraseña actualizada correctamente', 'success');
+            cerrarModalPassword();
+        } else {
+            errEl.textContent = data.error || 'Error al cambiar contraseña';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Error de conexión';
+        errEl.style.display = 'block';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', cargarPerfil);

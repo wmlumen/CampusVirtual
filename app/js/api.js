@@ -75,6 +75,39 @@ function gasMatricular(datos) {
     }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
+// Helper: subir foto de perfil a Google Drive vía GAS v06 (POST)
+// Guarda en la carpeta Drive institucional y devuelve {ok, url, fileId}.
+// La hoja 'Fotos' guarda solo la URL corta (el base64 superaría el límite de celda).
+function gasUploadPhoto(cedula, nombre, dataUrl) {
+    const payload = {
+        action: 'subir_foto',
+        cedula: cedula || '',
+        nombre: nombre || '',
+        foto: dataUrl || ''
+    };
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
+// Helper: obtener URL de foto de perfil desde Drive vía GAS v06 (GET)
+function gasGetPhoto(cedula) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    return fetch(GAS_URL + '?action=obtener_foto&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .catch(() => { clearTimeout(timeout); return { ok: false }; });
+}
+
+// Helper: eliminar foto de perfil de Drive vía GAS v06 (POST)
+function gasDeletePhoto(cedula) {
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'eliminar_foto', cedula: cedula || '' })
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
 // Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
     u = u || {};

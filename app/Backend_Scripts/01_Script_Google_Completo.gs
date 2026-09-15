@@ -1,6 +1,6 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 05
- * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06
+ * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
  * - RegistroAlumnos: [Cédula, Nombre, Apellido, Email, Grado, Carrera, Sección]
@@ -18,9 +18,11 @@
  * - AttendanceRecords: [ID, UUID, EventId, UserId, Cedula, Estado, HoraRegistro, Observacion, ...]
  * - CalendarEvents: [ID, UUID, Titulo, Descripcion, FechaInicio, FechaFin, HoraInicio, HoraFin, Tipo, Color, CreadoPor, ...]
  * - Filiales: [ID, UUID, Nombre, Codigo, Direccion, Telefono, Estado, CreadoPor, ...]
+ * - Fotos: [Cedula, Nombre, FileId, Url, Fecha] (solo URLs cortas; el archivo vive en Drive)
  * 
  * Changelog:
  * v05 (2026-09-15): Matrícula, asistencia con código, calendario, formularios, filiales
+ * v06 (2026-09-15): Fotos de perfil en Google Drive (subir_foto, obtener_foto, eliminar_foto)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
 
@@ -35,6 +37,12 @@ function doGet(e) {
   // ── ASISTENCIA TIC ──
   if (action === 'resumen_asistencia_tic') {
     try { return responderJSON(ticResumen(ss, e.parameter.cedula)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── FOTO DE PERFIL EN DRIVE (v06) ──
+  if (action === 'obtener_foto') {
+    try { return responderJSON(obtenerFotoDrive(ss, e.parameter.cedula)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -269,6 +277,16 @@ function doPost(e) {
   // ── ASISTENCIA TIC ──
   if (data.action === 'guardar_clase_tic' || data.action === 'justificar_ausencia_tic') {
     try { return responderJSON(ticGuardar(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── FOTOS DE PERFIL EN DRIVE (v06) ──
+  if (data.action === 'subir_foto') {
+    try { return responderJSON(subirFotoDrive(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'eliminar_foto') {
+    try { return responderJSON(eliminarFotoDrive(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -1705,4 +1723,120 @@ function eliminarAsignatura(ss, data) {
 
 function responderJSON(objeto) {
   return ContentService.createTextOutput(JSON.stringify(objeto)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ══════════════════════════════════════════════════════════════
+// v06: FOTOS DE PERFIL EN GOOGLE DRIVE
+// Carpeta institucional: https://drive.google.com/drive/folders/1zWbMUeXNRzO6Jzd7UIh1opRtOtgLgQzI
+// - El archivo vive en Drive; en la hoja 'Fotos' solo se guarda la URL corta.
+//   (Un base64 NO cabe en una celda de Sheets: límite 50.000 caracteres.)
+// - El archivo queda "cualquiera con el enlace puede ver" para que el
+//   perfil lo muestre sin login. Para uso privado, cambiar a
+//   DriveApp.Access.PRIVATE y servir vía obtener_foto.
+// ══════════════════════════════════════════════════════════════
+var FOTO_FOLDER_ID = '1zWbMUeXNRzO6Jzd7UIh1opRtOtgLgQzI';
+
+function fotosSheet(ss) {
+  var sheet = ss.getSheetByName('Fotos');
+  if (!sheet) {
+    sheet = ss.insertSheet('Fotos');
+    sheet.appendRow(['Cedula', 'Nombre', 'FileId', 'Url', 'Fecha']);
+  }
+  return sheet;
+}
+
+function subirFotoDrive(ss, data) {
+  var cedula = (data.cedula || '').toString().trim();
+  var raw = data.foto || '';
+  if (!cedula) return { ok: false, error: 'Falta cedula' };
+  if (!raw) return { ok: false, error: 'Falta foto' };
+
+  // Acepta dataURL (data:image/jpeg;base64,...) o base64 puro
+  var base64 = raw.indexOf('base64,') >= 0 ? raw.split('base64,')[1] : raw;
+  var mime = 'image/jpeg';
+  var ext = 'jpg';
+  var m = raw.match(/^data:(image\/[a-z]+);base64,/);
+  if (m) {
+    mime = m[1];
+    ext = (mime === 'image/png') ? 'png' : 'jpg';
+  }
+  var blob = Utilities.newBlob(Utilities.base64Decode(base64), mime, 'foto_' + cedula + '.' + ext);
+
+  var folder = DriveApp.getFolderById(FOTO_FOLDER_ID);
+
+  // Borra fotos anteriores de la misma cédula para no duplicar
+  var it = folder.getFiles();
+  while (it.hasNext()) {
+    var f = it.next();
+    var nm = f.getName();
+    if (nm === 'foto_' + cedula + '.jpg' || nm === 'foto_' + cedula + '.png') {
+      f.setTrashed(true);
+    }
+  }
+
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var fileId = file.getId();
+  var url = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w400';
+
+  // Upsert en hoja Fotos por cédula
+  var sheet = fotosSheet(ss);
+  var vals = sheet.getDataRange().getValues();
+  var ts = new Date().toISOString();
+  var found = false;
+  for (var i = 1; i < vals.length; i++) {
+    if (vals[i][0].toString() === cedula) {
+      sheet.getRange(i + 1, 2).setValue(data.nombre || vals[i][1] || '');
+      sheet.getRange(i + 1, 3).setValue(fileId);
+      sheet.getRange(i + 1, 4).setValue(url);
+      sheet.getRange(i + 1, 5).setValue(ts);
+      found = true;
+      break;
+    }
+  }
+  if (!found) sheet.appendRow([cedula, data.nombre || '', fileId, url, ts]);
+
+  return { ok: true, url: url, fileId: fileId };
+}
+
+function obtenerFotoDrive(ss, cedula) {
+  cedula = (cedula || '').toString().trim();
+  if (!cedula) return { ok: false, error: 'Falta cedula' };
+  var sheet = ss.getSheetByName('Fotos');
+  if (!sheet) return { ok: true, existe: false };
+  var vals = sheet.getDataRange().getValues();
+  for (var i = vals.length - 1; i >= 1; i--) {
+    if (vals[i][0].toString() === cedula && vals[i][3]) {
+      return { ok: true, existe: true, url: vals[i][3], fileId: vals[i][2] || '' };
+    }
+  }
+  return { ok: true, existe: false };
+}
+
+function eliminarFotoDrive(ss, data) {
+  var cedula = (data.cedula || '').toString().trim();
+  if (!cedula) return { ok: false, error: 'Falta cedula' };
+  try {
+    var folder = DriveApp.getFolderById(FOTO_FOLDER_ID);
+    var it = folder.getFiles();
+    while (it.hasNext()) {
+      var f = it.next();
+      var nm = f.getName();
+      if (nm === 'foto_' + cedula + '.jpg' || nm === 'foto_' + cedula + '.png') {
+        f.setTrashed(true);
+      }
+    }
+  } catch (e) {}
+  var sheet = ss.getSheetByName('Fotos');
+  if (sheet) {
+    var vals = sheet.getDataRange().getValues();
+    for (var i = 1; i < vals.length; i++) {
+      if (vals[i][0].toString() === cedula) {
+        sheet.getRange(i + 1, 3).setValue('');
+        sheet.getRange(i + 1, 4).setValue('');
+        sheet.getRange(i + 1, 5).setValue(new Date().toISOString());
+      }
+    }
+  }
+  return { ok: true };
 }

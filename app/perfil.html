@@ -66,7 +66,18 @@
 
         /* Avatar zone */
         .avatar-zone{text-align:center;margin-top:-55px;position:relative;z-index:2}
-        .avatar-big{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:inline-flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:#fff;border:5px solid var(--card);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+        .avatar-big{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:inline-flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:#fff;border:5px solid var(--card);box-shadow:0 6px 20px rgba(0,0,0,.2);overflow:hidden;cursor:zoom-in;position:relative}
+        .avatar-big img{width:100%;height:100%;object-fit:cover;display:none}
+        .avatar{overflow:hidden;cursor:zoom-in}
+        .avatar .av-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none}
+        .foto-zoom{position:absolute;right:0;bottom:0;width:28px;height:28px;border-radius:50%;background:var(--verde-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid #fff}
+        .foto-btns{display:flex;gap:8px;justify-content:center;margin-top:10px}
+        .foto-btn{padding:6px 14px;border-radius:8px;font-size:.62rem;font-family:'Montserrat';font-weight:700;cursor:pointer;border:1px solid var(--verde);background:var(--verde-card);color:var(--verde-dark);display:inline-flex;align-items:center;gap:5px;transition:.15s}
+        .foto-btn:hover{background:#D1FAE5}
+        #modal-foto{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:zoom-out}
+        #modal-foto img{width:min(82vw,340px);height:min(82vw,340px);object-fit:cover;border-radius:50%;border:6px solid #fff;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+        #modal-foto .mf-name{color:#fff;font-weight:700;font-size:.85rem}
+        #modal-foto .mf-close{background:#fff;border:none;border-radius:20px;padding:6px 18px;font-size:.7rem;font-weight:700;cursor:pointer;color:var(--verde-dark);font-family:'Montserrat'}
         .profile-name{font-size:1.2rem;font-weight:800;margin-top:10px;color:var(--verde-dark)}
         .profile-role{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--verde)}
         .profile-cedula{font-size:.6rem;color:var(--txt3);margin-top:2px}
@@ -135,7 +146,7 @@
     <!-- Header -->
     <div class="hdr">
         <div class="hdr-left">
-            <div class="avatar" id="hdr-avatar">P</div>
+            <div class="avatar" id="hdr-avatar" onclick="abrirFoto()" title="Clic para agrandar"><span id="hdr-initials">P</span><img id="hdr-img" class="av-img" alt="Foto de perfil"></div>
             <div><div class="hdr-name" id="hdr-name">Cargando...</div><div class="hdr-sub">Mi Perfil</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -157,10 +168,19 @@
     <div class="profile-card">
         <div class="banner"></div>
         <div class="avatar-zone">
-            <div class="avatar-big" id="avatar-big">P</div>
+            <div class="avatar-big" id="avatar-big" onclick="abrirFoto()" title="Clic para agrandar">
+                <span id="avatar-initials">P</span>
+                <img id="avatar-img" alt="Foto de perfil">
+                <span class="foto-zoom"><i class="bi bi-zoom-in"></i></span>
+            </div>
             <div class="profile-name" id="profile-name">Cargando...</div>
             <div class="profile-role" id="profile-role">-</div>
             <div class="profile-cedula" id="profile-cedula">C.I: -</div>
+            <div class="foto-btns">
+                <label class="foto-btn" for="foto-input"><i class="bi bi-cloud-upload"></i> Subir foto</label>
+                <button type="button" class="foto-btn" id="btn-quitar-foto" onclick="quitarFoto()" style="display:none;border-color:#FECACA;background:#FEE2E2;color:#991B1B"><i class="bi bi-trash"></i> Quitar</button>
+                <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
+            </div>
         </div>
 
         <div class="card-body">
@@ -218,6 +238,13 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Foto Ampliada -->
+    <div id="modal-foto" onclick="cerrarFoto()" role="dialog" aria-label="Foto de perfil ampliada">
+        <img id="mf-img" alt="Foto de perfil ampliada">
+        <div class="mf-name" id="mf-name"></div>
+        <button class="mf-close" onclick="cerrarFoto()">Cerrar ✕</button>
+    </div>
 </div>
 
 <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
@@ -243,6 +270,7 @@ async function cargarPerfil() {
         mostrar(user);
         userId = user.id;
         await Promise.all([cargarStats(user, token), cargarFormularios(token)]);
+        sincronizarFotoDrive();
     } catch(e) {
         console.error(e);
         const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
@@ -262,6 +290,7 @@ async function cargarPorCedula(cedula) {
         } else {
             mostrarLocal();
         }
+        sincronizarFotoDrive();
     } catch(e) { mostrarLocal(); }
 }
 
@@ -282,8 +311,8 @@ function mostrar(user) {
     document.getElementById('profile-role').textContent = r.toUpperCase();
     document.getElementById('profile-cedula').textContent = 'C.I: ' + c;
     document.getElementById('hdr-name').textContent = n + ' ' + a;
-    document.getElementById('hdr-avatar').textContent = (n.charAt(0) + a.charAt(0)).toUpperCase();
-    document.getElementById('avatar-big').innerHTML = '<span>' + (n.charAt(0) + a.charAt(0)).toUpperCase() + '</span>';
+    pintarIniciales(n, a);
+    resolverFoto(user);
 
     const badge = document.getElementById('hdr-badge');
     const config = {alumno:'Alumno',docente:'Docente',admin:'Admin',academico:'Académico',administrador_plataforma:'Admin Plataforma',admin_filial:'Admin Filial'};
@@ -313,8 +342,8 @@ function mostrarLocal() {
     document.getElementById('profile-role').textContent = r.toUpperCase();
     document.getElementById('profile-cedula').textContent = 'C.I: ' + c;
     document.getElementById('hdr-name').textContent = n + ' ' + a;
-    document.getElementById('hdr-avatar').textContent = (n.charAt(0) + a.charAt(0)).toUpperCase();
-    document.getElementById('avatar-big').innerHTML = '<span>' + (n.charAt(0) + a.charAt(0)).toUpperCase() + '</span>';
+    pintarIniciales(n, a);
+    resolverFoto(null);
 
     document.getElementById('p-cedula').textContent = c;
     document.getElementById('p-nombre').textContent = n;
@@ -528,6 +557,148 @@ async function cargarFormularios(token) {
     }
 }
 
+// ═══ FOTO DE PERFIL ═══
+// Dónde se guarda: 1) SQLite users.foto vía PHP update_profile,
+// 2) localStorage centuria_foto_<cedula> (funciona en GitHub Pages),
+// 3) caché de sesión. La foto del registro (cámara) llega como user.foto.
+function fotoKey() {
+    const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+    return 'centuria_foto_' + c;
+}
+
+function pintarIniciales(n, a) {
+    const ini = ((n || 'U').charAt(0) + (a || '').charAt(0)).toUpperCase();
+    const s1 = document.getElementById('avatar-initials');
+    if (s1) s1.textContent = ini;
+    const s2 = document.getElementById('hdr-initials');
+    if (s2) s2.textContent = ini;
+}
+
+function aplicarFoto(dataUrl) {
+    const has = !!dataUrl;
+    const big = document.getElementById('avatar-img');
+    if (big) { big.src = dataUrl || ''; big.style.display = has ? 'block' : 'none'; }
+    const ini = document.getElementById('avatar-initials');
+    if (ini) ini.style.display = has ? 'none' : 'block';
+    const hdr = document.getElementById('hdr-img');
+    if (hdr) { hdr.src = dataUrl || ''; hdr.style.display = has ? 'block' : 'none'; }
+    const hi = document.getElementById('hdr-initials');
+    if (hi) hi.style.display = has ? 'none' : 'block';
+    const bq = document.getElementById('btn-quitar-foto');
+    if (bq) bq.style.display = has ? 'inline-flex' : 'none';
+}
+
+function resolverFoto(user) {
+    let f = (user && (user.foto || user.photo)) || '';
+    if (!f) { try { f = localStorage.getItem(fotoKey()) || ''; } catch(e) {} }
+    if (!f) { try { f = sessionStorage.getItem('centuria_foto_tmp') || ''; } catch(e) {} }
+    aplicarFoto(f);
+    return f;
+}
+
+function abrirFoto() {
+    const big = document.getElementById('avatar-img');
+    if (!big || !big.src || big.style.display === 'none') { showToast('No hay foto para mostrar', 'error'); return; }
+    document.getElementById('mf-img').src = big.src;
+    document.getElementById('mf-name').textContent = document.getElementById('profile-name').textContent || '';
+    document.getElementById('modal-foto').style.display = 'flex';
+}
+
+function cerrarFoto() { document.getElementById('modal-foto').style.display = 'none'; }
+
+function subirFoto(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('El archivo debe ser una imagen', 'error'); return; }
+    if (file.size > 4 * 1024 * 1024) { showToast('La imagen no puede superar 4MB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const S = 240;
+            const cv = document.createElement('canvas');
+            cv.width = S; cv.height = S;
+            const ctx = cv.getContext('2d');
+            const m = Math.min(img.width, img.height);
+            ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+            guardarFoto(cv.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = function() { showToast('No se pudo leer la imagen', 'error'); };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function guardarFoto(dataUrl) {
+    aplicarFoto(dataUrl);
+    const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+    const nom = (document.getElementById('profile-name').textContent || '').trim();
+    let finalFoto = dataUrl;
+    // 1) Subir a la carpeta Drive institucional vía GAS v06 (devuelve URL corta).
+    //    Si el script aún no está actualizado a v06, falla y se usa base64 local.
+    try {
+        showToast('Subiendo foto a Drive...', 'success');
+        const up = await gasUploadPhoto(ced, nom, dataUrl);
+        if (up && up.ok && up.url) {
+            finalFoto = up.url;
+            aplicarFoto(finalFoto);
+        }
+    } catch(e) {}
+    // 2) Guardar referencia (URL de Drive o base64) en este dispositivo
+    try { localStorage.setItem(fotoKey(), finalFoto); } catch(e) {}
+    try { sessionStorage.setItem('centuria_foto_tmp', finalFoto); } catch(e) {}
+    try {
+        const raw = localStorage.getItem('centuria_user');
+        if (raw) { const u = JSON.parse(raw); u.foto = finalFoto; localStorage.setItem('centuria_user', JSON.stringify(u)); }
+    } catch(e) {}
+    // 3) Guardar en SQLite (users.foto) vía PHP cuando hay backend
+    if (userId) {
+        try {
+            const fd = new FormData();
+            fd.append('action', 'update_profile');
+            fd.append('user_id', userId);
+            fd.append('foto', finalFoto);
+            const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=update_profile', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                body: fd
+            });
+            const data = await resp.json();
+            showToast(data.success ? 'Foto guardada correctamente' : 'Foto guardada en Drive y este dispositivo', data.success ? 'success' : 'error');
+            return;
+        } catch(e) {}
+    }
+    showToast('Foto guardada en Drive y este dispositivo', 'success');
+}
+
+// Trae la foto desde Drive si en este dispositivo aún no hay ninguna visible
+async function sincronizarFotoDrive() {
+    try {
+        const big = document.getElementById('avatar-img');
+        if (big && big.style.display === 'block') return;
+        const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+        if (!ced || typeof gasGetPhoto !== 'function') return;
+        const r = await gasGetPhoto(ced);
+        if (r && r.ok && r.existe && r.url) {
+            aplicarFoto(r.url);
+            try { localStorage.setItem(fotoKey(), r.url); } catch(e) {}
+        }
+    } catch(e) {}
+}
+
+function quitarFoto() {
+    aplicarFoto('');
+    try { localStorage.removeItem(fotoKey()); } catch(e) {}
+    try { sessionStorage.removeItem('centuria_foto_tmp'); } catch(e) {}
+    try {
+        const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+        if (ced && typeof gasDeletePhoto === 'function') gasDeletePhoto(ced);
+    } catch(e) {}
+    showToast('Foto eliminada', 'success');
+}
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarFoto(); });
 document.addEventListener('DOMContentLoaded', cargarPerfil);
 </script>
 </body>

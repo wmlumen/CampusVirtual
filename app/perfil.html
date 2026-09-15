@@ -185,6 +185,14 @@
                 <div class="row-item"><span class="row-label">Último Acceso</span><span class="row-value" id="p-login">-</span></div>
             </div>
 
+            <!-- Formularios -->
+            <div class="sec" id="sec-formularios" style="display:none">
+                <div class="sec-title"><i class="bi bi-file-earmark-text"></i> Mis Formularios</div>
+                <div id="formularios-list">
+                    <div style="text-align:center;padding:10px;color:var(--txt3);font-size:.65rem">Cargando formularios...</div>
+                </div>
+            </div>
+
             <!-- Botones -->
             <div class="btns">
                 <button class="btn btn-p" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
@@ -234,7 +242,7 @@ async function cargarPerfil() {
 
         mostrar(user);
         userId = user.id;
-        await cargarStats(user, token);
+        await Promise.all([cargarStats(user, token), cargarFormularios(token)]);
     } catch(e) {
         console.error(e);
         const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
@@ -478,6 +486,45 @@ async function cambiarPassword() {
     } catch(e) {
         errEl.textContent = 'Error de conexión';
         errEl.style.display = 'block';
+    }
+}
+
+// ═══ FORMULARIOS ═══
+async function cargarFormularios(token) {
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=my_forms', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await r.json();
+        const forms = data.formularios || [];
+        if (forms.length === 0) return;
+
+        const sec = document.getElementById('sec-formularios');
+        sec.style.display = 'block';
+        const list = document.getElementById('formularios-list');
+
+        list.innerHTML = forms.map(f => {
+            const estado = f.mi_estado || 'pendiente';
+            const badge = estado === 'completado' 
+                ? '<span style="padding:3px 10px;border-radius:20px;font-size:.5rem;font-weight:700;background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7"><i class="bi bi-check-circle"></i> COMPLETADO</span>'
+                : '<span style="padding:3px 10px;border-radius:20px;font-size:.5rem;font-weight:700;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A"><i class="bi bi-clock"></i> PENDIENTE</span>';
+            return `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+                    <div>
+                        <div style="font-size:.72rem;font-weight:700;color:var(--txt2)">${f.nombre || 'Formulario'}</div>
+                        <div style="font-size:.55rem;color:var(--txt3);margin-top:2px">Código: ${f.codigo || f.id} · Tipo: ${f.tipo || 'matrícula'}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        ${badge}
+                        <a href="formulario-matricula.html?id=${f.id}" 
+                           style="padding:5px 12px;border-radius:8px;font-size:.6rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:.2s">
+                            <i class="bi bi-pencil-square"></i> ${estado === 'completado' ? 'Ver' : 'Completar'}
+                        </a>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch(e) {
+        console.error('Error cargando formularios:', e);
     }
 }
 

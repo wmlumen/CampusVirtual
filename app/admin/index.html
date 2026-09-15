@@ -112,6 +112,10 @@
                 :class="activeTab==='reportes' ? 'tab-active' : 'tab-inactive'">
                 <i class="bi bi-bar-chart-fill text-base"></i> Reportes
             </button>
+            <button x-show="userRole === 'admin'" @click="switchTab('formularios')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
+                :class="activeTab==='formularios' ? 'tab-active' : 'tab-inactive'">
+                <i class="bi bi-file-earmark-text-fill text-base"></i> Formularios
+            </button>
             <button x-show="userRole === 'admin'" @click="switchTab('config')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
                 :class="activeTab==='config' ? 'tab-active' : 'tab-inactive'">
                 <i class="bi bi-gear-fill text-base"></i> Configuración

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Matrícula — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--dorado:#d4a843;--txt2:#2D2D2D;--txt3:#64748b;--border:#C8E6C9}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Montserrat',sans-serif;background:#f0fdf4;color:var(--txt2);min-height:100vh}
+
+        .topbar{background:var(--verde-dark);border-bottom:2px solid var(--verde);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+        .topbar-brand{font-size:.85rem;font-weight:700;color:#fff;letter-spacing:1px}
+        .topbar-nav{display:flex;gap:6px}
+        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.6rem;font-weight:600;padding:5px 10px;border-radius:6px;transition:.2s}
+        .topbar-nav a:hover,.topbar-nav a.active{background:var(--verde);color:#fff}
+
+        .wrap{max-width:850px;margin:0 auto;padding:20px 16px 80px}
+        .breadcrumb{font-size:.6rem;color:var(--txt3);margin-bottom:12px}
+        .breadcrumb a{color:var(--verde-dark);text-decoration:none}
+
+        .form-card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden}
+        .form-header{background:linear-gradient(135deg,var(--verde-dark),var(--verde));padding:24px 28px;color:#fff}
+        .form-header h1{font-size:1.1rem;font-weight:800;margin-bottom:4px}
+        .form-header p{font-size:.65rem;opacity:.8}
+        .form-header .codigo{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:.55rem;font-weight:700;letter-spacing:.5px;margin-top:8px;display:inline-block}
+
+        .form-body{padding:24px 28px}
+        .sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--verde-dark);margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--verde);display:flex;align-items:center;gap:6px}
+        .sec-title:first-child{margin-top:0}
+        .sec-title i{color:var(--verde)}
+
+        .field-row{display:flex;gap:12px;margin-bottom:10px}
+        .field-group{flex:1}
+        .field-group label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+        .field-group label .req{color:#dc2626}
+        .field-group input,.field-group select,.field-group textarea{width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.78rem;font-family:'Montserrat';font-weight:500;color:var(--txt2);background:#fff;outline:none;transition:.2s}
+        .field-group input:focus,.field-group select:focus,.field-group textarea:focus{border-color:var(--verde);box-shadow:0 0 0 3px rgba(0,177,64,.15)}
+        .field-group textarea{resize:vertical;min-height:60px}
+
+        .checkbox-row{display:flex;align-items:center;gap:8px;padding:12px;background:var(--verde-card);border-radius:10px;border:1px solid var(--border)}
+        .checkbox-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--verde)}
+
+        .declaration{background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:14px;font-size:.65rem;color:#92400E;line-height:1.6}
+
+        .signature-zone{text-align:center;padding:20px;border:2px dashed var(--border);border-radius:12px;background:var(--verde-card)}
+        .signature-zone .sig-line{width:200px;border-bottom:2px solid var(--txt2);margin:10px auto 6px;font-size:.8rem;font-weight:600}
+        .signature-zone .sig-label{font-size:.55rem;color:var(--txt3);text-transform:uppercase}
+
+        .btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+        .btn{padding:10px 20px;border-radius:10px;font-size:.7rem;font-family:'Montserrat';font-weight:700;cursor:pointer;border:none;transition:.15s;display:flex;align-items:center;gap:6px}
+        .btn-primary{background:var(--verde);color:#fff}.btn-primary:hover{background:var(--verde-dark);transform:translateY(-1px)}
+        .btn-secondary{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}.btn-secondary:hover{background:#D1FAE5}
+        .btn-print{background:#2563EB;color:#fff}.btn-print:hover{background:#1D4ED8;transform:translateY(-1px)}
+        .btn-download{background:var(--dorado);color:#fff}.btn-download:hover{background:#b8922f;transform:translateY(-1px)}
+
+        .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:.55rem;font-weight:700;text-transform:uppercase}
+        .status-completado{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+        .status-pendiente{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;animation:fadeIn .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+        .toast-success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+        .toast-error{background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+        .loader{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9998;align-items:center;justify-content:center}
+        .loader.show{display:flex}
+        .loader-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--verde);border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px 16px;background:var(--verde-dark);border-top:2px solid var(--verde);font-size:.5rem;font-weight:500;color:rgba(255,255,255,.6)}
+
+        @media print{
+            body{background:#fff}
+            .topbar,.footer,.btns,.breadcrumb,.no-print{display:none!important}
+            .form-card{box-shadow:none;border:none}
+            .form-header{background:var(--verde-dark)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            .sec-title{color:var(--verde-dark)!important;border-bottom-color:var(--verde)!important}
+            .field-group input,.field-group select{border:none!important;border-bottom:1px solid #ccc!important}
+        }
+        @media(max-width:768px){
+            .field-row{flex-direction:column;gap:8px}
+            .form-body{padding:16px}
+            .topbar{flex-direction:column;gap:6px}
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
+        <div class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="formulario-matricula.html" class="active">Matrícula</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="breadcrumb">
+            <a href="dashboard.html">Inicio</a> / <a href="perfil.html">Mi Perfil</a> / Formulario de Matrícula
+        </div>
+
+        <div class="form-card">
+            <div class="form-header">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+                    <div>
+                        <h1><i class="bi bi-file-earmark-text"></i> Formulario de Matrícula</h1>
+                        <p>Instituto Superior Centuria — Formulario único de admisión y matrícula</p>
+                    </div>
+                    <div>
+                        <span class="codigo" id="form-codigo">CEN-AS-SM-AGP005</span>
+                        <div id="form-status" style="margin-top:6px"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-body" id="form-body">
+                <div style="text-align:center;padding:40px;color:var(--txt3)">
+                    <div class="loader-spinner" style="margin:0 auto 12px"></div>
+                    <p style="font-size:.75rem;font-weight:600">Cargando formulario...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loader" id="global-loader"><div class="loader-spinner"></div></div>
+
+    <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
+
+    <script src="js/api.js?v=7"></script>
+    <script>
+    (function(){
+        const token = CenturiaAPI.getToken();
+        const user = CenturiaAPI.getCurrentUser();
+        const baseUrl = CenturiaAPI.baseUrl;
+
+        if (!token || !user) {
+            location.href = 'index.html';
+            return;
+        }
+
+        let formularioData = null;
+        let alumnoData = {};
+        let savedState = 'pendiente';
+
+        async function init() {
+            // Sembrar formulario si es admin
+            const cedula = user.username || sessionStorage.getItem('current_cedula') || '';
+            if (cedula === '1340130') {
+                try {
+                    await fetch(baseUrl + 'formularios.php?action=seed', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                } catch(e) {}
+            }
+
+            await loadFormulario();
+        }
+
+        async function loadFormulario() {
+            try {
+                // Buscar formulario de matrícula
+                const r = await fetch(baseUrl + 'formularios.php?action=my_forms', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await r.json();
+                const forms = data.formularios || [];
+                const matricula = forms.find(f => f.codigo === 'CEN-AS-SM-AGP005') || forms.find(f => f.tipo === 'matricula') || forms[0];
+
+                if (!matricula) {
+                    document.getElementById('form-body').innerHTML = `
+                        <div style="text-align:center;padding:40px">
+                            <i class="bi bi-info-circle" style="font-size:2rem;color:var(--verde);margin-bottom:10px"></i>
+                            <p style="font-size:.8rem;font-weight:600;color:var(--txt2)">No hay formularios disponibles para tu carrera.</p>
+                            <p style="font-size:.65rem;color:var(--txt3);margin-top:6px">Contacta al administrador para más información.</p>
+                        </div>`;
+                    return;
+                }
+
+                formularioData = matricula;
+                document.getElementById('form-codigo').textContent = matricula.codigo || matricula.id;
+
+                // Load saved data or use profile data
+                let saved = {};
+                if (matricula.mis_datos) {
+                    try { saved = JSON.parse(matricula.mis_datos); } catch(e) {}
+                }
+                savedState = matricula.mi_estado || 'pendiente';
+
+                // Build alumno data from profile + saved
+                alumnoData = {
+                    apellido_paterno: user.lastname || '',
+                    apellido_materno: '',
+                    nombres: user.firstname || '',
+                    sexo: saved.sexo || '',
+                    nacimiento: saved.nacimiento || '',
+                    lugar_nacimiento: saved.lugar_nacimiento || '',
+                    nacionalidad: saved.nacionalidad || 'ECUATORIANA',
+                    estado_civil: saved.estado_civil || 'Soltero/a',
+                    direccion: saved.direccion || '',
+                    email: user.email || '',
+                    telefono: user.telefono || '',
+                    cedula: cedula,
+                    libreta_militar: saved.libreta_militar || '',
+                    sangre: saved.sangre || '',
+                    discapacidad: saved.discapacidad || 'No',
+                    carrera: user.carrera || '',
+                    semestre: user.grado || '',
+                    padre_nombre: saved.padre_nombre || '',
+                    padre_ocupacion: saved.padre_ocupacion || '',
+                    madre_nombre: saved.madre_nombre || '',
+                    madre_ocupacion: saved.madre_ocupacion || '',
+                    emergencia_contacto: saved.emergencia_contacto || '',
+                    emergencia_telefono: saved.emergencia_telefono || '',
+                    declaracion_veraz: saved.declaracion_veraz || false,
+                    firma_alumno: saved.firma_alumno || (user.firstname + ' ' + user.lastname)
+                };
+
+                renderForm();
+            } catch(e) {
+                console.error(e);
+                document.getElementById('form-body').innerHTML = `
+                    <div style="text-align:center;padding:40px">
+                        <i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#dc2626;margin-bottom:10px"></i>
+                        <p style="font-size:.8rem;font-weight:600">Error al cargar formulario</p>
+                    </div>`;
+            }
+        }
+
+        function renderForm() {
+            const container = document.getElementById('form-body');
+            const campos = JSON.parse(formularioData.campos_json || '[]');
+            
+            // Group by section
+            const sections = {};
+            const sectionLabels = {
+                datos_personales: { label: 'Datos Personales', icon: 'bi-person' },
+                datos_institucionales: { label: 'Datos Institucionales', icon: 'bi-mortarboard' },
+                info_opcional: { label: 'Información Adicional', icon: 'bi-info-circle' },
+                declaracion: { label: 'Declaración Juramentada', icon: 'bi-journal-text' },
+                firma: { label: 'Firma', icon: 'bi-pen' }
+            };
+
+            campos.forEach(c => {
+                const sec = c.section || 'datos_personales';
+                if (!sections[sec]) sections[sec] = [];
+                sections[sec].push(c);
+            });
+
+            let html = '';
+
+            Object.entries(sections).forEach(([secKey, secCampos]) => {
+                const secInfo = sectionLabels[secKey] || { label: secKey, icon: 'bi-folder' };
+                html += `<div class="sec-title"><i class="bi ${secInfo.icon}"></i> ${secInfo.label}</div>`;
+
+                if (secKey === 'declaracion') {
+                    html += `
+                        <div class="declaration">
+                            <strong>DECLARACIÓN JURAMENTADA:</strong><br>
+                            Declaro bajo juramento que todos los datos proporcionados en el presente formulario son verídicos y completos. 
+                            Acepto que la información falsa o incompleta será motivo de anulación de mi matrícula. 
+                            Me comprometo a cumplir con el Reglamento Interno del Instituto Superior Centuria.
+                        </div>`;
+                }
+
+                if (secKey === 'firma') {
+                    html += `
+                        <div class="signature-zone" style="margin-top:12px">
+                            <div class="sig-line">${alumnoData.firma_alumno || '________________________'}</div>
+                            <div class="sig-label">Firma del Alumno(a)</div>
+                            <p style="font-size:.55rem;color:var(--txt3);margin-top:8px">Fecha: ${new Date().toLocaleDateString('es-ES')}</p>
+                        </div>`;
+                }
+
+                // Render fields in pairs
+                let rowOpen = false;
+                secCampos.forEach((campo, i) => {
+                    if (secKey === 'declaracion' || secKey === 'firma') {
+                        if (campo.key === 'declaracion_veraz') {
+                            html += `
+                                <div class="checkbox-row" style="margin-top:10px">
+                                    <input type="checkbox" id="field-${campo.key}" ${alumnoData[campo.key] ? 'checked' : ''} onchange="alumnoData.declaracion_veraz = this.checked">
+                                    <label for="field-${campo.key}" style="font-size:.65rem;font-weight:600;margin:0">
+                                        Declaro bajo juramento que todos los datos proporcionados son verídicos y completos.
+                                    </label>
+                                </div>`;
+                        }
+                        return;
+                    }
+
+                    if (i % 2 === 0) { html += '<div class="field-row">'; rowOpen = true; }
+                    html += renderField(campo);
+                    if (i % 2 === 1 || i === secCampos.length - 1) { html += '</div>'; rowOpen = false; }
+                });
+                if (rowOpen) html += '</div>';
+            });
+
+            // Status badge
+            const statusEl = document.getElementById('form-status');
+            if (savedState === 'completado') {
+                statusEl.innerHTML = '<span class="status-badge status-completado"><i class="bi bi-check-circle"></i> Completado</span>';
+            } else {
+                statusEl.innerHTML = '<span class="status-badge status-pendiente"><i class="bi bi-clock"></i> Pendiente</span>';
+            }
+
+            // Buttons
+            html += `
+                <div class="btns no-print">
+                    <button class="btn btn-secondary" onclick="location.href='perfil.html'"><i class="bi bi-arrow-left"></i> Volver</button>
+                    <button class="btn btn-print" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+                    <button class="btn btn-download" onclick="window.print()"><i class="bi bi-download"></i> Descargar PDF</button>
+                    <button class="btn btn-primary" onclick="guardarFormulario()"><i class="bi bi-check-lg"></i> Guardar</button>
+                </div>`;
+
+            container.innerHTML = html;
+        }
+
+        function renderField(campo) {
+            const val = alumnoData[campo.key] || '';
+            const req = campo.required ? '<span class="req">*</span>' : '';
+            const reqAttr = campo.required ? 'required' : '';
+            
+            if (campo.type === 'select') {
+                const options = (campo.options || []).map(o => 
+                    `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`
+                ).join('');
+                return `<div class="field-group">
+                    <label>${campo.label} ${req}</label>
+                    <select id="field-${campo.key}" onchange="alumnoData['${campo.key}']=this.value" ${reqAttr}>
+                        <option value="">— Seleccionar —</option>${options}
+                    </select>
+                </div>`;
+            }
+
+            const inputType = campo.type === 'email' ? 'email' : campo.type === 'date' ? 'date' : 'text';
+            return `<div class="field-group">
+                <label>${campo.label} ${req}</label>
+                <input type="${inputType}" id="field-${campo.key}" value="${val}" 
+                    oninput="alumnoData['${campo.key}']=this.value" ${reqAttr}>
+            </div>`;
+        }
+
+        window.guardarFormulario = async function() {
+            if (!formularioData) return;
+
+            // Validate required fields
+            const campos = JSON.parse(formularioData.campos_json || '[]');
+            const missing = [];
+            campos.forEach(c => {
+                if (c.required && c.key !== 'declaracion_veraz' && c.key !== 'firma_alumno') {
+                    if (!alumnoData[c.key]) missing.push(c.label);
+                }
+            });
+
+            if (missing.length > 0) {
+                showToast('Campos requeridos: ' + missing.join(', '), 'error');
+                return;
+            }
+
+            if (!alumnoData.declaracion_veraz) {
+                showToast('Debe aceptar la declaración juramentada', 'error');
+                return;
+            }
+
+            document.getElementById('global-loader').classList.add('show');
+
+            try {
+                const fd = new FormData();
+                fd.append('action', 'save_data');
+                fd.append('formulario_id', formularioData.id);
+                fd.append('datos_json', JSON.stringify(alumnoData));
+
+                const r = await fetch(baseUrl + 'formularios.php', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: fd
+                });
+                const data = await r.json();
+
+                if (data.status === 'Exito') {
+                    showToast('Formulario guardado correctamente', 'success');
+                    savedState = 'completado';
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('Error: ' + (data.error || 'No se pudo guardar'), 'error');
+                }
+            } catch(e) {
+                showToast('Error de conexión', 'error');
+            } finally {
+                document.getElementById('global-loader').classList.remove('show');
+            }
+        };
+
+        function showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = 'toast toast-' + type;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        // Auto-fill fields from profile on first load
+        window.alumnoData = alumnoData;
+
+        init();
+    })();
+    </script>
+</body>
+</html>

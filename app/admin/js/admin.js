@@ -139,7 +139,8 @@ document.addEventListener('alpine:init', () => {
                 cursos:     'sections/catalogos.html',
                 reportes:   'sections/reportes.html',
                 config:     'sections/config.html',
-                vistas:     'sections/vistas.html'
+                vistas:     'sections/vistas.html',
+                formularios: 'sections/formularios.html'
             };
             const url = urls[tab];
             if (!url) return;

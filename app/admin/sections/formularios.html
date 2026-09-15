@@ -1,0 +1,273 @@
+<!-- ═══ SECCIÓN: FORMULARIOS ═══ -->
+<div x-data="{
+    formularios: [],
+    completions: [],
+    selectedForm: null,
+    searchForm: '',
+    tabForm: 'plantillas',
+    showCreateForm: false,
+    formCreate: { codigo: 'CEN-AS-SM-AGP005', nombre: 'Formulario de Matrícula — Instituto Superior Centuria', carrera: '', tipo: 'matricula' },
+
+    async init() { await this.loadFormularios(); },
+
+    async loadFormularios() {
+        try {
+            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=list_forms', {
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+            });
+            const data = await r.json();
+            this.formularios = data.formularios || [];
+        } catch(e) { console.error(e); }
+    },
+
+    async seedFormulario() {
+        try {
+            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=seed', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+            });
+            const data = await r.json();
+            alert(data.message || data.status);
+            await this.loadFormularios();
+        } catch(e) { alert('Error al sembrar formulario'); }
+    },
+
+    async crearFormulario() {
+        const f = this.formCreate;
+        if (!f.codigo || !f.nombre) { alert('Código y nombre requeridos'); return; }
+        try {
+            const fd = new FormData();
+            fd.append('action', 'create');
+            fd.append('codigo', f.codigo);
+            fd.append('nombre', f.nombre);
+            fd.append('carrera', f.carrera);
+            fd.append('tipo', f.tipo);
+            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                body: fd
+            });
+            const data = await r.json();
+            if (data.status === 'Exito') {
+                this.showCreateForm = false;
+                await this.loadFormularios();
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo crear'));
+            }
+        } catch(e) { alert('Error de conexión'); }
+    },
+
+    async eliminarFormulario(f) {
+        if (!confirm('¿Eliminar formulario "' + f.nombre + '"?')) return;
+        try {
+            const fd = new FormData();
+            fd.append('action', 'delete');
+            fd.append('id', f.id);
+            await fetch(CenturiaAPI.baseUrl + 'formularios.php', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                body: fd
+            });
+            await this.loadFormularios();
+        } catch(e) {}
+    },
+
+    async verCompletions(f) {
+        this.selectedForm = f;
+        this.tabForm = 'completions';
+        try {
+            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=completions&formulario_id=' + f.id, {
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+            });
+            const data = await r.json();
+            this.completions = data.completions || [];
+        } catch(e) { this.completions = []; }
+    },
+
+    get filteredFormularios() {
+        if (!this.searchForm.trim()) return this.formularios;
+        const q = this.searchForm.toLowerCase();
+        return this.formularios.filter(f => 
+            (f.nombre || '').toLowerCase().includes(q) || 
+            (f.codigo || '').toLowerCase().includes(q)
+        );
+    }
+}" x-init="init()">
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="bi bi-file-earmark-text-fill text-emerald-600"></i> Formularios por Carrera
+            </h2>
+            <p class="text-[11px] text-slate-500 mt-1">Gestión de formularios de matrícula, inscripción y documentos por carrera. 
+            Los alumnos completan los formularios desde su perfil.</p>
+        </div>
+        <div class="flex gap-2">
+            <button @click="seedFormulario()" class="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold hover:bg-amber-200 transition">
+                <i class="bi bi-seedling me-1"></i> Sembrar Matrícula
+            </button>
+            <button @click="showCreateForm = !showCreateForm" class="btn-primary px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <i class="bi bi-plus-lg"></i> Nuevo Formulario
+            </button>
+        </div>
+    </div>
+
+    <!-- FORM CREAR -->
+    <div x-show="showCreateForm" x-transition class="bg-white rounded-xl border border-slate-200 p-4 mb-4 shadow-sm">
+        <h3 class="text-xs font-bold text-slate-700 mb-3">Crear Formulario</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Código</label>
+                <input x-model="formCreate.codigo" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs mt-1" placeholder="CEN-AS-SM-AGP005">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Nombre</label>
+                <input x-model="formCreate.nombre" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs mt-1" placeholder="Formulario de Matrícula">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Carrera (vacío = todas)</label>
+                <input x-model="formCreate.carrera" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs mt-1" placeholder="Todas las carreras">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">Tipo</label>
+                <select x-model="formCreate.tipo" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs mt-1">
+                    <option value="matricula">Matrícula</option>
+                    <option value="inscripcion">Inscripción</option>
+                    <option value="constancia">Constancia</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-3 justify-end">
+            <button @click="showCreateForm=false" class="px-3 py-1.5 text-[10px] font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition">Cancelar</button>
+            <button @click="crearFormulario()" class="btn-primary px-3 py-1.5 rounded-lg text-[10px] font-bold"><i class="bi bi-check-lg me-1"></i> Crear</button>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4">
+        <button @click="tabForm='plantillas'" class="flex-1 py-2 rounded-md text-[10px] font-bold transition"
+            :class="tabForm==='plantillas' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            <i class="bi bi-file-earmark me-1"></i> Plantillas ({{formularios.length}})
+        </button>
+        <button @click="tabForm='completions'" class="flex-1 py-2 rounded-md text-[10px] font-bold transition"
+            :class="tabForm==='completions' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            <i class="bi bi-people me-1"></i> Completitud de Alumnos
+        </button>
+    </div>
+
+    <!-- SEARCH -->
+    <div x-show="tabForm==='plantillas'" class="mb-4">
+        <input x-model="searchForm" placeholder="Buscar por nombre o código..." 
+            class="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs">
+    </div>
+
+    <!-- ═══ TAB: PLANTILLAS ═══ -->
+    <div x-show="tabForm==='plantillas'" class="space-y-3">
+        <template x-for="f in filteredFormularios" :key="f.id">
+            <div class="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-bold" x-text="f.codigo"></span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[9px] font-bold uppercase" x-text="f.tipo"></span>
+                            <span x-show="f.carrera" class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[9px] font-bold" x-text="f.carrera"></span>
+                        </div>
+                        <h3 class="text-xs font-bold text-slate-800 mt-1" x-text="f.nombre"></h3>
+                        <div class="flex gap-4 mt-2">
+                            <span class="text-[10px] text-slate-500">
+                                <i class="bi bi-people text-emerald-500"></i> <span x-text="f.total_alumnos || 0"></span> alumnos
+                            </span>
+                            <span class="text-[10px] text-emerald-600 font-bold">
+                                <i class="bi bi-check-circle"></i> <span x-text="f.completados || 0"></span> completados
+                            </span>
+                            <span x-show="(f.total_alumnos||0) > 0" class="text-[10px] text-amber-600">
+                                <i class="bi bi-clock"></i> <span x-text="(f.total_alumnos||0) - (f.completados||0)"></span> pendientes
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="verCompletions(f)" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition">
+                            <i class="bi bi-eye me-1"></i> Ver Completitud
+                        </button>
+                        <button @click="eliminarFormulario(f)" class="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Barra de progreso -->
+                <div x-show="(f.total_alumnos||0) > 0" class="mt-3">
+                    <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full transition-all" 
+                            :style="'width:' + Math.round(((f.completados||0)/(f.total_alumnos||1))*100) + '%'"></div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <div x-show="filteredFormularios.length === 0" class="text-center py-12 text-slate-400">
+            <i class="bi bi-file-earmark-x text-4xl mb-3 block"></i>
+            <p class="text-xs font-bold">No hay formularios registrados</p>
+            <p class="text-[10px] mt-1">Usa "Sembrar Matrícula" para crear el formulario predeterminado</p>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: COMPLETITUD ═══ -->
+    <div x-show="tabForm==='completions'">
+        <div x-show="selectedForm" class="mb-4">
+            <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                <i class="bi bi-file-earmark-text text-emerald-600"></i>
+                <span class="text-xs font-bold text-emerald-800" x-text="selectedForm?.nombre || ''"></span>
+                <button @click="tabForm='plantillas'; selectedForm=null" class="ml-auto text-[10px] text-slate-500 hover:text-slate-700">
+                    <i class="bi bi-x-lg"></i> Cerrar
+                </button>
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div x-show="selectedForm" class="grid grid-cols-3 gap-3 mb-4">
+            <div class="bg-white rounded-xl border border-slate-200 p-3 text-center">
+                <div class="text-lg font-bold text-slate-800" x-text="completions.length"></div>
+                <div class="text-[9px] font-bold text-slate-400 uppercase">Total</div>
+            </div>
+            <div class="bg-white rounded-xl border border-emerald-200 p-3 text-center">
+                <div class="text-lg font-bold text-emerald-600" x-text="completions.filter(c=>c.estado==='completado').length"></div>
+                <div class="text-[9px] font-bold text-emerald-400 uppercase">Completados</div>
+            </div>
+            <div class="bg-white rounded-xl border border-amber-200 p-3 text-center">
+                <div class="text-lg font-bold text-amber-600" x-text="completions.filter(c=>c.estado!=='completado').length"></div>
+                <div class="text-[9px] font-bold text-amber-400 uppercase">Pendientes</div>
+            </div>
+        </div>
+
+        <!-- Lista de alumnos -->
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div class="grid grid-cols-6 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase">
+                <div>Cédula</div>
+                <div>Nombre</div>
+                <div>Carrera</div>
+                <div>Sección</div>
+                <div>Estado</div>
+                <div>Fecha</div>
+            </div>
+            <template x-for="c in completions" :key="c.id">
+                <div class="grid grid-cols-6 gap-2 px-4 py-2.5 border-b border-slate-100 text-[10px] hover:bg-slate-50 transition">
+                    <div class="font-bold text-slate-700" x-text="c.cedula"></div>
+                    <div class="text-slate-600" x-text="(c.lastname||'') + ' ' + (c.firstname||'')"></div>
+                    <div class="text-slate-500" x-text="c.carrera || '-'"></div>
+                    <div class="text-slate-500" x-text="c.seccion || '-'"></div>
+                    <div>
+                        <span class="px-2 py-0.5 rounded-full text-[8px] font-bold"
+                            :class="c.estado==='completado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+                            x-text="c.estado.toUpperCase()"></span>
+                    </div>
+                    <div class="text-slate-400" x-text="c.completado_at ? new Date(c.completado_at).toLocaleDateString('es-ES') : '-'"></div>
+                </div>
+            </template>
+            <div x-show="completions.length === 0" class="text-center py-8 text-slate-400 text-xs">
+                <i class="bi bi-inbox text-2xl mb-2 block"></i>
+                Sin registros de completitud
+            </div>
+        </div>
+    </div>
+</div>

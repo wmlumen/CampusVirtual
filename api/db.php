@@ -265,6 +265,39 @@ class Database {
                 completado INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
+            )",
+
+            // ═══ TABLAS: Formularios por Carrera + Completitud de Alumnos ═══
+
+            // formularios_carrera: plantillas de formularios asociados a una carrera
+            "CREATE TABLE IF NOT EXISTS formularios_carrera (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT UNIQUE NOT NULL,
+                nombre TEXT NOT NULL,
+                carrera TEXT DEFAULT '',
+                tipo TEXT DEFAULT 'matricula' CHECK(tipo IN ('matricula','inscripcion','constancia','otro')),
+                campos_json TEXT DEFAULT '[]',
+                activo INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+
+            // formularios_alumno: datos completados por cada alumno + estado
+            "CREATE TABLE IF NOT EXISTS formularios_alumno (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                formulario_id INTEGER NOT NULL,
+                cedula TEXT DEFAULT '',
+                estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente','completado','aprobado')),
+                datos_json TEXT DEFAULT '{}',
+                completado_at DATETIME,
+                revisado_por TEXT DEFAULT '',
+                revisado_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (formulario_id) REFERENCES formularios_carrera(id),
+                UNIQUE(user_id, formulario_id)
             )"
         ];
 
@@ -343,6 +376,16 @@ class Database {
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_cedula ON attendance_records(cedula)");
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_fecha ON attendance_records(fecha)");
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_carrera ON attendance_records(carrera)");
+        } catch (Exception $e) {}
+
+        // ═══ Tabla formularios_carrera + formularios_alumno (índices) ═══
+        try {
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fc_carrera ON formularios_carrera(carrera)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fc_tipo ON formularios_carrera(tipo)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_user ON formularios_alumno(user_id)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_form ON formularios_alumno(formulario_id)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_estado ON formularios_alumno(estado)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_fa_cedula ON formularios_alumno(cedula)");
         } catch (Exception $e) {}
 
         foreach ($schema as $sql) {

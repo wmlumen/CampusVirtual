@@ -9,7 +9,7 @@ define('API_BASE_PATH', '/api/');
 define('DB_PATH', __DIR__ . '/centuria.db');
 
 // CORS headers - allow all origins for development
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (php_sapi_name() === 'cli' OR $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization');

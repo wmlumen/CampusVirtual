@@ -27,6 +27,8 @@ document.addEventListener('alpine:init', () => {
         userFilterEstado: '',
         stats: { totalCedulas: 0, alumnos: 0, docentes: 0 },
         rolesConfig: [],
+        filiales: [],
+        nuevaFilial: { nombre: '', codigo: '', direccion: '' },
         permisosDisponibles: [
             { id: 'ver_cursos', label: 'Ver cursos' },
             { id: 'editar_cursos', label: 'Editar cursos' },
@@ -122,10 +124,10 @@ document.addEventListener('alpine:init', () => {
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 container.innerHTML = await resp.text();
-                Alpine.initTree(container);
                 if (tab === 'usuarios') await this.initUsuarios();
                 if (tab === 'cursos') await this.loadCatalogData();
                 if (tab === 'reportes') await this.loadReportData();
+                Alpine.initTree(container);
             } catch (err) {
                 console.error('Error cargando seccion:', err);
                 container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-slate-400">
@@ -148,7 +150,9 @@ document.addEventListener('alpine:init', () => {
             await Promise.all([
                 this.cargarPendientes(),
                 this.cargarUsuarios(),
-                this.cargarRolesConfig()
+                this.cargarRolesConfig(),
+                this.cargarFiliales(),
+                this.cargarAdminsPorFilial()
             ]);
         },
 
@@ -438,6 +442,80 @@ document.addEventListener('alpine:init', () => {
                 await this.cargarRolesConfig();
             } catch (e) { console.error(e); }
             finally { this.loading = false; }
+        },
+
+        // ═══════════════════════════════════════
+        // MÓDULO: FILIALES
+        // ═══════════════════════════════════════
+        async cargarFiliales() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const data = await r.json();
+                this.filiales = data.filiales || [];
+            } catch (e) { console.error('Error cargando filiales:', e); }
+        },
+
+        async crearFilial() {
+            if (!this.nuevaFilial.nombre || !this.nuevaFilial.codigo) {
+                alert('Nombre y código requeridos');
+                return;
+            }
+            try {
+                const fd = new FormData();
+                fd.append('nombre', this.nuevaFilial.nombre);
+                fd.append('codigo', this.nuevaFilial.codigo.toUpperCase());
+                fd.append('direccion', this.nuevaFilial.direccion);
+                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=create', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                this.nuevaFilial = { nombre: '', codigo: '', direccion: '' };
+                await this.cargarFiliales();
+            } catch (e) { console.error('Error creando filial:', e); }
+        },
+
+        async toggleFilial(id) {
+            try {
+                const fd = new FormData();
+                fd.append('id', id);
+                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                await this.cargarFiliales();
+            } catch (e) { console.error('Error toggling filial:', e); }
+        },
+
+        async eliminarFilial(id) {
+            if (!confirm('¿Eliminar esta filial?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('id', id);
+                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                await this.cargarFiliales();
+            } catch (e) { console.error('Error eliminando filial:', e); }
+        },
+
+        getAdminsByFilial(filialNombre) {
+            return (this.adminsByFilial || []).filter(a => a.filial === filialNombre);
+        },
+
+        async cargarAdminsPorFilial() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=admins-by-filial', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const data = await r.json();
+                this.adminsByFilial = data.admins || [];
+            } catch (e) { console.error('Error cargando admins:', e); }
         },
 
         // ═══════════════════════════════════════

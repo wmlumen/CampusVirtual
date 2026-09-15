@@ -193,6 +193,18 @@ class Database {
                 revisado_por TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 reviewed_at DATETIME
+            )",
+
+            // filiales: sedes/branchs de la institución
+            "CREATE TABLE IF NOT EXISTS filiales (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT UNIQUE NOT NULL,
+                codigo TEXT UNIQUE NOT NULL,
+                direccion TEXT DEFAULT '',
+                telefono TEXT DEFAULT '',
+                estado TEXT DEFAULT 'activo',
+                creado_por TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )"
         ];
         

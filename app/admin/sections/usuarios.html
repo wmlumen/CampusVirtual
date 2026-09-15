@@ -21,6 +21,11 @@
             :class="usuariosTab==='roles' ? 'bg-purple-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
             <i class="bi bi-shield-lock-fill"></i> Roles y Permisos
         </button>
+        <button @click="usuariosTab='filiales'"
+            class="flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all flex items-center justify-center gap-1"
+            :class="usuariosTab==='filiales' ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
+            <i class="bi bi-building"></i> Filiales
+        </button>
     </div>
 
     <!-- ═══ TAB: PENDIENTES DE APROBACIÓN ═══ -->
@@ -361,6 +366,70 @@
                         No hay roles configurados. Crea el primero.
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: FILIALES ═══ -->
+    <div x-show="usuariosTab==='filiales'" style="display:none;">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-3">
+            <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="bi bi-building me-1"></i>Gestión de Filiales</h3>
+            <div class="flex gap-2 mb-3 flex-wrap">
+                <input type="text" x-model="nuevaFilial.nombre" placeholder="Nombre de filial"
+                    class="flex-1 min-w-[150px] px-3 py-2 border border-slate-200 rounded-lg text-xs">
+                <input type="text" x-model="nuevaFilial.codigo" placeholder="Código" maxlength="4"
+                    class="w-24 px-3 py-2 border border-slate-200 rounded-lg text-xs">
+                <input type="text" x-model="nuevaFilial.direccion" placeholder="Dirección"
+                    class="flex-1 min-w-[150px] px-3 py-2 border border-slate-200 rounded-lg text-xs">
+                <button @click="crearFilial()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
+                    <i class="bi bi-plus-lg me-1"></i>Crear
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Filiales -->
+        <div class="space-y-2">
+            <template x-for="f in filiales" :key="f.id">
+                <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800" x-text="f.nombre"></p>
+                        <p class="text-[9px] text-slate-400" x-text="f.codigo + ' • ' + (f.direccion || '')"></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[8px] font-bold"
+                            :class="f.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                            x-text="f.estado === 'activo' ? 'Activa' : 'Inactiva'"></span>
+                        <button @click="toggleFilial(f.id)" class="text-blue-400 hover:text-blue-600 p-1" title="Toggle estado">
+                            <i class="bi bi-power-fill text-[10px]"></i>
+                        </button>
+                        <button @click="eliminarFilial(f.id)" class="text-rose-400 hover:text-rose-600 p-1" title="Eliminar">
+                            <i class="bi bi-trash-fill text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </template>
+            <div x-show="filiales.length === 0" class="py-8 text-center text-slate-400 text-xs">
+                No hay filiales registradas.
+            </div>
+        </div>
+
+        <!-- Admins por Filial -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mt-4">
+            <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="bi bi-person-gear me-1"></i>Administradores por Filial</h3>
+            <div class="space-y-2">
+                <template x-for="f in filiales" :key="'admin-'+f.id">
+                    <div class="border border-slate-100 rounded-lg p-2">
+                        <p class="text-xs font-bold text-slate-700 mb-1" x-text="f.nombre"></p>
+                        <div class="flex flex-wrap gap-1">
+                            <template x-for="a in (getAdminsByFilial(f.nombre) || [])" :key="a.user_id">
+                                <span class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-[9px]">
+                                    <span x-text="a.firstname + ' ' + a.lastname"></span>
+                                    <span class="opacity-60" x-text="(' • ' + a.rol)"></span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>

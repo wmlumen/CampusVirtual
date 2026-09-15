@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Estudiante — Campus Virtual Centuria</title>
+    <title>Dashboard — Campus Virtual Centuria</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,15 +13,12 @@
             --verde-oscuro: #007A33;
             --verde-medio: #00B140;
             --verde-claro: #E6F4EA;
-            --verde-hover: #81C784;
-            --texto-oscuro: #2D2D2D;
             --dorado: #C5A55A;
-            --dorado-claro: #D4B96A;
-            --plateado: #B0BEC5;
             --blanco: #ffffff;
             --rosa: #FF6B9D;
             --azul: #4A90D9;
             --naranja: #FF8C42;
+            --rojo: #ef5350;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -41,7 +37,6 @@
             inset: 0;
             background:
                 radial-gradient(ellipse at 20% 50%, rgba(0,177,64,.12) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(129,199,132,.08) 0%, transparent 50%),
                 linear-gradient(160deg, #003d19 0%, #007A33 35%, #005c26 65%, #003d19 100%);
             z-index: -2;
         }
@@ -49,13 +44,12 @@
             content: '';
             position: fixed;
             inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
             z-index: -1;
         }
-        /* ── Layout ── */
         .dash-wrapper {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
@@ -79,242 +73,108 @@
         .dash-header-left { display: flex; align-items: center; gap: 16px; }
         .dash-avatar {
             width: 56px; height: 56px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
             display: flex; align-items: center; justify-content: center;
             font-size: 1.3rem; font-weight: 700; color: var(--blanco);
             border: 2px solid var(--dorado);
         }
         .dash-header-name { font-size: 1.1rem; font-weight: 700; }
-        .dash-header-sub { font-size: .7rem; color: var(--dorado); letter-spacing: 1px; text-transform: uppercase; }
-        .dash-header-right { display: flex; align-items: center; gap: 12px; }
+        .dash-header-sub { font-size: .7rem; color: var(--dorado); letter-spacing: 1px; }
         .dash-badge {
             padding: 6px 14px; border-radius: 20px; font-size: .65rem;
             font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
         }
-        .dash-badge-admin { background: rgba(197,165,90,.2); color: var(--dorado); border: 1px solid rgba(197,165,90,.3); }
-        .dash-badge-teacher { background: rgba(74,144,217,.2); color: var(--azul); border: 1px solid rgba(74,144,217,.3); }
-        .dash-badge-student { background: rgba(0,177,64,.2); color: var(--verde-medio); border: 1px solid rgba(0,177,64,.3); }
         .dash-btn-logout {
             padding: 8px 16px; border-radius: 12px; font-size: .7rem;
             background: rgba(239,83,80,.15); color: #ef9a9a; border: 1px solid rgba(239,83,80,.3);
-            cursor: pointer; font-family: 'Montserrat'; font-weight: 600; letter-spacing: .5px;
+            cursor: pointer; font-family: 'Montserrat'; font-weight: 600;
         }
-        .dash-btn-logout:hover { background: rgba(239,83,80,.25); }
-
+        /* ── Role-specific colors ── */
+        .role-alumno .dash-avatar { background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro)); }
+        .role-docente .dash-avatar { background: linear-gradient(135deg, var(--azul), #2a5f8f); }
+        .role-admin .dash-avatar { background: linear-gradient(135deg, var(--dorado), #a08530); }
+        .role-academico .dash-avatar { background: linear-gradient(135deg, var(--rosa), #c04070); }
+        .role-adm-plataforma .dash-avatar { background: linear-gradient(135deg, var(--naranja), #c06020); }
+        .role-alumno .dash-badge { background: rgba(0,177,64,.2); color: var(--verde-medio); }
+        .role-docente .dash-badge { background: rgba(74,144,217,.2); color: var(--azul); }
+        .role-admin .dash-badge { background: rgba(197,165,90,.2); color: var(--dorado); }
+        .role-academico .dash-badge { background: rgba(255,107,157,.2); color: var(--rosa); }
+        .role-adm-plataforma .dash-badge { background: rgba(255,140,66,.2); color: var(--naranja); }
         /* ── Grid ── */
-        .dash-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
         .dash-card {
-            background: rgba(255,255,255,.07);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 18px;
-            padding: 20px;
-            backdrop-filter: blur(20px);
-            transition: .3s;
+            background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 18px; padding: 20px; backdrop-filter: blur(20px); transition: .3s;
         }
         .dash-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,.2); }
-        .dash-card-icon {
-            width: 44px; height: 44px; border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; margin-bottom: 12px;
-        }
+        .dash-card-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 12px; }
         .dash-card-icon.green { background: rgba(0,177,64,.2); color: var(--verde-medio); }
         .dash-card-icon.gold { background: rgba(197,165,90,.2); color: var(--dorado); }
         .dash-card-icon.blue { background: rgba(74,144,217,.2); color: var(--azul); }
         .dash-card-icon.rose { background: rgba(255,107,157,.2); color: var(--rosa); }
-        .dash-card-value { font-size: 1.6rem; font-weight: 800; margin-bottom: 2px; }
+        .dash-card-icon.orange { background: rgba(255,140,66,.2); color: var(--naranja); }
+        .dash-card-value { font-size: 1.6rem; font-weight: 800; }
         .dash-card-label { font-size: .65rem; color: rgba(255,255,255,.5); letter-spacing: 1px; text-transform: uppercase; }
-
         /* ── Section ── */
         .dash-section {
-            background: rgba(255,255,255,.07);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 18px;
-            padding: 20px;
-            backdrop-filter: blur(20px);
-            margin-bottom: 16px;
+            background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 18px; padding: 20px; backdrop-filter: blur(20px); margin-bottom: 16px;
         }
-        .dash-section-title {
-            font-size: .8rem; font-weight: 700; letter-spacing: 1px;
-            text-transform: uppercase; margin-bottom: 16px;
-            display: flex; align-items: center; gap: 8px;
-        }
+        .dash-section-title { font-size: .8rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .dash-section-title i { color: var(--dorado); }
-
-        /* ── Subject Card ── */
-        .subject-card {
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: .2s;
-        }
-        .subject-card:hover { background: rgba(255,255,255,.08); }
-        .subject-info { flex: 1; }
-        .subject-name { font-size: .85rem; font-weight: 600; margin-bottom: 2px; }
-        .subject-meta { font-size: .65rem; color: rgba(255,255,255,.4); }
-        .subject-progress { width: 100px; flex-shrink: 0; }
-        .subject-progress .progress { height: 6px; }
-        .subject-progress .progress-text { font-size: .6rem; color: var(--dorado); text-align: right; margin-top: 2px; }
-
-        /* ── Event Card ── */
-        .event-card {
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            gap: 14px;
-            align-items: center;
-        }
-        .event-date {
-            width: 48px; height: 48px; border-radius: 14px;
-            background: linear-gradient(135deg, var(--rosa), var(--naranja));
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .event-date .day { font-size: 1.1rem; font-weight: 800; line-height: 1; }
-        .event-date .month { font-size: .55rem; text-transform: uppercase; letter-spacing: 1px; }
-        .event-info { flex: 1; }
-        .event-title { font-size: .8rem; font-weight: 600; margin-bottom: 2px; }
-        .event-desc { font-size: .65rem; color: rgba(255,255,255,.4); }
-        .event-tag {
-            padding: 4px 10px; border-radius: 10px; font-size: .55rem;
-            font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
-            flex-shrink: 0;
-        }
-        .event-tag.exam { background: rgba(239,83,80,.2); color: #ef9a9a; }
-        .event-tag.assignment { background: rgba(197,165,90,.2); color: var(--dorado); }
-        .event-tag.meeting { background: rgba(74,144,217,.2); color: var(--azul); }
-        .event-tag.deadline { background: rgba(255,107,157,.2); color: var(--rosa); }
-
-        /* ── Form Styles ── */
-        .dash-form {
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 10px;
-        }
-        .dash-form-label {
-            font-size: .65rem; font-weight: 700; letter-spacing: 1px;
-            text-transform: uppercase; color: var(--dorado); margin-bottom: 6px;
-        }
-        .dash-form-input {
-            width: 100%; padding: 10px 14px; background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.15); border-radius: 10px;
-            color: var(--blanco); font-family: 'Montserrat'; font-size: .8rem;
-            outline: none; transition: .3s;
-        }
-        .dash-form-input:focus { border-color: var(--dorado); box-shadow: 0 0 0 3px rgba(197,165,90,.2); }
-        .dash-form-input::placeholder { color: rgba(255,255,255,.3); }
-        .dash-form-select {
-            width: 100%; padding: 10px 14px; background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.15); border-radius: 10px;
-            color: var(--blanco); font-family: 'Montserrat'; font-size: .8rem;
-            outline: none; appearance: none; cursor: pointer;
-        }
-        .dash-form-select option { background: #1a3d26; }
-        .dash-btn {
-            padding: 10px 20px; border-radius: 12px; font-size: .75rem;
-            font-family: 'Montserrat'; font-weight: 700; letter-spacing: 1px;
-            cursor: pointer; border: none; transition: .3s;
-        }
-        .dash-btn-primary {
-            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
-            color: var(--blanco);
-        }
-        .dash-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,122,51,.4); }
-        .dash-btn-outline {
-            background: transparent; color: rgba(255,255,255,.6);
-            border: 1px solid rgba(255,255,255,.2);
-        }
-        .dash-btn-outline:hover { background: rgba(255,255,255,.08); color: var(--blanco); }
-
-        /* ── Grade Row ── */
-        .grade-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05);
-        }
-        .grade-row:last-child { border-bottom: none; }
-        .grade-subject { font-size: .78rem; font-weight: 500; }
-        .grade-value { font-size: .85rem; font-weight: 700; }
-        .grade-a { color: var(--verde-medio); }
-        .grade-b { color: var(--dorado); }
-        .grade-c { color: var(--naranja); }
-        .grade-f { color: #ef5350; }
-
         /* ── Quick Links ── */
-        .dash-links {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
+        .dash-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
         .dash-link {
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 16px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: .2s;
-            text-decoration: none;
-            color: var(--blanco);
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px; padding: 16px 10px; text-align: center; cursor: pointer;
+            transition: .2s; text-decoration: none; color: var(--blanco);
         }
         .dash-link:hover { background: rgba(255,255,255,.10); transform: translateY(-2px); }
         .dash-link i { font-size: 1.4rem; margin-bottom: 6px; display: block; color: var(--dorado); }
         .dash-link span { font-size: .6rem; letter-spacing: .5px; text-transform: uppercase; color: rgba(255,255,255,.6); }
-
-        /* ── Footer ── */
-        .premium-footer-wrapper {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            text-align: center; padding: 6px 20px; z-index: 10;
-            background: rgba(0,61,25,.9); backdrop-filter: blur(8px);
-            border-top: 1px solid rgba(255,255,255,.08); height: 36px;
+        /* ── Subject Card ── */
+        .subject-card {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px; padding: 14px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .subject-name { font-size: .85rem; font-weight: 600; }
+        .subject-meta { font-size: .65rem; color: rgba(255,255,255,.4); }
+        .subject-progress { width: 80px; }
+        .subject-progress .progress { height: 6px; }
+        .subject-progress .progress-text { font-size: .55rem; color: var(--dorado); text-align: right; margin-top: 2px; }
+        /* ── Event Card ── */
+        .event-card {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px; padding: 14px; margin-bottom: 10px; display: flex; gap: 14px; align-items: center;
+        }
+        .event-date { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--rosa), var(--naranja)); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+        .event-date .day { font-size: 1.1rem; font-weight: 800; line-height: 1; }
+        .event-date .month { font-size: .55rem; text-transform: uppercase; letter-spacing: 1px; }
+        .event-info { flex: 1; }
+        .event-title { font-size: .8rem; font-weight: 600; }
+        .event-desc { font-size: .65rem; color: rgba(255,255,255,.4); }
+        .event-tag { padding: 4px 10px; border-radius: 10px; font-size: .55rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; flex-shrink: 0; }
+        .event-tag.exam { background: rgba(239,83,80,.2); color: #ef9a9a; }
+        .event-tag.assignment { background: rgba(197,165,90,.2); color: var(--dorado); }
+        .event-tag.meeting { background: rgba(74,144,217,.2); color: var(--azul); }
+        .event-tag.deadline { background: rgba(255,107,157,.2); color: var(--rosa); }
+        /* ── Footer ── */
+        .premium-footer-wrapper { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 6px 20px; z-index: 10; background: rgba(0,61,25,.9); backdrop-filter: blur(8px); border-top: 1px solid rgba(255,255,255,.08); height: 36px; }
         .premium-footer-wrapper .premium-footer { margin-top: 0; padding: 0; line-height: 1.4; }
         .premium-footer-wrapper .premium-footer .institution { font-size: .55rem; margin-bottom: 0; }
         .premium-footer-wrapper .premium-footer .motto { font-size: .5rem; }
         .premium-footer-wrapper .premium-footer .year { font-size: .45rem; margin-top: 0; }
         .dash-wrapper { padding-bottom: 44px; }
-
-        /* ── Responsive ── */
-        @media (max-width: 900px) {
-            .dash-grid { grid-template-columns: repeat(2, 1fr); }
-            .dash-links { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            .dash-grid { grid-template-columns: 1fr; }
-            .dash-links { grid-template-columns: repeat(2, 1fr); }
-            .dash-header { flex-direction: column; gap: 12px; }
-            .dash-header-right { width: 100%; justify-content: flex-end; }
-            .dash-wrapper { padding: 12px; }
-        }
         /* ── Print ── */
-        @media print {
-            body { background: white !important; color: black !important; }
-            body::before, body::after { display: none; }
-            .dash-card, .dash-section { border: 1px solid #ccc; background: white; box-shadow: none; }
-            .dash-card-value, .dash-card-label, .dash-section-title { color: black; }
-            .dash-btn { display: none; }
-            .premium-footer-wrapper { display: none; }
-            .dash-wrapper { padding-bottom: 0; }
-        }
+        @media print { body { background: white !important; color: black !important; } body::before, body::after { display: none; } .dash-card, .dash-section { border: 1px solid #ccc; background: white; box-shadow: none; } .dash-card-value, .dash-card-label, .dash-section-title { color: black; } .dash-btn-logout { display: none; } .premium-footer-wrapper { display: none; } .dash-wrapper { padding-bottom: 0; } }
+        /* ── Responsive ── */
+        @media (max-width: 768px) { .dash-wrapper { padding: 12px; } .dash-header { flex-direction: column; gap: 12px; } .dash-header-right { width: 100%; justify-content: flex-end; } }
     </style>
 </head>
 <body>
-    <div class="dash-wrapper">
+    <div class="dash-wrapper" id="dash-wrapper" x-data="dashboardData()">
         <!-- ═══ Header ═══ -->
-        <div class="dash-header">
+        <div class="dash-header" :class="'role-' + userRole">
             <div class="dash-header-left">
                 <div class="dash-avatar" id="dash-avatar">E</div>
                 <div>
@@ -323,133 +183,59 @@
                 </div>
             </div>
             <div class="dash-header-right">
-                <span class="dash-badge dash-badge-student" id="dash-badge">Alumno</span>
+                <span class="dash-badge" id="dash-badge">-</span>
                 <button class="dash-btn-logout" onclick="location.href='index.html'">
                     <i class="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
             </div>
         </div>
 
-        <!-- ═══ Stats Cards ═══ -->
+        <!-- ═══ Stats ═══ -->
         <div class="dash-grid">
             <div class="dash-card">
                 <div class="dash-card-icon green"><i class="bi bi-book"></i></div>
                 <div class="dash-card-value" id="stat-courses">0</div>
-                <div class="dash-card-label">Asignaturas Activas</div>
+                <div class="dash-card-label">Asignaturas</div>
             </div>
             <div class="dash-card">
                 <div class="dash-card-icon gold"><i class="bi bi-calendar-event"></i></div>
                 <div class="dash-card-value" id="stat-events">0</div>
-                <div class="dash-card-label">Eventos en Puerta</div>
+                <div class="dash-card-label">Eventos</div>
             </div>
             <div class="dash-card">
                 <div class="dash-card-icon blue"><i class="bi bi-graph-up"></i></div>
                 <div class="dash-card-value" id="stat-promedio">-</div>
-                <div class="dash-card-label">Promedio General</div>
+                <div class="dash-card-label">Promedio</div>
+            </div>
+            <div class="dash-card">
+                <div class="dash-card-icon rose"><i class="bi bi-clipboard-check"></i></div>
+                <div class="dash-card-value" id="stat-asistencia">-</div>
+                <div class="dash-card-label">Asistencia</div>
             </div>
         </div>
 
-        <!-- ═══ Quick Links ═══ -->
+        <!-- ═══ Quick Links (role-specific) ═══ -->
         <div class="dash-section">
             <div class="dash-section-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div>
-            <div class="dash-links">
-                <a href="Materiales_Clases/index.html" class="dash-link">
-                    <i class="bi bi-book"></i><span>Materiales</span>
-                </a>
-                <a href="academic/asistencia_presencial.html" class="dash-link">
-                    <i class="bi bi-calendar-check"></i><span>Asistencia</span>
-                </a>
-                <a href="perfil.html" class="dash-link">
-                    <i class="bi bi-person"></i><span>Perfil</span>
-                </a>
-                <a href="academic/glosario.html" class="dash-link">
-                    <i class="bi bi-journal-text"></i><span>Glosario</span>
-                </a>
-                <a href="libreta.html" class="dash-link">
-                    <i class="bi bi-book"></i><span>Libreta</span>
-                </a>
-            </div>
+            <div class="dash-links" id="dash-links"></div>
         </div>
 
-        <!-- ═══ Carrera Activa ═══ -->
-        <div class="dash-section">
-            <div class="dash-section-title"><i class="bi bi-mortarboard"></i> Carrera Activa</div>
-            <div id="dash-career">
-                <div class="dash-form">
-                    <div class="dash-form-label">Carrera / Programa</div>
-                    <div class="dash-form-input" id="dash-career-name" style="cursor:default;">Cargando...</div>
-                </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <div class="dash-form" style="flex:1;min-width:120px;">
-                        <div class="dash-form-label">Grado</div>
-                        <div class="dash-form-input" id="dash-grado" style="cursor:default;">-</div>
-                    </div>
-                    <div class="dash-form" style="flex:1;min-width:120px;">
-                        <div class="dash-form-label">Sección</div>
-                        <div class="dash-form-input" id="dash-seccion" style="cursor:default;">-</div>
-                    </div>
-                    <div class="dash-form" style="flex:1;min-width:120px;">
-                        <div class="dash-form-label">Estado</div>
-                        <div class="dash-form-input" id="dash-estado" style="cursor:default;">-</div>
-                    </div>
-                </div>
-            </div>
+        <!-- ═══ Asignaturas ═══ -->
+        <div class="dash-section" id="section-courses">
+            <div class="dash-section-title"><i class="bi bi-mortarboard-fill"></i> Mis Asignaturas</div>
+            <div id="dash-courses">Cargando...</div>
         </div>
 
-        <!-- ═══ Asignaturas Activas ═══ -->
-        <div class="dash-section">
-            <div class="dash-section-title"><i class="bi bi-mortarboard-fill"></i> Asignaturas Activas</div>
-            <div id="dash-courses">Cargando cursos...</div>
-        </div>
-
-        <!-- ═══ Calendario y Eventos ═══ -->
+        <!-- ═══ Eventos ═══ -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div class="dash-section">
-                <div class="dash-section-title"><i class="bi bi-calendar3"></i> Calendario — Próximos Eventos</div>
-                <div id="dash-calendar">Cargando eventos...</div>
+                <div class="dash-section-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div>
+                <div id="dash-calendar">Cargando...</div>
             </div>
             <div class="dash-section">
-                <div class="dash-section-title"><i class="bi bi-exclamation-triangle"></i> Eventos Importantes</div>
+                <div class="dash-section-title"><i class="bi bi-exclamation-triangle"></i> En Puerta</div>
                 <div id="dash-events">Cargando...</div>
             </div>
-        </div>
-
-        <!-- ═══ Formulario de Asistencia ═══ -->
-        <div class="dash-section">
-            <div class="dash-section-title"><i class="bi bi-clipboard-check"></i> Registro de Asistencia</div>
-            <div class="dash-form">
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:150px;">
-                        <div class="dash-form-label">Fecha</div>
-                        <input type="date" class="dash-form-input" id="att-date">
-                    </div>
-                    <div style="flex:1;min-width:150px;">
-                        <div class="dash-form-label">Asignatura</div>
-                        <select class="dash-form-select" id="att-course">
-                            <option value="">Seleccionar...</option>
-                        </select>
-                    </div>
-                    <div style="flex:1;min-width:120px;">
-                        <div class="dash-form-label">Estado</div>
-                        <select class="dash-form-select" id="att-status">
-                            <option value="presente">Presente</option>
-                            <option value="ausente">Ausente</option>
-                            <option value="tarde">Tarde</option>
-                        </select>
-                    </div>
-                    <div style="flex:1;min-width:120px;display:flex;align-items:flex-end;">
-                        <button class="dash-btn dash-btn-primary" onclick="registrarAsistencia()">
-                            <i class="bi bi-check-lg me-1"></i>Registrar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══ Notas ═══ -->
-        <div class="dash-section">
-            <div class="dash-section-title"><i class="bi bi-graph-up"></i> Mis Notas</div>
-            <div id="dash-grades">Cargando notas...</div>
         </div>
     </div>
 
@@ -464,6 +250,69 @@
 
     <script src="js/api.js?v=6"></script>
     <script>
+        // ═══ DASHBOARD DATA ═══
+        function dashboardData() {
+            return {
+                userRole: 'alumno',
+                userName: '',
+                userCedula: '',
+                userFilial: '',
+                filiales: [],
+                courses: [],
+                events: [],
+                links: []
+            };
+        }
+
+        // ═══ ROLE CONFIG ═══
+        const roleConfig = {
+            alumno: {
+                label: 'Alumno', icon: 'bi-mortarboard-fill', color: 'var(--verde-medio)',
+                links: [
+                    { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
+                    { href: 'academic/asistencia_presencial.html', icon: 'bi-calendar-check', label: 'Asistencia' },
+                    { href: 'libreta.html', icon: 'bi-book', label: 'Libreta' },
+                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
+                ]
+            },
+            docente: {
+                label: 'Docente', icon: 'bi-person-badge-fill', color: 'var(--azul)',
+                links: [
+                    { href: 'teacher_panel.html', icon: 'bi-chalkboard', label: 'Panel' },
+                    { href: 'academic/asistencia_presencial.html', icon: 'bi-calendar-check', label: 'Asistencia' },
+                    { href: 'libreta.html', icon: 'bi-book', label: 'Libreta' },
+                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
+                ]
+            },
+            admin: {
+                label: 'Administrador', icon: 'bi-shield-fill-check', color: 'var(--dorado)',
+                links: [
+                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Admin' },
+                    { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
+                    { href: 'libreta.html', icon: 'bi-book', label: 'Libreta' },
+                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
+                ]
+            },
+            academico: {
+                label: 'Académico', icon: 'bi-building', color: 'var(--rosa)',
+                links: [
+                    { href: 'academic/indicadores_por_unidad.html', icon: 'bi-graph-up', label: 'Indicadores' },
+                    { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' },
+                    { href: 'libreta.html', icon: 'bi-book', label: 'Libreta' },
+                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
+                ]
+            },
+            'administrador_plataforma': {
+                label: 'Admin Plataforma', icon: 'bi-person-gear', color: 'var(--naranja)',
+                links: [
+                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Admin' },
+                    { href: 'admin/index.html#filiales', icon: 'bi-building', label: 'Filiales' },
+                    { href: 'libreta.html', icon: 'bi-book', label: 'Libreta' },
+                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
+                ]
+            }
+        };
+
         // ═══ CARGAR DASHBOARD ═══
         async function cargarDashboard() {
             try {
@@ -476,7 +325,7 @@
                     await cargarDatosLocal(cedula);
                     return;
                 }
-                
+
                 await cargarDatosAPI(user, token);
             } catch(e) {
                 console.error('Error:', e);
@@ -490,43 +339,38 @@
             const apellido = user.lastname || '';
             const cedula = user.username || '';
             const rol = user.role || 'alumno';
+            const carrera = user.carrera || '';
+            const filial = user.filial || '';
 
-            // Header
             document.getElementById('dash-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('dash-sub').textContent = cedula + ' • ' + rol.toUpperCase();
+            document.getElementById('dash-sub').textContent = cedula + ' • ' + carrera + (filial ? ' • ' + filial : '');
             document.getElementById('dash-avatar').textContent = nombre.charAt(0) + apellido.charAt(0);
             
-            const badgeMap = { admin: 'dash-badge-admin', teacher: 'dash-badge-teacher', student: 'dash-badge-student' };
-            const badgeEl = document.getElementById('dash-badge');
-            badgeEl.textContent = rol.toUpperCase();
-            badgeEl.className = 'dash-badge ' + (badgeMap[rol] || 'dash-badge-student');
+            const cfg = roleConfig[rol] || roleConfig.alumno;
+            document.getElementById('dash-badge').textContent = cfg.label;
+            document.getElementById('dash-wrapper').className = 'dash-wrapper role-' + rol;
 
-            // Career
-            const carrera = user.carrera || 'No asignada';
-            const grado = user.grado || '-';
-            const seccion = user.seccion || '-';
-            const estado = user.estado || 'activo';
-            document.getElementById('dash-career-name').textContent = carrera;
-            document.getElementById('dash-grado').textContent = grado;
-            document.getElementById('dash-seccion').textContent = seccion;
-            document.getElementById('dash-estado').textContent = estado.toUpperCase();
+            // Set quick links
+            const linksContainer = document.getElementById('dash-links');
+            linksContainer.innerHTML = cfg.links.map(l => `
+                <a href="${l.href}" class="dash-link">
+                    <i class="bi ${l.icon}"></i><span>${l.label}</span>
+                </a>
+            `).join('');
 
             // Load courses
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'courses.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const resp = await fetch(CenturiaAPI.baseUrl + 'courses.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await resp.json();
                 if (data.success && data.data) {
+                    this.courses = data.data;
                     renderCourses(data.data);
                 }
             } catch(e) {}
 
-            // Load calendar events
+            // Load calendar
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const resp = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await resp.json();
                 if (data.success && data.data) {
                     renderCalendar(data.data);
@@ -535,162 +379,91 @@
 
             // Load grades
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const resp = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await resp.json();
                 if (data.success && data.data) {
                     renderGrades(data.data);
                 }
             } catch(e) {}
-
-            // Set today's date
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('att-date').value = today;
         }
 
         async function cargarDatosLocal(cedula) {
             const nombre = localStorage.getItem('centuria_nombre') || 'Estudiante';
             const apellido = localStorage.getItem('centuria_apellido') || '';
             const rol = localStorage.getItem('centuria_rol') || 'alumno';
-            const carrera = localStorage.getItem('centuria_carrera') || 'No asignada';
-            const grado = localStorage.getItem('centuria_grado') || '-';
-            const seccion = localStorage.getItem('centuria_seccion') || '-';
+            const carrera = localStorage.getItem('centuria_carrera') || '';
+            const filial = localStorage.getItem('centuria_filial') || '';
 
             document.getElementById('dash-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('dash-sub').textContent = cedula + ' • ' + rol.toUpperCase();
+            document.getElementById('dash-sub').textContent = cedula + ' • ' + carrera + (filial ? ' • ' + filial : '');
             document.getElementById('dash-avatar').textContent = nombre.charAt(0) + apellido.charAt(0);
-            document.getElementById('dash-career-name').textContent = carrera;
-            document.getElementById('dash-grado').textContent = grado;
-            document.getElementById('dash-seccion').textContent = seccion;
-            document.getElementById('dash-estado').textContent = 'ACTIVO';
+            
+            const cfg = roleConfig[rol] || roleConfig.alumno;
+            document.getElementById('dash-badge').textContent = cfg.label;
+            document.getElementById('dash-wrapper').className = 'dash-wrapper role-' + rol;
 
-            const badgeMap = { admin: 'dash-badge-admin', teacher: 'dash-badge-teacher', student: 'dash-badge-student' };
-            const badgeEl = document.getElementById('dash-badge');
-            badgeEl.textContent = rol.toUpperCase();
-            badgeEl.className = 'dash-badge ' + (badgeMap[rol] || 'dash-badge-student');
+            const linksContainer = document.getElementById('dash-links');
+            linksContainer.innerHTML = cfg.links.map(l => `
+                <a href="${l.href}" class="dash-link">
+                    <i class="bi ${l.icon}"></i><span>${l.label}</span>
+                </a>
+            `).join('');
         }
 
-        // ═══ RENDER COURSES ═══
+        // ═══ RENDER FUNCTIONS ═══
         function renderCourses(courses) {
             const container = document.getElementById('dash-courses');
-            const activeCourses = courses.filter(c => c.estado !== 'inactivo');
-            document.getElementById('stat-courses').textContent = activeCourses.length;
+            const active = courses.filter(c => c.estado !== 'inactivo');
+            document.getElementById('stat-courses').textContent = active.length;
             
-            if (activeCourses.length === 0) {
-                container.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:.8rem;text-align:center;padding:20px;">No tienes asignaturas activas</div>';
+            if (active.length === 0) {
+                container.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:.8rem;text-align:center;padding:20px;">No tienes asignaturas</div>';
                 return;
             }
-
-            container.innerHTML = activeCourses.map(c => {
-                const progress = c.progreso || Math.floor(Math.random() * 40 + 10);
-                return `
+            container.innerHTML = active.map(c => `
                 <div class="subject-card">
                     <div class="subject-info">
                         <div class="subject-name">${c.nombre || c.title || 'Asignatura'}</div>
-                        <div class="subject-meta">${c.codigo || ''} • ${c.carrera || ''} • ${c.docente || ''}</div>
+                        <div class="subject-meta">${c.codigo || ''} • ${c.carrera || ''}</div>
                     </div>
                     <div class="subject-progress">
-                        <div class="progress" style="height:6px;">
-                            <div class="progress-bar" style="width:${progress}%;background:linear-gradient(90deg,var(--verde-medio),var(--verde-oscuro));"></div>
-                        </div>
-                        <div class="progress-text">${progress}%</div>
+                        <div class="progress" style="height:6px;"><div class="progress-bar" style="width:${c.progreso || 0}%;background:var(--verde-medio);"></div></div>
+                        <div class="progress-text">${c.progreso || 0}%</div>
                     </div>
-                </div>`;
-            }).join('');
-
-            // Populate attendance select
-            const select = document.getElementById('att-course');
-            select.innerHTML = '<option value="">Seleccionar...</option>' +
-                activeCourses.map(c => `<option value="${c.id || c.codigo}">${c.nombre || c.title}</option>`).join('');
+                </div>
+            `).join('');
         }
 
-        // ═══ RENDER CALENDAR ═══
         function renderCalendar(events) {
             const container = document.getElementById('dash-calendar');
             const now = new Date();
-            const upcoming = events.filter(e => new Date(e.fecha || e.date) >= now).sort((a,b) => new Date(a.fecha||a.date) - new Date(b.fecha||b.date));
+            const upcoming = (events || []).filter(e => new Date(e.fecha || e.date) >= now).sort((a,b) => new Date(a.fecha||a.date) - new Date(b.fecha||b.date));
             document.getElementById('stat-events').textContent = upcoming.length;
 
             if (upcoming.length === 0) {
                 container.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:.8rem;text-align:center;padding:20px;">No hay eventos próximos</div>';
                 return;
             }
-
             container.innerHTML = upcoming.slice(0, 5).map(e => {
                 const date = new Date(e.fecha || e.date);
-                const day = date.getDate();
-                const month = date.toLocaleString('es', { month: 'short' });
-                const tagClass = e.tipo || 'meeting';
                 return `
                 <div class="event-card">
-                    <div class="event-date">
-                        <div class="day">${day}</div>
-                        <div class="month">${month}</div>
-                    </div>
-                    <div class="event-info">
-                        <div class="event-title">${e.titulo || e.title || 'Evento'}</div>
-                        <div class="event-desc">${e.descripcion || e.description || ''}</div>
-                    </div>
-                    <span class="event-tag ${tagClass}">${tagClass}</span>
+                    <div class="event-date"><div class="day">${date.getDate()}</div><div class="month">${date.toLocaleString('es',{month:'short'})}</div></div>
+                    <div class="event-info"><div class="event-title">${e.titulo || e.title || 'Evento'}</div><div class="event-desc">${e.descripcion || ''}</div></div>
+                    <span class="event-tag ${e.tipo || 'meeting'}">${e.tipo || 'evento'}</span>
                 </div>`;
             }).join('');
         }
 
-        // ═══ RENDER GRADES ═══
         function renderGrades(grades) {
-            const container = document.getElementById('dash-grades');
             if (!grades || grades.length === 0) {
-                container.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:.8rem;text-align:center;padding:20px;">Sin notas registradas</div>';
+                document.getElementById('stat-promedio').textContent = '-';
+                document.getElementById('stat-asistencia').textContent = '-';
                 return;
             }
-
-            let total = 0, count = 0;
-            container.innerHTML = grades.map(g => {
-                const val = g.nota || g.grade || 0;
-                total += val; count++;
-                const cls = val >= 80 ? 'grade-a' : val >= 70 ? 'grade-b' : val >= 60 ? 'grade-c' : 'grade-f';
-                return `
-                <div class="grade-row">
-                    <span class="grade-subject">${g.asignatura || g.subject || 'Asignatura'}</span>
-                    <span class="grade-value ${cls}">${val}/100</span>
-                </div>`;
-            }).join('');
-
-            const promedio = count > 0 ? (total / count).toFixed(1) : '-';
-            document.getElementById('stat-promedio').textContent = promedio;
-        }
-
-        // ═══ REGISTER ATTENDANCE ═══
-        async function registrarAsistencia() {
-            const date = document.getElementById('att-date').value;
-            const course = document.getElementById('att-course').value;
-            const status = document.getElementById('att-status').value;
-
-            if (!date || !course) {
-                alert('Completa todos los campos');
-                return;
-            }
-
-            try {
-                const token = CenturiaAPI.getToken();
-                const resp = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=mark', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ fecha: date, curso_id: course, estado: status })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    alert('Asistencia registrada correctamente');
-                } else {
-                    alert('Error: ' + (data.error || 'No se pudo registrar'));
-                }
-            } catch(e) {
-                alert('Error de conexión. Intenta de nuevo.');
-            }
+            const avg = (grades.reduce((s,g) => s + (g.score || 0), 0) / grades.length).toFixed(1);
+            document.getElementById('stat-promedio').textContent = avg;
+            document.getElementById('stat-asistencia').textContent = Math.round((grades.filter(g => g.component === 'asistencia' || g.estado === 'presente').length / grades.length) * 100) + '%';
         }
 
         // ═══ INIT ═══

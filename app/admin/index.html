@@ -35,7 +35,7 @@
                 <h1 class="text-sm font-bold text-slate-800 tracking-wide uppercase" x-text="viewMode ? 'Vista: ' + viewRolLabel : 'Administracion Central'"></h1>
                 <p class="text-[10px] font-medium"
                     :class="viewMode ? 'text-amber-600' : 'text-slate-500'"
-                    x-text="viewMode ? 'Modo vista previa — ' + viewRolLabel : (userRole === 'admin' ? 'Nivel: Administrador del Sistema' : 'Nivel: Acceso Academico')"></p>
+                    x-text="viewMode ? 'Modo vista previa — ' + viewRolLabel : 'Nivel: ' + rolLabel"></p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -90,15 +90,23 @@
 
         <!-- SIDEBAR -->
         <aside class="w-64 glass-panel border-t-0 shadow-sm flex flex-col py-4 z-20">
-            <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase px-6 mb-3">Modulos</p>
+            <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase px-6 mb-3">Módulos</p>
 
             <button @click="switchTab('usuarios')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
                 :class="activeTab==='usuarios' ? 'tab-active' : 'tab-inactive'">
-                <i class="bi bi-people-fill text-base"></i> Alta y Roles
+                <i class="bi bi-people-fill text-base"></i> Usuarios
+            </button>
+            <button x-show="userRole === 'admin' || userRole === 'academico'" @click="switchTab('asignaturas')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
+                :class="activeTab==='asignaturas' ? 'tab-active' : 'tab-inactive'">
+                <i class="bi bi-book-fill text-base"></i> Asignaturas
+            </button>
+            <button x-show="userRole === 'admin'" @click="switchTab('filiales')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
+                :class="activeTab==='filiales' ? 'tab-active' : 'tab-inactive'">
+                <i class="bi bi-geo-alt-fill text-base"></i> Filiales
             </button>
             <button @click="switchTab('cursos')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
                 :class="activeTab==='cursos' ? 'tab-active' : 'tab-inactive'">
-                <i class="bi bi-grid-3x3-gap-fill text-base"></i> Catalogos
+                <i class="bi bi-grid-3x3-gap-fill text-base"></i> Catálogos
             </button>
             <button @click="switchTab('reportes')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
                 :class="activeTab==='reportes' ? 'tab-active' : 'tab-inactive'">
@@ -106,7 +114,7 @@
             </button>
             <button x-show="userRole === 'admin'" @click="switchTab('config')" class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors"
                 :class="activeTab==='config' ? 'tab-active' : 'tab-inactive'">
-                <i class="bi bi-gear-fill text-base"></i> Configuracion
+                <i class="bi bi-gear-fill text-base"></i> Configuración
             </button>
             <div class="border-t border-slate-200 my-2"></div>
             <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase px-6 mb-2 mt-1">Vista Previa</p>

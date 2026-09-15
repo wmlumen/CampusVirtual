@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         // ═══════════════════════════════════════
         userRole: '',
         userName: '',
+        rolLabel: 'Usuario',
         activeTab: 'usuarios',
         loading: false,
         loadingText: 'Cargando...',
@@ -59,9 +60,10 @@ document.addEventListener('alpine:init', () => {
         viewRolColor: '',
         viewRolUrl: '',
         vistasDisponibles: [
-            { id: 'alumno',    label: 'Alumno',      icon: 'bi-mortarboard-fill', color: '#10b981', url: '../index.html',         desc: 'Portal principal, login, registro, cursos del estudiante' },
-            { id: 'docente',   label: 'Docente',     icon: 'bi-person-badge-fill', color: '#3b82f6', url: '../sociologia/teacher_panel.html', desc: 'Panel docente: asistencia, notas, calificaciones, actas' },
-            { id: 'academico', label: 'Acceso Academico', icon: 'bi-building', color: '#8b5cf6', url: '../academic/', desc: 'Vista academica: indicadores, examenes, criterios, glosario' },
+            { id: 'alumno',    label: 'Alumno',           icon: 'bi-mortarboard-fill', color: '#10b981', url: '../dashboard.html', desc: 'Dashboard del alumno: asignaturas, progreso, eventos' },
+            { id: 'docente',   label: 'Docente',          icon: 'bi-person-badge-fill', color: '#3b82f6', url: '../docente.html', desc: 'Panel docente: asignaturas, calificaciones, planificación' },
+            { id: 'academico', label: 'Acceso Académico', icon: 'bi-building', color: '#8b5cf6', url: '../dashboard.html', desc: 'Coordinación académica: indicadores, reportes' },
+            { id: 'admin',     label: 'Administrador',    icon: 'bi-shield-fill-check', color: '#f43f5e', url: 'index.html', desc: 'Panel administrativo central' },
         ],
 
         // ═══ CATÁLOGOS ═══
@@ -89,12 +91,24 @@ document.addEventListener('alpine:init', () => {
         // ═══════════════════════════════════════
         async initPanel() {
             this.userRole = sessionStorage.getItem('rol');
-            if (this.userRole !== 'admin' && this.userRole !== 'academico') {
-                alert('Acceso denegado.');
-                window.location.href = '../index.html';
+            // Roles que pueden acceder al panel admin
+            const rolesPermitidos = ['admin', 'academico', 'admin_filial', 'administrador_plataforma'];
+            if (!rolesPermitidos.includes(this.userRole)) {
+                alert('Acceso denegado. No tienes permisos para acceder al panel de administración.');
+                window.location.href = '../dashboard.html';
                 return;
             }
             this.userName = sessionStorage.getItem('current_nombre') || 'Usuario';
+            
+            // Determinar nombre del rol para mostrar
+            const rolLabels = {
+                'admin': 'Administrador General',
+                'academico': 'Acceso Académico',
+                'admin_filial': 'Administrador de Filial',
+                'administrador_plataforma': 'Administrador de Plataforma'
+            };
+            this.rolLabel = rolLabels[this.userRole] || this.userRole;
+            
             await this.loadSection('usuarios');
         },
 
@@ -103,7 +117,7 @@ document.addEventListener('alpine:init', () => {
             sessionStorage.clear();
             localStorage.removeItem('centuria_remember');
             localStorage.removeItem('centuria_token');
-            window.location.replace('../index.html');
+            window.location.replace('../dashboard.html');
         },
 
         // ═══════════════════════════════════════
@@ -113,26 +127,30 @@ document.addEventListener('alpine:init', () => {
             const container = document.getElementById('section-container');
             if (!container) return;
             const urls = {
-                usuarios:  'sections/usuarios.html',
-                cursos:    'sections/catalogos.html',
-                reportes:  'sections/reportes.html',
-                config:    'sections/config.html',
-                vistas:    'sections/vistas.html'
+                usuarios:   'sections/usuarios.html',
+                asignaturas: 'sections/asignaturas.html',
+                filiales:   'sections/filiales.html',
+                cursos:     'sections/catalogos.html',
+                reportes:   'sections/reportes.html',
+                config:     'sections/config.html',
+                vistas:     'sections/vistas.html'
             };
             const url = urls[tab];
             if (!url) return;
             this.loading = true;
-            this.loadingText = 'Cargando modulo...';
+            this.loadingText = 'Cargando módulo...';
             try {
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 container.innerHTML = await resp.text();
                 if (tab === 'usuarios') await this.initUsuarios();
+                if (tab === 'asignaturas') await this.cargarAsignaturas();
+                if (tab === 'filiales') await this.cargarFiliales();
                 if (tab === 'cursos') await this.loadCatalogData();
                 if (tab === 'reportes') await this.loadReportData();
                 Alpine.initTree(container);
             } catch (err) {
-                console.error('Error cargando seccion:', err);
+                console.error('Error cargando sección:', err);
                 container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-slate-400">
                     <i class="bi bi-exclamation-triangle text-4xl text-amber-300 mb-3"></i>
                     <p class="text-sm font-bold">Error al cargar</p>
@@ -448,8 +466,113 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ═══════════════════════════════════════
+        // MÓDULO: ASIGNATURAS
+        // ═══════════════════════════════════════
+        asignaturas: [],
+        asignaturaSearch: '',
+        asignaturaFilterCarrera: '',
+        selectedAsignatura: null,
+        formAsignatura: { nombre: '', codigo: '', carrera: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
+
+        async cargarAsignaturas() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const data = await r.json();
+                this.asignaturas = data.asignaturas || [];
+            } catch (e) { console.error('Error cargando asignaturas:', e); }
+        },
+
+        get filteredAsignaturas() {
+            let result = this.asignaturas;
+            if (this.asignaturaSearch.trim()) {
+                const q = this.asignaturaSearch.toLowerCase();
+                result = result.filter(a =>
+                    (a.nombre || '').toLowerCase().includes(q) ||
+                    (a.codigo || '').toLowerCase().includes(q)
+                );
+            }
+            if (this.asignaturaFilterCarrera) {
+                result = result.filter(a => a.carrera === this.asignaturaFilterCarrera);
+            }
+            return result;
+        },
+
+        seleccionarAsignatura(a) {
+            this.selectedAsignatura = a;
+            this.formAsignatura = {
+                nombre: a.nombre || '',
+                codigo: a.codigo || '',
+                carrera: a.carrera || '',
+                semestre: a.semestre || 1,
+                carga_horaria: a.carga_horaria || 0,
+                color: a.color || '#10b981',
+                icono: a.icono || 'bi-book'
+            };
+        },
+
+        async guardarAsignatura() {
+            const f = this.formAsignatura;
+            if (!f.nombre || !f.codigo) { alert('Nombre y código requeridos'); return; }
+            this.loading = true;
+            this.loadingText = this.selectedAsignatura ? 'Actualizando...' : 'Creando...';
+            try {
+                const fd = new FormData();
+                fd.append('nombre', f.nombre);
+                fd.append('codigo', f.codigo.toUpperCase());
+                fd.append('carrera', f.carrera);
+                fd.append('semestre', f.semestre);
+                fd.append('carga_horaria', f.carga_horaria);
+                fd.append('color', f.color);
+                fd.append('icono', f.icono);
+                const action = this.selectedAsignatura ? 'update' : 'create';
+                if (this.selectedAsignatura) fd.append('id', this.selectedAsignatura.id);
+                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=' + action, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.status === 'Exito' || data.status === 'Éxito') {
+                    this.cancelarEditAsignatura();
+                    await this.cargarAsignaturas();
+                } else {
+                    alert('Error: ' + (data.error || data.mensaje));
+                }
+            } catch (e) { console.error(e); alert('Error al guardar.'); }
+            finally { this.loading = false; }
+        },
+
+        cancelarEditAsignatura() {
+            this.selectedAsignatura = null;
+            this.formAsignatura = { nombre: '', codigo: '', carrera: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
+        },
+
+        async eliminarAsignatura(a) {
+            if (!confirm('¿Eliminar asignatura "' + a.nombre + '"?')) return;
+            this.loading = true;
+            try {
+                const fd = new FormData();
+                fd.append('id', a.id);
+                await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=delete', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                await this.cargarAsignaturas();
+            } catch (e) { console.error(e); }
+            finally { this.loading = false; }
+        },
+
+        // ═══════════════════════════════════════
         // MÓDULO: FILIALES
         // ═══════════════════════════════════════
+        filiales: [],
+        filialSearch: '',
+        selectedFilial: null,
+        formFilial: { nombre: '', codigo: '', direccion: '' },
+
         async cargarFiliales() {
             try {
                 const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=list', {
@@ -458,6 +581,52 @@ document.addEventListener('alpine:init', () => {
                 const data = await r.json();
                 this.filiales = data.filiales || [];
             } catch (e) { console.error('Error cargando filiales:', e); }
+        },
+
+        async crearFilial() {
+            const f = this.formFilial;
+            if (!f.nombre || !f.codigo) { alert('Nombre y código requeridos'); return; }
+            this.loading = true;
+            this.loadingText = this.selectedFilial ? 'Actualizando...' : 'Creando...';
+            try {
+                const fd = new FormData();
+                fd.append('nombre', f.nombre);
+                fd.append('codigo', f.codigo.toUpperCase());
+                fd.append('direccion', f.direccion);
+                const action = this.selectedFilial ? 'update' : 'create';
+                if (this.selectedFilial) fd.append('id', this.selectedFilial.id);
+                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=' + action, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.status === 'Exito' || data.status === 'Éxito') {
+                    this.selectedFilial = null;
+                    this.formFilial = { nombre: '', codigo: '', direccion: '' };
+                    this.showForm = false;
+                    await this.cargarFiliales();
+                } else {
+                    alert('Error: ' + (data.error || data.mensaje));
+                }
+            } catch (e) { console.error(e); alert('Error al guardar.'); }
+            finally { this.loading = false; }
+        },
+
+        async eliminarFilial(id) {
+            if (!confirm('¿Eliminar esta filial?')) return;
+            this.loading = true;
+            try {
+                const fd = new FormData();
+                fd.append('id', id);
+                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                await this.cargarFiliales();
+            } catch (e) { console.error(e); }
+            finally { this.loading = false; }
         },
 
         async crearFilial() {
@@ -478,47 +647,6 @@ document.addEventListener('alpine:init', () => {
                 this.nuevaFilial = { nombre: '', codigo: '', direccion: '' };
                 await this.cargarFiliales();
             } catch (e) { console.error('Error creando filial:', e); }
-        },
-
-        async toggleFilial(id) {
-            try {
-                const fd = new FormData();
-                fd.append('id', id);
-                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                await this.cargarFiliales();
-            } catch (e) { console.error('Error toggling filial:', e); }
-        },
-
-        async eliminarFilial(id) {
-            if (!confirm('¿Eliminar esta filial?')) return;
-            try {
-                const fd = new FormData();
-                fd.append('id', id);
-                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                await this.cargarFiliales();
-            } catch (e) { console.error('Error eliminando filial:', e); }
-        },
-
-        getAdminsByFilial(filialNombre) {
-            return (this.adminsByFilial || []).filter(a => a.filial === filialNombre);
-        },
-
-        async cargarAdminsPorFilial() {
-            try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=admins-by-filial', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
-                this.adminsByFilial = data.admins || [];
-            } catch (e) { console.error('Error cargando admins:', e); }
         },
 
         // ═══════════════════════════════════════

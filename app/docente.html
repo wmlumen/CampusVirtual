@@ -9,492 +9,478 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --verde: #00B140; --verde-dark: #007A33; --dorado: #C5A55A;
-            --azul: #4A90D9; --rosa: #FF6B9D; --naranja: #FF8C42;
-            --texto: #1e293b; --texto-sec: #64748b;
-            --bg: #f8fafc; --card-bg: #ffffff; --border: #e2e8f0;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Montserrat', sans-serif; min-height: 100vh; background: var(--bg); color: var(--texto); }
-        .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 50px; }
+        :root { --verde:#00B140; --verde-d:#007A33; --dorado:#C5A55A; --azul:#4A90D9; --rosa:#FF6B9D; --naranja:#FF8C42; --txt:#1e293b; --txt2:#64748b; --bg:#f8fafc; --card:#fff; --bdr:#e2e8f0; }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+        .wrap{max-width:1200px;margin:0 auto;padding:12px 16px 50px}
 
         /* Header */
-        .hdr { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-        .hdr-left { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--azul), #2a5f8f); display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; color: #fff; }
-        .hdr-name { font-size: .85rem; font-weight: 700; }
-        .hdr-sub { font-size: .6rem; color: var(--texto-sec); }
-        .badge-rol { padding: 4px 10px; border-radius: 20px; font-size: .55rem; font-weight: 600; background: #E3F2FD; color: var(--azul); }
-        .btn-out { padding: 5px 10px; border-radius: 8px; font-size: .6rem; background: #FEE2E2; color: #DC2626; border: none; cursor: pointer; font-family: 'Montserrat'; font-weight: 600; }
+        .hdr{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+        .hdr-left{display:flex;align-items:center;gap:12px}
+        .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--azul),#2a5f8f);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#fff}
+        .hdr-name{font-size:.85rem;font-weight:700}
+        .hdr-sub{font-size:.6rem;color:var(--txt2)}
+        .badge-rol{padding:4px 10px;border-radius:20px;font-size:.55rem;font-weight:600;background:#E3F2FD;color:var(--azul)}
+        .btn-out{padding:5px 10px;border-radius:8px;font-size:.6rem;background:#FEE2E2;color:#DC2626;border:none;cursor:pointer;font-family:'Montserrat';font-weight:600}
+
+        /* Tabs Asignaturas */
+        .asig-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
+        .asig-tab{padding:8px 16px;border-radius:10px;font-size:.7rem;font-weight:600;cursor:pointer;background:var(--card);border:1px solid var(--bdr);color:var(--txt2);transition:.2s;white-space:nowrap;font-family:'Montserrat';display:flex;align-items:center;gap:6px}
+        .asig-tab:hover{border-color:var(--azul);color:var(--azul)}
+        .asig-tab.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+        .asig-tab .count{background:rgba(255,255,255,.25);padding:1px 6px;border-radius:10px;font-size:.55rem}
+        .asig-tab.active .count{background:rgba(255,255,255,.3)}
 
         /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-        .stat-icon { width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 6px; }
-        .stat-icon.blue { background: #E3F2FD; color: var(--azul); }
-        .stat-icon.green { background: #E6F4EA; color: var(--verde); }
-        .stat-icon.gold { background: #FFF8E1; color: var(--dorado); }
-        .stat-icon.rose { background: #FCE4EC; color: var(--rosa); }
-        .stat-val { font-size: 1.3rem; font-weight: 800; }
-        .stat-lbl { font-size: .55rem; color: var(--texto-sec); letter-spacing: .5px; text-transform: uppercase; }
+        .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+        .stat{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:10px;text-align:center}
+        .stat-val{font-size:1.1rem;font-weight:800}
+        .stat-lbl{font-size:.5rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.3px}
 
         /* Section */
-        .sec { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-        .sec-title { font-size: .7rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--texto); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .sec-title i { color: var(--dorado); }
-
-        /* Tools */
-        .tools { background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-        .tools-title { font-size: .65rem; font-weight: 700; color: var(--azul); margin-bottom: 8px; letter-spacing: .5px; text-transform: uppercase; }
-        .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
-        .tool { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; text-align: center; cursor: pointer; transition: .2s; text-decoration: none; color: var(--texto); }
-        .tool:hover { background: #E3F2FD; border-color: var(--azul); transform: translateY(-1px); }
-        .tool i { font-size: 1rem; display: block; margin-bottom: 3px; color: var(--azul); }
-        .tool span { font-size: .5rem; letter-spacing: .3px; text-transform: uppercase; color: var(--texto-sec); }
-
-        /* Subject */
-        .subj { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-        .subj-name { font-size: .75rem; font-weight: 600; }
-        .subj-meta { font-size: .55rem; color: var(--texto-sec); }
-        .subj-btn { padding: 4px 10px; border-radius: 8px; font-size: .55rem; background: var(--verde); color: #fff; text-decoration: none; font-weight: 600; }
-
-        /* Empty */
-        .empty { text-align: center; padding: 24px; color: var(--texto-sec); }
-        .empty i { font-size: 2rem; margin-bottom: 8px; display: block; color: #cbd5e1; }
-        .empty p { font-size: .7rem; }
-
-        /* Form */
-        .frm { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-        .frm label { font-size: .55rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--texto-sec); margin-bottom: 4px; display: block; }
-        .frm input, .frm select { width: 100%; padding: 8px 10px; background: #fff; border: 1px solid var(--border); border-radius: 8px; color: var(--texto); font-family: 'Montserrat'; font-size: .75rem; }
-        .btn { padding: 8px 16px; border-radius: 8px; font-size: .7rem; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; border: none; transition: .2s; }
-        .btn-primary { background: var(--azul); color: #fff; }
-        .btn-primary:hover { background: #2a5f8f; }
+        .sec{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:10px}
+        .sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .sec-title i{color:var(--dorado)}
 
         /* Table */
-        .tbl { width: 100%; border-collapse: collapse; font-size: .7rem; }
-        .tbl th { background: #E3F2FD; color: var(--azul); font-size: .55rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; padding: 8px; text-align: left; }
-        .tbl td { padding: 8px; border-bottom: 1px solid var(--border); }
-        .tbl tr:hover td { background: #f8fafc; }
+        .tbl{width:100%;border-collapse:collapse;font-size:.68rem}
+        .tbl th{background:#E3F2FD;color:var(--azul);font-size:.55rem;font-weight:700;text-transform:uppercase;padding:8px 6px;text-align:left;position:sticky;top:0}
+        .tbl td{padding:7px 6px;border-bottom:1px solid var(--bdr)}
+        .tbl tr:hover td{background:#f0f7ff}
+        .tbl .nota{font-weight:700;text-align:center}
+        .tbl .aprobado{color:#16a34a}
+        .tbl .reprobado{color:#dc2626}
+        .tbl .pendiente{color:#94a3b8}
+
+        /* Badges estado */
+        .est{padding:2px 8px;border-radius:8px;font-size:.55rem;font-weight:600}
+        .est-ap{background:#DCFCE7;color:#16a34a}
+        .est-re{background:#FEE2E2;color:#dc2626}
+        .est-pen{background:#F1F5F9;color:#94a3b8}
+
+        /* Toolbar */
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+        .btn{padding:6px 12px;border-radius:8px;font-size:.65rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:none;transition:.15s;display:inline-flex;align-items:center;gap:4px}
+        .btn-p{background:var(--azul);color:#fff}.btn-p:hover{background:#2a5f8f}
+        .btn-g{background:#E6F4EA;color:var(--verde-d)}.btn-g:hover{background:#C8E6C9}
+        .btn-o{background:#FFF8E1;color:#D97706}.btn-o:hover{background:#FEF3C7}
+        .btn-s{background:#F1F5F9;color:var(--txt)}.btn-s:hover{background:#E2E8F0}
+        .btn-r{background:#FEE2E2;color:#DC2626}.btn-r:hover{background:#FECACA}
+
+        /* Form inline */
+        .frm-i{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+        .frm-i label{font-size:.5rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px}
+        .frm-i select,.frm-i input{padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;font-family:'Montserrat'}
+
+        /* Summary cards row */
+        .sum-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+        .sum-card{background:#f8fafc;border:1px solid var(--bdr);border-radius:10px;padding:10px;text-align:center;border-left:3px solid var(--azul)}
+        .sum-card .val{font-size:1rem;font-weight:800}
+        .sum-card .lbl{font-size:.5rem;color:var(--txt2);text-transform:uppercase}
+
+        /* Empty */
+        .empty{text-align:center;padding:30px;color:var(--txt2)}
+        .empty i{font-size:2rem;margin-bottom:8px;display:block;color:#cbd5e1}
 
         /* Footer */
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 4px 16px; background: var(--card-bg); border-top: 1px solid var(--border); font-size: .45rem; color: var(--texto-sec); }
-        @media print { .footer, .btn-out { display: none; } }
-        @media (max-width: 768px) { .stats { grid-template-columns: repeat(2, 1fr); } .hdr { flex-direction: column; gap: 8px; } }
+        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:4px 16px;background:var(--card);border-top:1px solid var(--bdr);font-size:.45rem;color:var(--txt2)}
+        @media print{.footer,.btn-out,.toolbar{display:none!important}.wrap{padding:0}}
+        @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.hdr{flex-direction:column;gap:8px}.sum-row{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <!-- Header -->
-        <div class="hdr">
-            <div class="hdr-left">
-                <div class="avatar" id="avatar">D</div>
-                <div>
-                    <div class="hdr-name" id="userName">Cargando...</div>
-                    <div class="hdr-sub" id="userSub">Cargando...</div>
-                </div>
-            </div>
-            <div>
-                <span class="badge-rol" id="badgeRol">Docente</span>
-                <button class="btn-out" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right me-1"></i> Salir</button>
-            </div>
+<div class="wrap">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-left">
+            <div class="avatar" id="avatar">D</div>
+            <div><div class="hdr-name" id="userName">Cargando...</div><div class="hdr-sub" id="userSub">—</div></div>
         </div>
-
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-chalkboard"></i></div><div class="stat-val" id="statAsig">0</div><div class="stat-lbl">Mis Asignaturas</div></div>
-            <div class="stat-card"><div class="stat-icon green"><i class="bi bi-people"></i></div><div class="stat-val" id="statAlum">0</div><div class="stat-lbl">Alumnos</div></div>
-            <div class="stat-card"><div class="stat-icon gold"><i class="bi bi-calendar-event"></i></div><div class="stat-val" id="statEvent">0</div><div class="stat-lbl">Eventos</div></div>
-            <div class="stat-card"><div class="stat-icon rose"><i class="bi bi-clipboard-check"></i></div><div class="stat-val" id="statAsist">-</div><div class="stat-lbl">Asistencia</div></div>
-        </div>
-
-        <!-- Mis Asignaturas -->
-        <div class="sec">
-            <div class="sec-title"><i class="bi bi-book"></i> Mis Asignaturas</div>
-            <div id="misAsignaturas">Cargando...</div>
-        </div>
-
-        <!-- Herramientas Docente -->
-        <div class="tools">
-            <div class="tools-title"><i class="bi bi-tools me-1"></i> Herramientas Docente</div>
-            <div class="tools-grid">
-                <a href="#plan-clases" class="tool" onclick="scrollTo('plan-clases')"><i class="bi bi-calendar3"></i><span>Planificar</span></a>
-                <a href="#registro-clases" class="tool" onclick="scrollTo('registro-clases')"><i class="bi bi-clipboard-check"></i><span>Registrar</span></a>
-                <a href="#libreta" class="tool" onclick="scrollTo('libreta')"><i class="bi bi-journal-text"></i><span>Libreta</span></a>
-                <a href="#planilla" class="tool" onclick="scrollTo('planilla')"><i class="bi bi-table"></i><span>Planilla</span></a>
-                <a href="#acta" class="tool" onclick="scrollTo('acta')"><i class="bi bi-file-earmark"></i><span>Acta</span></a>
-                <a href="#documentos" class="tool" onclick="scrollTo('documentos')"><i class="bi bi-folder"></i><span>Documentos</span></a>
-                <a href="perfil.html" class="tool"><i class="bi bi-person"></i><span>Perfil</span></a>
-            </div>
-        </div>
-
-        <!-- Planificación -->
-        <div class="sec" id="plan-clases">
-            <div class="sec-title"><i class="bi bi-calendar3"></i> Planificación de Clases</div>
-            <div class="frm">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;"><label>Asignatura</label><select id="plan-asig"></select></div>
-                    <div style="flex:1;min-width:120px;"><label>Fecha</label><input type="date" id="plan-fecha"></div>
-                    <div style="flex:1;min-width:140px;"><label>Tema</label><input type="text" id="plan-tema" placeholder="Tema de la clase"></div>
-                    <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="guardarPlan()"><i class="bi bi-plus-lg me-1"></i>Guardar</button></div>
-                </div>
-            </div>
-            <div id="plan-list">Cargando...</div>
-        </div>
-
-        <!-- Registro Asistencia -->
-        <div class="sec" id="registro-clases">
-            <div class="sec-title"><i class="bi bi-clipboard-check"></i> Registro de Asistencia</div>
-            <div class="frm">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;"><label>Asignatura</label><select id="att-asig"></select></div>
-                    <div style="flex:1;min-width:120px;"><label>Fecha</label><input type="date" id="att-fecha"></div>
-                    <div style="flex:1;min-width:100px;"><label>Estado</label><select id="att-estado"><option value="presente">Presente</option><option value="ausente">Ausente</option><option value="tarde">Tarde</option></select></div>
-                    <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="regAsistencia()"><i class="bi bi-check-lg me-1"></i>Registrar</button></div>
-                </div>
-            </div>
-            <div id="att-list">Cargando...</div>
-        </div>
-
-        <!-- Libreta de Calificaciones -->
-        <div class="sec" id="libreta">
-            <div class="sec-title"><i class="bi bi-journal-text"></i> Libreta de Calificaciones</div>
-            <div class="frm">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;"><label>Asignatura</label><select id="lib-asig" onchange="cargarLibretaDocente()"></select></div>
-                    <div style="flex:1;min-width:120px;"><label>Período</label><select id="lib-periodo"><option value="2026-I">2026-I</option><option value="2026-II">2026-II</option></select></div>
-                </div>
-            </div>
-            <!-- Resumen -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
-                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;text-align:center;">
-                    <div style="font-size:1.2rem;font-weight:800;color:#16a34a;" id="lib-alumnos">0</div>
-                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Alumnos</div>
-                </div>
-                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;text-align:center;">
-                    <div style="font-size:1.2rem;font-weight:800;color:#2563eb;" id="lib-promedio">-</div>
-                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Promedio</div>
-                </div>
-                <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px;text-align:center;">
-                    <div style="font-size:1.2rem;font-weight:800;color:#ca8a04;" id="lib-aprobados">0</div>
-                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Aprobados</div>
-                </div>
-                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px;text-align:center;">
-                    <div style="font-size:1.2rem;font-weight:800;color:#dc2626;" id="lib-reprobados">0</div>
-                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Reprobados</div>
-                </div>
-            </div>
-            <!-- Tabla -->
-            <div style="overflow-x:auto;">
-                <table class="tbl">
-                    <thead><tr><th>Alumno</th><th>Cédula</th><th>Asist.</th><th>P1</th><th>P2</th><th>Final</th><th>Promedio</th><th>Estado</th></tr></thead>
-                    <tbody id="libreta-body"><tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;">Selecciona una asignatura</td></tr></tbody>
-                </table>
-            </div>
-            <div style="margin-top:8px;display:flex;gap:8px;">
-                <button class="btn btn-primary" onclick="exportarLibreta()"><i class="bi bi-download me-1"></i>Exportar</button>
-                <button class="btn" style="background:#f1f5f9;color:var(--texto);" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
-            </div>
-        </div>
-
-        <!-- Planilla Calificaciones -->
-        <div class="sec" id="planilla">
-            <div class="sec-title"><i class="bi bi-table"></i> Planilla de Calificaciones</div>
-            <div style="overflow-x:auto;">
-                <table class="tbl">
-                    <thead><tr><th>Alumno</th><th>Cédula</th><th>Asistencia</th><th>P1</th><th>P2</th><th>Final</th><th>Promedio</th><th>Estado</th></tr></thead>
-                    <tbody id="planilla-body"><tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;">Selecciona una asignatura</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Acta -->
-        <div class="sec" id="acta">
-            <div class="sec-title"><i class="bi bi-file-earmark"></i> Acta de Calificaciones</div>
-            <div class="frm">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;"><label>Asignatura</label><select id="acta-asig"></select></div>
-                    <div style="flex:1;min-width:120px;"><label>Período</label><select id="acta-periodo"><option value="2026-I">2026-I</option><option value="2026-II">2026-II</option></select></div>
-                    <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="generarActa()"><i class="bi bi-file-earmark-meat me-1"></i>Generar</button></div>
-                </div>
-            </div>
-            <div id="acta-content" style="display:none;"><div id="acta-text"></div><button class="btn" style="background:#f1f5f9;color:var(--texto);margin-top:8px;" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button></div>
-        </div>
-
-        <!-- Documentos -->
-        <div class="sec" id="documentos">
-            <div class="sec-title"><i class="bi bi-folder"></i> Documentos</div>
-            <div class="frm">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:160px;"><label>Título</label><input type="text" id="doc-titulo" placeholder="Título del documento"></div>
-                    <div style="flex:1;min-width:160px;"><label>Descripción</label><input type="text" id="doc-desc" placeholder="Descripción"></div>
-                    <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="guardarDoc()"><i class="bi bi-upload me-1"></i>Guardar</button></div>
-                </div>
-            </div>
-            <div id="doc-list">Cargando...</div>
+        <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge-rol">Docente</span>
+            <button class="btn-out" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
         </div>
     </div>
 
-    <div class="footer">Instituto Superior Centuria © 2026 — Sistema Académico Digital v2.0</div>
+    <!-- Tabs Asignaturas -->
+    <div class="asig-tabs" id="asigTabs"></div>
 
-    <script src="js/api.js?v=7"></script>
-    <script src="js/logout.js"></script>
-    <script>
-    let misAsignaturas = [];
+    <!-- Stats de la asignatura seleccionada -->
+    <div class="stats" id="statsRow">
+        <div class="stat"><div class="stat-val" style="color:var(--azul)" id="st-alumnos">0</div><div class="stat-lbl">Alumnos</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--verde)" id="st-aprobados">0</div><div class="stat-lbl">Aprobados</div></div>
+        <div class="stat"><div class="stat-val" style="color:#dc2626" id="st-reprobados">0</div><div class="stat-lbl">Reprobados</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--dorado)" id="st-asistencia">-</div><div class="stat-lbl">Asistencia</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--naranja)" id="st-promedio">-</div><div class="stat-lbl">Promedio</div></div>
+    </div>
 
-    async function cargarDocente() {
-        const cedula = sessionStorage.getItem('current_cedula');
-        if (!cedula) { location.href = 'index.html'; return; }
+    <!-- Toolbar acciones -->
+    <div class="toolbar">
+        <button class="btn btn-p" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar CSV</button>
+        <button class="btn btn-g" onclick="generarActa()"><i class="bi bi-file-earmark"></i> Generar Acta</button>
+        <button class="btn btn-o" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+        <button class="btn btn-s" onclick="cargarPanel()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+    </div>
 
-        const nombre = sessionStorage.getItem('current_nombre') || 'Docente';
-        const parts = nombre.split(' ');
-        const nombreP = parts[0] || '';
-        const apellidoP = parts.slice(1).join(' ') || '';
-        const carrera = sessionStorage.getItem('current_carrera') || '';
-        const seccion = sessionStorage.getItem('current_seccion') || '';
+    <!-- Tabla principal: Lista de Alumnos -->
+    <div class="sec">
+        <div class="sec-title"><i class="bi bi-people"></i> <span id="sec-title-text">Lista de Alumnos</span></div>
+        <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+            <table class="tbl" id="tblAlumnos">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Alumno</th>
+                        <th>Cédula</th>
+                        <th style="text-align:center">Asist.</th>
+                        <th style="text-align:center">P1</th>
+                        <th style="text-align:center">P2</th>
+                        <th style="text-align:center">Final</th>
+                        <th style="text-align:center">Prom.</th>
+                        <th style="text-align:center">Estado</th>
+                        <th style="text-align:center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyAlumnos">
+                    <tr><td colspan="10" class="empty"><i class="bi bi-inbox"></i><p>Selecciona una asignatura</p></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-        document.getElementById('userName').textContent = nombre;
-        document.getElementById('userSub').textContent = cedula + (carrera ? ' • ' + carrera : '') + (seccion ? ' • Sec. ' + seccion : '');
-        document.getElementById('avatar').textContent = (nombreP.charAt(0) + apellidoP.charAt(0)).toUpperCase();
+    <!-- Resumen por evaluación -->
+    <div class="sum-row" id="sumRow" style="display:none">
+        <div class="sum-card" style="border-left-color:var(--verde)"><div class="val" id="sum-p1">-</div><div class="lbl">Prom. Parcial 1</div></div>
+        <div class="sum-card" style="border-left-color:var(--azul)"><div class="val" id="sum-p2">-</div><div class="lbl">Prom. Parcial 2</div></div>
+        <div class="sum-card" style="border-left-color:var(--rosa)"><div class="val" id="sum-final">-</div><div class="lbl">Prom. Final</div></div>
+        <div class="sum-card" style="border-left-color:var(--dorado)"><div class="val" id="sum-mejor">-</div><div class="lbl">Mejor Nota</div></div>
+        <div class="sum-card" style="border-left-color:#dc2626"><div class="val" id="sum-peor">-</div><div class="lbl">Peor Nota</div></div>
+    </div>
+</div>
 
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('plan-fecha').value = today;
-        document.getElementById('att-fecha').value = today;
+<div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
-        await cargarMisAsignaturas(cedula);
-    }
+<script src="js/api.js?v=7"></script>
+<script src="js/logout.js"></script>
+<script>
+// ═══ ESTADO ═══
+let misAsignaturas = [];
+let asigActual = null;
+let alumnosData = [];
+let notasData = [];
+let asistData = [];
 
-    async function cargarMisAsignaturas(cedula) {
-        const container = document.getElementById('misAsignaturas');
-        try {
-            const resp = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=my_subjects&cedula=' + encodeURIComponent(cedula));
-            const data = await resp.json();
-            const subjects = data.subjects || [];
+// ═══ CARGAR PANEL ═══
+async function cargarPanel() {
+    const cedula = sessionStorage.getItem('current_cedula');
+    const nombre = sessionStorage.getItem('current_nombre') || 'Docente';
+    if (!cedula) { location.href = 'index.html'; return; }
 
-            // Solo mostrar asignaturas que están realmente asignadas en user_roles
-            const assignments = data.assignments || [];
-            const asignadas = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && a.rol === 'docente'));
+    document.getElementById('userName').textContent = nombre;
+    document.getElementById('userSub').textContent = 'C.I: ' + cedula;
+    document.getElementById('avatar').textContent = nombre.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
 
-            if (asignadas.length > 0) {
-                misAsignaturas = asignadas;
-                document.getElementById('statAsig').textContent = asignadas.length;
-                container.innerHTML = asignadas.map(s => `
-                    <div class="subj" style="border-left:3px solid ${s.color || '#00B140'};">
-                        <div>
-                            <div class="subj-name"><i class="bi ${s.icono || 'bi-book'}" style="color:${s.color || '#00B140'};margin-right:4px;"></i>${s.nombre}</div>
-                            <div class="subj-meta">${s.codigo} • ${s.carrera || ''} • ${s.semestre || ''}</div>
-                        </div>
-                        <a href="Materiales_Clases/programa.html?curso=${s.codigo}" class="subj-btn"><i class="bi bi-arrow-right"></i> Ver</a>
-                    </div>
-                `).join('');
-                populateSelects(asignadas);
-            } else {
-                container.innerHTML = `
-                    <div class="empty">
-                        <i class="bi bi-inbox"></i>
-                        <p><strong>Sin asignaturas asignadas</strong></p>
-                        <p style="margin-top:4px;font-size:.55rem;color:#94a3b8;">Tu asignación será visible aquí una vez que el administrador te vincule a una materia.</p>
-                    </div>`;
-                document.getElementById('statAsig').textContent = '0';
-            }
-        } catch(e) {
-            console.error('Error:', e);
-            container.innerHTML = `<div class="empty"><i class="bi bi-exclamation-circle"></i><p>Error al cargar asignaturas</p></div>`;
+    // 1) Cargar asignaturas del docente
+    await cargarMisAsignaturas(cedula);
+}
+
+// ═══ CARGAR ASIGNATURAS ASIGNADAS ═══
+async function cargarMisAsignaturas(cedula) {
+    const tabsEl = document.getElementById('asigTabs');
+    try {
+        const resp = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=my_subjects&cedula=' + encodeURIComponent(cedula));
+        const data = await resp.json();
+        const assignments = data.assignments || [];
+        const subjects = data.subjects || [];
+
+        // Solo mostrar las que tienen rol docente
+        const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && a.rol === 'docente'));
+
+        misAsignaturas = docenteAsig;
+
+        if (docenteAsig.length === 0) {
+            tabsEl.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p><strong>Sin asignaturas asignadas</strong></p><p style="font-size:.55rem;color:#94a3b8;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';
+            document.getElementById('statsRow').style.display = 'none';
+            return;
         }
-    }
 
-    function populateSelects(subjects) {
-        ['plan-asig', 'att-asig', 'acta-asig'].forEach(id => {
-            const sel = document.getElementById(id);
-            if (sel) sel.innerHTML = '<option value="">Seleccionar...</option>' + subjects.map(s => `<option value="${s.codigo}">${s.nombre} (${s.codigo})</option>`).join('');
+        // Renderizar tabs
+        tabsEl.innerHTML = docenteAsig.map((s, i) => `
+            <div class="asig-tab ${i===0?'active':''}" onclick="seleccionarAsig('${s.codigo}', this)" data-cod="${s.codigo}">
+                <i class="bi ${s.icono||'bi-book'}"></i>
+                ${s.nombre||s.codigo}
+                <span class="count" id="count-${s.codigo}">—</span>
+            </div>
+        `).join('');
+
+        // Seleccionar la primera
+        seleccionarAsig(docenteAsig[0].codigo, tabsEl.querySelector('.asig-tab'));
+
+    } catch(e) {
+        console.error('Error:', e);
+        tabsEl.innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i><p>Error al cargar asignaturas</p></div>';
+    }
+}
+
+// ═══ SELECCIONAR ASIGNATURA ═══
+async function seleccionarAsig(codigo, tabEl) {
+    // Activar tab
+    document.querySelectorAll('.asig-tab').forEach(t => t.classList.remove('active'));
+    if (tabEl) tabEl.classList.add('active');
+
+    asigActual = misAsignaturas.find(s => s.codigo === codigo);
+    if (!asigActual) return;
+
+    document.getElementById('sec-title-text').textContent = `Alumnos — ${asigActual.nombre || asigActual.codigo}`;
+    document.getElementById('statsRow').style.display = 'grid';
+    document.getElementById('sumRow').style.display = 'grid';
+
+    await cargarDatosAsignatura(codigo);
+}
+
+// ═══ CARGAR DATOS DE LA ASIGNATURA ═══
+async function cargarDatosAsignatura(codigo) {
+    const tbody = document.getElementById('tbodyAlumnos');
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt2)"><i class="bi bi-hourglass-split"></i> Cargando datos...</td></tr>';
+
+    try {
+        // Cargar todos los usuarios
+        const rUsers = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
+            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
         });
-    }
+        const dUsers = await rUsers.json();
+        const todos = dUsers.usuarios || [];
 
-    async function guardarPlan() {
-        const asig = document.getElementById('plan-asig').value;
-        const fecha = document.getElementById('plan-fecha').value;
-        const tema = document.getElementById('plan-tema').value;
-        if (!asig || !tema) { alert('Completa todos los campos'); return; }
+        // Filtrar alumnos (rol alumno, carrera de la asignatura)
+        alumnosData = todos.filter(u => {
+            const roles = u.roles || [];
+            return roles.some(r => r.rol === 'alumno' && (!r.carrera || r.carrera === asigActual.carrera));
+        });
+
+        // Cargar notas
         try {
-            await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=create', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: JSON.stringify({ titulo: tema, fecha, curso_id: asig, tipo: 'clase' })
-            });
-            alert('Clase planificada'); location.reload();
-        } catch(e) { alert('Error al guardar'); }
-    }
-
-    async function regAsistencia() {
-        const asig = document.getElementById('att-asig').value;
-        const fecha = document.getElementById('att-fecha').value;
-        const estado = document.getElementById('att-estado').value;
-        if (!asig) { alert('Selecciona una asignatura'); return; }
-        try {
-            await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=mark', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: JSON.stringify({ fecha, curso_id: asig, estado })
-            });
-            alert('Asistencia registrada'); location.reload();
-        } catch(e) { alert('Error al registrar'); }
-    }
-
-    function generarActa() {
-        const asig = document.getElementById('acta-asig');
-        const periodo = document.getElementById('acta-periodo').value;
-        if (!asig.value) { alert('Selecciona una asignatura'); return; }
-        document.getElementById('acta-text').innerHTML = `
-            <h3 style="margin-bottom:8px;font-size:.85rem;">ACTA DE CALIFICACIONES</h3>
-            <p style="font-size:.7rem;"><strong>Período:</strong> ${periodo} | <strong>Asignatura:</strong> ${asig.selectedOptions[0].text} | <strong>Docente:</strong> ${document.getElementById('userName').textContent}</p>
-            <table class="tbl" style="margin-top:8px;"><thead><tr><th>Alumno</th><th>Asistencia</th><th>P1</th><th>P2</th><th>Final</th><th>Promedio</th><th>Estado</th></tr></thead><tbody id="acta-body"></tbody></table>`;
-        document.getElementById('acta-content').style.display = 'block';
-    }
-
-    async function guardarDoc() {
-        const titulo = document.getElementById('doc-titulo').value;
-        const desc = document.getElementById('doc-desc').value;
-        if (!titulo) { alert('Ingresa un título'); return; }
-        try {
-            await fetch(CenturiaAPI.baseUrl + 'documentos.php?action=save', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: JSON.stringify({ titulo, descripcion: desc })
-            });
-            alert('Documento guardado'); location.reload();
-        } catch(e) { alert('Error al guardar'); }
-    }
-
-    function scrollTo(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
-
-    // ═══ LIBRETA DE CALIFICACIONES ═══
-    async function cargarLibretaDocente() {
-        const asig = document.getElementById('lib-asig').value;
-        if (!asig) return;
-        const tbody = document.getElementById('libreta-body');
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;"><i class="bi bi-hourglass-split"></i> Cargando...</td></tr>';
-
-        try {
-            // Cargar alumnos de la asignatura
-            const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
+            const rN = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
                 headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
             });
-            const data = await resp.json();
-            const usuarios = data.usuarios || [];
+            const dN = await rN.json();
+            notasData = dN.data || [];
+        } catch(e) { notasData = []; }
 
-            // Filtrar alumnos de esta asignatura
-            const alumnos = usuarios.filter(u =>
-                (u.roles || []).some(r => r.rol === 'alumno' && (r.asignatura === asig || !r.asignatura))
-            );
-
-            // Cargar notas
-            let notas = [];
-            try {
-                const rNotas = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const dNotas = await rNotas.json();
-                notas = dNotas.data || [];
-            } catch(e) {}
-
-            // Cargar asistencia
-            let asistencias = [];
-            try {
-                const rAsist = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const dAsist = await rAsist.json();
-                asistencias = dAsist.data || [];
-            } catch(e) {}
-
-            if (alumnos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;">No hay alumnos registrados en esta asignatura</td></tr>';
-                document.getElementById('lib-alumnos').textContent = '0';
-                document.getElementById('lib-promedio').textContent = '-';
-                document.getElementById('lib-aprobados').textContent = '0';
-                document.getElementById('lib-reprobados').textContent = '0';
-                return;
-            }
-
-            let html = '';
-            let totalPromedio = 0;
-            let aprobados = 0;
-            let reprobados = 0;
-
-            alumnos.forEach(alumno => {
-                const nombre = alumno.nombre_completo || (alumno.firstname + ' ' + alumno.lastname) || 'Sin nombre';
-                const cedula = alumno.cedula || alumno.username || '-';
-
-                // Notas del alumno
-                const notasAlumno = notas.filter(n => n.user_id === alumno.id || n.cedula === cedula);
-                const p1 = notasAlumno.find(n => n.component === 'parcial1')?.score || '-';
-                const p2 = notasAlumno.find(n => n.component === 'parcial2')?.score || '-';
-                const fin = notasAlumno.find(n => n.component === 'final')?.score || '-';
-
-                // Calcular promedio
-                let promedio = '-';
-                if (p1 !== '-' && p2 !== '-' && fin !== '-') {
-                    promedio = ((parseFloat(p1) + parseFloat(p2) + parseFloat(fin)) / 3).toFixed(1);
-                    totalPromedio += parseFloat(promedio);
-                    if (parseFloat(promedio) >= 70) aprobados++;
-                    else reprobados++;
-                }
-
-                // Asistencia
-                const asistFiltrada = asistencias.filter(a => a.user_id === alumno.id || a.cedula === cedula);
-                const totalAsist = asistFiltrada.length;
-                const presente = asistFiltrada.filter(a => a.estado === 'presente').length;
-                const pctAsist = totalAsist > 0 ? Math.round(presente / totalAsist * 100) : '-';
-
-                const estado = promedio !== '-' ? (parseFloat(promedio) >= 70 ? 'Aprobado' : 'Reprobado') : 'Pendiente';
-                const estadoColor = promedio !== '-' ? (parseFloat(promedio) >= 70 ? 'color:#16a34a;' : 'color:#dc2626;') : 'color:#94a3b8;';
-
-                html += `<tr>
-                    <td><strong>${nombre}</strong></td>
-                    <td>${cedula}</td>
-                    <td style="text-align:center;">${pctAsist !== '-' ? pctAsist + '%' : '-'}</td>
-                    <td style="text-align:center;font-weight:600;">${p1}</td>
-                    <td style="text-align:center;font-weight:600;">${p2}</td>
-                    <td style="text-align:center;font-weight:600;">${fin}</td>
-                    <td style="text-align:center;font-weight:800;${promedio !== '-' ? 'font-size:.85rem;' : ''}">${promedio}</td>
-                    <td style="text-align:center;${estadoColor}font-weight:600;">${estado}</td>
-                </tr>`;
+        // Cargar asistencia
+        try {
+            const rA = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', {
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
             });
+            const dA = await rA.json();
+            asistData = dA.data || [];
+        } catch(e) { asistData = []; }
 
-            tbody.innerHTML = html;
+        renderTabla();
 
-            // Actualizar resumen
-            document.getElementById('lib-alumnos').textContent = alumnos.length;
-            document.getElementById('lib-promedio').textContent = alumnos.length > 0 ? (totalPromedio / alumnos.length).toFixed(1) : '-';
-            document.getElementById('lib-aprobados').textContent = aprobados;
-            document.getElementById('lib-reprobados').textContent = reprobados;
+    } catch(e) {
+        console.error('Error:', e);
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
+    }
+}
 
-        } catch(e) {
-            console.error('Error cargando libreta:', e);
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:16px;">Error al cargar datos</td></tr>';
-        }
+// ═══ RENDERIZAR TABLA ═══
+function renderTabla() {
+    const tbody = document.getElementById('tbodyAlumnos');
+
+    if (alumnosData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="bi bi-people"></i><p>No hay alumnos en esta asignatura</p></td></tr>';
+        actualizarStats([], [], []);
+        return;
     }
 
-    function exportarLibreta() {
-        const asig = document.getElementById('lib-asig');
-        const asigNombre = asig.options[asig.selectedIndex]?.text || 'Asignatura';
-        const periodo = document.getElementById('lib-periodo').value;
-        let csv = 'Alumno,Cédula,Asistencia,P1,P2,Final,Promedio,Estado\n';
-        document.querySelectorAll('#libreta-body tr').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 8) {
-                csv += Array.from(cells).map(c => c.textContent.trim()).join(',') + '\n';
-            }
+    let html = '';
+    let totalP1 = 0, totalP2 = 0, totalFin = 0, totalProm = 0;
+    let cntP1 = 0, cntP2 = 0, cntFin = 0, cntProm = 0;
+    let aprobados = 0, reprobados = 0;
+    let todasAsist = [];
+
+    alumnosData.forEach((alumno, idx) => {
+        const nombre = alumno.nombre_completo || ((alumno.firstname||'') + ' ' + (alumno.lastname||'')).trim() || 'Sin nombre';
+        const cedula = alumno.cedula || alumno.username || '-';
+        const uid = alumno.id;
+
+        // Notas del alumno para esta asignatura
+        const notas = notasData.filter(n => {
+            const matchUser = n.user_id == uid || n.cedula == cedula;
+            const matchAsig = !n.curso_id || n.curso_id == asigActual.codigo || (n.asignatura||'').includes(asigActual.codigo);
+            return matchUser && matchAsig;
         });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Libreta_${asigNombre}_${periodo}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+
+        const p1 = getNota(notas, 'parcial1');
+        const p2 = getNota(notas, 'parcial2');
+        const fin = getNota(notas, 'final');
+
+        let prom = '-';
+        if (p1 !== null && p2 !== null && fin !== null) {
+            prom = ((p1 + p2 + fin) / 3).toFixed(1);
+            totalP1 += p1; cntP1++;
+            totalP2 += p2; cntP2++;
+            totalFin += fin; cntFin++;
+            totalProm += parseFloat(prom); cntProm++;
+            if (parseFloat(prom) >= 70) aprobados++; else reprobados++;
+        }
+
+        // Asistencia
+        const asist = asistData.filter(a => {
+            const matchUser = a.user_id == uid || a.cedula == cedula;
+            const matchAsig = !a.curso_id || a.curso_id == asigActual.codigo;
+            return matchUser && matchAsig;
+        });
+        const totalA = asist.length;
+        const presente = asist.filter(a => a.estado === 'presente').length;
+        const pctAsist = totalA > 0 ? Math.round(presente / totalA * 100) : null;
+        if (pctAsist !== null) todasAsist.push(pctAsist);
+
+        const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'Pendiente';
+        const estClass = prom !== '-' ? (parseFloat(prom) >= 70 ? 'est-ap' : 'est-re') : 'est-pen';
+
+        html += `<tr>
+            <td style="text-align:center;color:var(--txt2)">${idx+1}</td>
+            <td><strong>${nombre}</strong></td>
+            <td style="color:var(--txt2)">${cedula}</td>
+            <td class="nota ${pctAsist!==null?(pctAsist>=80?'aprobado':pctAsist>=70?'':'reprobado'):'pendiente'}" style="text-align:center">${pctAsist!==null?pctAsist+'%':'-'}</td>
+            <td class="nota ${p1!==null?(p1>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center">${p1!==null?p1:'-'}</td>
+            <td class="nota ${p2!==null?(p2>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center">${p2!==null?p2:'-'}</td>
+            <td class="nota ${fin!==null?(fin>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center">${fin!==null?fin:'-'}</td>
+            <td class="nota ${prom!=='-'?(parseFloat(prom)>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center;font-size:.8rem">${prom}</td>
+            <td style="text-align:center"><span class="est ${estClass}">${estado}</span></td>
+            <td style="text-align:center">
+                <button class="btn btn-s" style="padding:3px 6px;font-size:.55rem" onclick="editarAlumno(${uid},'${nombre}')"><i class="bi bi-pencil"></i></button>
+            </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+
+    // Actualizar contadores en tabs
+    const countEl = document.getElementById('count-' + asigActual.codigo);
+    if (countEl) countEl.textContent = alumnosData.length;
+
+    // Actualizar stats
+    const avgP1 = cntP1>0?(totalP1/cntP1).toFixed(1):'-';
+    const avgP2 = cntP2>0?(totalP2/cntP2).toFixed(1):'-';
+    const avgFin = cntFin>0?(totalFin/cntFin).toFixed(1):'-';
+    const avgProm = cntProm>0?(totalProm/cntProm).toFixed(1):'-';
+    const avgAsist = todasAsist.length>0?Math.round(todasAsist.reduce((a,b)=>a+b,0)/todasAsist.length):'-';
+
+    document.getElementById('st-alumnos').textContent = alumnosData.length;
+    document.getElementById('st-aprobados').textContent = aprobados;
+    document.getElementById('st-reprobados').textContent = reprobados;
+    document.getElementById('st-asistencia').textContent = avgAsist!=='-'?avgAsist+'%':'-';
+    document.getElementById('st-promedio').textContent = avgProm;
+
+    document.getElementById('sum-p1').textContent = avgP1;
+    document.getElementById('sum-p2').textContent = avgP2;
+    document.getElementById('sum-final').textContent = avgFin;
+
+    // Mejor / peor nota
+    const proms = [];
+    tbody.querySelectorAll('tr').forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 8) {
+            const v = parseFloat(cells[7].textContent);
+            if (!isNaN(v)) proms.push(v);
+        }
+    });
+    document.getElementById('sum-mejor').textContent = proms.length>0?Math.max(...proms).toFixed(1):'-';
+    document.getElementById('sum-peor').textContent = proms.length>0?Math.min(...proms).toFixed(1):'-';
+}
+
+function getNota(notas, componente) {
+    const n = notas.find(x => x.component === componente || (x.component||'').toLowerCase().includes(componente));
+    if (n && n.score !== undefined && n.score !== null && n.score !== '') return parseFloat(n.score);
+    return null;
+}
+
+// ═══ EDITAR ALUMNO ═══
+function editarAlumno(uid, nombre) {
+    const p1 = prompt(`Nota Parcial 1 de ${nombre}:`);
+    if (p1 === null) return;
+    const p2 = prompt(`Nota Parcial 2 de ${nombre}:`);
+    if (p2 === null) return;
+    const fin = prompt(`Nota Final de ${nombre}:`);
+    if (fin === null) return;
+
+    // Guardar cada nota
+    async function guardarNota(componente, valor) {
+        if (valor === '' || valor === null) return;
+        const fd = new FormData();
+        fd.append('action', 'create');
+        fd.append('user_id', uid);
+        fd.append('asignatura', asigActual.codigo);
+        fd.append('componente', componente);
+        fd.append('score', valor);
+        fd.append('curso_id', asigActual.codigo);
+        await fetch(CenturiaAPI.baseUrl + 'grades.php?action=create', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+            body: fd
+        });
     }
 
-    // ═══ INIT ═══
-    document.addEventListener('DOMContentLoaded', cargarDocente);
-    </script>
+    (async () => {
+        await guardarNota('parcial1', p1);
+        await guardarNota('parcial2', p2);
+        await guardarNota('final', fin);
+        alert('Calificaciones guardadas');
+        await cargarDatosAsignatura(asigActual.codigo);
+    })();
+}
+
+// ═══ EXPORTAR CSV ═══
+function exportarCSV() {
+    if (!asigActual) return;
+    let csv = 'Alumno,Cédula,Asistencia %,P1,P2,Final,Promedio,Estado\n';
+    document.querySelectorAll('#tbodyAlumnos tr').forEach(tr => {
+        const c = tr.querySelectorAll('td');
+        if (c.length >= 9) {
+            csv += [c[1].textContent.trim(), c[2].textContent.trim(), c[3].textContent.trim(), c[4].textContent.trim(), c[5].textContent.trim(), c[6].textContent.trim(), c[7].textContent.trim(), c[8].textContent.trim()].join(',') + '\n';
+        }
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Acta_${asigActual.codigo}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+
+// ═══ GENERAR ACTA ═══
+function generarActa() {
+    if (!asigActual) { alert('Selecciona una asignatura'); return; }
+    const nombre = sessionStorage.getItem('current_nombre') || 'Docente';
+    const fecha = new Date().toLocaleDateString('es-ES');
+    let contenido = `
+        <html><head><title>Acta - ${asigActual.nombre}</title>
+        <style>body{font-family:Arial;padding:30px}h1{font-size:16px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #333;padding:6px 8px;font-size:12px;text-align:left}th{background:#007A33;color:white}</style>
+        </head><body>
+        <h1>INSTITUTO SUPERIOR CENTURIA</h1>
+        <h2>ACTA DE CALIFICACIONES</h2>
+        <p><strong>Asignatura:</strong> ${asigActual.nombre} (${asigActual.codigo})</p>
+        <p><strong>Docente:</strong> ${nombre}</p>
+        <p><strong>Fecha:</strong> ${fecha}</p>
+        <p><strong>Carrera:</strong> ${asigActual.carrera||'-'}</p>
+        <table><thead><tr><th>#</th><th>Alumno</th><th>Cédula</th><th>P1</th><th>P2</th><th>Final</th><th>Promedio</th><th>Estado</th></tr></thead><tbody>`;
+    let idx = 1;
+    document.querySelectorAll('#tbodyAlumnos tr').forEach(tr => {
+        const c = tr.querySelectorAll('td');
+        if (c.length >= 9) {
+            contenido += `<tr><td>${idx++}</td><td>${c[1].textContent.trim()}</td><td>${c[2].textContent.trim()}</td><td>${c[4].textContent.trim()}</td><td>${c[5].textContent.trim()}</td><td>${c[6].textContent.trim()}</td><td>${c[7].textContent.trim()}</td><td>${c[8].textContent.trim()}</td></tr>`;
+        }
+    });
+    contenido += '</tbody></table><br><p>Firma del Docente: ________________</p></body></html>';
+    const w = window.open('', '_blank');
+    w.document.write(contenido);
+    w.document.close();
+    w.print();
+}
+
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded', cargarPanel);
+</script>
 </body>
 </html>

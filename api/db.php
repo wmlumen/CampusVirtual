@@ -205,6 +205,19 @@ class Database {
                 estado TEXT DEFAULT 'activo',
                 creado_por TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+
+            // subject_kit: control de completitud del kit de cada asignatura
+            "CREATE TABLE IF NOT EXISTS subject_kit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                asignatura TEXT NOT NULL,
+                componente TEXT NOT NULL,
+                completado INTEGER DEFAULT 0,
+                datos TEXT DEFAULT '{}',
+                completado_por TEXT DEFAULT '',
+                completado_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(asignatura, componente)
             )"
         ];
         

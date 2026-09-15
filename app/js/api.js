@@ -7,7 +7,7 @@ const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'acad
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
 // Google Apps Script URL (base de datos Sheets como backup/sync)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec';
 
 // Helper: verificar alumno en Google Sheets (GET) con timeout de 2s
 function gasCheckStudent(cedula) {

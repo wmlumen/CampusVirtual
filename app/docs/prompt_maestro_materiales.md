@@ -86,7 +86,7 @@ NUM_UNIDADES: 10
 
 ## Google Sheets (_SSOT__)
 
-- URL: `https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec`
+- URL: `https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec`
 - Hoja: `1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`
 - Prohibido usar URLs o IDs diferentes
 

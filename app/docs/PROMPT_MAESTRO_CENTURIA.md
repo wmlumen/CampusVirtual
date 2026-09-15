@@ -28,7 +28,7 @@ flowchart TD
 
 ### URL del endpoint
 ```
-https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec
+https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec
 ```
 
 ### Acciones disponibles

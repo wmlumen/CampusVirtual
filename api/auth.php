@@ -277,3 +277,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     
     api_response(['success' => true, 'message' => 'Logged out successfully']);
 }
+
+// ═══ #1 Cambiar contraseña (usuario) ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'change_password') {
+    $decoded = require_auth();
+    $current_password = $_POST['current_password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
+
+    if (empty($current_password) || empty($new_password)) {
+        api_error('Contraseña actual y nueva contraseña requeridas', 400);
+    }
+    if (strlen($new_password) < 6) {
+        api_error('La nueva contraseña debe tener al menos 6 caracteres', 400);
+    }
+
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+    $stmt->execute([$decoded->user_id]);
+    $hash = $stmt->fetchColumn();
+
+    if (!$hash || !verify_password($current_password, $hash)) {
+        api_error('La contraseña actual es incorrecta', 401);
+    }
+
+    $new_hash = hash_password($new_password);
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt->execute([$new_hash, $decoded->user_id]);
+
+    api_response(['ok' => true, 'mensaje' => 'Contraseña actualizada correctamente']);
+}
+
+// ═══ #2 Reset contraseña (admin) ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'reset_password') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin'])) {
+        api_error('Solo administradores pueden resetear contraseñas', 403);
+    }
+
+    $user_id = intval($_POST['user_id'] ?? 0);
+    $new_password = $_POST['new_password'] ?? '';
+
+    if (!$user_id || empty($new_password)) {
+        api_error('user_id y nueva contraseña requeridos', 400);
+    }
+
+    $pdo = db();
+
+    // Obtener nombre y apellido para generar contraseña institucional si no se provee
+    if (empty($new_password)) {
+        $stmt = $pdo->prepare("SELECT username, firstname, lastname FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $u = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($u) {
+            $fn = strtoupper(substr($u['firstname'],0,1));
+            $ln = strtolower(substr($u['lastname'],0,1));
+            $new_password = $fn . $ln . $u['username'] . '*';
+        }
+    }
+
+    $new_hash = hash_password($new_password);
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt->execute([$new_hash, $user_id]);
+
+    api_response(['ok' => true, 'mensaje' => 'Contraseña reseteada', 'nueva_contraseña_generada' => $new_password]);
+}

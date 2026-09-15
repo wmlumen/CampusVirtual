@@ -195,3 +195,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     
     api_response(['success' => true, 'message' => 'Event deleted successfully']);
 }
+
+// ═══ #8 REGISTRAR CLASE IMPARTIDA ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'register_class') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['teacher','admin','academic'])) {
+        api_error('Solo docentes/admins pueden registrar clases', 403);
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+
+    $course_id = intval($input['course_id'] ?? 0);
+    $date = $input['date'] ?? date('Y-m-d');
+    $title = $input['title'] ?? 'Clase del ' . $date;
+    $description = $input['description'] ?? '';
+    $students_present = $input['students_present'] ?? []; // array de user_ids
+
+    if (!$course_id) {
+        api_error('course_id requerido', 400);
+    }
+
+    $pdo = db();
+
+    // 1. Crear evento en calendar
+    $stmt = $pdo->prepare("INSERT INTO calendar (title, description, start_date, end_date, all_day, created_by) VALUES (?, ?, ?, ?, 1, ?)");
+    $stmt->execute([$title, $description, $date, $date, $decoded->user_id]);
+    $event_id = $pdo->lastInsertId();
+
+    // 2. Registrar asistencia de los alumnos presentes
+    if (!empty($students_present)) {
+        foreach ($students_present as $student_id) {
+            $stmt = $pdo->prepare("
+                INSERT INTO attendance (user_id, course_id, date, status) 
+                VALUES (?, ?, ?, 'present')
+                ON CONFLICT(user_id, course_id, date) DO UPDATE SET status='present'
+            ");
+            $stmt->execute([$student_id, $course_id, $date]);
+        }
+    }
+
+    api_response([
+        'ok' => true,
+        'mensaje' => 'Clase registrada',
+        'event_id' => $event_id,
+        'asistencias_registradas' => count($students_present)
+    ]);
+}

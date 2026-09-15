@@ -354,3 +354,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
         'password_generado' => $password
     ]);
 }
+
+// ═══ #3 ACTUALIZAR PERFIL PROPIO ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'update_profile') {
+    $decoded = require_auth();
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+
+    $email    = trim($input['email'] ?? '');
+    $telefono = trim($input['telefono'] ?? '');
+    $grado    = trim($input['grado'] ?? '');
+    $carrera  = trim($input['carrera'] ?? '');
+    $seccion  = trim($input['seccion'] ?? '');
+    $foto     = trim($input['foto'] ?? '');
+
+    $pdo = db();
+    $sets = [];
+    $vals = [];
+
+    if ($email !== '')    { $sets[] = 'email = ?';    $vals[] = $email; }
+    if ($telefono !== '') { $sets[] = 'telefono = ?'; $vals[] = $telefono; }
+    if ($grado !== '')    { $sets[] = 'grado = ?';    $vals[] = $grado; }
+    if ($carrera !== '')  { $sets[] = 'carrera = ?';  $vals[] = $carrera; }
+    if ($seccion !== '')  { $sets[] = 'seccion = ?';  $vals[] = $seccion; }
+    if ($foto !== '')     { $sets[] = 'foto = ?';     $vals[] = $foto; }
+
+    if (empty($sets)) {
+        api_error('No hay campos para actualizar', 400);
+    }
+
+    $sets[] = 'updated_at = CURRENT_TIMESTAMP';
+    $vals[] = $decoded->user_id;
+
+    $sql = 'UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = ?';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($vals);
+
+    api_response(['ok' => true, 'mensaje' => 'Perfil actualizado']);
+}

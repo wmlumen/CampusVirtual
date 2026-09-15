@@ -218,6 +218,53 @@ class Database {
                 completado_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(asignatura, componente)
+            )",
+
+            // ═══ TABLAS: Progreso de Unidades + Exámenes Dinámicos ═══
+
+            // unit_progress: progreso de lectura por unidad por alumno
+            "CREATE TABLE IF NOT EXISTS unit_progress (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                unidad INTEGER NOT NULL,
+                secciones_leidas TEXT DEFAULT '[]',
+                total_secciones INTEGER DEFAULT 10,
+                completada INTEGER DEFAULT 0,
+                asistencia INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                UNIQUE(user_id, unidad)
+            )",
+
+            // exam_questions: banco de preguntas por unidad/indicador
+            "CREATE TABLE IF NOT EXISTS exam_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unidad INTEGER NOT NULL,
+                indicador TEXT DEFAULT '',
+                pregunta TEXT NOT NULL,
+                opcion_a TEXT NOT NULL,
+                opcion_b TEXT NOT NULL,
+                opcion_c TEXT NOT NULL,
+                opcion_d TEXT NOT NULL,
+                respuesta INTEGER NOT NULL,
+                tipo TEXT DEFAULT 'multiple',
+                dificultad TEXT DEFAULT 'media',
+                activa INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+
+            // exam_attempts: intentos de examen por alumno
+            "CREATE TABLE IF NOT EXISTS exam_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                examen TEXT NOT NULL,
+                puntuacion INTEGER DEFAULT 0,
+                total_preguntas INTEGER DEFAULT 0,
+                respuestas TEXT DEFAULT '{}',
+                completado INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
             )"
         ];
         

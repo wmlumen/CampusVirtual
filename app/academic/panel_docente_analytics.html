@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Docente Analytics - Instituto Superior Centuria</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root {
+            --primary: #007A33;
+            --primary-dark: #005a26;
+            --accent: #00B140;
+            --gold: #d4a843;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #333;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg) 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dashboard-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .kpi-icon.green { background: #e8f5e9; color: var(--success); }
+        .kpi-icon.blue { background: #e3f2fd; color: #1976d2; }
+        .kpi-icon.orange { background: #fff3e0; color: #f57c00; }
+        .kpi-icon.red { background: #ffebee; color: var(--danger); }
+        .kpi-icon.purple { background: #f3e5f5; color: #7b1fa2; }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-card h3 i {
+            color: var(--primary);
+        }
+
+        /* Tabla de estudiantes */
+        .students-table-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-header h3 i {
+            color: var(--primary);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            padding: 8px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 250px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-box select {
+            padding: 8px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .students-table th {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .students-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .students-table tr:hover {
+            background: #f8fff8;
+        }
+
+        .student-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .student-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar-mini {
+            width: 100px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-mini .fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        .progress-bar-mini .fill.green { background: var(--success); }
+        .progress-bar-mini .fill.orange { background: var(--warning); }
+        .progress-bar-mini .fill.red { background: var(--danger); }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active { background: #e8f5e9; color: var(--success); }
+        .status-badge.risk { background: #ffebee; color: var(--danger); }
+        .status-badge.warning { background: #fff3e0; color: #f57c00; }
+
+        /* Activity Feed */
+        .activity-feed {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.green { background: #e8f5e9; color: var(--success); }
+        .activity-icon.blue { background: #e3f2fd; color: #1976d2; }
+        .activity-icon.orange { background: #fff3e0; color: #f57c00; }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 3px;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        /* Export Button */
+        .export-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container-fluid">
+            <h1><i class="fas fa-chalkboard-teacher"></i> Panel Docente Analytics</h1>
+            <p>Monitoreo en tiempo real del progreso de tus estudiantes</p>
+        </div>
+    </div>
+
+    <div class="container-fluid" style="padding: 0 30px;">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon green">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="kpi-value" id="kpiTotalStudents">0</div>
+                <div class="kpi-label">Total Estudiantes</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon blue">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="kpi-value" id="kpiPresentToday">0</div>
+                <div class="kpi-label">Presentes Hoy</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon orange">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="kpi-value" id="kpiAvgAttendance">0%</div>
+                <div class="kpi-label">Promedio Asistencia</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon purple">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="kpi-value" id="kpiAvgGrade">0</div>
+                <div class="kpi-label">Promedio Calificaciones</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="kpi-value" id="kpiAtRisk">0</div>
+                <div class="kpi-label">En Riesgo (&lt;75%)</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-bar"></i> Asistencia por Semana</h3>
+                <canvas id="attendanceChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-pie"></i> Distribución de Calificaciones</h3>
+                <canvas id="gradesChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Students Table -->
+        <div class="students-table-container">
+            <div class="table-header">
+                <h3><i class="fas fa-user-graduate"></i> Lista de Estudiantes</h3>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o cédula..." onkeyup="filterStudents()">
+                    <select id="filterCareer" onchange="filterStudents()">
+                        <option value="">Todas las carreras</option>
+                        <option value="Administración de Empresas">Administración de Empresas</option>
+                        <option value="Administración y Gestión">Administración y Gestión</option>
+                    </select>
+                    <button class="export-btn" onclick="exportToCSV()">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                </div>
+            </div>
+            <table class="students-table">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Cédula</th>
+                        <th>Carrera</th>
+                        <th>Asistencia</th>
+                        <th>Calificación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <!-- Datos cargados dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="activity-feed">
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-history" style="color: var(--primary);"></i> Actividad Reciente
+            </h3>
+            <div id="activityFeed">
+                <!-- Actividad cargada dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/session-guard.js"></script>
+    <script>
+        // ═══════════════════════════════════════════════════════
+        // VARIABLES GLOBALES
+        // ═══════════════════════════════════════════════════════
+        let students = [];
+        let attendanceData = [];
+        let gradesData = [];
+
+        // ═══════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            try {
+                // Cargar datos de estudiantes
+                const studentsResponse = await fetch(`${API_BASE}/usuarios.php?action=list`, {
+                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}` }
+                });
+                const studentsData = await studentsResponse.json();
+                
+                if (studentsData.ok) {
+                    students = studentsData.usuarios.filter(u => u.role === 'student');
+                    updateKPIs();
+                    renderStudentsTable();
+                }
+
+                // Cargar datos de asistencia
+                const attendanceResponse = await fetch(`${API_BASE}/attendance.php?action=list`, {
+                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}` }
+                });
+                const attendanceResult = await attendanceResponse.json();
+                
+                if (attendanceResult.ok) {
+                    attendanceData = attendanceResult.records;
+                    renderAttendanceChart();
+                }
+
+                // Cargar calificaciones
+                const gradesResponse = await fetch(`${API_BASE}/grades.php?action=list`, {
+                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}` }
+                });
+                const gradesResult = await gradesResponse.json();
+                
+                if (gradesResult.ok) {
+                    gradesData = gradesResult.grades;
+                    renderGradesChart();
+                }
+
+                // Cargar actividad reciente
+                loadRecentActivity();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ACTUALIZAR KPIs
+        // ═══════════════════════════════════════════════════════
+        function updateKPIs() {
+            document.getElementById('kpiTotalStudents').textContent = students.length;
+            
+            // Calcular asistencia promedio
+            const today = new Date().toISOString().split('T')[0];
+            const presentToday = attendanceData.filter(a => a.date === today && a.status === 'present').length;
+            document.getElementById('kpiPresentToday').textContent = presentToday;
+            
+            // Calcular promedio de asistencia
+            const totalRecords = attendanceData.length;
+            const presentRecords = attendanceData.filter(a => a.status === 'present').length;
+            const avgAttendance = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
+            document.getElementById('kpiAvgAttendance').textContent = avgAttendance + '%';
+            
+            // Calcular promedio de calificaciones
+            if (gradesData.length > 0) {
+                const avgGrade = gradesData.reduce((sum, g) => sum + (g.score || 0), 0) / gradesData.length;
+                document.getElementById('kpiAvgGrade').textContent = avgGrade.toFixed(1);
+            }
+            
+            // Calcular estudiantes en riesgo
+            const atRisk = students.filter(s => {
+                const studentAttendance = attendanceData.filter(a => a.user_id === s.id);
+                const present = studentAttendance.filter(a => a.status === 'present').length;
+                const percentage = studentAttendance.length > 0 ? (present / studentAttendance.length) * 100 : 0;
+                return percentage < 75;
+            }).length;
+            document.getElementById('kpiAtRisk').textContent = atRisk;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // RENDERIZAR TABLA DE ESTUDIANTES
+        // ═══════════════════════════════════════════════════════
+        function renderStudentsTable() {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+
+            students.forEach(student => {
+                // Calcular asistencia
+                const studentAttendance = attendanceData.filter(a => a.user_id === student.id);
+                const present = studentAttendance.filter(a => a.status === 'present').length;
+                const attendancePercentage = studentAttendance.length > 0 ? Math.round((present / studentAttendance.length) * 100) : 0;
+                
+                // Obtener calificación
+                const studentGrades = gradesData.filter(g => g.user_id === student.id);
+                const avgGrade = studentGrades.length > 0 ? 
+                    (studentGrades.reduce((sum, g) => sum + (g.score || 0), 0) / studentGrades.length).toFixed(1) : '-';
+                
+                // Determinar estado
+                let statusClass = 'active';
+                let statusText = 'Activo';
+                if (attendancePercentage < 75) {
+                    statusClass = 'risk';
+                    statusText = 'En Riesgo';
+                } else if (attendancePercentage < 85) {
+                    statusClass = 'warning';
+                    statusText = 'Alerta';
+                }
+                
+                // Iniciales del nombre
+                const initials = (student.firstname?.[0] || '') + (student.lastname?.[0] || '');
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="student-name">
+                                <div class="student-avatar">${initials}</div>
+                                <span>${student.firstname} ${student.lastname}</span>
+                            </div>
+                        </td>
+                        <td>${student.username}</td>
+                        <td>${student.carrera || '-'}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="progress-bar-mini">
+                                    <div class="fill ${attendancePercentage >= 85 ? 'green' : attendancePercentage >= 75 ? 'orange' : 'red'}" 
+                                         style="width: ${attendancePercentage}%"></div>
+                                </div>
+                                <span>${attendancePercentage}%</span>
+                            </div>
+                        </td>
+                        <td><strong>${avgGrade}</strong></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetails(${student.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // FILTRAR ESTUDIANTES
+        // ═══════════════════════════════════════════════════════
+        function filterStudents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const careerFilter = document.getElementById('filterCareer').value;
+            
+            const filtered = students.filter(student => {
+                const matchesSearch = 
+                    student.firstname?.toLowerCase().includes(searchTerm) ||
+                    student.lastname?.toLowerCase().includes(searchTerm) ||
+                    student.username?.includes(searchTerm);
+                
+                const matchesCareer = !careerFilter || student.carrera === careerFilter;
+                
+                return matchesSearch && matchesCareer;
+            });
+            
+            // Renderizar estudiantes filtrados
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+            
+            filtered.forEach(student => {
+                // Calcular asistencia
+                const studentAttendance = attendanceData.filter(a => a.user_id === student.id);
+                const present = studentAttendance.filter(a => a.status === 'present').length;
+                const attendancePercentage = studentAttendance.length > 0 ? Math.round((present / studentAttendance.length) * 100) : 0;
+                
+                // Obtener calificación
+                const studentGrades = gradesData.filter(g => g.user_id === student.id);
+                const avgGrade = studentGrades.length > 0 ? 
+                    (studentGrades.reduce((sum, g) => sum + (g.score || 0), 0) / studentGrades.length).toFixed(1) : '-';
+                
+                // Determinar estado
+                let statusClass = 'active';
+                let statusText = 'Activo';
+                if (attendancePercentage < 75) {
+                    statusClass = 'risk';
+                    statusText = 'En Riesgo';
+                } else if (attendancePercentage < 85) {
+                    statusClass = 'warning';
+                    statusText = 'Alerta';
+                }
+                
+                // Iniciales del nombre
+                const initials = (student.firstname?.[0] || '') + (student.lastname?.[0] || '');
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="student-name">
+                                <div class="student-avatar">${initials}</div>
+                                <span>${student.firstname} ${student.lastname}</span>
+                            </div>
+                        </td>
+                        <td>${student.username}</td>
+                        <td>${student.carrera || '-'}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="progress-bar-mini">
+                                    <div class="fill ${attendancePercentage >= 85 ? 'green' : attendancePercentage >= 75 ? 'orange' : 'red'}" 
+                                         style="width: ${attendancePercentage}%"></div>
+                                </div>
+                                <span>${attendancePercentage}%</span>
+                            </div>
+                        </td>
+                        <td><strong>${avgGrade}</strong></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetails(${student.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // GRÁFICOS
+        // ═══════════════════════════════════════════════════════
+        function renderAttendanceChart() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            // Agrupar asistencia por semana
+            const weeklyData = {};
+            attendanceData.forEach(record => {
+                const date = new Date(record.date);
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay());
+                const weekKey = weekStart.toISOString().split('T')[0];
+                
+                if (!weeklyData[weekKey]) {
+                    weeklyData[weekKey] = { present: 0, total: 0 };
+                }
+                weeklyData[weekKey].total++;
+                if (record.status === 'present') {
+                    weeklyData[weekKey].present++;
+                }
+            });
+            
+            const labels = Object.keys(weeklyData).sort().slice(-8);
+            const data = labels.map(week => {
+                const d = weeklyData[week];
+                return d.total > 0 ? Math.round((d.present / d.total) * 100) : 0;
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => {
+                        const date = new Date(l);
+                        return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }),
+                    datasets: [{
+                        label: 'Asistencia %',
+                        data: data,
+                        backgroundColor: 'rgba(0, 122, 51, 0.7)',
+                        borderColor: 'rgba(0, 122, 51, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderGradesChart() {
+            const ctx = document.getElementById('gradesChart').getContext('2d');
+            
+            // Contar calificaciones por rango
+            const ranges = { '0-5': 0, '5-6': 0, '6-7': 0, '7-8': 0, '8-9': 0, '9-10': 0 };
+            
+            gradesData.forEach(grade => {
+                const score = grade.score || 0;
+                if (score < 5) ranges['0-5']++;
+                else if (score < 6) ranges['5-6']++;
+                else if (score < 7) ranges['6-7']++;
+                else if (score < 8) ranges['7-8']++;
+                else if (score < 9) ranges['8-9']++;
+                else ranges['9-10']++;
+            });
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(ranges),
+                    datasets: [{
+                        data: Object.values(ranges),
+                        backgroundColor: [
+                            '#dc3545',
+                            '#ffc107',
+                            '#17a2b8',
+                            '#28a745',
+                            '#007A33',
+                            '#005a26'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ACTIVIDAD RECIENTE
+        // ═══════════════════════════════════════════════════════
+        function loadRecentActivity() {
+            const activityFeed = document.getElementById('activityFeed');
+            
+            // Simular actividad reciente (en producción vendría del servidor)
+            const activities = [
+                { icon: 'check-circle', color: 'green', text: 'María García registró asistencia', time: 'Hace 5 minutos' },
+                { icon: 'file-alt', color: 'blue', text: 'Carlos López entregó tarea de Unidad 3', time: 'Hace 15 minutos' },
+                { icon: 'exclamation-circle', color: 'orange', text: 'Ana Martínez marcó tarde', time: 'Hace 30 minutos' },
+                { icon: 'check-circle', color: 'green', text: 'Pedro Sánchez completó examen parcial', time: 'Hace 1 hora' },
+                { icon: 'file-alt', color: 'blue', text: 'Laura Rodríguez entregó laboratorio', time: 'Hace 2 horas' }
+            ];
+            
+            activityFeed.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon ${activity.color}">
+                        <i class="fas fa-${activity.icon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">${activity.text}</div>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // UTILIDADES
+        // ═══════════════════════════════════════════════════════
+        function viewStudentDetails(studentId) {
+            // Redirigir a página de detalles del estudiante
+            window.location.href = `seguimiento_asistencia.html?student=${studentId}`;
+        }
+
+        function exportToCSV() {
+            // Exportar datos de estudiantes a CSV
+            let csv = 'Nombre,Cédula,Carrera,Asistencia,Calificación,Estado\n';
+            
+            students.forEach(student => {
+                const studentAttendance = attendanceData.filter(a => a.user_id === student.id);
+                const present = studentAttendance.filter(a => a.status === 'present').length;
+                const attendancePercentage = studentAttendance.length > 0 ? Math.round((present / studentAttendance.length) * 100) : 0;
+                
+                const studentGrades = gradesData.filter(g => g.user_id === student.id);
+                const avgGrade = studentGrades.length > 0 ? 
+                    (studentGrades.reduce((sum, g) => sum + (g.score || 0), 0) / studentGrades.length).toFixed(1) : '-';
+                
+                let status = 'Activo';
+                if (attendancePercentage < 75) status = 'En Riesgo';
+                else if (attendancePercentage < 85) status = 'Alerta';
+                
+                csv += `"${student.firstname} ${student.lastname}","${student.username}","${student.carrera || ''}",${attendancePercentage}%,"${avgGrade}","${status}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `estudiantes_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

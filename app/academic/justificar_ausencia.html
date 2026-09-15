@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justificar Ausencia - Instituto Superior Centuria</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root {
+            --primary: #007A33;
+            --primary-dark: #005a26;
+            --accent: #00B140;
+            --gold: #d4a843;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #333;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg) 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        /* Form Container */
+        .form-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .form-card h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-card h2 i {
+            color: var(--primary);
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .form-group label .required {
+            color: var(--danger);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 51, 0.1);
+        }
+
+        .form-control.error {
+            border-color: var(--danger);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Date Input */
+        .date-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .date-input-group input {
+            flex: 1;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            border: 2px dashed #d0d0d0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: #f0fff0;
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary);
+            background: #e8f5e9;
+        }
+
+        .file-upload-area i {
+            font-size: 2.5rem;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+
+        .file-upload-area p {
+            color: #666;
+            margin: 0;
+        }
+
+        .file-upload-area .hint {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .file-preview.show {
+            display: block;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-item i {
+            color: var(--primary);
+        }
+
+        .file-item .name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .file-item .size {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .file-item .remove {
+            color: var(--danger);
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 5px;
+        }
+
+        /* Motivos */
+        .motivos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .motivo-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .motivo-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .motivo-btn.selected {
+            border-color: var(--primary);
+            background: #e8f5e9;
+        }
+
+        .motivo-btn i {
+            color: var(--primary);
+        }
+
+        .motivo-btn span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 122, 51, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 51, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* History */
+        .history-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-top: 30px;
+        }
+
+        .history-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-card h3 i {
+            color: var(--primary);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .history-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.pending { background: #fff3e0; color: #f57c00; }
+        .status-badge.approved { background: #e8f5e9; color: var(--success); }
+        .status-badge.rejected { background: #ffebee; color: var(--danger); }
+
+        /* Alert */
+        .alert-info-custom {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-info-custom i {
+            color: #1976d2;
+            font-size: 1.2rem;
+            margin-top: 2px;
+        }
+
+        .alert-info-custom .content {
+            flex: 1;
+        }
+
+        .alert-info-custom .title {
+            font-weight: 600;
+            color: #1565c0;
+            margin-bottom: 5px;
+        }
+
+        .alert-info-custom .text {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .motivos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .date-input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="page-header">
+        <div class="container-fluid">
+            <h1><i class="fas fa-file-medical"></i> Justificar Ausencia</h1>
+            <p>Registra la justificación de tu ausencia con documentación de soporte</p>
+        </div>
+    </div>
+
+    <div class="container-fluid" style="padding: 0 30px;">
+        <div class="form-container">
+            <!-- Alert -->
+            <div class="alert-info-custom">
+                <i class="fas fa-info-circle"></i>
+                <div class="content">
+                    <div class="title">Información importante</div>
+                    <div class="text">
+                        Las justificaciones serán revisadas por el docente. Adjunta la documentación de soporte 
+                        (certificado médico, constancia, etc.) para que tu ausencia sea validada.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <h2><i class="fas fa-edit"></i> Formulario de Justificación</h2>
+                
+                <form id="justificationForm" onsubmit="submitJustification(event)">
+                    <!-- Fecha de ausencia -->
+                    <div class="form-group">
+                        <label>Fecha de Ausencia <span class="required">*</span></label>
+                        <input type="date" class="form-control" id="absenceDate" required>
+                        <div class="error-message" id="dateError">Selecciona la fecha de la ausencia</div>
+                    </div>
+
+                    <!-- Motivo -->
+                    <div class="form-group">
+                        <label>Motivo de la Ausencia <span class="required">*</span></label>
+                        <div class="motivos-grid">
+                            <div class="motivo-btn" onclick="selectMotivo('enfermedad', this)">
+                                <i class="fas fa-heartbeat"></i>
+                                <span>Enfermedad</span>
+                            </div>
+                            <div class="motivo-btn" onclick="selectMotivo('familiar', this)">
+                                <i class="fas fa-home"></i>
+                                <span>Problema Familiar</span>
+                            </div>
+                            <div class="motivo-btn" onclick="selectMotivo('trabajo', this)">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Trabajo</span>
+                            </div>
+                            <div class="motivo-btn" onclick="selectMotivo('pago', this)">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Falta de Pago</span>
+                            </div>
+                            <div class="motivo-btn" onclick="selectMotivo('otro', this)">
+                                <i class="fas fa-ellipsis-h"></i>
+                                <span>Otro</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="motivo" required>
+                        <div class="error-message" id="motivoError">Selecciona un motivo</div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="form-group">
+                        <label>Descripción Adicional</label>
+                        <textarea class="form-control" id="description" rows="3" 
+                                  placeholder="Describe brevemente la situación..."></textarea>
+                    </div>
+
+                    <!-- Documento de soporte -->
+                    <div class="form-group">
+                        <label>Documento de Soporte</label>
+                        <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
+                            <div class="hint">PDF, JPG, PNG (Máx. 5MB)</div>
+                        </div>
+                        <input type="file" class="file-input" id="fileInput" 
+                               accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event)">
+                        
+                        <div class="file-preview" id="filePreview">
+                            <div class="file-item">
+                                <i class="fas fa-file"></i>
+                                <span class="name" id="fileName"></span>
+                                <span class="size" id="fileSize"></span>
+                                <button type="button" class="remove" onclick="removeFile()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Enviar Justificación
+                    </button>
+                </form>
+            </div>
+
+            <!-- History -->
+            <div class="history-card">
+                <h3><i class="fas fa-history"></i> Mis Justificaciones</h3>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha Ausencia</th>
+                            <th>Motivo</th>
+                            <th>Estado</th>
+                            <th>Fecha Envío</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- Datos cargados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/session-guard.js"></script>
+    <script>
+        // ═══════════════════════════════════════════════════════
+        // VARIABLES GLOBALES
+        // ═══════════════════════════════════════════════════════
+        let selectedFile = null;
+        let selectedMotivo = '';
+
+        // ═══════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function() {
+            // Establecer fecha mínima (hoy)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('absenceDate').max = today;
+            
+            // Cargar historial
+            loadHistory();
+            
+            // Configurar drag and drop
+            setupDragAndDrop();
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // SELECCIONAR MOTIVO
+        // ═══════════════════════════════════════════════════════
+        function selectMotivo(motivo, element) {
+            // Remover selección anterior
+            document.querySelectorAll('.motivo-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Seleccionar nuevo
+            element.classList.add('selected');
+            selectedMotivo = motivo;
+            document.getElementById('motivo').value = motivo;
+            
+            // Limpiar error
+            document.getElementById('motivoError').style.display = 'none';
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // MANEJO DE ARCHIVOS
+        // ═══════════════════════════════════════════════════════
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('uploadArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+            });
+            
+            uploadArea.addEventListener('drop', handleDrop, false);
+        }
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            // Validar tamaño (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('El archivo no puede superar 5MB');
+                return;
+            }
+            
+            // Validar tipo
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Solo se permiten archivos PDF, JPG o PNG');
+                return;
+            }
+            
+            selectedFile = file;
+            
+            // Mostrar preview
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('filePreview').classList.add('show');
+            document.getElementById('uploadArea').style.display = 'none';
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').classList.remove('show');
+            document.getElementById('uploadArea').style.display = 'block';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ENVIAR JUSTIFICACIÓN
+        // ═══════════════════════════════════════════════════════
+        async function submitJustification(e) {
+            e.preventDefault();
+            
+            // Validar campos
+            let isValid = true;
+            
+            if (!document.getElementById('absenceDate').value) {
+                document.getElementById('dateError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('dateError').style.display = 'none';
+            }
+            
+            if (!selectedMotivo) {
+                document.getElementById('motivoError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('motivoError').style.display = 'none';
+            }
+            
+            if (!isValid) return;
+            
+            // Preparar datos
+            const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
+            
+            const formData = {
+                action: 'justificar',
+                cedula: userData.username,
+                nombre: `${userData.firstname} ${userData.lastname}`,
+                fechaAusencia: document.getElementById('absenceDate').value,
+                motivo: selectedMotivo,
+                observacion: document.getElementById('description').value
+            };
+            
+            // Si hay archivo, convertir a base64
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64 = e.target.result.split(',')[1];
+                    formData.fileData = base64;
+                    formData.fileName = selectedFile.name;
+                    
+                    await sendJustification(formData);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                await sendJustification(formData);
+            }
+        }
+
+        async function sendJustification(formData) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            
+            try {
+                const response = await fetch(API_GAS_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    alert('Justificación enviada correctamente');
+                    document.getElementById('justificationForm').reset();
+                    removeFile();
+                    selectedMotivo = '';
+                    document.querySelectorAll('.motivo-btn').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                    loadHistory();
+                } else {
+                    alert('Error: ' + (result.error || 'No se pudo enviar la justificación'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión. Intente nuevamente.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Justificación';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // CARGAR HISTORIAL
+        // ═══════════════════════════════════════════════════════
+        async function loadHistory() {
+            const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
+            
+            try {
+                const response = await fetch(`${API_GAS_URL}?modo=justificaciones&cedula=${userData.username}`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('historyBody');
+                
+                if (data.justificaciones && data.justificaciones.length > 0) {
+                    tbody.innerHTML = data.justificaciones.map(j => `
+                        <tr>
+                            <td>${j.Fecha || '-'}</td>
+                            <td>${j.Motivo || '-'}</td>
+                            <td>
+                                <span class="status-badge ${j.Estado === 'Aprobada' ? 'approved' : j.Estado === 'Rechazada' ? 'rejected' : 'pending'}">
+                                    ${j.Estado || 'Pendiente'}
+                                </span>
+                            </td>
+                            <td>${j.MarcaTemporal || '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay justificaciones registradas</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        :root{--bg:#007A33;--bg-dark:#0d2c16;--accent:#00B140;--accent-light:#81C784;--card:#fff;--card-bg:#E6F4EA;--border:#C8E6C9;--gold:#d4a843;--txt1:#1a1a2e;--txt2:#2D2D2D;--txt3:#64748b}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Montserrat',sans-serif;background:var(--card-bg);color:var(--txt2);min-height:100vh}
+
+        .topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--bg);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+        .topbar-brand{font-size:.82rem;font-weight:800;color:#fff;letter-spacing:1px}
+        .topbar-nav{display:flex;gap:6px}
+        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.65rem;font-weight:600;padding:6px 12px;border-radius:8px;transition:.15s}
+        .topbar-nav a:hover,.topbar-nav a.active{background:rgba(255,255,255,.15);color:#fff}
+
+        .wrap{padding:70px 20px 20px;max-width:1400px;margin:0 auto}
+        .breadcrumb{font-size:.6rem;color:var(--txt3);margin-bottom:10px}
+        .breadcrumb a{color:var(--accent);text-decoration:none}
+
+        /* TABS */
+        .tabs{display:flex;gap:4px;background:var(--card);border-radius:12px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px}
+        .tab{flex:1;padding:10px;border:none;border-radius:10px;font-size:.7rem;font-weight:700;cursor:pointer;transition:.15s;background:transparent;color:var(--txt3)}
+        .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(0,177,64,.3)}
+        .tab:not(.active):hover{background:var(--card-bg)}
+
+        /* SECTIONS */
+        .section{display:none}
+        .section.active{display:block}
+
+        /* CARD */
+        .card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .card h3{font-size:.82rem;font-weight:800;color:var(--txt1);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .card h3 i{color:var(--accent)}
+
+        /* FORM */
+        .form-group{margin-bottom:8px}
+        .form-group label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-bottom:3px}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.72rem;font-family:'Montserrat';font-weight:600;color:var(--txt2);transition:.15s}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,177,64,.1)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+        .btn{padding:8px 16px;border:none;border-radius:8px;font-size:.7rem;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px}
+        .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--bg)}
+        .btn-secondary{background:var(--card-bg);color:var(--txt3);border:1px solid var(--border)}.btn-secondary:hover{background:#f1f5f9}
+        .btn-danger{background:#FEE2E2;color:#991B1B}.btn-danger:hover{background:#FECACA}
+        .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+        .btn-sm{padding:5px 10px;font-size:.6rem}
+        .btn-block{width:100%;justify-content:center}
+
+        /* EVENT CARD */
+        .event-card{border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;transition:.15s;cursor:pointer}
+        .event-card:hover{border-color:var(--accent);box-shadow:0 2px 12px rgba(0,177,64,.1)}
+        .event-card.active{border-color:var(--accent);background:linear-gradient(135deg,var(--card-bg),#d4f5de)}
+        .event-code{font-size:1.4rem;font-weight:800;color:var(--accent);font-family:'Courier New',monospace;letter-spacing:4px}
+        .event-meta{font-size:.58rem;color:var(--txt3);margin-top:4px;display:flex;flex-wrap:wrap;gap:8px}
+        .event-meta i{margin-right:2px}
+        .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.55rem;font-weight:700}
+        .badge-active{background:#D1FAE5;color:#065F46}
+        .badge-closed{background:#FEE2E2;color:#991B1B}
+
+        /* QR SECTION */
+        .qr-box{text-align:center;padding:16px;border:2px dashed var(--border);border-radius:14px;background:var(--card);transition:.15s}
+        .qr-box:hover{border-color:var(--accent)}
+        .qr-box .qr-title{font-size:.7rem;font-weight:700;color:var(--txt3);margin-bottom:8px}
+        .qr-box #qrcode{display:inline-block;padding:8px;background:#fff;border-radius:8px}
+        .qr-box .qr-code-label{font-size:1.2rem;font-weight:800;color:var(--accent);margin-top:8px;font-family:'Courier New',monospace;letter-spacing:3px}
+
+        /* TABLE */
+        .table-wrap{overflow-x:auto;max-height:400px;overflow-y:auto}
+        table{width:100%;border-collapse:collapse;font-size:.65rem}
+        thead{background:var(--card-bg);position:sticky;top:0;z-index:1}
+        th{padding:8px 10px;text-align:left;font-weight:700;color:var(--txt3);font-size:.58rem;text-transform:uppercase;border-bottom:2px solid var(--border)}
+        td{padding:6px 10px;border-bottom:1px solid var(--border-light)}
+        tr:hover{background:rgba(0,177,64,.03)}
+
+        /* STAT ROW */
+        .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+        .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+        .stat-val{font-size:1rem;font-weight:800;color:var(--accent)}
+        .stat-lbl{font-size:.5rem;font-weight:600;color:var(--txt3);text-transform:uppercase}
+
+        /* STUDENT FORM */
+        .student-form{max-width:480px;margin:0 auto}
+        .code-input{font-size:2rem;font-weight:800;text-align:center;letter-spacing:8px;font-family:'Courier New',monospace;color:var(--accent);text-transform:uppercase}
+        .code-input::placeholder{color:#C8E6C9;font-size:1rem;letter-spacing:2px}
+
+        /* TOAST */
+        .toast{position:fixed;top:70px;right:20px;padding:12px 20px;border-radius:10px;font-size:.7rem;font-weight:700;z-index:9999;animation:fadeIn .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+        .toast-success{background:var(--card-bg);color:var(--bg-dark);border:1px solid var(--accent)}
+        .toast-error{background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+        .empty{text-align:center;padding:30px;color:var(--txt3)}
+        .empty i{font-size:2rem;color:var(--border);display:block;margin-bottom:6px}
+
+        .footer{text-align:center;padding:12px;font-size:.5rem;color:var(--txt3);margin-top:20px}
+
+        @media(max-width:768px){
+            .stat-row{grid-template-columns:repeat(2,1fr)}
+            .form-row{grid-template-columns:1fr}
+            .tabs{flex-wrap:wrap}
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-brand"><i class="bi bi-person-check"></i> Sistema de Asistencia</div>
+    <div class="topbar-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="attendance.html" class="active">Asistencia</a>
+        <a href="calendario.html">Calendario</a>
+        <a href="perfil.html">Perfil</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="breadcrumb"><a href="dashboard.html">Inicio</a> / Sistema de Asistencia</div>
+
+    <!-- TABS -->
+    <div class="tabs" id="main-tabs">
+        <button class="tab active" onclick="switchTab('create')"><i class="bi bi-plus-circle"></i> Crear Evento</button>
+        <button class="tab" onclick="switchTab('myevents')"><i class="bi bi-list-ul"></i> Mis Eventos</button>
+        <button class="tab" onclick="switchTab('register')"><i class="bi bi-pencil-square"></i> Registrar Asistencia</button>
+        <button class="tab" onclick="switchTab('reports')"><i class="bi bi-bar-chart"></i> Reportes</button>
+    </div>
+
+    <!-- ═══ SECCION: CREAR EVENTO ═══ -->
+    <div class="section active" id="sec-create">
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+            <div>
+                <div class="card">
+                    <h3><i class="bi bi-calendar-plus"></i> Nuevo Evento de Asistencia</h3>
+                    <div class="form-group">
+                        <label>Nombre del Evento *</label>
+                        <input type="text" id="ev-title" placeholder="Ej: Seminario de Inteligencia Artificial">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="ev-type">
+                                <option value="clase">Clase</option>
+                                <option value="seminario">Seminario</option>
+                                <option value="reunion">Reunión</option>
+                                <option value="taller">Taller</option>
+                                <option value="examen">Examen</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Modalidad</label>
+                            <select id="ev-modality">
+                                <option value="presencial">Presencial</option>
+                                <option value="virtual">Virtual</option>
+                                <option value="hibrida">Híbrida</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Carrera</label>
+                            <select id="ev-career">
+                                <option value="">Todas las carreras</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicación</label>
+                            <input type="text" id="ev-location" placeholder="Ej: Aula 301, Zoom">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Hora Inicio</label>
+                            <input type="time" id="ev-start">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora Fin</label>
+                            <input type="time" id="ev-end">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="ev-desc" rows="2" placeholder="Detalles del evento..."></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="createEvent()">
+                        <i class="bi bi-check-circle"></i> Crear Evento y Generar Código
+                    </button>
+                </div>
+            </div>
+
+            <!-- QR PREVIEW -->
+            <div>
+                <div class="qr-box" id="qr-preview">
+                    <div class="qr-title"><i class="bi bi-qr-code"></i> Código del Evento</div>
+                    <div id="qrcode"></div>
+                    <div class="qr-code-label" id="qr-code-text">------</div>
+                    <p style="font-size:.55rem;color:var(--txt3);margin-top:6px">Escanea o comparte el código</p>
+                </div>
+                <div style="margin-top:8px;text-align:center">
+                    <button class="btn btn-secondary btn-sm" onclick="copyCode()" id="btn-copy" style="display:none">
+                        <i class="bi bi-clipboard"></i> Copiar Código
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="copyLink()" id="btn-link" style="display:none">
+                        <i class="bi bi-link-45deg"></i> Copiar Enlace
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECCION: MIS EVENTOS ═══ -->
+    <div class="section" id="sec-myevents">
+        <div class="card">
+            <h3><i class="bi bi-calendar-event"></i> Mis Eventos de Asistencia</h3>
+            <button class="btn btn-secondary btn-sm" onclick="loadMyEvents()" style="margin-bottom:10px">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
+            <div id="events-list">
+                <div class="empty"><i class="bi bi-inbox"></i><p>Cargando eventos...</p></div>
+            </div>
+        </div>
+
+        <!-- DETALLE EVENTO SELECCIONADO -->
+        <div class="card" id="event-detail" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <h3 id="detail-title" style="margin:0"><i class="bi bi-people"></i> Asistentes</h3>
+                <div style="display:flex;gap:4px">
+                    <button class="btn btn-secondary btn-sm" onclick="exportCSV()"><i class="bi bi-download"></i> CSV</button>
+                    <button class="btn btn-danger btn-sm" onclick="closeEvent()"><i class="bi bi-lock"></i> Cerrar</button>
+                </div>
+            </div>
+            <div id="detail-stats" class="stat-row"></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Hora</th><th>Cédula</th><th>Nombre</th><th>Carrera</th><th>Sección</th><th>Estado</th></tr></thead>
+                    <tbody id="detail-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECCION: REGISTRAR ASISTENCIA (ALUMNO) ═══ -->
+    <div class="section" id="sec-register">
+        <div class="student-form">
+            <div class="card" style="border:2px solid var(--accent)">
+                <h3 style="justify-content:center"><i class="bi bi-pencil-square"></i> Registrar Mi Asistencia</h3>
+                <p style="text-align:center;font-size:.65rem;color:var(--txt3);margin-bottom:12px">Ingresa el código de 6 caracteres que te proporcionó el docente</p>
+
+                <div class="form-group">
+                    <label>Código del Evento</label>
+                    <input type="text" id="reg-code" class="code-input" maxlength="6" placeholder="ABC123"
+                        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onblur="validateCode()">
+                </div>
+                <div id="event-info" style="display:none;margin-bottom:10px;padding:10px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border)">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--txt1)" id="ev-info-title"></div>
+                    <div style="font-size:.58rem;color:var(--txt3);margin-top:2px" id="ev-info-meta"></div>
+                </div>
+
+                <div id="reg-fields" style="display:none">
+                    <div class="form-group">
+                        <label>Cédula *</label>
+                        <input type="text" id="reg-cedula" placeholder="Tu cédula" oninput="this.value=this.value.replace(/\./g,'')">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" id="reg-nombre" placeholder="Tu nombre y apellido" style="text-transform:uppercase">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Carrera</label>
+                            <select id="reg-carrera">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sección</label>
+                            <input type="text" id="reg-seccion" placeholder="Ej: A, B">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Observación</label>
+                        <input type="text" id="reg-obs" placeholder="Opcional">
+                    </div>
+                    <button class="btn btn-success btn-block" onclick="registerAttendance()">
+                        <i class="bi bi-check-lg"></i> Confirmar Asistencia
+                    </button>
+                </div>
+
+                <div id="reg-msg" style="display:none;margin-top:10px"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECCION: REPORTES ═══ -->
+    <div class="section" id="sec-reports">
+        <div class="card">
+            <h3><i class="bi bi-funnel"></i> Filtros de Búsqueda</h3>
+            <div class="form-row" style="grid-template-columns:repeat(4,1fr)">
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="rpt-fecha">
+                </div>
+                <div class="form-group">
+                    <label>Carrera</label>
+                    <select id="rpt-career"><option value="">Todas</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Sección</label>
+                    <input type="text" id="rpt-seccion" placeholder="Filtrar">
+                </div>
+                <div class="form-group">
+                    <label>Tipo Evento</label>
+                    <select id="rpt-type">
+                        <option value="">Todos</option>
+                        <option value="clase">Clase</option>
+                        <option value="seminario">Seminario</option>
+                        <option value="reunion">Reunión</option>
+                        <option value="taller">Taller</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="loadReport()"><i class="bi bi-search"></i> Buscar</button>
+            <button class="btn btn-secondary" onclick="exportReportCSV()"><i class="bi bi-download"></i> Exportar CSV</button>
+        </div>
+
+        <div class="card">
+            <h3><i class="bi bi-table"></i> Resultados</h3>
+            <div class="stat-row" id="rpt-stats"></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Código</th><th>Cédula</th><th>Nombre</th><th>Carrera</th><th>Sección</th><th>Estado</th></tr></thead>
+                    <tbody id="rpt-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">Instituto Superior Centuria — Sistema de Asistencia &copy; 2026</div>
+
+<script src="js/api.js?v=7"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let currentEventId = null;
+let currentEventCode = null;
+let lastCreatedCode = null;
+
+const TYPES = {clase:'Clase',seminario:'Seminario',reunion:'Reunión',taller:'Taller',examen:'Examen',otro:'Otro'};
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = CenturiaAPI.getCurrentUser();
+    if (!user) {
+        const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+        if (!cedula) { /* permitir modo público para registro */ }
+    }
+    await loadCareers();
+
+    // Verificar si viene con código en URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        switchTab('register');
+        document.getElementById('reg-code').value = code.toUpperCase();
+        validateCode();
+    }
+});
+
+async function loadCareers() {
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=carreras');
+        const d = await r.json();
+        ['ev-career','reg-carrera','rpt-career'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            const first = sel.options[0];
+            sel.innerHTML = '';
+            sel.appendChild(first);
+            (d.carreras || []).forEach(c => {
+                sel.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+        });
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + tab).classList.add('active');
+    event.target.closest('.tab')?.classList.add('active') || document.querySelector(`.tab[onclick*="${tab}"]`)?.classList.add('active');
+
+    if (tab === 'myevents') loadMyEvents();
+}
+
+// ═══════════════════════════════════════════════════════
+// CREAR EVENTO
+// ═══════════════════════════════════════════════════════
+async function createEvent() {
+    const title = document.getElementById('ev-title').value.trim();
+    if (!title) { showToast('Ingresa el nombre del evento', 'error'); return; }
+
+    const body = {
+        action: 'create_event',
+        title,
+        description: document.getElementById('ev-desc').value.trim(),
+        event_type: document.getElementById('ev-type').value,
+        career: document.getElementById('ev-career').value,
+        modality: document.getElementById('ev-modality').value,
+        start_time: document.getElementById('ev-start').value,
+        end_time: document.getElementById('ev-end').value,
+        location: document.getElementById('ev-location').value.trim()
+    };
+
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'attendance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+
+        if (d.ok) {
+            lastCreatedCode = d.code;
+            currentEventId = d.id;
+            currentEventCode = d.code;
+            showQR(d.code);
+            showToast('Evento creado. Código: ' + d.code, 'success');
+            document.getElementById('btn-copy').style.display = 'inline-flex';
+            document.getElementById('btn-link').style.display = 'inline-flex';
+        } else {
+            showToast(d.error || 'Error al crear', 'error');
+        }
+    } catch(e) { showToast('Error de conexión', 'error'); }
+}
+
+function showQR(code) {
+    const container = document.getElementById('qrcode');
+    container.innerHTML = '';
+    const url = window.location.origin + window.location.pathname + '?code=' + code;
+    new QRCode(container, { text: url, width: 150, height: 150 });
+    document.getElementById('qr-code-text').textContent = code;
+}
+
+function copyCode() {
+    if (lastCreatedCode) {
+        navigator.clipboard.writeText(lastCreatedCode);
+        showToast('Código copiado: ' + lastCreatedCode, 'success');
+    }
+}
+
+function copyLink() {
+    if (lastCreatedCode) {
+        const url = window.location.origin + window.location.pathname + '?code=' + lastCreatedCode;
+        navigator.clipboard.writeText(url);
+        showToast('Enlace copiado', 'success');
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// MIS EVENTOS
+// ═══════════════════════════════════════════════════════
+async function loadMyEvents() {
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=my_events', {
+            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+        });
+        const d = await r.json();
+
+        const list = document.getElementById('events-list');
+        if (!d.ok || !d.events.length) {
+            list.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p>No hay eventos creados</p></div>';
+            return;
+        }
+
+        list.innerHTML = d.events.map(e => `
+            <div class="event-card ${currentEventId == e.id ? 'active' : ''}" onclick="selectEvent(${e.id})">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <div style="font-size:.78rem;font-weight:700;color:var(--txt1)">${e.title}</div>
+                        <div class="event-code" style="font-size:1rem;margin:4px 0">${e.code}</div>
+                        <div class="event-meta">
+                            <span><i class="bi bi-tag"></i> ${TYPES[e.type]||e.type}</span>
+                            <span><i class="bi bi-people"></i> ${e.total_asistentes} asistentes</span>
+                            ${e.career ? `<span><i class="bi bi-mortarboard"></i> ${e.career}</span>` : ''}
+                            ${e.start_time ? `<span><i class="bi bi-clock"></i> ${e.start_time}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="badge ${e.is_active ? 'badge-active' : 'badge-closed'}">${e.is_active ? 'Activo' : 'Cerrado'}</span>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('events-list').innerHTML = '<div class="empty"><p>Error al cargar eventos</p></div>';
+    }
+}
+
+async function selectEvent(id) {
+    currentEventId = id;
+    loadMyEvents(); // refresh highlight
+
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + `attendance.php?action=event&id=${id}`, {
+            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+        });
+        const d = await r.json();
+        if (!d.ok) return;
+
+        document.getElementById('event-detail').style.display = 'block';
+        currentEventCode = d.event.code;
+        document.getElementById('detail-title').innerHTML = `<i class="bi bi-people"></i> ${d.event.title} <span class="badge ${d.event.is_active ? 'badge-active' : 'badge-closed'}" style="font-size:.5rem;margin-left:6px">${d.event.code}</span>`;
+
+        // Stats
+        const total = d.total;
+        const carreras = [...new Set(d.attendees.map(a => a.carrera).filter(Boolean))];
+        document.getElementById('detail-stats').innerHTML = `
+            <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Total</div></div>
+            <div class="stat-card"><div class="stat-val">${carreras.length}</div><div class="stat-lbl">Carreras</div></div>
+            <div class="stat-card"><div class="stat-val">${d.attendees.filter(a=>a.estado==='presente').length}</div><div class="stat-lbl">Presentes</div></div>
+            <div class="stat-card"><div class="stat-val">${d.event.start_time||'-'}</div><div class="stat-lbl">Hora Inicio</div></div>
+        `;
+
+        // Table
+        const tbody = document.getElementById('detail-body');
+        if (!d.attendees.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin asistentes registrados</td></tr>';
+        } else {
+            tbody.innerHTML = d.attendees.map(a => `
+                <tr>
+                    <td style="font-weight:700;color:var(--accent)">${a.hora}</td>
+                    <td>${a.cedula}</td>
+                    <td style="font-weight:600">${a.nombre}</td>
+                    <td>${a.carrera||'-'}</td>
+                    <td>${a.seccion||'-'}</td>
+                    <td><span class="badge badge-active">${a.estado}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch(e) { console.error(e); }
+}
+
+function exportCSV() {
+    if (currentEventId) {
+        window.open(CenturiaAPI.baseUrl + `attendance.php?action=exportar&event_id=${currentEventId}`, '_blank');
+    }
+}
+
+async function closeEvent() {
+    if (!currentEventId) return;
+    if (!confirm('¿Cerrar este evento? Ya no se podrán registrar asistencias.')) return;
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'attendance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+            body: JSON.stringify({ action: 'close_event', event_id: currentEventId })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            showToast('Evento cerrado', 'success');
+            loadMyEvents();
+            selectEvent(currentEventId);
+        }
+    } catch(e) { showToast('Error', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// REGISTRAR ASISTENCIA (ALUMNO)
+// ═══════════════════════════════════════════════════════
+async function validateCode() {
+    const code = document.getElementById('reg-code').value.trim();
+    if (code.length < 6) {
+        document.getElementById('event-info').style.display = 'none';
+        document.getElementById('reg-fields').style.display = 'none';
+        return;
+    }
+
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + `attendance.php?action=validate_code&code=${code}`);
+        const d = await r.json();
+
+        if (d.ok && d.valid) {
+            document.getElementById('event-info').style.display = 'block';
+            document.getElementById('ev-info-title').textContent = d.event.title;
+            document.getElementById('ev-info-meta').textContent = `${TYPES[d.event.type]||d.event.type} • ${d.event.career||'Todas las carreras'} • ${d.event.start_time||'Sin horario'}`;
+            document.getElementById('reg-fields').style.display = 'block';
+            document.getElementById('reg-msg').style.display = 'none';
+
+            // Pre-llenar carrera si el evento la especifica
+            if (d.event.career) {
+                document.getElementById('reg-carrera').value = d.event.career;
+            }
+        } else {
+            document.getElementById('event-info').style.display = 'block';
+            document.getElementById('ev-info-title').textContent = d.error || 'Código inválido';
+            document.getElementById('ev-info-meta').textContent = '';
+            document.getElementById('reg-fields').style.display = 'none';
+        }
+    } catch(e) {
+        document.getElementById('event-info').style.display = 'none';
+        document.getElementById('reg-fields').style.display = 'none';
+    }
+}
+
+async function registerAttendance() {
+    const code = document.getElementById('reg-code').value.trim();
+    const cedula = document.getElementById('reg-cedula').value.trim();
+    const nombre = document.getElementById('reg-nombre').value.trim();
+
+    if (!code || !cedula || !nombre) {
+        showRegMsg('Completa código, cédula y nombre', 'error');
+        return;
+    }
+
+    const body = {
+        action: 'register',
+        code,
+        cedula,
+        nombre,
+        carrera: document.getElementById('reg-carrera').value,
+        seccion: document.getElementById('reg-seccion').value.trim(),
+        observacion: document.getElementById('reg-obs').value.trim()
+    };
+
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'attendance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+
+        if (d.ok) {
+            showRegMsg(`✅ Asistencia registrada — ${d.event} — ${d.fecha} ${d.hora}`, 'success');
+            document.getElementById('reg-cedula').value = '';
+            document.getElementById('reg-nombre').value = '';
+            document.getElementById('reg-obs').value = '';
+        } else {
+            showRegMsg(d.error || 'Error al registrar', 'error');
+        }
+    } catch(e) { showRegMsg('Error de conexión', 'error'); }
+}
+
+function showRegMsg(msg, type) {
+    const el = document.getElementById('reg-msg');
+    el.style.display = 'block';
+    el.innerHTML = `<div class="status-msg ${type}" style="display:flex;align-items:center;gap:6px;padding:10px;border-radius:8px;font-size:.7rem;font-weight:600;background:${type==='success'?'#D1FAE2':'#FEE2E2'};color:${type==='success'?'#065F46':'#991B1B'};border:1px solid ${type==='success'?'#A7F3D0':'#FECACA'}"><i class="bi ${type==='success'?'bi-check-circle-fill':'bi-exclamation-circle-fill'}"></i> ${msg}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// REPORTES
+// ═══════════════════════════════════════════════════════
+let reportData = [];
+
+async function loadReport() {
+    const fecha = document.getElementById('rpt-fecha').value;
+    const career = document.getElementById('rpt-career').value;
+    const seccion = document.getElementById('rpt-seccion').value.trim();
+    const type = document.getElementById('rpt-type').value;
+
+    let url = CenturiaAPI.baseUrl + 'attendance.php?action=report_general';
+    if (fecha) url += `&fecha=${fecha}`;
+    if (career) url += `&career=${encodeURIComponent(career)}`;
+    if (seccion) url += `&seccion=${encodeURIComponent(seccion)}`;
+    if (type) url += `&event_type=${type}`;
+
+    try {
+        const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() } });
+        const d = await r.json();
+        reportData = d.records || [];
+
+        // Stats
+        const uniqueCedulas = [...new Set(reportData.map(r => r.cedula))];
+        const carreras = [...new Set(reportData.map(r => r.carrera).filter(Boolean))];
+        document.getElementById('rpt-stats').innerHTML = `
+            <div class="stat-card"><div class="stat-val">${reportData.length}</div><div class="stat-lbl">Registros</div></div>
+            <div class="stat-card"><div class="stat-val">${uniqueCedulas.length}</div><div class="stat-lbl">Personas</div></div>
+            <div class="stat-card"><div class="stat-val">${carreras.length}</div><div class="stat-lbl">Carreras</div></div>
+            <div class="stat-card"><div class="stat-val">${[...new Set(reportData.map(r=>r.event_code))].length}</div><div class="stat-lbl">Eventos</div></div>
+        `;
+
+        // Table
+        const tbody = document.getElementById('rpt-body');
+        if (!reportData.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">Sin resultados</td></tr>';
+        } else {
+            tbody.innerHTML = reportData.map(r => `
+                <tr>
+                    <td>${r.fecha}</td>
+                    <td style="font-weight:700;color:var(--accent)">${r.hora}</td>
+                    <td>${r.event_title||'-'}</td>
+                    <td style="font-family:monospace;font-weight:700">${r.event_code}</td>
+                    <td>${r.cedula}</td>
+                    <td style="font-weight:600">${r.nombre}</td>
+                    <td>${r.carrera||'-'}</td>
+                    <td>${r.seccion||'-'}</td>
+                    <td><span class="badge badge-active">${r.estado}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch(e) { console.error(e); }
+}
+
+function exportReportCSV() {
+    if (!reportData.length) { showToast('No hay datos para exportar', 'error'); return; }
+    let csv = 'Fecha,Hora,Evento,Codigo,Cedula,Nombre,Carrera,Seccion,Estado\n';
+    reportData.forEach(r => {
+        csv += `"${r.fecha}","${r.hora}","${r.event_title||''}","${r.event_code}","${r.cedula}","${r.nombre}","${r.carrera||''}","${r.seccion||''}","${r.estado}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'reporte_asistencia_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click(); URL.revokeObjectURL(url);
+}
+
+// ═══ TOAST ═══
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>

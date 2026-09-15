@@ -297,6 +297,54 @@ class Database {
             // Tabla puede ya existir
         }
 
+        // ═══ Tabla attendance_events (eventos con código único) ═══
+        try {
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS attendance_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_code TEXT UNIQUE NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                event_type TEXT DEFAULT 'clase',
+                career TEXT DEFAULT '',
+                modality TEXT DEFAULT 'presencial',
+                start_time TEXT DEFAULT '',
+                end_time TEXT DEFAULT '',
+                location TEXT DEFAULT '',
+                created_by INTEGER DEFAULT 0,
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                closed_at DATETIME DEFAULT NULL
+            )");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ae_code ON attendance_events(event_code)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ae_active ON attendance_events(is_active)");
+        } catch (Exception $e) {}
+
+        // ═══ Tabla attendance_records (registros con fecha+hora+minutos) ═══
+        try {
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS attendance_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id INTEGER NOT NULL,
+                event_code TEXT NOT NULL,
+                cedula TEXT NOT NULL,
+                nombre TEXT NOT NULL,
+                carrera TEXT DEFAULT '',
+                seccion TEXT DEFAULT '',
+                grado TEXT DEFAULT '',
+                estado TEXT DEFAULT 'presente',
+                fecha TEXT NOT NULL,
+                hora TEXT NOT NULL,
+                observacion TEXT DEFAULT '',
+                recorded_by INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (event_id) REFERENCES attendance_events(id)
+            )");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_event ON attendance_records(event_id)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_code ON attendance_records(event_code)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_cedula ON attendance_records(cedula)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_fecha ON attendance_records(fecha)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ar_carrera ON attendance_records(carrera)");
+        } catch (Exception $e) {}
+
         foreach ($schema as $sql) {
             $this->pdo->exec($sql);
         }

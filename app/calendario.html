@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario Académico — Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #007A33;
+            --bg-dark: #0d2c16;
+            --accent: #00B140;
+            --accent-light: #81C784;
+            --card: #ffffff;
+            --card-bg: #E6F4EA;
+            --border: #C8E6C9;
+            --gold: #d4a843;
+            --txt1: #1a1a2e;
+            --txt2: #2D2D2D;
+            --txt3: #64748b;
+            --clase: #00B140;
+            --examen: #f59e0b;
+            --actividad: #3b82f6;
+            --tarea: #8b5cf6;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Montserrat',sans-serif; background:var(--card-bg); color:var(--txt2); min-height:100vh; }
+
+        /* TOPBAR */
+        .topbar { position:fixed; top:0; left:0; right:0; z-index:100; background:var(--bg); padding:10px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+        .topbar-brand { font-size:.82rem; font-weight:800; color:#fff; letter-spacing:1px; }
+        .topbar-nav { display:flex; gap:6px; }
+        .topbar-nav a { color:rgba(255,255,255,.7); text-decoration:none; font-size:.65rem; font-weight:600; padding:6px 12px; border-radius:8px; transition:.15s; }
+        .topbar-nav a:hover,.topbar-nav a.active { background:rgba(255,255,255,.15); color:#fff; }
+
+        /* LAYOUT */
+        .wrap { padding:70px 20px 20px; max-width:1400px; margin:0 auto; }
+
+        /* BREADCRUMB */
+        .breadcrumb { font-size:.6rem; color:var(--txt3); margin-bottom:10px; }
+        .breadcrumb a { color:var(--accent); text-decoration:none; }
+
+        /* HEADER */
+        .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+        .cal-title { font-size:1.1rem; font-weight:800; color:var(--txt1); display:flex; align-items:center; gap:8px; }
+        .cal-nav { display:flex; align-items:center; gap:6px; }
+        .cal-nav button { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:.7rem; font-weight:700; cursor:pointer; transition:.15s; color:var(--txt2); }
+        .cal-nav button:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .cal-nav .month-label { font-size:.82rem; font-weight:700; min-width:160px; text-align:center; }
+
+        /* FILTROS */
+        .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+        .filters select,.filters input { padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:.68rem; font-family:'Montserrat'; font-weight:600; background:var(--card); color:var(--txt2); }
+        .filters select:focus,.filters input:focus { outline:none; border-color:var(--accent); }
+        .btn-filter { padding:6px 14px; border:none; border-radius:8px; font-size:.68rem; font-weight:700; cursor:pointer; transition:.15s; }
+        .btn-filter.active { background:var(--accent); color:#fff; }
+        .btn-filter:not(.active) { background:var(--card); color:var(--txt3); border:1px solid var(--border); }
+        .btn-filter:not(.active):hover { background:var(--card-bg); }
+
+        /* CALENDAR GRID */
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; background:var(--border); border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+        .cal-day-header { background:var(--bg); color:#fff; text-align:center; font-size:.6rem; font-weight:700; padding:8px 0; text-transform:uppercase; letter-spacing:.5px; }
+        .cal-day { background:var(--card); min-height:80px; padding:4px 6px; position:relative; cursor:pointer; transition:.1s; }
+        .cal-day:hover { background:var(--card-bg); }
+        .cal-day.today { border:2px solid var(--accent); }
+        .cal-day.other-month { opacity:.35; }
+        .cal-day .day-num { font-size:.65rem; font-weight:700; color:var(--txt3); margin-bottom:2px; }
+        .cal-day.today .day-num { color:var(--accent); font-weight:800; }
+        .cal-day .events-list { display:flex; flex-direction:column; gap:1px; }
+        .cal-event { font-size:.5rem; font-weight:600; padding:2px 4px; border-radius:4px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+        .cal-event.clase { background:var(--clase); }
+        .cal-event.examen { background:var(--examen); }
+        .cal-event.actividad { background:var(--actividad); }
+        .cal-event.tarea { background:var(--tarea); }
+        .cal-event:hover { opacity:.85; transform:scale(1.02); }
+        .cal-day .more-events { font-size:.5rem; color:var(--accent); font-weight:700; cursor:pointer; margin-top:1px; }
+
+        /* SIDEBAR DERECHA */
+        .main-layout { display:flex; gap:16px; }
+        .cal-container { flex:1; min-width:0; }
+        .sidebar { width:340px; flex-shrink:0; }
+
+        /* PANEL DÍA SELECCIONADO */
+        .day-panel { background:var(--card); border-radius:14px; border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+        .day-panel-header { background:var(--bg); color:#fff; padding:14px 16px; }
+        .day-panel-header h3 { font-size:.82rem; font-weight:800; }
+        .day-panel-header p { font-size:.6rem; opacity:.8; margin-top:2px; }
+        .day-panel-body { padding:12px 16px; max-height:calc(100vh - 320px); overflow-y:auto; }
+        .day-event-card { border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:8px; transition:.15s; }
+        .day-event-card:hover { border-color:var(--accent); box-shadow:0 2px 8px rgba(0,177,64,.1); }
+        .day-event-card .ev-type { font-size:.5rem; font-weight:700; text-transform:uppercase; padding:2px 6px; border-radius:4px; color:#fff; display:inline-block; margin-bottom:4px; }
+        .day-event-card .ev-title { font-size:.75rem; font-weight:700; color:var(--txt1); }
+        .day-event-card .ev-meta { font-size:.58rem; color:var(--txt3); margin-top:3px; display:flex; flex-wrap:wrap; gap:8px; }
+        .day-event-card .ev-meta i { margin-right:2px; }
+        .day-event-card .ev-link { display:inline-flex; align-items:center; gap:3px; font-size:.58rem; color:var(--accent); font-weight:700; text-decoration:none; margin-top:4px; }
+        .day-event-card .ev-link:hover { text-decoration:underline; }
+        .day-event-card .ev-actions { display:flex; gap:4px; margin-top:6px; }
+        .day-event-card .ev-actions button { font-size:.55rem; font-weight:700; padding:3px 8px; border-radius:6px; border:none; cursor:pointer; transition:.15s; }
+        .btn-edit { background:#E0F2FE; color:#0369a1; }
+        .btn-edit:hover { background:#BAE6FD; }
+        .btn-del { background:#FEE2E2; color:#991B1B; }
+        .btn-del:hover { background:#FECACA; }
+        .btn-join { background:var(--accent); color:#fff; }
+        .btn-join:hover { background:var(--bg); }
+
+        .empty-day { text-align:center; padding:20px 0; color:var(--txt3); }
+        .empty-day i { font-size:1.8rem; color:var(--border); display:block; margin-bottom:6px; }
+
+        /* FORMULARIO CREAR/EDITAR */
+        .btn-new-event { width:100%; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:.72rem; font-weight:700; cursor:pointer; transition:.15s; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:12px; }
+        .btn-new-event:hover { background:var(--bg); }
+
+        .form-panel { background:var(--card); border-radius:14px; border:1px solid var(--border); padding:14px 16px; margin-bottom:12px; display:none; }
+        .form-panel.open { display:block; }
+        .form-panel h4 { font-size:.78rem; font-weight:800; margin-bottom:10px; color:var(--txt1); display:flex; align-items:center; gap:6px; }
+        .form-group { margin-bottom:8px; }
+        .form-group label { display:block; font-size:.58rem; font-weight:700; color:var(--txt3); text-transform:uppercase; margin-bottom:3px; }
+        .form-group input,.form-group select,.form-group textarea { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.68rem; font-family:'Montserrat'; font-weight:600; color:var(--txt2); }
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus { outline:none; border-color:var(--accent); }
+        .form-group textarea { resize:vertical; min-height:40px; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .form-actions { display:flex; gap:6px; margin-top:10px; }
+        .form-actions button { flex:1; padding:8px; border:none; border-radius:8px; font-size:.68rem; font-weight:700; cursor:pointer; transition:.15s; }
+        .btn-save { background:var(--accent); color:#fff; }
+        .btn-save:hover { background:var(--bg); }
+        .btn-cancel { background:var(--card-bg); color:var(--txt3); border:1px solid var(--border); }
+        .btn-cancel:hover { background:#f1f5f9; }
+
+        /* TOGGLE VIRTUAL */
+        .toggle-row { display:flex; align-items:center; gap:8px; }
+        .toggle { position:relative; width:36px; height:20px; background:#cbd5e1; border-radius:20px; cursor:pointer; transition:.2s; }
+        .toggle.on { background:var(--accent); }
+        .toggle::after { content:''; position:absolute; width:16px; height:16px; background:#fff; border-radius:50%; top:2px; left:2px; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+        .toggle.on::after { left:18px; }
+
+        /* CONFFLICT WARNING */
+        .conflict-warning { background:#FEF3C7; border:1px solid #FDE68A; border-radius:8px; padding:8px 10px; margin-top:6px; font-size:.6rem; color:#92400E; display:none; }
+        .conflict-warning.show { display:flex; align-items:flex-start; gap:6px; }
+        .conflict-warning i { font-size:.8rem; margin-top:1px; }
+
+        /* LEGEND */
+        .legend { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .legend-item { display:flex; align-items:center; gap:4px; font-size:.55rem; font-weight:600; color:var(--txt3); }
+        .legend-dot { width:10px; height:10px; border-radius:3px; }
+
+        /* STAT CARDS */
+        .stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+        .stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+        .stat-card .stat-val { font-size:1rem; font-weight:800; color:var(--accent); }
+        .stat-card .stat-lbl { font-size:.5rem; font-weight:600; color:var(--txt3); text-transform:uppercase; }
+
+        /* TOAST */
+        .toast { position:fixed; top:70px; right:20px; padding:12px 20px; border-radius:10px; font-size:.68rem; font-weight:700; z-index:9999; animation:fadeIn .3s; box-shadow:0 4px 16px rgba(0,0,0,.15); }
+        .toast-success { background:var(--card-bg); color:var(--bg-dark); border:1px solid var(--accent); }
+        .toast-error { background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5; }
+        .toast-info { background:#E0F2FE;color:#0369a1;border:1px solid #BAE6FD; }
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+        .footer { text-align:center; padding:12px; font-size:.5rem; color:var(--txt3); margin-top:20px; }
+
+        @media(max-width:1024px) {
+            .main-layout { flex-direction:column; }
+            .sidebar { width:100%; }
+            .stat-row { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:600px) {
+            .cal-day { min-height:50px; padding:2px; }
+            .cal-event { font-size:.4rem; padding:1px 2px; }
+            .filters { flex-direction:column; }
+            .form-row { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="topbar-brand"><i class="bi bi-calendar3"></i> Calendario Academico</div>
+    <div class="topbar-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="calendario.html" class="active">Calendario</a>
+        <a href="Materiales_Clases/index.html">Materiales</a>
+        <a href="perfil.html">Perfil</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="breadcrumb"><a href="dashboard.html">Inicio</a> / Calendario Academico</div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-row" id="stat-row">
+        <div class="stat-card"><div class="stat-val" id="st-total">0</div><div class="stat-lbl">Eventos del Mes</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-clases">0</div><div class="stat-lbl">Clases</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-examenes">0</div><div class="stat-lbl">Examenes</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-actividades">0</div><div class="stat-lbl">Actividades</div></div>
+    </div>
+
+    <!-- HEADER + CONTROLS -->
+    <div class="cal-header">
+        <div class="cal-title"><i class="bi bi-calendar-month"></i> <span id="month-title">Calendario</span></div>
+        <div class="cal-nav">
+            <button onclick="prevMonth()"><i class="bi bi-chevron-left"></i></button>
+            <span class="month-label" id="month-label">Septiembre 2026</span>
+            <button onclick="nextMonth()"><i class="bi bi-chevron-right"></i></button>
+            <button onclick="goToday()" style="margin-left:4px">Hoy</button>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filters">
+        <select id="filter-career" onchange="loadEvents()">
+            <option value="">Todas las Carreras</option>
+        </select>
+        <select id="filter-type" onchange="loadEvents()">
+            <option value="">Todos los Tipos</option>
+            <option value="clase">Clases</option>
+            <option value="examen">Examenes</option>
+            <option value="actividad">Actividades</option>
+            <option value="tarea">Tareas</option>
+        </select>
+        <button class="btn-filter" id="btn-my-events" onclick="toggleMyEvents()" style="display:none">Mis Eventos</button>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--clase)"></div> Clase</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--examen)"></div> Examen</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--actividad)"></div> Actividad</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--tarea)"></div> Tarea</div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+        <!-- CALENDAR -->
+        <div class="cal-container">
+            <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <!-- BOTON CREAR -->
+            <button class="btn-new-event" id="btn-create" onclick="openForm()" style="display:none">
+                <i class="bi bi-plus-lg"></i> Nuevo Evento
+            </button>
+
+            <!-- FORMULARIO CREAR/EDITAR -->
+            <div class="form-panel" id="form-panel">
+                <h4><i class="bi bi-pencil-square"></i> <span id="form-title">Nuevo Evento</span></h4>
+                <input type="hidden" id="f-id">
+                <div class="form-group">
+                    <label>Titulo *</label>
+                    <input type="text" id="f-title" placeholder="Ej: Clase de Base de Datos">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo *</label>
+                        <select id="f-type">
+                            <option value="clase">Clase</option>
+                            <option value="examen">Examen</option>
+                            <option value="actividad">Actividad</option>
+                            <option value="tarea">Tarea</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha *</label>
+                        <input type="date" id="f-date">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hora Inicio</label>
+                        <input type="time" id="f-start">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Fin</label>
+                        <input type="time" id="f-end">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Carrera</label>
+                    <select id="f-career">
+                        <option value="">Todas las carreras</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Grupo / Seccion</label>
+                        <input type="text" id="f-group" placeholder="Ej: A, B, 1ro">
+                    </div>
+                    <div class="form-group">
+                        <label>Modalidad</label>
+                        <select id="f-modality">
+                            <option value="">Todas</option>
+                            <option value="presencial">Presencial</option>
+                            <option value="virtual">Virtual</option>
+                            <option value="hibrida">Hibrida</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Clase Virtual</label>
+                    <div class="toggle-row">
+                        <div class="toggle" id="f-virtual-toggle" onclick="toggleVirtual()"></div>
+                        <span id="f-virtual-label" style="font-size:.6rem;color:var(--txt3)">No</span>
+                    </div>
+                </div>
+                <div class="form-group" id="f-link-group" style="display:none">
+                    <label>Enlace Virtual</label>
+                    <input type="url" id="f-link" placeholder="https://meet.google.com/... o Zoom...">
+                </div>
+                <div class="form-group">
+                    <label>Descripcion</label>
+                    <textarea id="f-desc" placeholder="Notas adicionales..." rows="2"></textarea>
+                </div>
+
+                <!-- CONFLICT WARNING -->
+                <div class="conflict-warning" id="conflict-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="conflict-text">Hay conflictos en esta fecha</span>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-save" onclick="saveEvent()"><i class="bi bi-check-lg"></i> Guardar</button>
+                    <button class="btn-cancel" onclick="closeForm()">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- PANEL DIA SELECCIONADO -->
+            <div class="day-panel" id="day-panel">
+                <div class="day-panel-header">
+                    <h3 id="dp-title">Selecciona un dia</h3>
+                    <p id="dp-subtitle">Haz clic en un dia del calendario</p>
+                </div>
+                <div class="day-panel-body" id="dp-body">
+                    <div class="empty-day">
+                        <i class="bi bi-calendar-check"></i>
+                        <p>Selecciona un dia para ver los eventos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">Instituto Superior Centuria — Calendario Academico &copy; 2026</div>
+
+<script src="js/api.js?v=7"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let events = [];
+let selectedDate = null;
+let editingId = null;
+let myEventsOnly = false;
+let isVirtual = false;
+let userRole = '';
+let userId = 0;
+
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+    // Detectar usuario
+    const user = CenturiaAPI.getCurrentUser();
+    if (user) {
+        userRole = user.role || user.rol || '';
+        userId = user.id || 0;
+    } else {
+        const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+        if (!cedula) { location.href = 'index.html'; return; }
+        userRole = sessionStorage.getItem('rol') || 'alumno';
+    }
+
+    // Mostrar botón crear si es docente/admin
+    if (['teacher','docente','admin','academico','administrador_plataforma'].includes(userRole)) {
+        document.getElementById('btn-create').style.display = 'flex';
+    }
+    if (['teacher','docente','admin'].includes(userRole)) {
+        document.getElementById('btn-my-events').style.display = 'block';
+    }
+
+    await loadCareers();
+    renderCalendar();
+    await loadEvents();
+});
+
+// ═══════════════════════════════════════════════════════
+// CARGAR CARRERAS
+// ═══════════════════════════════════════════════════════
+async function loadCareers() {
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=carreras');
+        const d = await r.json();
+        const sel = document.getElementById('filter-career');
+        const formSel = document.getElementById('f-career');
+        (d.carreras || []).forEach(c => {
+            sel.innerHTML += `<option value="${c}">${c}</option>`;
+            formSel.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// CARGAR EVENTOS
+// ═══════════════════════════════════════════════════════
+async function loadEvents() {
+    const career = document.getElementById('filter-career').value;
+    const type = document.getElementById('filter-type').value;
+    let url = CenturiaAPI.baseUrl + `calendar.php?action=list&year=${currentYear}&month=${currentMonth}`;
+    if (career) url += `&career=${encodeURIComponent(career)}`;
+    if (type) url += `&event_type=${type}`;
+    if (myEventsOnly && userId) url += `&teacher_id=${userId}`;
+
+    try {
+        const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() } });
+        const d = await r.json();
+        events = d.events || [];
+        renderCalendar();
+        updateStats();
+        if (selectedDate) renderDayPanel(selectedDate);
+    } catch(e) { console.error('Error cargando eventos:', e); }
+}
+
+// ═══════════════════════════════════════════════════════
+// ACTUALIZAR ESTADISTICAS
+// ═══════════════════════════════════════════════════════
+function updateStats() {
+    document.getElementById('st-total').textContent = events.length;
+    document.getElementById('st-clases').textContent = events.filter(e => e.event_type === 'clase').length;
+    document.getElementById('st-examenes').textContent = events.filter(e => e.event_type === 'examen').length;
+    document.getElementById('st-actividades').textContent = events.filter(e => ['actividad','tarea'].includes(e.event_type)).length;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CALENDARIO
+// ═══════════════════════════════════════════════════════
+function renderCalendar() {
+    document.getElementById('month-label').textContent = MONTHS[currentMonth - 1] + ' ' + currentYear;
+    document.getElementById('month-title').textContent = 'Calendario — ' + MONTHS[currentMonth - 1] + ' ' + currentYear;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    // Headers
+    DIAS.forEach(d => { grid.innerHTML += `<div class="cal-day-header">${d}</div>`; });
+
+    // Primer dia del mes (0=domingo, adjust to monday-start)
+    const firstDay = new Date(currentYear, currentMonth - 1, 1);
+    let startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const daysInPrevMonth = new Date(currentYear, currentMonth - 1, 0).getDate();
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+    // Dias del mes anterior
+    for (let i = startDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const m = currentMonth === 1 ? 12 : currentMonth - 1;
+        const y = currentMonth === 1 ? currentYear - 1 : currentYear;
+        const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        grid.innerHTML += renderDayCell(day, dateStr, true, todayStr);
+    }
+
+    // Dias del mes actual
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        grid.innerHTML += renderDayCell(d, dateStr, false, todayStr);
+    }
+
+    // Dias del mes siguiente (completar 6 filas)
+    const totalCells = startDay + daysInMonth;
+    const remaining = totalCells <= 35 ? 35 - totalCells : 42 - totalCells;
+    for (let d = 1; d <= remaining; d++) {
+        const m = currentMonth === 12 ? 1 : currentMonth + 1;
+        const y = currentMonth === 12 ? currentYear + 1 : currentYear;
+        const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        grid.innerHTML += renderDayCell(d, dateStr, true, todayStr);
+    }
+}
+
+function renderDayCell(day, dateStr, otherMonth, todayStr) {
+    const isToday = dateStr === todayStr;
+    const dayEvents = events.filter(e => e.date === dateStr);
+    const maxShow = 3;
+
+    let html = `<div class="cal-day ${isToday ? 'today' : ''} ${otherMonth ? 'other-month' : ''}" onclick="selectDay('${dateStr}')">`;
+    html += `<div class="day-num">${day}</div>`;
+    html += '<div class="events-list">';
+
+    dayEvents.slice(0, maxShow).forEach(e => {
+        const timeStr = e.start_time ? e.start_time.substring(0,5) + ' ' : '';
+        html += `<div class="cal-event ${e.event_type}" title="${e.title}" onclick="event.stopPropagation();selectDay('${dateStr}')">${timeStr}${e.title}</div>`;
+    });
+
+    if (dayEvents.length > maxShow) {
+        html += `<div class="more-events" onclick="event.stopPropagation();selectDay('${dateStr}')">+${dayEvents.length - maxShow} mas</div>`;
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVEGACION
+// ═══════════════════════════════════════════════════════
+function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    loadEvents();
+}
+
+function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    loadEvents();
+}
+
+function goToday() {
+    const today = new Date();
+    currentYear = today.getFullYear();
+    currentMonth = today.getMonth() + 1;
+    loadEvents();
+    selectDay(`${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`);
+}
+
+function toggleMyEvents() {
+    myEventsOnly = !myEventsOnly;
+    const btn = document.getElementById('btn-my-events');
+    btn.classList.toggle('active', myEventsOnly);
+    loadEvents();
+}
+
+// ═══════════════════════════════════════════════════════
+// SELECCIONAR DIA
+// ═══════════════════════════════════════════════════════
+function selectDay(dateStr) {
+    selectedDate = dateStr;
+    // Highlight
+    document.querySelectorAll('.cal-day').forEach(el => el.style.outline = 'none');
+    const dayEls = document.querySelectorAll('.cal-day');
+    dayEls.forEach(el => {
+        const num = el.querySelector('.day-num');
+        if (num && el.getAttribute('onclick')?.includes(dateStr)) {
+            el.style.outline = '2px solid var(--accent)';
+            el.style.outlineOffset = '-2px';
+        }
+    });
+    renderDayPanel(dateStr);
+}
+
+function renderDayPanel(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayName = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'][d.getDay()];
+    const dayEvents = events.filter(e => e.date === dateStr);
+
+    document.getElementById('dp-title').textContent = dayName + ' ' + d.getDate();
+    document.getElementById('dp-subtitle').textContent = d.toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+
+    const body = document.getElementById('dp-body');
+
+    if (dayEvents.length === 0) {
+        body.innerHTML = `<div class="empty-day"><i class="bi bi-calendar-check"></i><p>Sin eventos programados</p>
+            ${['teacher','docente','admin','academico'].includes(userRole) ? `<button class="btn-new-event" style="margin-top:10px;font-size:.65rem" onclick="openFormForDate('${dateStr}')"><i class="bi bi-plus"></i> Crear evento</button>` : ''}</div>`;
+        return;
+    }
+
+    let html = '';
+    dayEvents.forEach(e => {
+        const typeColors = { clase:'var(--clase)', examen:'var(--examen)', actividad:'var(--actividad)', tarea:'var(--tarea)' };
+        const typeLabels = { clase:'Clase', examen:'Examen', actividad:'Actividad', tarea:'Tarea' };
+
+        html += `<div class="day-event-card">
+            <span class="ev-type" style="background:${typeColors[e.event_type] || '#94a3b8'}">${typeLabels[e.event_type] || e.event_type}</span>
+            <div class="ev-title">${e.title}</div>
+            <div class="ev-meta">`;
+
+        if (e.start_time) html += `<span><i class="bi bi-clock"></i> ${e.start_time}${e.end_time ? ' - ' + e.end_time : ''}</span>`;
+        if (e.career) html += `<span><i class="bi bi-mortarboard"></i> ${e.career}</span>`;
+        if (e.group_name) html += `<span><i class="bi bi-people"></i> Grupo ${e.group_name}</span>`;
+        if (e.modality) html += `<span><i class="bi bi-laptop"></i> ${e.modality}</span>`;
+        if (e.teacher_name) html += `<span><i class="bi bi-person"></i> ${e.teacher_name}</span>`;
+
+        html += '</div>';
+
+        if (e.description) html += `<div style="font-size:.58rem;color:var(--txt3);margin-top:4px">${e.description}</div>`;
+
+        if (e.is_virtual && e.virtual_link) {
+            html += `<a class="ev-link" href="${e.virtual_link}" target="_blank"><i class="bi bi-camera-video-fill"></i> Unirse a clase virtual</a>`;
+            html += `<button class="btn-join" onclick="window.open('${e.virtual_link}','_blank')" style="margin-top:4px;font-size:.55rem;padding:4px 10px;border:none;border-radius:6px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">Entrar a clase</button>`;
+        }
+
+        // Acciones (solo el creador o admin)
+        if (e.created_by === userId || ['admin','administrador_plataforma'].includes(userRole)) {
+            html += `<div class="ev-actions">
+                <button class="btn-edit" onclick="editEvent(${e.id})"><i class="bi bi-pencil"></i> Editar</button>
+                <button class="btn-del" onclick="deleteEvent(${e.id})"><i class="bi bi-trash"></i> Eliminar</button>
+            </div>`;
+        }
+
+        html += '</div>';
+    });
+
+    body.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// FORMULARIO CREAR / EDITAR
+// ═══════════════════════════════════════════════════════
+function openForm() {
+    editingId = null;
+    document.getElementById('form-title').textContent = 'Nuevo Evento';
+    document.getElementById('f-id').value = '';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-type').value = 'clase';
+    document.getElementById('f-date').value = selectedDate || new Date().toISOString().split('T')[0];
+    document.getElementById('f-start').value = '';
+    document.getElementById('f-end').value = '';
+    document.getElementById('f-career').value = '';
+    document.getElementById('f-group').value = '';
+    document.getElementById('f-modality').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-link').value = '';
+    isVirtual = false;
+    document.getElementById('f-virtual-toggle').classList.remove('on');
+    document.getElementById('f-virtual-label').textContent = 'No';
+    document.getElementById('f-link-group').style.display = 'none';
+    document.getElementById('conflict-warning').classList.remove('show');
+    document.getElementById('form-panel').classList.add('open');
+}
+
+function openFormForDate(dateStr) {
+    openForm();
+    document.getElementById('f-date').value = dateStr;
+}
+
+function closeForm() {
+    document.getElementById('form-panel').classList.remove('open');
+    editingId = null;
+}
+
+function toggleVirtual() {
+    isVirtual = !isVirtual;
+    document.getElementById('f-virtual-toggle').classList.toggle('on', isVirtual);
+    document.getElementById('f-virtual-label').textContent = isVirtual ? 'Si' : 'No';
+    document.getElementById('f-link-group').style.display = isVirtual ? 'block' : 'none';
+}
+
+// ═══ VERIFICAR CONFLICTOS AL Cambiar FECHA ═══
+document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('f-date');
+    if (dateInput) {
+        dateInput.addEventListener('change', async () => {
+            const date = dateInput.value;
+            if (!date) return;
+            try {
+                const career = document.getElementById('f-career').value;
+                let url = CenturiaAPI.baseUrl + `calendar.php?action=conflicts&date=${date}`;
+                if (career) url += `&career=${encodeURIComponent(career)}`;
+                if (editingId) url += `&exclude_id=${editingId}`;
+
+                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() } });
+                const d = await r.json();
+
+                const warn = document.getElementById('conflict-warning');
+                const txt = document.getElementById('conflict-text');
+                if (d.has_conflicts) {
+                    const names = d.conflicts.map(c => `"${c.title}" (${c.start_time || 'sin hora'})`).join(', ');
+                    txt.textContent = `Conflicto: ya existen eventos este dia: ${names}`;
+                    warn.classList.add('show');
+                } else {
+                    warn.classList.remove('show');
+                }
+            } catch(e) {}
+        });
+    }
+});
+
+// ═══ EDITAR EVENTO ═══
+async function editEvent(id) {
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + `calendar.php?action=get&id=${id}`, {
+            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+        });
+        const d = await r.json();
+        if (!d.ok) { showToast('Error: ' + d.error, 'error'); return; }
+
+        const e = d.event;
+        editingId = e.id;
+        document.getElementById('form-title').textContent = 'Editar Evento';
+        document.getElementById('f-id').value = e.id;
+        document.getElementById('f-title').value = e.title;
+        document.getElementById('f-type').value = e.event_type;
+        document.getElementById('f-date').value = e.date;
+        document.getElementById('f-start').value = e.start_time || '';
+        document.getElementById('f-end').value = e.end_time || '';
+        document.getElementById('f-career').value = e.career || '';
+        document.getElementById('f-group').value = e.group_name || '';
+        document.getElementById('f-modality').value = e.modality || '';
+        document.getElementById('f-desc').value = e.description || '';
+
+        isVirtual = !!e.is_virtual;
+        document.getElementById('f-virtual-toggle').classList.toggle('on', isVirtual);
+        document.getElementById('f-virtual-label').textContent = isVirtual ? 'Si' : 'No';
+        document.getElementById('f-link-group').style.display = isVirtual ? 'block' : 'none';
+        document.getElementById('f-link').value = e.virtual_link || '';
+
+        document.getElementById('form-panel').classList.add('open');
+        document.getElementById('f-title').focus();
+    } catch(e) { showToast('Error de conexion', 'error'); }
+}
+
+// ═══ GUARDAR EVENTO ═══
+async function saveEvent() {
+    const title = document.getElementById('f-title').value.trim();
+    const type = document.getElementById('f-type').value;
+    const date = document.getElementById('f-date').value;
+    const start = document.getElementById('f-start').value;
+    const end = document.getElementById('f-end').value;
+    const career = document.getElementById('f-career').value;
+    const group = document.getElementById('f-group').value.trim();
+    const modality = document.getElementById('f-modality').value;
+    const link = document.getElementById('f-link').value.trim();
+    const desc = document.getElementById('f-desc').value.trim();
+
+    if (!title || !date) {
+        showToast('Titulo y fecha son requeridos', 'error');
+        return;
+    }
+
+    const body = {
+        action: editingId ? 'update' : 'create',
+        title, event_type: type, date,
+        start_time: start, end_time: end,
+        career, group_name: group, modality,
+        is_virtual: isVirtual ? 1 : 0,
+        virtual_link: link, description: desc
+    };
+    if (editingId) body.id = editingId;
+
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+
+        if (d.ok) {
+            showToast(editingId ? 'Evento actualizado' : 'Evento creado', 'success');
+            closeForm();
+            await loadEvents();
+            if (selectedDate) selectDay(selectedDate);
+        } else if (d.conflict) {
+            showToast('Conflicto: ' + d.error, 'error');
+            document.getElementById('conflict-warning').classList.add('show');
+            document.getElementById('conflict-text').textContent = d.error;
+        } else {
+            showToast('Error: ' + (d.error || 'Desconocido'), 'error');
+        }
+    } catch(e) { showToast('Error de conexion', 'error'); }
+}
+
+// ═══ ELIMINAR EVENTO ═══
+async function deleteEvent(id) {
+    if (!confirm('Eliminar este evento?')) return;
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+            body: JSON.stringify({ action: 'delete', id })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            showToast('Evento eliminado', 'success');
+            await loadEvents();
+            if (selectedDate) selectDay(selectedDate);
+        } else {
+            showToast('Error: ' + (d.error || ''), 'error');
+        }
+    } catch(e) { showToast('Error de conexion', 'error'); }
+}
+
+// ═══ TOAST ═══
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>

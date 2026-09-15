@@ -873,12 +873,23 @@ async function registrarYAcceder(){
     const grado=document.getElementById('reg-grado').value||'';const carrera=document.getElementById('reg-carrera').value||'';
     const seccion=document.getElementById('reg-seccion').value.trim().toUpperCase();
     const password=nombre.charAt(0).toUpperCase()+apellido.charAt(0).toLowerCase()+cedula+'*';
-    if(!cedula||!nombre||!apellido){alert('Completa CÉDULA, NOMBRE y APELLIDO.');return}
+    if(!cedula||!nombre||!apellido){alert('Completa CEDULA, NOMBRE y APELLIDO.');return}
     try{const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:'alumno'};
     const regResult=await window.CenturiaAPI.auth.register(userData);if(!regResult||!regResult.ok)throw new Error((regResult&&regResult.message)||'Error al registrar.');
-    const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesión.');
+
+    // ═══ SINCRONIZAR CON GOOGLE SHEETS (backup) ═══
+    try {
+        if (typeof gasRegisterStudent === 'function') {
+            await gasRegisterStudent(cedula, nombre + ' ' + apellido, email, carrera, seccion);
+            console.log('[GAS] Alumno sincronizado en Google Sheets');
+        }
+    } catch(gasErr) {
+        console.warn('[GAS] Error sincronizando con Google Sheets (no bloqueante):', gasErr);
+    }
+
+    const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesion.');
     sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);mostrarCursos(null)}
-    catch(err){const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cédula ya está registrada. ¿Deseas recuperar tu contraseña?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
+    catch(err){const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cedula ya esta registrada. Deseas recuperar tu contrasena?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
 }
 
 // ═══ QR ═══

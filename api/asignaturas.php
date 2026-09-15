@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 // ═══ ASEGURAR TABLA ═══
 function ensureAsignaturasTable($pdo) {
@@ -61,81 +62,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     api_response($item);
 }
 
-// ═══ CREAR ═══
+// ═══ CREAR (solo admin/academico) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'create') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma','academico'])) {
+        api_error('Solo administradores pueden crear asignaturas', 403);
+    }
+
     $pdo = db();
     ensureAsignaturasTable($pdo);
     
-    $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
-    $nombre = trim($_POST['nombre'] ?? '');
-    $nombre_completo = trim($_POST['nombre_completo'] ?? '');
-    $carrera = trim($_POST['carrera'] ?? '');
-    $grado = trim($_POST['grado'] ?? '');
-    $semestre = trim($_POST['semestre'] ?? '');
-    $carga_horaria = intval($_POST['carga_horaria'] ?? 0);
-    $unidades = intval($_POST['unidades'] ?? 10);
-    $descripcion = trim($_POST['descripcion'] ?? '');
-    $color = trim($_POST['color'] ?? '#00B140');
-    $icono = trim($_POST['icono'] ?? 'bi-book');
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
     
-    if (empty($codigo) || empty($nombre)) api_error('Código y nombre requeridos', 400);
+    $codigo = strtoupper(trim($input['codigo'] ?? ''));
+    $nombre = trim($input['nombre'] ?? '');
+    $nombre_completo = trim($input['nombre_completo'] ?? '');
+    $carrera = trim($input['carrera'] ?? '');
+    $grado = trim($input['grado'] ?? '');
+    $semestre = trim($input['semestre'] ?? '');
+    $carga_horaria = intval($input['carga_horaria'] ?? 0);
+    $unidades = intval($input['unidades'] ?? 10);
+    $descripcion = trim($input['descripcion'] ?? '');
+    $color = trim($input['color'] ?? '#00B140');
+    $icono = trim($input['icono'] ?? 'bi-book');
+    
+    if (empty($codigo) || empty($nombre)) api_error('Codigo y nombre requeridos', 400);
     
     $stmt = $pdo->prepare("INSERT INTO asignaturas (codigo, nombre, nombre_completo, carrera, grado, semestre, carga_horaria, unidades, descripcion, color, icono) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     try {
         $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $carga_horaria, $unidades, $descripcion, $color, $icono]);
-        api_response(['status' => 'Éxito', 'mensaje' => 'Asignatura creada', 'id' => $pdo->lastInsertId()]);
+        api_response(['status' => 'Exito', 'mensaje' => 'Asignatura creada', 'id' => $pdo->lastInsertId()]);
     } catch (PDOException $e) {
-        if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe una asignatura con ese código', 409);
+        if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe una asignatura con ese codigo', 409);
         api_error('Error: ' . $e->getMessage(), 500);
     }
 }
 
-// ═══ EDITAR ═══
+// ═══ EDITAR (solo admin/academico) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'update') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma','academico'])) {
+        api_error('Solo administradores pueden editar asignaturas', 403);
+    }
+
     $pdo = db();
     ensureAsignaturasTable($pdo);
     
-    $id = intval($_POST['id'] ?? 0);
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    
+    $id = intval($input['id'] ?? 0);
     if (!$id) api_error('ID requerido', 400);
     
-    $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
-    $nombre = trim($_POST['nombre'] ?? '');
-    $nombre_completo = trim($_POST['nombre_completo'] ?? '');
-    $carrera = trim($_POST['carrera'] ?? '');
-    $grado = trim($_POST['grado'] ?? '');
-    $semestre = trim($_POST['semestre'] ?? '');
-    $carga_horaria = intval($_POST['carga_horaria'] ?? 0);
-    $unidades = intval($_POST['unidades'] ?? 10);
-    $descripcion = trim($_POST['descripcion'] ?? '');
-    $color = trim($_POST['color'] ?? '#00B140');
-    $icono = trim($_POST['icono'] ?? 'bi-book');
-    $estado = trim($_POST['estado'] ?? 'activo');
+    $codigo = strtoupper(trim($input['codigo'] ?? ''));
+    $nombre = trim($input['nombre'] ?? '');
+    $nombre_completo = trim($input['nombre_completo'] ?? '');
+    $carrera = trim($input['carrera'] ?? '');
+    $grado = trim($input['grado'] ?? '');
+    $semestre = trim($input['semestre'] ?? '');
+    $carga_horaria = intval($input['carga_horaria'] ?? 0);
+    $unidades = intval($input['unidades'] ?? 10);
+    $descripcion = trim($input['descripcion'] ?? '');
+    $color = trim($input['color'] ?? '#00B140');
+    $icono = trim($input['icono'] ?? 'bi-book');
+    $estado = trim($input['estado'] ?? 'activo');
     
     $stmt = $pdo->prepare("UPDATE asignaturas SET codigo=?, nombre=?, nombre_completo=?, carrera=?, grado=?, semestre=?, carga_horaria=?, unidades=?, descripcion=?, color=?, icono=?, estado=? WHERE id=?");
     try {
         $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $carga_horaria, $unidades, $descripcion, $color, $icono, $estado, $id]);
-        api_response(['status' => 'Éxito', 'mensaje' => 'Asignatura actualizada']);
+        api_response(['status' => 'Exito', 'mensaje' => 'Asignatura actualizada']);
     } catch (PDOException $e) {
-        if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe otra asignatura con ese código', 409);
+        if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe otra asignatura con ese codigo', 409);
         api_error('Error', 500);
     }
 }
 
-// ═══ ELIMINAR (desactivar) ═══
+// ═══ ELIMINAR (desactivar, solo admin/academico) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'delete') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma','academico'])) {
+        api_error('Solo administradores pueden eliminar asignaturas', 403);
+    }
+
     $pdo = db();
     ensureAsignaturasTable($pdo);
     
-    $id = intval($_POST['id'] ?? 0);
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    
+    $id = intval($input['id'] ?? 0);
     if (!$id) api_error('ID requerido', 400);
     
     $stmt = $pdo->prepare("UPDATE asignaturas SET estado = 'inactivo' WHERE id = ?");
     $stmt->execute([$id]);
-    api_response(['status' => 'Éxito', 'mensaje' => 'Asignatura desactivada']);
+    api_response(['status' => 'Exito', 'mensaje' => 'Asignatura desactivada']);
 }
 
-// ═══ SEMBRAR DATOS INICIALES ═══
+// ═══ SEMBRAR DATOS INICIALES (solo admin) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'seed') {
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma'])) {
+        api_error('Solo administradores pueden sembrar datos', 403);
+    }
+
     $pdo = db();
     ensureAsignaturasTable($pdo);
     

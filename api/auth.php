@@ -84,41 +84,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     }
     
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT id, username, password, role, firstname, lastname FROM users WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT id, username, password, role, firstname, lastname, email, estado FROM users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($user && verify_password($password, $user['password'])) {
-        // Generate session token
-        $token = generate_token(48);
-        
-        // Delete old tokens for this user
-        $stmt = $pdo->prepare("DELETE FROM sessions WHERE user_id = ?");
-        $stmt->execute([$user['id']]);
-        
-        // Store new token with IP and user agent binding
-        $user_agent = !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
-        $client_ip = get_client_ip();
-        
-        $stmt = $pdo->prepare(
-            "INSERT INTO sessions (token, user_id, expires, ip_address, user_agent) 
-             VALUES (?, ?, datetime('now', '+1 hour'), ?, ?)"
-        );
-        $stmt->execute([$token, $user['id'], $client_ip, $user_agent]);
-        
-        api_response([
-            'token' => $token,
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'firstname' => $user['firstname'],
-                'lastname' => $user['lastname'],
-                'role' => $user['role']
-            ]
-        ]);
-    } else {
-        api_error('Invalid credentials', 401);
+    if (!$user || !verify_password($password, $user['password'])) {
+        api_error('Cedula o contrasena incorrecta', 401);
     }
+
+    // FIX #3: Verificar que el usuario no este inactivo
+    if (isset($user['estado']) && $user['estado'] === 'inactivo') {
+        api_error('Tu cuenta esta desactivada. Contacta al administrador.', 403);
+    }
+
+    // Obtener roles activos del usuario desde user_roles
+    $stmt_roles = $pdo->prepare("SELECT rol, carrera, seccion, asignatura, estado FROM user_roles WHERE user_id = ? AND (estado IS NULL OR estado = 'activo')");
+    $stmt_roles->execute([$user['id']]);
+    $roles = $stmt_roles->fetchAll(PDO::FETCH_ASSOC);
+
+    // Determinar el rol principal
+    $primary_role = $user['role'];
+    if (!empty($roles)) {
+        // Prioridad: admin > academico > docente > alumno
+        $role_priority = ['admin' => 4, 'administrador_plataforma' => 4, 'academico' => 3, 'docente' => 2, 'teacher' => 2, 'alumno' => 1, 'student' => 1];
+        $best_role = $primary_role;
+        $best_priority = $role_priority[$primary_role] ?? 0;
+        foreach ($roles as $r) {
+            $p = $role_priority[$r['rol']] ?? 0;
+            if ($p > $best_priority) {
+                $best_role = $r['rol'];
+                $best_priority = $p;
+            }
+        }
+        $primary_role = $best_role;
+    }
+    
+    // Generate session token
+    $token = generate_token(48);
+    
+    // Delete old tokens for this user
+    $stmt = $pdo->prepare("DELETE FROM sessions WHERE user_id = ?");
+    $stmt->execute([$user['id']]);
+    
+    // Store new token
+    $user_agent = !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+    $client_ip = get_client_ip();
+    
+    $stmt = $pdo->prepare(
+        "INSERT INTO sessions (token, user_id, expires, ip_address, user_agent) 
+         VALUES (?, ?, datetime('now', '+8 hours'), ?, ?)"
+    );
+    $stmt->execute([$token, $user['id'], $client_ip, $user_agent]);
+
+    // Registrar ultimo acceso
+    $pdo->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?")->execute([$user['id']]);
+    
+    api_response([
+        'success' => true,
+        'token' => $token,
+        'user' => [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'firstname' => $user['firstname'],
+            'lastname' => $user['lastname'],
+            'email' => $user['email'] ?? '',
+            'role' => $primary_role,
+            'roles' => $roles
+        ]
+    ]);
 }
 
 // Register endpoint
@@ -281,14 +314,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
 // ═══ #1 Cambiar contraseña (usuario) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'change_password') {
     $decoded = require_auth();
-    $current_password = $_POST['current_password'] ?? '';
-    $new_password = $_POST['new_password'] ?? '';
+
+    // Leer de JSON body O de $_POST
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = [];
+    $current_password = $input['current_password'] ?? $_POST['current_password'] ?? '';
+    $new_password = $input['new_password'] ?? $_POST['new_password'] ?? '';
 
     if (empty($current_password) || empty($new_password)) {
-        api_error('Contraseña actual y nueva contraseña requeridas', 400);
+        api_error('Contrasena actual y nueva contrasena requeridas', 400);
     }
     if (strlen($new_password) < 6) {
-        api_error('La nueva contraseña debe tener al menos 6 caracteres', 400);
+        api_error('La nueva contrasena debe tener al menos 6 caracteres', 400);
     }
 
     $pdo = db();
@@ -297,47 +334,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $hash = $stmt->fetchColumn();
 
     if (!$hash || !verify_password($current_password, $hash)) {
-        api_error('La contraseña actual es incorrecta', 401);
+        api_error('La contrasena actual es incorrecta', 401);
     }
 
     $new_hash = hash_password($new_password);
     $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$new_hash, $decoded->user_id]);
 
-    api_response(['ok' => true, 'mensaje' => 'Contraseña actualizada correctamente']);
+    api_response(['ok' => true, 'mensaje' => 'Contrasena actualizada correctamente']);
 }
 
 // ═══ #2 Reset contraseña (admin) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'reset_password') {
     $decoded = require_auth();
-    if (!in_array($decoded->role, ['admin'])) {
-        api_error('Solo administradores pueden resetear contraseñas', 403);
+    if (!in_array($decoded->role, ['admin','administrador_plataforma'])) {
+        api_error('Solo administradores pueden resetear contrasenas', 403);
     }
 
-    $user_id = intval($_POST['user_id'] ?? 0);
-    $new_password = $_POST['new_password'] ?? '';
+    // Leer de JSON body O de $_POST
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = [];
+    $user_id = intval($input['user_id'] ?? $_POST['user_id'] ?? 0);
+    $new_password = $input['new_password'] ?? $_POST['new_password'] ?? '';
 
-    if (!$user_id || empty($new_password)) {
-        api_error('user_id y nueva contraseña requeridos', 400);
+    if (!$user_id) {
+        api_error('user_id requerido', 400);
     }
 
     $pdo = db();
 
-    // Obtener nombre y apellido para generar contraseña institucional si no se provee
+    // Si NO se proporciona contrasena, generar la institucional
     if (empty($new_password)) {
         $stmt = $pdo->prepare("SELECT username, firstname, lastname FROM users WHERE id = ?");
         $stmt->execute([$user_id]);
         $u = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($u) {
-            $fn = strtoupper(substr($u['firstname'],0,1));
-            $ln = strtolower(substr($u['lastname'],0,1));
-            $new_password = $fn . $ln . $u['username'] . '*';
+        if (!$u) {
+            api_error('Usuario no encontrado', 404);
         }
+        $fn = strtoupper(substr($u['firstname'],0,1));
+        $ln = strtolower(substr($u['lastname'],0,1));
+        $new_password = $fn . $ln . $u['username'] . '*';
     }
 
     $new_hash = hash_password($new_password);
     $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$new_hash, $user_id]);
 
-    api_response(['ok' => true, 'mensaje' => 'Contraseña reseteada', 'nueva_contraseña_generada' => $new_password]);
+    api_response(['ok' => true, 'mensaje' => 'Contrasena reseteada', 'new_password' => $new_password]);
 }

@@ -267,7 +267,36 @@ class Database {
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )"
         ];
-        
+
+        // ═══ Tabla calendar_events (extendida para planificación docente) ═══
+        try {
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS calendar_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                event_type TEXT NOT NULL DEFAULT 'clase',
+                date TEXT NOT NULL,
+                start_time TEXT DEFAULT '',
+                end_time TEXT DEFAULT '',
+                is_virtual INTEGER DEFAULT 0,
+                virtual_link TEXT DEFAULT '',
+                career TEXT DEFAULT '',
+                modality TEXT DEFAULT '',
+                group_name TEXT DEFAULT '',
+                course_id INTEGER DEFAULT 0,
+                created_by INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            )");
+            // Índices para conflictos y filtrado
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_cal_ev_date ON calendar_events(date)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_cal_ev_career ON calendar_events(career)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_cal_ev_creator ON calendar_events(created_by)");
+        } catch (Exception $e) {
+            // Tabla puede ya existir
+        }
+
         foreach ($schema as $sql) {
             $this->pdo->exec($sql);
         }

@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 
 // ═══ OBTENER ASIGNATURAS DEL DOCENTE ═══
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'my_subjects') {
@@ -59,12 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     ]);
 }
 
-// ═══ ASIGNAR ASIGNATURA A DOCENTE ═══
+// ═══ ASIGNAR ASIGNATURA A DOCENTE (solo admin) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'assign_subject') {
-    $user_id = intval($_POST['user_id'] ?? 0);
-    $asignatura = strtoupper(trim($_POST['asignatura'] ?? ''));
-    $carrera = trim($_POST['carrera'] ?? '');
-    $seccion = trim($_POST['seccion'] ?? '');
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma','academico'])) {
+        api_error('Solo administradores pueden asignar cátedras', 403);
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    $user_id = intval($input['user_id'] ?? 0);
+    $asignatura = strtoupper(trim($input['asignatura'] ?? ''));
+    $carrera = trim($input['carrera'] ?? '');
+    $seccion = trim($input['seccion'] ?? '');
     
     if (!$user_id || !$asignatura) api_error('user_id y asignatura requeridos', 400);
     
@@ -84,9 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     api_response(['status' => 'Éxito', 'mensaje' => 'Asignatura asignada al docente', 'id' => $pdo->lastInsertId()]);
 }
 
-// ═══ QUITAR ASIGNATURA A DOCENTE ═══
+// ═══ QUITAR ASIGNATURA A DOCENTE (solo admin) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'unassign_subject') {
-    $id = intval($_POST['id'] ?? 0);
+    $decoded = require_auth();
+    if (!in_array($decoded->role, ['admin','administrador_plataforma','academico'])) {
+        api_error('Solo administradores pueden desasignar cátedras', 403);
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    $id = intval($input['id'] ?? 0);
     if (!$id) api_error('ID requerido', 400);
     
     $pdo = db();

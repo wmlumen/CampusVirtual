@@ -34,6 +34,26 @@ function gasRegisterStudent(cedula, nombre, email, carrera, seccion) {
     }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
+// Helper: marcar asistencia en Google Sheets (POST)
+function gasMarkAttendance(cedula, observacion) {
+    const payload = {
+        action: 'marcar_asistencia',
+        cedula: cedula,
+        observacion: observacion || ''
+    };
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
+// Helper: obtener notas desde Google Sheets (GET)
+function gasGetGrades() {
+    return fetch(GAS_URL)
+        .then(r => r.json())
+        .catch(() => []);
+}
+
 // Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
     u = u || {};

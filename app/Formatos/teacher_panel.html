@@ -514,7 +514,7 @@
 <script>
 // === LOCAL STORAGE ===
 const USERS_KEY = 'sociologia_users';
-const STORAGE_KEY = 'sociologia_teacherRecords';
+const STORAGE_KEY = 'sociologia_docenteRecords';
 const STUDENT_RESULTS_KEY = 'socioResults';
 const ATTENDANCE_KEY = 'sociologia_attendanceRecords';
 const PERFIL_KEY = 'sociologia_perfil';
@@ -564,9 +564,9 @@ async function loginDocente() {
         const result = await window.CenturiaAPI.login(cedula, password);
         if (result && result.ok && result.user) {
             // Login exitoso vía API
-            sessionStorage.setItem('teacher_cedula', cedula);
-            sessionStorage.setItem('teacher_nombre', result.user.firstname + ' ' + result.user.lastname);
-            sessionStorage.setItem('teacher_session_active', '1');
+            sessionStorage.setItem('docente_cedula', cedula);
+            sessionStorage.setItem('docente_nombre', result.user.firstname + ' ' + result.user.lastname);
+            sessionStorage.setItem('docente_session_active', '1');
             sessionStorage.setItem('userRole', result.user.role || 'docente');
             sessionStorage.setItem('current_cedula', cedula);
             sessionStorage.setItem('current_nombre', result.user.firstname + ' ' + result.user.lastname);
@@ -580,9 +580,9 @@ async function loginDocente() {
         if (!usuario) { errorText.textContent = 'Cédula no registrada. Regístrese primero usando el formulario de registro.'; errorDiv.classList.add('show'); btn.innerHTML = '<i class="bi bi-arrow-right-circle me-2"></i>Ingresar al Panel'; btn.disabled = false; return; }
         if (password !== usuario.password) { errorText.textContent = 'Contraseña incorrecta.'; errorDiv.classList.add('show'); btn.innerHTML = '<i class="bi bi-arrow-right-circle me-2"></i>Ingresar al Panel'; btn.disabled = false; return; }
         const nombreCompleto = usuario.nombre + ' ' + usuario.apellido;
-        sessionStorage.setItem('teacher_cedula', cedula);
-        sessionStorage.setItem('teacher_nombre', nombreCompleto);
-        sessionStorage.setItem('teacher_session_active', '1');
+        sessionStorage.setItem('docente_cedula', cedula);
+        sessionStorage.setItem('docente_nombre', nombreCompleto);
+        sessionStorage.setItem('docente_session_active', '1');
         sessionStorage.setItem('userRole', usuario.rol || 'docente');
         sessionStorage.setItem('current_cedula', cedula);
         sessionStorage.setItem('current_nombre', nombreCompleto);

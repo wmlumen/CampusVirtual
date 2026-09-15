@@ -319,7 +319,7 @@ async function guardarSistema() {
 function cambiarCurso() { cargarSistema(); }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    const profesor = sessionStorage.getItem('teacher_nombre') || sessionStorage.getItem('current_nombre');
+    const profesor = sessionStorage.getItem('docente_nombre') || sessionStorage.getItem('current_nombre');
     if (profesor) document.getElementById('inp-docente').value = profesor;
     const prog = sessionStorage.getItem('docente_programa');
     if (prog) {

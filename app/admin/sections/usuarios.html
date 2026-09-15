@@ -19,12 +19,17 @@
         <button @click="usuariosTab='roles'"
             class="flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all flex items-center justify-center gap-1"
             :class="usuariosTab==='roles' ? 'bg-purple-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
-            <i class="bi bi-shield-lock-fill"></i> Roles y Permisos
+            <i class="bi bi-shield-lock-fill"></i> Roles
         </button>
         <button @click="usuariosTab='filiales'"
             class="flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all flex items-center justify-center gap-1"
             :class="usuariosTab==='filiales' ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
             <i class="bi bi-building"></i> Filiales
+        </button>
+        <button @click="usuariosTab='asignaturas'"
+            class="flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all flex items-center justify-center gap-1"
+            :class="usuariosTab==='asignaturas' ? 'bg-green-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
+            <i class="bi bi-book"></i> Asignaturas
         </button>
     </div>
 
@@ -430,6 +435,79 @@
                         </div>
                     </div>
                 </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PESTAÑA: ASIGNATURAS ═══ -->
+    <div x-show="usuariosTab==='asignaturas'" style="display:none;">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="bi bi-book me-1"></i>Gestión de Asignaturas</h3>
+            
+            <!-- Formulario -->
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input type="text" x-model="asignaturaForm.codigo" placeholder="Código (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="asignaturaForm.nombre" placeholder="Nombre (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="asignaturaForm.nombre_completo" placeholder="Nombre completo" class="border border-slate-200 rounded-lg px-3 py-2 text-xs col-span-2">
+                <input type="text" x-model="asignaturaForm.carrera" placeholder="Carrera" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="asignaturaForm.semestre" placeholder="Semestre" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="number" x-model="asignaturaForm.carga_horaria" placeholder="Horas" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="number" x-model="asignaturaForm.unidades" placeholder="Unidades" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="color" x-model="asignaturaForm.color" class="border border-slate-200 rounded-lg px-3 py-2 text-xs h-10">
+                <select x-model="asignaturaForm.icono" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                    <option value="bi-laptop">💻 Laptop</option>
+                    <option value="bi-people">👥 Personas</option>
+                    <option value="bi-book">📚 Libro</option>
+                    <option value="bi-calculator">🔢 Calculadora</option>
+                    <option value="bi-briefcase">💼 Maletín</option>
+                    <option value="bi-graph-up">📈 Gráfico</option>
+                    <option value="bi-percent">%</option>
+                    <option value="bi-translate">🌐 Traducir</option>
+                    <option value="bi-balance-scale">⚖️ Balanza</option>
+                    <option value="bi-search">🔍 Buscar</option>
+                    <option value="bi-file-earmark-text">📄 Documento</option>
+                </select>
+            </div>
+            <button @click="guardarAsignatura()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                <i class="bi bi-plus-lg me-1"></i>Guardar Asignatura
+            </button>
+
+            <!-- Tabla -->
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead><tr class="border-b border-slate-200">
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Código</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Nombre</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Carrera</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Semestre</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Horas</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Estado</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Acciones</th>
+                    </tr></thead>
+                    <tbody>
+                        <template x-for="a in asignaturas" :key="a.id">
+                            <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                <td class="py-2 px-2 font-bold" x-text="a.codigo"></td>
+                                <td class="py-2 px-2">
+                                    <span x-text="a.nombre"></span>
+                                    <div class="text-[9px] text-slate-400" x-text="a.nombre_completo"></div>
+                                </td>
+                                <td class="py-2 px-2 text-slate-600" x-text="a.carrera"></td>
+                                <td class="py-2 px-2 text-slate-600" x-text="a.semestre"></td>
+                                <td class="py-2 px-2 text-slate-600" x-text="a.carga_horaria + 'h'"></td>
+                                <td class="py-2 px-2">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold"
+                                        :class="a.estado==='activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                        x-text="a.estado"></span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <button @click="editarAsignatura(a)" class="text-blue-500 hover:text-blue-700 text-[10px] me-1">Editar</button>
+                                    <button @click="eliminarAsignatura(a.id)" class="text-red-500 hover:text-red-700 text-[10px]">Eliminar</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

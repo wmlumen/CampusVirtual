@@ -240,7 +240,7 @@ function cerrar() { window.close(); }
 
 // Cargar datos de session si existen
 window.addEventListener('DOMContentLoaded', () => {
-    const ced = sessionStorage.getItem('teacher_nombre');
+    const ced = sessionStorage.getItem('docente_nombre');
     if (ced) document.getElementById('inp-presidente').value = ced;
     renderStudents();
 });

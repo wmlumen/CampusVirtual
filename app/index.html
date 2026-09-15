@@ -764,6 +764,18 @@
                         <p id="curso-info-alumno" style="margin-top:4px;"></p>
                     </div>
 
+                    <div class="d-flex gap-2 mb-3">
+                        <a href="dashboard.html" class="premium-btn-ghost" style="flex:1;text-align:center;text-decoration:none;">
+                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+                        <a href="perfil.html" class="premium-btn-ghost" style="flex:1;text-align:center;text-decoration:none;">
+                            <i class="bi bi-person me-1"></i>Mi Perfil
+                        </a>
+                        <a href="libreta.html" class="premium-btn-ghost" style="flex:1;text-align:center;text-decoration:none;">
+                            <i class="bi bi-book me-1"></i>Libreta
+                        </a>
+                    </div>
+
                     <div id="lista-cursos" class="d-grid gap-2 mb-3"></div>
 
                     <button class="premium-btn-ghost" onclick="cerrarSesionCursos()">
@@ -1401,20 +1413,38 @@
             const lista = document.getElementById('lista-cursos');
             if(cursosDirectos && Array.isArray(cursosDirectos) && cursosDirectos.length>0){ renderCursos(cursosDirectos); return; }
 
+            // Intentar obtener asignaturas de la BD
+            try {
+                const resp = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list');
+                const data = await resp.json();
+                if (data.items && data.items.length > 0) {
+                    const cursosConMeta = data.items.map(c => ({
+                        id: c.codigo,
+                        nombre: c.nombre,
+                        codigo: c.codigo,
+                        seccion: seccion || '',
+                        color: c.color || '#00B140',
+                        icono: c.icono || 'bi-book',
+                        rol: rol,
+                        carrera: c.carrera || '',
+                        semestre: c.semestre || '',
+                        carga_horaria: c.carga_horaria || 0,
+                        unidades: c.unidades || 10
+                    }));
+                    sessionStorage.setItem('cursos_disponibles', JSON.stringify(cursosConMeta));
+                    renderCursos(cursosConMeta);
+                    return;
+                }
+            } catch(e) {}
+
             // Intentar obtener cursos de la API
             const result = await CenturiaAPI.getCourses();
             if(result && result.ok && result.courses && result.courses.length > 0){
-                // Agregar sección y rol del usuario a cada curso
                 const cursosConMeta = result.courses.map(c => ({
                     ...c,
                     seccion: seccion || c.seccion || '',
                     rol: rol
                 }));
-                // Agregar Sociología si no viene
-                const tieneSociologia = cursosConMeta.some(c => (c.id||'').toLowerCase().includes('soc'));
-                if(!tieneSociologia){
-                    cursosConMeta.push({id:'SOCIOLOGIA',nombre:'Sociología',codigo:'SOC01',seccion:seccion,color:'#7C4DFF',icono:'bi-people',rol:rol});
-                }
                 sessionStorage.setItem('cursos_disponibles', JSON.stringify(cursosConMeta));
                 renderCursos(cursosConMeta);
             } else {
@@ -1441,7 +1471,8 @@
                     </div>
                     <div class="text-start flex-grow-1">
                         <div class="fw-bold" style="font-size:.88rem;">${c.nombre} ${badgeRol}</div>
-                        <small style="color:rgba(255,255,255,.45); font-size:.72rem;">${c.codigo||''} ${c.seccion?'• Sección '+c.seccion:''}</small>
+                        <small style="color:rgba(255,255,255,.45); font-size:.72rem;">${c.codigo||''} ${c.seccion?'• Sección '+c.seccion:''} ${c.semestre?'• '+c.semestre:''}</small>
+                        ${c.carga_horaria ? '<br><small style="color:rgba(255,255,255,.35); font-size:.65rem;"><i class="bi bi-clock me-1"></i>'+c.carga_horaria+' horas • '+c.unidades+' unidades</small>' : ''}
                     </div>
                     <i class="bi bi-chevron-right" style="color:rgba(255,255,255,.3);"></i>`;
                 btn.onclick = ()=> seleccionarCurso(c);
@@ -1459,17 +1490,8 @@
             const cursoId = (curso.id || '').toLowerCase();
             const rol = sessionStorage.getItem('rol') || 'alumno';
 
-            if(cursoId.includes('sociolog') || cursoId === 'sociologia' || cursoId.includes('mae')){
-                // Sociología / Maestría → panel docente o student panel
-                if(rol === 'docente' || rol === 'admin' || rol === 'academico'){
-                    window.location.href = 'sociologia/teacher_panel.html';
-                } else {
-                    window.location.href = 'sociologia/teacher_panel.html'; // Por ahora, mismo panel
-                }
-            } else {
-                // TIC y otros → portal de materiales
-                window.location.href = 'Materiales_Clases/programa.html?curso=' + encodeURIComponent(curso.id);
-            }
+            // Todos los cursos van al portal de materiales unificado
+            window.location.href = 'Materiales_Clases/programa.html?curso=' + encodeURIComponent(curso.id);
         }
 
         function cerrarSesionCursos(){

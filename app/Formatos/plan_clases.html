@@ -284,7 +284,7 @@ function actualizar() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    const profesor = sessionStorage.getItem('teacher_nombre');
+    const profesor = sessionStorage.getItem('docente_nombre');
     if (profesor) document.getElementById('inp-profesor').value = profesor;
     const prog = sessionStorage.getItem('docente_programa');
     if (prog) {

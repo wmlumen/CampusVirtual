@@ -4,7 +4,7 @@
 //            sociologia/teacher_panel.html, Materiales_Clases/, academic/
 
 const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'academico',inactive:'inactivo'};
-const ROLE_EN = {alumno:'student',docente:'teacher',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'teacher',academic:'academic',inactive:'inactive'};
+const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
 // Google Apps Script URL (base de datos Sheets como backup/sync)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhfPTAVGGFsry6ueNVGQGZD0dGVbPu8zwJWnQkg6iOBcHx0FVUiAk5y8RJ1ggkIvTC2g/exec';

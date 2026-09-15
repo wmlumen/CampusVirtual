@@ -293,8 +293,8 @@
                 label: 'Docente',
                 links: [
                     { href: 'docente.html', icon: 'bi-chalkboard', label: 'Panel Docente' },
+                    { href: 'habilitar_asig.html', icon: 'bi-journal-check', label: 'Habilitar Asig.' },
                     { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
-                    { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
                     { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
                 ]
             },
@@ -406,14 +406,29 @@
             }
         }
 
-        // ═══ ASIGNATURAS GENERALES (alumno/admin/académico) ═══
+        // ═══ ASIGNATURAS GENERALES (alumno/admin/académico) — Solo habilitadas ═══
         async function cargarAsignaturasGenerales() {
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list');
-                const data = await resp.json();
-                const courses = (data.items || data.asignaturas || []).filter(c => c.estado !== 'inactivo');
-                document.getElementById('stat-courses').textContent = courses.length;
-                renderMisAsignaturas(courses.slice(0, 6));
+                // Primero obtener asignaturas con kit completo
+                const rKit = await fetch(CenturiaAPI.baseUrl + 'kit.php?action=habilitadas');
+                const dKit = await rKit.json();
+                const habilitadas = dKit.asignaturas || [];
+
+                document.getElementById('stat-courses').textContent = habilitadas.length;
+
+                if (habilitadas.length === 0) {
+                    document.getElementById('dash-courses').innerHTML = `
+                        <div class="empty">
+                            <i class="bi bi-lock"></i>
+                            <p><strong>Sin asignaturas habilitadas</strong></p>
+                            <p style="margin-top:4px;font-size:.58rem;color:#64748b;">
+                                Las asignaturas aparecen aquí una vez que el docente completa todo el kit de contenidos.
+                            </p>
+                        </div>`;
+                    return;
+                }
+
+                renderMisAsignaturas(habilitadas);
             } catch (e) {
                 document.getElementById('dash-courses').innerHTML = `<div class="empty"><i class="bi bi-inbox"></i><p>No hay asignaturas</p></div>`;
             }

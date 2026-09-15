@@ -1,6 +1,6 @@
-# PROMPT MAESTRO CENTURIA — Campus Virtual Unificado v5.0
+# PROMPT MAESTRO CENTURIA — Campus Virtual Unificado v6.0
 > **ÚNICO ARCHIVO FUENTE** para generar/validar cualquier módulo del Instituto Superior Centuria.
-> Reemplaza todos los prompts anteriores. v5.0: Admin panel completo, multi-roles, APIs REST, vista previa por rol.
+> Reemplaza todos los prompts anteriores. v6.0: Perfil docente completo, dashboards por rol, filiales, catálogos dinámicos.
 
 ---
 
@@ -20,11 +20,19 @@
 CampusVirtual/
 ├── index.php                          ← Router principal (sirve app/ + api/)
 ├── iniciar.bat / iniciar.ps1          ← Scripts de inicio del servidor
+├── README.md                          ← Documentación del proyecto
+├── .github/workflows/deploy-pages.yml ← GitHub Actions (Pages)
 ├── app/
 │   ├── index.html                     ← Login premium (glassmorphism, 2-fases)
+│   ├── dashboard.html                 ← Dashboard adaptativo por rol (NUEVO v6.0)
+│   ├── docente.html                   ← Perfil docente completo con formatos (NUEVO v6.0)
+│   ├── perfil.html                    ← Perfil de usuario (NUEVO v6.0)
+│   ├── libreta.html                   ← Libreta de calificaciones (NUEVO v6.0)
 │   ├── favicon.ico                    ← Favicon logo Centuria
 │   ├── session-guard.js               ← Logout + timeout 1hr inactividad
 │   ├── accesibilidad.js               ← Font/zoom/contraste WCAG AAA
+│   ├── images/                        ← Logo Centuria PNG (NUEVO v6.0)
+│   ├── favicon_io/                    ← Favicon package (NUEVO v6.0)
 │   ├── js/
 │   │   ├── api.js                     ← Cliente API dual (PHP + GAS)
 │   │   ├── centuria-plugins.js        ← Alpine.js plugins (theme, notifications)
@@ -33,21 +41,21 @@ CampusVirtual/
 │   ├── admin/
 │   │   ├── index.html                 ← Panel administración (shell SPA)
 │   │   ├── js/admin.js                ← Lógica admin (Alpine.js)
-│   │   ├── sections/
-│   │   │   ├── usuarios.html          ← Gestión usuarios + multi-roles + roles/permisos
-│   │   │   ├── catalogos.html         ← CRUD Secciones, Carreras, Grados, Programas, Modalidades
-│   │   │   ├── reportes.html          ← Dashboard analítico
-│   │   │   ├── config.html            ← Configuración del sistema
-│   │   │   └── vistas.html            ← Vista previa por rol (iframe)
+│   │   └── sections/
+│   │       ├── usuarios.html          ← Gestión usuarios + roles + filiales (ACTUALIZADO v6.0)
+│   │       ├── catalogos.html         ← CRUD Secciones, Carreras, Grados, Programas, Modalidades
+│   │       ├── reportes.html          ← Dashboard analítico
+│   │       ├── config.html            ← Configuración del sistema
+│   │       └── vistas.html            ← Vista previa por rol (iframe)
 │   │   ├── admin_roles.html           ← Redirect → index.html
 │   │   └── upload_alumnos.html        ← Importación CSV
-│   ├── sociologia/
+│   ├── Formatos/                      ← Formatos del docente (NUEVO v6.0)
 │   │   ├── teacher_panel.html         ← Panel docente
 │   │   ├── planilla.html              ← Planilla calificaciones
 │   │   ├── plan_clases.html           ← Planificación docente
 │   │   ├── registro_clases.html       ← Registro de clases
-│   │   ├── documentos.html            ← Documentos del docente
-│   │   └── acta.html                  ← Acta de calificaciones
+│   │   ├── acta.html                  ← Acta de calificaciones
+│   │   └── documentos.html            ← Documentos del docente
 │   ├── academic/                      ← Módulos académicos
 │   │   ├── asistencia_presencial.html
 │   │   ├── autoevaluacion_secuencial.html
@@ -64,15 +72,16 @@ CampusVirtual/
 │       ├── index.html                 ← Menú sidebar interno
 │       ├── programa.html              ← Programa de estudios
 │       ├── planilla.html              ← Dashboard calificaciones
-│       ├── Unidad_01.html ... Unidad_10.html
+│       └── Unidad_01.html ... Unidad_10.html
 ├── api/
 │   ├── config.php                     ← CORS, JWT, helpers
-│   ├── db.php                         ← SQLite connection + schema (users, user_roles, roles_config, etc.)
+│   ├── db.php                         ← SQLite connection + schema (users, user_roles, roles_config, filiales, etc.)
 │   ├── centuria.db                    ← Base de datos SQLite
 │   ├── auth.php                       ← Login, register, validate, logout, find_user
 │   ├── admin.php                      ← Gestión usuarios (CRUD, set_role, delete, import)
-│   ├── usuarios.php                   ← NUEVO: CRUD usuarios + multi-roles + aprobación
-│   ├── roles.php                      ← NUEVO: Catálogo de roles con permisos JSON
+│   ├── usuarios.php                   ← CRUD usuarios + multi-roles + aprobación
+│   ├── roles.php                      ← Catálogo de roles con permisos JSON
+│   ├── filiales.php                   ← CRUD filiales/sedes (NUEVO v6.0)
 │   ├── catalogos.php                  ← CRUD Secciones, Carreras, Grados, Programas, Modalidades
 │   ├── courses.php                    ← CRUD cursos
 │   ├── grades.php                     ← Calificaciones
@@ -379,7 +388,138 @@ async loadSection(tab) {
 
 ---
 
-## PARTE 5 — VARIABLES PARA PERSONALIZAR
+## PARTE 5 — DASHBOARD ADAPTATIVO POR ROL (v6.0)
+
+### `dashboard.html`
+Dashboard dinámico que cambia según el rol del usuario:
+
+```javascript
+const roleConfig = {
+    'Administrador General': { label: 'Administrador', icon: 'bi-shield-fill-check', color: '#007A33', links: ['admin/', 'reportes', 'usuarios'] },
+    'Administrador de Plataforma': { label: 'Admin Plataforma', icon: 'bi-gear-fill', color: '#4A90D9', links: ['admin/', 'config'] },
+    'Alumno': { label: 'Alumno', icon: 'bi-mortarboard-fill', color: '#FF8C42', links: ['libreta.html', 'perfil.html'] },
+    'Docente': { label: 'Docente', icon: 'bi-person-badge-fill', color: '#4A90D9', links: ['docente.html', 'libreta.html'] },
+    'Acceso Académico': { label: 'Académico', icon: 'bi-building', color: '#FF6B9D', links: ['admin/', 'reportes'] },
+};
+```
+
+### Funcionalidades del Dashboard
+- **Tarjetas de estadísticas:** Cursos, alumnos, eventos, asistencia
+- **Enlaces rápidos:** Según el rol del usuario
+- **Calendario:** Próximos eventos
+- **Asistencia:** Formulario rápido de registro
+
+---
+
+## PARTE 6 — PERFIL DOCENTE COMPLETO (v6.0)
+
+### `docente.html`
+Perfil del docente con todos los formatos integrados y datos de la base de datos:
+
+### Secciones del Perfil
+1. **Header:** Avatar, nombre, cédula, carrera, sección, badge de rol
+2. **Estadísticas:** Asignaturas, alumnos, eventos, asistencia
+3. **Acceso Rápido:** Links a todas las funciones
+4. **Planificación de Clases:** Formulario + lista de clases planificadas
+5. **Registro de Clases:** Asistencia por asignatura y fecha
+6. **Planilla de Calificaciones:** Tabla con todos los alumnos
+7. **Acta de Calificaciones:** Generación e impresión de actas
+8. **Documentos:** CRUD de documentos del docente
+
+### Datos desde la API
+```javascript
+// Carga datos desde la base de datos
+- courses.php?action=list     → Asignaturas del docente
+- calendar.php?action=list    → Clases planificadas
+- attendance.php?action=list  → Registros de asistencia
+- documentos.php?action=list  → Documentos del docente
+- grades.php?action=list      → Calificaciones
+```
+
+---
+
+## PARTE 7 — SISTEMA DE FILIALES (v6.0)
+
+### `filiales.php` API
+CRUD completo de sedes/filiales con asignación de administradores:
+
+| Método | Action | Descripción | Auth |
+|--------|--------|-------------|------|
+| GET | `list` | Listar filiales | No |
+| POST | `create` | Crear filial | Admin |
+| POST | `toggle` | Activar/desactivar filial | Admin |
+| POST | `delete` | Eliminar filial | Admin |
+| POST | `assign-admin` | Asignar admin a filial | Admin |
+| GET | `admins-by-filial&id=X` | Ver admins de una filial | Admin |
+
+### Tabla `filiales`
+```sql
+CREATE TABLE filiales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    codigo TEXT UNIQUE NOT NULL,
+    direccion TEXT DEFAULT '',
+    telefono TEXT DEFAULT '',
+    estado TEXT DEFAULT 'activo',
+    creado_por TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Tabla `user_roles` (columna filial)
+```sql
+-- Columna filial en user_roles vincula usuarios a filiales
+ALTER TABLE user_roles ADD COLUMN filial TEXT DEFAULT '';
+```
+
+### Datos sembrados
+| Código | Nombre |
+|:-------|:-------|
+| SC | Sede Central |
+| FN | Filial Norte |
+| FS | Filial Sur |
+| FE | Filial Este |
+| FO | Filial Oeste |
+
+---
+
+## PARTE 8 — CATÁLOGOS DINÁMICOS (v6.0)
+
+### Formulario de Registro Actualizado
+El formulario de registro en `index.html` ahora carga grados, carreras y secciones desde la base de datos:
+
+```javascript
+// Cargar grados desde API
+async function cargarCatalogos(){
+    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=grados');
+    const data = await r.json();
+    // Poblar select de grados
+}
+
+// Cargar carreras por grado
+async function cargarCarrerasPorGrado(){
+    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras');
+    const data = await r.json();
+    const carreras = data.carreras.filter(c => c.grado === grado);
+    // Poblar select de carreras
+}
+
+// Cargar secciones
+async function cargarSecciones(){
+    const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones');
+    const data = await r.json();
+    // Poblar select de secciones
+}
+```
+
+### Ventajas sobre datos hardcodeados
+- **Actualización en tiempo real:** Los cambios en catálogos se reflejan inmediatamente
+- **Consistencia:** Todos los formularios usan los mismos datos
+- **Mantenimiento:** Solo se actualiza la base de datos, no el código
+
+---
+
+## PARTE 9 — VARIABLES PARA PERSONALIZAR
 
 ```yaml
 ASIGNATURA: "TIC"
@@ -394,7 +534,7 @@ SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
 
 ---
 
-## PARTE 6 — REGLAS DE GENERACIÓN HTML
+## PARTE 10 — REGLAS DE GENERACIÓN HTML
 
 ### Generales
 1. **Tailwind CSS** (vía CDN) + **Bootstrap Icons** + **Montserrat**. Prohibido otro framework.
@@ -426,7 +566,7 @@ SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
 
 ---
 
-## PARTE 7 — HOJAS GOOGLE SHEETS (Backup)
+## PARTE 11 — HOJAS GOOGLE SHEETS (Backup)
 
 | Hoja | Columnas | Propósito |
 |------|----------|-----------|
@@ -441,7 +581,7 @@ SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
 
 ---
 
-## PARTE 8 — SERVIDOR Y DESPLIEGUE
+## PARTE 12 — SERVIDOR Y DESPLIEGUE
 
 ### Inicio del Servidor
 ```bash
@@ -462,6 +602,17 @@ php -S 0.0.0.0:8080 -t . index.php
 - PHP 7.4+ con extensiones: `pdo_sqlite`, `json`, `mbstring`
 
 ---
+
+## v6.0 Changelog
+- **Dashboard adaptativo por rol:** Vista personalizada según el rol del usuario
+- **Perfil docente completo:** `docente.html` con todos los formatos y datos de la BD
+- **Sistema de filiales:** CRUD de sedes con asignación de administradores
+- **Catálogos dinámicos:** Formulario de registro carga grados/carreras/secciones desde la BD
+- **Perfil de usuario:** `perfil.html` con diseño premium e impresión
+- **Libreta de calificaciones:** `libreta.html` con carreras, asignaturas y progreso
+- **Logo y favicon:** Nuevos assets de imagen para el instituto
+- **Formatos integrados:** `Formatos/` contiene todos los formatos del docente
+- **Base de datos ampliada:** Tablas `filiales`, `catalogo_*`, columnas `filial` en `user_roles`
 
 ## v5.0 Changelog
 - **Admin panel reconstruido como SPA** con carga dinámica de secciones

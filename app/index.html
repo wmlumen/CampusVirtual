@@ -959,7 +959,26 @@ b.innerHTML='<div class="curso-icon" style="background:linear-gradient(135deg,'+
 function seleccionarCurso(c){sessionStorage.setItem('curso_actual',c.id);sessionStorage.setItem('curso_nombre',c.nombre);sessionStorage.setItem('curso_codigo',c.codigo||'');if(c.rol)sessionStorage.setItem('rol',c.rol);window.location.href='Materiales_Clases/programa.html?curso='+encodeURIComponent(c.id)}
 function cerrarSesionCursos(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');document.getElementById('step-3-cursos').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
-window.addEventListener('load',()=>{const c=sessionStorage.getItem('current_cedula');const cr=sessionStorage.getItem('curso_actual');if(c&&!cr)mostrarCursos(null)});
+window.addEventListener('load',()=>{
+    const cedula=sessionStorage.getItem('current_cedula');
+    const remember=localStorage.getItem('centuria_remember');
+    // Si ya tiene sesión activa, redirigir directo al dashboard
+    if(cedula){location.href='dashboard.html';return}
+    // Si tiene "recordar" guardado, auto-login silencioso
+    if(remember){try{
+        const r=JSON.parse(remember);
+        if(r&&r.cedula&&r.password){
+            document.getElementById('inp-cedula').value=r.cedula;
+            document.getElementById('inp-password').value=r.password;
+            document.getElementById('chk-recordar').checked=true;
+            document.getElementById('password-section').style.display='block';
+            document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';
+            document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';
+            loginFase='pass';
+            verificarCedula();
+        }
+    }catch(e){}}
+});
 </script>
 
 <!-- MODAL RECUPERAR CONTRASEÑA -->
@@ -1004,7 +1023,7 @@ const u=buscarUsuarioLocal(c);if(u)mostrar(u.nombre,u.apellido);else noEncontrad
 function copiarContrasena(){const p=document.getElementById('recuperar-password').textContent;navigator.clipboard.writeText(p).then(()=>{document.getElementById('recuperar-copiado').style.display='block';setTimeout(()=>document.getElementById('recuperar-copiado').style.display='none',2000)})}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarRecuperar()});
 
-(function(){try{const s=JSON.parse(localStorage.getItem('centuria_remember'));if(s&&s.cedula&&s.password){document.getElementById('inp-cedula').value=s.cedula;document.getElementById('inp-password').value=s.password;document.getElementById('chk-recordar').checked=true;document.getElementById('password-section').style.display='block';document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';loginFase='pass';verificarCedula()}}catch(e){}})();
+(function(){})();
 </script>
 
 <script>

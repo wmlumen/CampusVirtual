@@ -392,7 +392,7 @@
         async function cargarDashboard() {
             const token = CenturiaAPI.getToken();
             const user = CenturiaAPI.getCurrentUser();
-            const cedula = localStorage.getItem('centuria_cedula');
+            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
 
             if (!user && !cedula) { location.href = 'index.html'; return; }
 

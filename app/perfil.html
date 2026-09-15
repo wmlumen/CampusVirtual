@@ -208,7 +208,7 @@ async function cargarPerfil() {
         const user = CenturiaAPI.getCurrentUser();
 
         if (!user) {
-            const cedula = localStorage.getItem('centuria_cedula');
+            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
             if (!cedula) { location.href = 'index.html'; return; }
             await cargarPorCedula(cedula);
             return;
@@ -219,7 +219,7 @@ async function cargarPerfil() {
         await cargarStats(user, token);
     } catch(e) {
         console.error(e);
-        const cedula = localStorage.getItem('centuria_cedula');
+        const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
         if (cedula) await cargarPorCedula(cedula);
     }
 }
@@ -278,7 +278,7 @@ function mostrar(user) {
 }
 
 function mostrarLocal() {
-    const c = localStorage.getItem('centuria_cedula') || '';
+    const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
     const n = localStorage.getItem('centuria_nombre') || '';
     const a = localStorage.getItem('centuria_apellido') || '';
     const r = localStorage.getItem('centuria_rol') || 'alumno';
@@ -363,7 +363,7 @@ function showToast(msg, type) {
 // ═══ STATS ═══
 async function cargarStats(user, token) {
     try {
-        const cedula = user.username || user.cedula || localStorage.getItem('centuria_cedula');
+        const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
         const rol = user.role || user.rol || 'alumno';
 
         // Asignaturas

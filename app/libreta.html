@@ -403,7 +403,7 @@
                 const user = CenturiaAPI.getCurrentUser();
                 
                 if (!user) {
-                    const cedula = localStorage.getItem('centuria_cedula');
+                    const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
                     if (!cedula) { location.href = 'index.html'; return; }
                     await cargarDatosLocal(cedula);
                     return;
@@ -412,7 +412,7 @@
                 await cargarDatosAPI(user, token);
             } catch(e) {
                 console.error('Error:', e);
-                const cedula = localStorage.getItem('centuria_cedula');
+                const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
                 if (cedula) await cargarDatosLocal(cedula);
             }
         }

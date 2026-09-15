@@ -105,16 +105,45 @@
 
             <!-- VISTA ALUMNO -->
             <div id="vista-alumno">
-<section class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-asistencias">
- <div class="card-body">
-  <h2 id="titulo-asistencias" class="h5">Asistencia por día de clase</h2>
-  <p class="small text-muted">Fechas registradas por el docente y días con asistencia presencial de tu carrera y sección. Las ausencias sin justificar se calculan al finalizar el día.</p>
-  <p id="asistencia-resumen" role="status">Cargando asistencias…</p>
-  <button type="button" id="asistencia-recargar" class="btn btn-sm btn-outline-primary">Actualizar asistencias</button>
-  <div class="table-responsive"><table class="table"><thead><tr><th>Fecha</th><th>Estado</th><th>Origen de la fecha</th></tr></thead><tbody id="asistencia-detalle"></tbody></table></div>
- </div>
-</section>
+                <!-- Avance por Unidad -->
+                <section class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-avance">
+                    <div class="card-body">
+                        <h2 id="titulo-avance" class="h5 fw-bold" style="color:#007A33;"><i class="bi bi-graph-up me-2"></i>Mi Avance por Unidad</h2>
+                        <p class="small text-muted mb-3">Progreso de lectura y asistencia presencial por cada unidad del curso.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0">
+                                <thead style="background:#007A33;color:#fff;">
+                                    <tr>
+                                        <th class="text-center" style="font-size:.7rem;">Unidad</th>
+                                        <th class="text-center" style="font-size:.7rem;">Leído</th>
+                                        <th class="text-center" style="font-size:.7rem;">Secciones</th>
+                                        <th class="text-center" style="font-size:.7rem;">Estado</th>
+                                        <th class="text-center" style="font-size:.7rem;">Asistencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-avance-unidades"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
 
+                <!-- Asistencia por día -->
+                <section class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-asistencias">
+                    <div class="card-body">
+                        <h2 id="titulo-asistencias" class="h5 fw-bold" style="color:#007A33;"><i class="bi bi-calendar-check me-2"></i>Asistencia por Día de Clase</h2>
+                        <p class="small text-muted">Fechas registradas por el docente y días con asistencia presencial.</p>
+                        <p id="asistencia-resumen" role="status" class="fw-bold" style="color:#007A33;font-size:.82rem;">Cargando asistencias…</p>
+                        <button type="button" id="asistencia-recargar" class="btn btn-sm btn-outline-success mb-3" onclick="loadSystemData()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead><tr><th style="font-size:.72rem;">Fecha</th><th style="font-size:.72rem;">Estado</th><th style="font-size:.72rem;">Origen</th></tr></thead>
+                                <tbody id="asistencia-detalle"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Info calificaciones -->
                 <div class="alert d-flex align-items-center shadow-sm border-0 mb-4" style="background:#E6F4EA; border-left:4px solid #007A33 !important;">
                     <i class="bi bi-info-circle-fill fs-4 me-3" style="color:#007A33;"></i>
                     <div><h6 class="fw-bold mb-1" style="color:#007A33;">Tus calificaciones oficiales</h6><p class="mb-0 small text-muted">Datos en tiempo real del sistema. <strong style="color:#007A33;">Asistencia mínima 80% (4/5 pts)</strong> para derecho a final.</p></div>
@@ -122,15 +151,15 @@
 
                 <!-- 3 tarjetas resumen -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #007A33 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">TRABAJOS / ASISTENCIA</small><h3 class="fw-bold mb-0" style="color:#007A33;">5 <small class="text-muted fs-6">/ 5 pts</small></h3><small class="text-muted">10% nota final</small></div><div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-calendar-check fs-4" style="color:#007A33;"></i></div></div><span class="badge mt-2" style="background:#007A33;">Al Día</span></div></div></div>
-                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #ffc107 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">PARCIALES</small><h3 class="fw-bold mb-0">17 <small class="text-muted fs-6">/ 20 pts</small></h3><small class="text-muted">40% nota final</small></div><div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-pencil-square fs-4 text-warning"></i></div></div></div></div></div>
-                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #198754 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">EXAMEN FINAL</small><h3 class="fw-bold mb-0">22 <small class="text-muted fs-6">/ 25 pts</small></h3><small class="text-muted">50% nota final</small></div><div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-award fs-4 text-success"></i></div></div></div></div></div>
+                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #007A33 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">ASISTENCIA</small><h3 class="fw-bold mb-0" style="color:#007A33;" id="card-asis-pts">— <small class="text-muted fs-6">/ 5 pts</small></h3><small class="text-muted">10% nota final</small></div><div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-calendar-check fs-4" style="color:#007A33;"></i></div></div><span class="badge mt-2" style="background:#007A33;" id="card-asis-badge">—</span></div></div></div>
+                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #ffc107 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">PARCIALES</small><h3 class="fw-bold mb-0" id="card-parciales-pts">— <small class="text-muted fs-6">/ 20 pts</small></h3><small class="text-muted">40% nota final</small></div><div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-pencil-square fs-4 text-warning"></i></div></div></div></div></div>
+                    <div class="col-md-4"><div class="card h-100 border-0 shadow-sm" style="border-left:4px solid #198754 !important;"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted fw-bold">EXAMEN FINAL</small><h3 class="fw-bold mb-0" id="card-final-pts">— <small class="text-muted fs-6">/ 25 pts</small></h3><small class="text-muted">50% nota final</small></div><div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-award fs-4 text-success"></i></div></div></div></div></div>
                 </div>
 
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0" style="color:#007A33;">Progreso total</h6><span class="badge" style="background:#007A33;">88%</span></div>
-                        <div class="progress" style="height:22px;"><div id="bar-total-alumno" class="progress-bar progress-bar-striped progress-bar-animated" style="width:88%; background:#007A33;">88%</div></div>
+                        <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0" style="color:#007A33;">Progreso total</h6><span class="badge" style="background:#007A33;" id="badge-progreso-total">0%</span></div>
+                        <div class="progress" style="height:22px;"><div id="bar-total-alumno" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%; background:#dc3545;">0%</div></div>
                         <div class="d-flex justify-content-between small text-muted mt-2"><span>0 pts</span><span>50 pts</span></div>
                     </div>
                 </div>
@@ -139,12 +168,12 @@
                     <div class="col-md-4">
                         <div class="card grade-card h-100 border-0 shadow-sm text-center"><div class="card-body p-2">
                                 <div class="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle" style="width:56px;height:56px; background:#E6F4EA;"><i class="bi bi-calendar-check fs-3" style="color:#007A33;"></i></div>
-                                <h6 class="fw-bold">Trabajos / Asistencia (10%)</h6>
+                                <h6 class="fw-bold">Asistencia (10%)</h6>
                                 <p class="small text-muted">5 pts = 10%</p>
                                 <div class="input-group input-group-sm justify-content-center">
-                                    <input type="number" id="inp-asis" class="form-control text-center fw-bold" readonly value="5" style="max-width:70px;"> <span class="input-group-text">/5</span>
+                                    <input type="number" id="inp-asis" class="form-control text-center fw-bold calc-input" readonly value="0" style="max-width:70px;"> <span class="input-group-text">/5</span>
                                 </div>
-                                <div id="alerta-asis" class="small fw-bold mt-2" style="display:none; color:#dc3545;"><i class="bi bi-exclamation-triangle"></i> <4 pts pierdes derecho a final</div>
+                                <div id="alerta-asis" class="small fw-bold mt-2" style="display:none; color:#dc3545;"><i class="bi bi-exclamation-triangle"></i> &lt;4 pts pierdes derecho a final</div>
                             </div>
                         </div>
                     </div>
@@ -154,10 +183,10 @@
                                 <h6 class="fw-bold">Parciales (40%)</h6>
                                 <p class="small text-muted">10+10 pts</p>
                                 <div class="row g-2 justify-content-center">
-                                    <div class="col-5"><label class="small text-muted">P1</label><input type="number" id="inp-par1" class="form-control text-center fw-bold" readonly value="8"></div>
-                                    <div class="col-5"><label class="small text-muted">P2</label><input type="number" id="inp-par2" class="form-control text-center fw-bold" readonly value="9"></div>
+                                    <div class="col-5"><label class="small text-muted">P1</label><input type="number" id="inp-par1" class="form-control text-center fw-bold calc-input" readonly value="0"></div>
+                                    <div class="col-5"><label class="small text-muted">P2</label><input type="number" id="inp-par2" class="form-control text-center fw-bold calc-input" readonly value="0"></div>
                                 </div>
-                                <small class="text-muted">Acumulado: <strong id="out-parciales">17</strong>/20</small>
+                                <small class="text-muted">Acumulado: <strong id="out-parciales">0</strong>/20</small>
                             </div>
                         </div>
                     </div>
@@ -167,7 +196,7 @@
                                 <h6 class="fw-bold">Examen Final (50%)</h6>
                                 <p class="small text-muted">25 pts = 50%</p>
                                 <div class="input-group input-group-sm justify-content-center">
-                                    <input type="number" id="inp-final" class="form-control text-center fw-bold" readonly value="22" style="max-width:70px;"> <span class="input-group-text">/25</span>
+                                    <input type="number" id="inp-final" class="form-control text-center fw-bold calc-input" readonly value="0" style="max-width:70px;"> <span class="input-group-text">/25</span>
                                 </div>
                             </div>
                         </div>
@@ -179,20 +208,20 @@
                         <div class="col-md-8 p-4">
                             <h5 class="fw-bold mb-3" style="font-family:'Montserrat'; color:#007A33;">Escala Oficial Centuria</h5>
                             <div class="row g-2">
-                                <div class="col"><div id="sc-1" class="scale-box"><strong>1</strong><br>0-69%</div></div>
+                                <div class="col"><div id="sc-1" class="scale-box scale-active"><strong>1</strong><br>0-69%</div></div>
                                 <div class="col"><div id="sc-2" class="scale-box"><strong>2</strong><br>70-77%</div></div>
                                 <div class="col"><div id="sc-3" class="scale-box"><strong>3</strong><br>78-85%</div></div>
-                                <div class="col"><div id="sc-4" class="scale-box scale-active"><strong>4</strong><br>86-93%</div></div>
+                                <div class="col"><div id="sc-4" class="scale-box"><strong>4</strong><br>86-93%</div></div>
                                 <div class="col"><div id="sc-5" class="scale-box"><strong>5</strong><br>94-100%</div></div>
                             </div>
-                            <div class="progress mt-4" style="height:30px;"><div id="bar-total" class="progress-bar progress-bar-striped progress-bar-animated" style="width:88%; background:#007A33;">88%</div></div>
+                            <div class="progress mt-4" style="height:30px;"><div id="bar-total" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%; background:#dc3545;">0%</div></div>
                         </div>
                         <div class="col-md-4 text-white d-flex flex-column justify-content-center align-items-center p-4 text-center" style="background:#007A33;">
                             <small class="text-white-50 text-uppercase fw-bold" style="letter-spacing:1px;">Calificación Final</small>
-                            <div id="out-nota" class="display-1 fw-bold my-2">4</div>
-                            <h5 id="out-estado" class="fw-bold">Distinguido</h5>
-                            <p id="out-pts" class="mb-0 small opacity-75">44 / 50 pts (88%)</p>
-                            <span class="badge bg-white mt-2" style="color:#007A33;">Aprobado</span>
+                            <div id="out-nota" class="display-1 fw-bold my-2">—</div>
+                            <h5 id="out-estado" class="fw-bold">Sin datos</h5>
+                            <p id="out-pts" class="mb-0 small opacity-75">0 / 50 pts (0%)</p>
+                            <span class="badge bg-white mt-2" style="color:#007A33;">—</span>
                         </div>
                     </div>
                 </div>
@@ -264,6 +293,7 @@
         document.getElementById('out-pts').innerText=total+" / 50 ("+pct+"%)";
         let bar=document.getElementById('bar-total'); bar.style.width=pct+'%'; bar.innerText=pct+'%';
         let bar2=document.getElementById('bar-total-alumno'); if(bar2){ bar2.style.width=pct+'%'; bar2.innerText=pct+'%'; }
+        const badgePT=document.getElementById('badge-progreso-total'); if(badgePT) badgePT.textContent=pct+'%';
         for(let i=1;i<=5;i++) document.getElementById('sc-'+i).classList.remove('scale-active');
         let nota=1,estado="Insuficiente",color="bg-danger";
         if(pct>=94){ nota=5; estado="Sobresaliente"; color="bg-success"; document.getElementById('sc-5').classList.add('scale-active'); }
@@ -364,12 +394,50 @@
             tr.innerHTML=`<td>${r.ced}</td><td class="fw-bold">${r.nom}</td><td class="text-center"><span class="badge ${abg}">${r.asis}</span></td><td class="text-center">${r.p1}</td><td class="text-center">${r.p2}</td><td class="text-center">${r.fin}</td><td class="text-center fw-bold ${nl.nota===1?'text-danger':''}">${pct}%</td><td class="text-center"><span class="badge ${nl.bg}">${nl.nota}</span></td><td class="text-center">${hoy}</td>`;
             tbody.appendChild(tr);
             if(currentUser && r.ced===currentUser){
-                document.getElementById('inp-asis').value=r.asis; document.getElementById('inp-par1').value=r.p1; document.getElementById('inp-par2').value=r.p2; document.getElementById('inp-final').value=r.fin; calcularNota();
+                document.getElementById('inp-asis').value=r.asis; document.getElementById('inp-par1').value=r.p1; document.getElementById('inp-par2').value=r.p2; document.getElementById('inp-final').value=r.fin;
+                // Update summary cards with REAL data
+                document.getElementById('card-asis-pts').innerHTML=r.asis+' <small class="text-muted fs-6">/ 5 pts</small>';
+                document.getElementById('card-parciales-pts').innerHTML=(r.p1+r.p2)+' <small class="text-muted fs-6">/ 20 pts</small>';
+                document.getElementById('card-final-pts').innerHTML=r.fin+' <small class="text-muted fs-6">/ 25 pts</small>';
+                const ab=r.asis>=4;
+                document.getElementById('card-asis-badge').textContent=ab?'Al Día':'En Riesgo';
+                document.getElementById('card-asis-badge').className=ab?'badge mt-2':'badge mt-2 bg-danger';
+                calcularNota();
             }
         });
         document.getElementById('lbl-alumnos').innerText=rows.length;
         const hl=document.getElementById('hoy-label'); if(hl) hl.textContent=fecha.split('-').reverse().join('/');
         renderAsistenciaPropia(amap);
+        renderAvanceUnidades();
+    }
+    function renderAvanceUnidades(){
+        const tbody=document.getElementById('tabla-avance-unidades');
+        if(!tbody) return;
+        tbody.innerHTML='';
+        const nomCorto=['Introducción a los SI','Estrategia de Negocios y TI','Admin. de Base de Datos','Sistemas Integrados (ERP)','Hardware y Software','Infraestructura de Redes','Tecnologías de Apoyo a Decisiones','Sistemas de Apoyo a Ejecutivos','Paradigmas en Internet','Futuro de las TIC'];
+        for(let i=1;i<=10;i++){
+            const leidosKey='tic_leidos_'+currentUser+'_Unidad_'+String(i).padStart(2,'0');
+            const completadaKey='tic_progress_'+currentUser+'_Materiales_HTML_LunesViernes_clase_'+i;
+            const asistenciaKey='tic_asistencia_'+currentUser+'_'+i;
+            let leidos=[]; try{ leidos=JSON.parse(localStorage.getItem(leidosKey)||'[]'); }catch(e){}
+            const completada=localStorage.getItem(completadaKey)==='finished';
+            const asistencia=localStorage.getItem(asistenciaKey);
+            const totalSecciones=10;
+            const numLeidos=leidos.length;
+            const pct=Math.round(numLeidos/totalSecciones*100);
+            let estadoHtml, estadoClass;
+            if(completada){ estadoHtml='<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Completada</span>'; estadoClass='table-success'; }
+            else if(numLeidos>0){ estadoHtml='<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>'+pct+'%</span>'; estadoClass='table-warning'; }
+            else{ estadoHtml='<span class="badge bg-secondary">Pendiente</span>'; estadoClass=''; }
+            const asistHtml=asistencia?'<span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>Presente</span>':'<span class="text-muted">—</span>';
+            const tr=document.createElement('tr'); tr.className=estadoClass;
+            tr.innerHTML=`<td class="text-center fw-bold" style="font-size:.72rem;color:#007A33;">${i}</td>
+                <td class="text-center" style="font-size:.72rem;">${numLeidos}/${totalSecciones}</td>
+                <td class="text-center" style="font-size:.72rem;"><div class="progress" style="height:8px;"><div class="progress-bar" style="width:${pct}%;background:${completada?'#198754':numLeidos>0?'#ffc107':'#dee2e6'};"></div></div></td>
+                <td class="text-center">${estadoHtml}</td>
+                <td class="text-center">${asistHtml}</td>`;
+            tbody.appendChild(tr);
+        }
     }
     function renderAsistenciaPropia(amap){
         const det=document.getElementById('asistencia-detalle'), res=document.getElementById('asistencia-resumen');

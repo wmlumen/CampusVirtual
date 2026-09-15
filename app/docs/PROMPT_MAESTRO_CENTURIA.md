@@ -573,6 +573,32 @@ SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
 15. **Escala:** Asistencia 10% + Parciales 40% + Final 50% = 100%.
 16. **Numérica:** 1 (0-69%), 2 (70-77%), 3 (78-85%), 4 (86-93%), 5 (94-100%).
 
+### Planilla de Avance por Unidad (v7.1)
+Cada alumno tiene una vista de progreso por unidad:
+
+| Unidad | Leído | Asistencia | Estado |
+|--------|-------|------------|--------|
+| Unidad 1 | ✓ | Presente | Completada |
+| Unidad 2 | ✓ | Ausente | Completada |
+| Unidad 3 | ◐ | — | En progreso |
+| Unidad 4 | — | — | Bloqueada |
+
+**Datos que alimentan la planilla:**
+- **Leído:** `localStorage('tic_leidos_' + cedula + '_Unidad_XX')` — array de secciones leídas
+- **Completada:** `localStorage('tic_progress_' + cedula + '_Materiales_HTML_LunesViernes_clase_X')` = `finished`
+- **Asistencia por unidad:** `localStorage('tic_asistencia_' + cedula + '_X')` — fecha de asistencia presencial
+
+**Vista docente:** Tabla consolidada de todos los alumnos mostrando avance por unidad (10 columnas) + asistencia + estado general.
+
+### Exámenes Parciales (v7.1)
+Los parciales se cargan desde `grades.php?action=list` con `component`:
+- `parcial_1` o `Primer Parcial` → max 10 pts
+- `parcial_2` o `Segundo Parcial` → max 10 pts
+- `final` o `Examen Final` → max 25 pts
+- `asistencia` o `Asistencia` → max 5 pts
+
+La planilla muestra valores **reales** del sistema, no hardcodeados.
+
 ---
 
 ## PARTE 11 — HOJAS GOOGLE SHEETS (Backup)

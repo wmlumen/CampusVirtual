@@ -1,6 +1,6 @@
-# PROMPT MAESTRO CENTURIA — Campus Virtual Unificado v6.0
+# PROMPT MAESTRO CENTURIA — Campus Virtual Unificado v7.0
 > **ÚNICO ARCHIVO FUENTE** para generar/validar cualquier módulo del Instituto Superior Centuria.
-> Reemplaza todos los prompts anteriores. v6.0: Perfil docente completo, dashboards por rol, filiales, catálogos dinámicos.
+> Reemplaza todos los prompts anteriores. v7.0: Paleta institucional #007A33, persistencia de sesión, unidades estructuradas.
 
 ---
 
@@ -107,15 +107,18 @@ CampusVirtual/
 /*         → fallback a archivos root
 ```
 
-### Paleta Institucional Oficial
+### Paleta Institucional Oficial (v7.0)
 | Variable | Valor | Uso |
 |----------|-------|-----|
+| `--c-bg` | `#007A33` | Fondo principal (sidebar, topbar, login) |
+| `--c-primary` | `#00B140` | Botones, acentos, links |
+| `--c-surface` | `#FFFFFF` | Tarjetas, fondos de contenido |
+| `--c-light` | `#E6F4EA` | Fondos suaves, hover |
+| `--c-hover` | `#81C784` | Hover secundario |
 | `--c-dark` | `#2D2D2D` | Texto principal |
-| `--c-light` | `#E6F4EA` | Fondos suaves |
-| `--c-primary` | `#007A33` | Verde principal |
-| `--c-accent` | `#00B140` | Botones/links |
-| `--c-hover` | `#81C784` | Hover/acento |
-| `--c-gold` | `#C5A55A` | Labels premium (login) |
+| `--c-muted` | `#64748b` | Texto secundario |
+| `--c-border` | `#C8E6C9` | Bordes suaves |
+| `--c-gold` | `#d4a843` | Labels premium |
 
 ---
 
@@ -550,15 +553,21 @@ SHEET_ID: "1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo"
 7. **Sidebar:** Siempre visible con enlaces a unidades + programa + planilla + glosario.
 8. **Header:** Logo + Nombre + Progreso inline + Badge rol + Botón Salir.
 
-### Interactividad
+### Interactividad (v7.0)
 9. **Marcar como Leído:** Botón por card. Al final: Confirmar Lección.
 10. **Progreso inline:** Barra `✅ X/10 ▓▓▓░░ 38%`.
 11. **Bloqueo secuencial:** Unidad N+1 bloqueada hasta completar N.
+17. **Cards individuales:** Cada sección tiene `id="card-X"` y `data-section="X"`
+18. **Asistencia presencial:** Botón por unidad con registro en localStorage
+19. **Bibliografía:** Sección al final de cada unidad
+20. **Session guard:** Protección en cada página con redirección a login
 
-### Sesión
+### Sesión (v7.0)
 12. **Guard:** `if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}`
-13. **Logout:** `sessionStorage.clear(); location.replace('../index.html');`
+13. **Logout:** `sessionStorage.clear(); localStorage.removeItem('centuria_remember'); window.location.replace('../index.html');`
 14. **Solo `sessionStorage`** para sesión. `localStorage` para progreso/preferencias.
+15. **Auto-redirect:** Si ya hay sesión activa, `index.html` redirige a `dashboard.html`
+16. **Remember me:** `localStorage.centuria_remember` para auto-login al recargar
 
 ### Calificaciones
 15. **Escala:** Asistencia 10% + Parciales 40% + Final 50% = 100%.
@@ -602,6 +611,15 @@ php -S 0.0.0.0:8080 -t . index.php
 - PHP 7.4+ con extensiones: `pdo_sqlite`, `json`, `mbstring`
 
 ---
+
+## v7.0 Changelog
+- **Nueva paleta institucional:** Background `#007A33`, accent `#00B140`, cards `#E6F4EA`
+- **Persistencia de sesión:** Una vez logueado, no se vuelve a pedir cédula
+- **Unidades 1-10 reestructuradas:** Cards individuales con `data-section`, botón "Marcar como Leído", progreso por unidad
+- **examen_virtual.html:** 100 preguntas embebidas, sin prompt(), sin duplicación
+- **js/devmode.js:** Modo desarrollador con overlays por sección
+- **Session guard:** `if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}`
+- **Logout centralizado:** `sessionStorage.clear(); localStorage.removeItem('centuria_remember');`
 
 ## v6.0 Changelog
 - **Dashboard adaptativo por rol:** Vista personalizada según el rol del usuario

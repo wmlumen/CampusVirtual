@@ -121,10 +121,10 @@
             <div class="tools-grid">
                 <a href="#plan-clases" class="tool" onclick="scrollTo('plan-clases')"><i class="bi bi-calendar3"></i><span>Planificar</span></a>
                 <a href="#registro-clases" class="tool" onclick="scrollTo('registro-clases')"><i class="bi bi-clipboard-check"></i><span>Registrar</span></a>
-                <a href="#planilla" class="tool" onclick="scrollTo('planilla')"><i class="bi bi-table"></i><span>Calificaciones</span></a>
+                <a href="#libreta" class="tool" onclick="scrollTo('libreta')"><i class="bi bi-journal-text"></i><span>Libreta</span></a>
+                <a href="#planilla" class="tool" onclick="scrollTo('planilla')"><i class="bi bi-table"></i><span>Planilla</span></a>
                 <a href="#acta" class="tool" onclick="scrollTo('acta')"><i class="bi bi-file-earmark"></i><span>Acta</span></a>
                 <a href="#documentos" class="tool" onclick="scrollTo('documentos')"><i class="bi bi-folder"></i><span>Documentos</span></a>
-                <a href="libreta.html" class="tool"><i class="bi bi-journal-text"></i><span>Libreta</span></a>
                 <a href="perfil.html" class="tool"><i class="bi bi-person"></i><span>Perfil</span></a>
             </div>
         </div>
@@ -155,6 +155,47 @@
                 </div>
             </div>
             <div id="att-list">Cargando...</div>
+        </div>
+
+        <!-- Libreta de Calificaciones -->
+        <div class="sec" id="libreta">
+            <div class="sec-title"><i class="bi bi-journal-text"></i> Libreta de Calificaciones</div>
+            <div class="frm">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:140px;"><label>Asignatura</label><select id="lib-asig" onchange="cargarLibretaDocente()"></select></div>
+                    <div style="flex:1;min-width:120px;"><label>Período</label><select id="lib-periodo"><option value="2026-I">2026-I</option><option value="2026-II">2026-II</option></select></div>
+                </div>
+            </div>
+            <!-- Resumen -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:1.2rem;font-weight:800;color:#16a34a;" id="lib-alumnos">0</div>
+                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Alumnos</div>
+                </div>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:1.2rem;font-weight:800;color:#2563eb;" id="lib-promedio">-</div>
+                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Promedio</div>
+                </div>
+                <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:1.2rem;font-weight:800;color:#ca8a04;" id="lib-aprobados">0</div>
+                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Aprobados</div>
+                </div>
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:1.2rem;font-weight:800;color:#dc2626;" id="lib-reprobados">0</div>
+                    <div style="font-size:.55rem;color:#64748b;text-transform:uppercase;">Reprobados</div>
+                </div>
+            </div>
+            <!-- Tabla -->
+            <div style="overflow-x:auto;">
+                <table class="tbl">
+                    <thead><tr><th>Alumno</th><th>Cédula</th><th>Asist.</th><th>P1</th><th>P2</th><th>Final</th><th>Promedio</th><th>Estado</th></tr></thead>
+                    <tbody id="libreta-body"><tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;">Selecciona una asignatura</td></tr></tbody>
+                </table>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+                <button class="btn btn-primary" onclick="exportarLibreta()"><i class="bi bi-download me-1"></i>Exportar</button>
+                <button class="btn" style="background:#f1f5f9;color:var(--texto);" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
+            </div>
         </div>
 
         <!-- Planilla Calificaciones -->
@@ -323,6 +364,136 @@
     }
 
     function scrollTo(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+
+    // ═══ LIBRETA DE CALIFICACIONES ═══
+    async function cargarLibretaDocente() {
+        const asig = document.getElementById('lib-asig').value;
+        if (!asig) return;
+        const tbody = document.getElementById('libreta-body');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;"><i class="bi bi-hourglass-split"></i> Cargando...</td></tr>';
+
+        try {
+            // Cargar alumnos de la asignatura
+            const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
+                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+            });
+            const data = await resp.json();
+            const usuarios = data.usuarios || [];
+
+            // Filtrar alumnos de esta asignatura
+            const alumnos = usuarios.filter(u =>
+                (u.roles || []).some(r => r.rol === 'alumno' && (r.asignatura === asig || !r.asignatura))
+            );
+
+            // Cargar notas
+            let notas = [];
+            try {
+                const rNotas = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const dNotas = await rNotas.json();
+                notas = dNotas.data || [];
+            } catch(e) {}
+
+            // Cargar asistencia
+            let asistencias = [];
+            try {
+                const rAsist = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const dAsist = await rAsist.json();
+                asistencias = dAsist.data || [];
+            } catch(e) {}
+
+            if (alumnos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--texto-sec);padding:16px;">No hay alumnos registrados en esta asignatura</td></tr>';
+                document.getElementById('lib-alumnos').textContent = '0';
+                document.getElementById('lib-promedio').textContent = '-';
+                document.getElementById('lib-aprobados').textContent = '0';
+                document.getElementById('lib-reprobados').textContent = '0';
+                return;
+            }
+
+            let html = '';
+            let totalPromedio = 0;
+            let aprobados = 0;
+            let reprobados = 0;
+
+            alumnos.forEach(alumno => {
+                const nombre = alumno.nombre_completo || (alumno.firstname + ' ' + alumno.lastname) || 'Sin nombre';
+                const cedula = alumno.cedula || alumno.username || '-';
+
+                // Notas del alumno
+                const notasAlumno = notas.filter(n => n.user_id === alumno.id || n.cedula === cedula);
+                const p1 = notasAlumno.find(n => n.component === 'parcial1')?.score || '-';
+                const p2 = notasAlumno.find(n => n.component === 'parcial2')?.score || '-';
+                const fin = notasAlumno.find(n => n.component === 'final')?.score || '-';
+
+                // Calcular promedio
+                let promedio = '-';
+                if (p1 !== '-' && p2 !== '-' && fin !== '-') {
+                    promedio = ((parseFloat(p1) + parseFloat(p2) + parseFloat(fin)) / 3).toFixed(1);
+                    totalPromedio += parseFloat(promedio);
+                    if (parseFloat(promedio) >= 70) aprobados++;
+                    else reprobados++;
+                }
+
+                // Asistencia
+                const asistFiltrada = asistencias.filter(a => a.user_id === alumno.id || a.cedula === cedula);
+                const totalAsist = asistFiltrada.length;
+                const presente = asistFiltrada.filter(a => a.estado === 'presente').length;
+                const pctAsist = totalAsist > 0 ? Math.round(presente / totalAsist * 100) : '-';
+
+                const estado = promedio !== '-' ? (parseFloat(promedio) >= 70 ? 'Aprobado' : 'Reprobado') : 'Pendiente';
+                const estadoColor = promedio !== '-' ? (parseFloat(promedio) >= 70 ? 'color:#16a34a;' : 'color:#dc2626;') : 'color:#94a3b8;';
+
+                html += `<tr>
+                    <td><strong>${nombre}</strong></td>
+                    <td>${cedula}</td>
+                    <td style="text-align:center;">${pctAsist !== '-' ? pctAsist + '%' : '-'}</td>
+                    <td style="text-align:center;font-weight:600;">${p1}</td>
+                    <td style="text-align:center;font-weight:600;">${p2}</td>
+                    <td style="text-align:center;font-weight:600;">${fin}</td>
+                    <td style="text-align:center;font-weight:800;${promedio !== '-' ? 'font-size:.85rem;' : ''}">${promedio}</td>
+                    <td style="text-align:center;${estadoColor}font-weight:600;">${estado}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+
+            // Actualizar resumen
+            document.getElementById('lib-alumnos').textContent = alumnos.length;
+            document.getElementById('lib-promedio').textContent = alumnos.length > 0 ? (totalPromedio / alumnos.length).toFixed(1) : '-';
+            document.getElementById('lib-aprobados').textContent = aprobados;
+            document.getElementById('lib-reprobados').textContent = reprobados;
+
+        } catch(e) {
+            console.error('Error cargando libreta:', e);
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:16px;">Error al cargar datos</td></tr>';
+        }
+    }
+
+    function exportarLibreta() {
+        const asig = document.getElementById('lib-asig');
+        const asigNombre = asig.options[asig.selectedIndex]?.text || 'Asignatura';
+        const periodo = document.getElementById('lib-periodo').value;
+        let csv = 'Alumno,Cédula,Asistencia,P1,P2,Final,Promedio,Estado\n';
+        document.querySelectorAll('#libreta-body tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 8) {
+                csv += Array.from(cells).map(c => c.textContent.trim()).join(',') + '\n';
+            }
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Libreta_${asigNombre}_${periodo}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ═══ INIT ═══
     document.addEventListener('DOMContentLoaded', cargarDocente);
     </script>
 </body>

@@ -795,7 +795,7 @@
     </div>
 </footer>
 
-<script src="js/api.js?v=7"></script>
+<script src="js/api.js?v=8"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -951,7 +951,18 @@ async function registrarYAcceder(){
 // ═══ REGISTRO OFFLINE (GitHub Pages sin PHP): guarda en local + Sheets y entra directo ═══
 async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,grado,carrera,seccion){
     try{const db=getUsersDB();db[cedula]={nombre:nombre,apellido:apellido,email:email||'',telefono:telefono||'',grado:grado||'',carrera:carrera||'',seccion:seccion||'',rol:'alumno',foto:userData.foto||''};saveUsersDB(db)}catch(e){}
-    try{if(typeof gasRegisterStudent==='function'){await gasRegisterStudent(cedula,nombre+' '+apellido,email||'',carrera||'',seccion||'');console.log('[GAS] Alumno sincronizado en Google Sheets')}}catch(gasErr){console.warn('[GAS] Sin conexión a Sheets:',gasErr)}
+    let sheetsOk=false;
+    try{
+        if(typeof gasRegisterStudent==='function'){
+            await gasRegisterStudent(cedula,nombre+' '+apellido,email||'',carrera||'',seccion||'');
+            console.log('[GAS] Alumno enviado a Google Sheets');
+            if(typeof gasCheckStudent==='function'){
+                const chk=await gasCheckStudent(cedula);
+                sheetsOk=!!(chk&&chk.existe);
+            }
+        }
+    }catch(gasErr){console.warn('[GAS] Sin conexión a Sheets:',gasErr)}
+    if(!sheetsOk)alert('Registrado en ESTE dispositivo.\n\nAviso: no se pudo anotar en Google (revisa tu internet). Si entras desde otro celular, regístrate de nuevo allí o avisa al administrador.');
     sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');loginSource='local';mostrarCursos(null);
 }
 

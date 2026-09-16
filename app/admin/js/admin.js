@@ -527,7 +527,7 @@ document.addEventListener('alpine:init', () => {
                     headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
                 });
                 const data = await r.json();
-                this.asignaturas = data.asignaturas || [];
+                this.asignaturas = data.asignaturas || data.items || [];
             } catch (e) { console.error('Error cargando asignaturas:', e); }
         },
 
@@ -610,6 +610,80 @@ document.addEventListener('alpine:init', () => {
                 await this.cargarAsignaturas();
             } catch (e) { console.error(e); }
             finally { this.loading = false; }
+        },
+
+        // --- Asignar docente a una asignatura (por cédula) ---
+        assignTarget: null,
+        assignCedula: '',
+        assignFound: null,
+        assignCarrera: '',
+        assignSeccion: '',
+        docentesCache: [],
+
+        abrirAsignar(a) {
+            this.assignTarget = a;
+            this.assignCedula = '';
+            this.assignFound = null;
+            this.assignCarrera = a.carrera || '';
+            this.assignSeccion = '';
+        },
+
+        cerrarAsignar() {
+            this.assignTarget = null;
+            this.assignCedula = '';
+            this.assignFound = null;
+            this.assignCarrera = '';
+            this.assignSeccion = '';
+        },
+
+        async buscarDocenteAsignar() {
+            const ced = (this.assignCedula || '').trim().replace(/\./g, '');
+            if (!ced) { alert('Ingresa la cédula del docente'); return; }
+            this.assignFound = null;
+            try {
+                if (!this.docentesCache.length) {
+                    const r = await fetch(CenturiaAPI.baseUrl + 'teachers.php?action=list', {
+                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                    });
+                    const d = await r.json();
+                    this.docentesCache = d.docentes || [];
+                }
+                let f = this.docentesCache.find(x => String(x.cedula) === ced);
+                if (!f) {
+                    if (!this.usuarios.length) await this.cargarUsuarios();
+                    const u = (this.usuarios || []).find(x => String(x.cedula) === ced);
+                    if (u) f = { id: u.id, cedula: u.cedula, nombre_completo: u.nombre_completo };
+                }
+                if (f) {
+                    this.assignFound = f;
+                } else {
+                    alert('No se encontró la cédula ' + ced);
+                }
+            } catch (e) { console.error(e); alert('Error al buscar docente'); }
+        },
+
+        async confirmarAsignacion() {
+            if (!this.assignTarget || !this.assignFound) return;
+            if (!confirm('Asignar "' + this.assignTarget.codigo + '" a ' + this.assignFound.nombre_completo + ' (' + this.assignFound.cedula + ')?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('user_id', this.assignFound.id);
+                fd.append('asignatura', this.assignTarget.codigo);
+                fd.append('carrera', this.assignCarrera || this.assignTarget.carrera || '');
+                fd.append('seccion', this.assignSeccion || '');
+                const r = await fetch(CenturiaAPI.baseUrl + 'teachers.php?action=assign', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.status === 'Exito' || data.status === 'Éxito') {
+                    alert(data.mensaje || 'Asignatura asignada. El docente ya la ve en su panel.');
+                    this.cerrarAsignar();
+                } else {
+                    alert('Error: ' + (data.error || data.mensaje));
+                }
+            } catch (e) { console.error(e); alert('Error de conexión'); }
         },
 
         // ═══════════════════════════════════════

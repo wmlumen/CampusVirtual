@@ -105,7 +105,10 @@
                         <td class="px-4 py-3 text-slate-500" x-text="a.carrera || '-'"></td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.semestre + '°'"></td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.carga_horaria + 'h'"></td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <button @click="abrirAsignar(a)" class="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Asignar a docente">
+                                <i class="bi bi-person-plus text-xs"></i>
+                            </button>
                             <button @click="seleccionarAsignatura(a); showForm = true" class="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition" title="Editar">
                                 <i class="bi bi-pencil text-xs"></i>
                             </button>
@@ -123,5 +126,41 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- Panel: asignar docente por cédula -->
+    <div x-show="assignTarget" style="display:none;" class="glass-panel rounded-xl p-5 border-emerald-200">
+        <h3 class="text-sm font-bold text-emerald-800 mb-1">
+            <i class="bi bi-person-plus-fill me-1"></i>Asignar <span x-text="assignTarget ? assignTarget.codigo : ''"></span> a un docente
+        </h3>
+        <p class="text-[10px] text-slate-500 mb-3">Busca al docente por su cédula. Al confirmar, la asignatura aparece en su panel.</p>
+        <div class="flex gap-2 flex-wrap items-end">
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Cédula del docente</label>
+                <input type="text" x-model="assignCedula" placeholder="Ej: 1340125" @input="assignCedula=assignCedula.replace(/\./g,'')"
+                    @keydown.enter.prevent="buscarDocenteAsignar()"
+                    class="block px-3 py-2 border border-slate-200 rounded-lg text-xs mt-1 w-40">
+            </div>
+            <button @click="buscarDocenteAsignar()" class="btn-primary px-4 py-2 rounded-lg text-xs font-bold">
+                <i class="bi bi-search me-1"></i>Buscar
+            </button>
+            <div x-show="assignFound" class="px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-800">
+                <i class="bi bi-check-circle-fill me-1"></i><span x-text="assignFound ? assignFound.nombre_completo : ''"></span>
+                (<span x-text="assignFound ? assignFound.cedula : ''"></span>)
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Carrera</label>
+                <input type="text" x-model="assignCarrera" class="block px-3 py-2 border border-slate-200 rounded-lg text-xs mt-1 w-44">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Sección</label>
+                <input type="text" x-model="assignSeccion" placeholder="Ej: S026" class="block px-3 py-2 border border-slate-200 rounded-lg text-xs mt-1 w-24">
+            </div>
+            <button @click="confirmarAsignacion()" :disabled="!assignFound" :class="!assignFound ? 'opacity-40 cursor-not-allowed' : ''"
+                class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                <i class="bi bi-check-lg me-1"></i>Confirmar
+            </button>
+            <button @click="cerrarAsignar()" class="text-xs text-slate-500 hover:underline px-2 py-2">Cancelar</button>
+        </div>
     </div>
 </div>

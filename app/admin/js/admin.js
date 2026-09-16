@@ -26,6 +26,7 @@ document.addEventListener('alpine:init', () => {
         userSearch: '',
         userFilterRol: '',
         userFilterEstado: '',
+        userFilterGrupo: '',
         stats: { totalCedulas: 0, alumnos: 0, docentes: 0 },
         rolesConfig: [],
         filiales: [],
@@ -442,6 +443,15 @@ document.addEventListener('alpine:init', () => {
             } catch (e) { console.error('Error cargando usuarios:', e); }
         },
 
+        // Grupos: sistema (admin/académico), docente, alumno
+        get gruposRoles() {
+            return {
+                sistema: ['admin', 'administrador_plataforma', 'academico', 'academic'],
+                docente: ['docente', 'teacher'],
+                alumno: ['alumno', 'student']
+            };
+        },
+
         get filteredUsuarios() {
             let result = this.usuarios;
             if (this.userSearch.trim()) {
@@ -450,6 +460,10 @@ document.addEventListener('alpine:init', () => {
                     (u.cedula || '').includes(q) ||
                     (u.nombre_completo || '').toLowerCase().includes(q)
                 );
+            }
+            if (this.userFilterGrupo && this.gruposRoles[this.userFilterGrupo]) {
+                const set = this.gruposRoles[this.userFilterGrupo];
+                result = result.filter(u => (u.roles || []).some(r => set.includes(r.rol)));
             }
             if (this.userFilterRol) {
                 result = result.filter(u => (u.roles || []).some(r => r.rol === this.userFilterRol));
@@ -576,7 +590,14 @@ document.addEventListener('alpine:init', () => {
         },
 
         async quitarRol(r) {
-            if (!confirm('¿Quitar rol ' + r.rol.toUpperCase() + '?')) return;
+            const miCedula = sessionStorage.getItem('current_cedula') || '';
+            const esMio = this.selectedUser && String(this.selectedUser.cedula) === String(miCedula);
+            const esAdmin = ['admin', 'administrador_plataforma'].includes(r.rol);
+            if (esMio && esAdmin) {
+                if (!confirm('OJO: es tu propio rol ADMIN. Si lo quitas pierdes el acceso. ¿Seguir?')) return;
+            } else if (!confirm('¿Quitar rol ' + r.rol.toUpperCase() + ' a ' + ((this.selectedUser && this.selectedUser.nombre_completo) || '') + '?')) {
+                return;
+            }
             this.loading = true;
             try {
                 const fd = new FormData();

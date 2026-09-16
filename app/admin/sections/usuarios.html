@@ -131,11 +131,21 @@
         <div class="flex gap-3">
             <!-- TABLA USUARIOS -->
             <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                <div class="p-3 border-b bg-slate-50/50 flex gap-2 items-center">
+                <div class="p-3 border-b bg-slate-50/50 flex gap-2 items-center flex-wrap">
                     <input type="text" x-model="userSearch" placeholder="Buscar cédula o nombre..."
-                        class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-[10px]">
-                    <select x-model="userFilterRol" class="px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] w-28">
-                        <option value="">Todos</option>
+                        class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-[10px]" style="min-width:140px">
+                    <div class="flex gap-1">
+                        <button @click="userFilterGrupo='';userFilterRol=''" class="px-2 py-1.5 rounded-lg text-[9px] font-bold"
+                            :class="!userFilterGrupo ? 'bg-slate-700 text-white' : 'bg-white border border-slate-200 text-slate-500'">Todos</button>
+                        <button @click="userFilterGrupo='sistema';userFilterRol=''" title="Admin y académicos" class="px-2 py-1.5 rounded-lg text-[9px] font-bold"
+                            :class="userFilterGrupo==='sistema' ? 'bg-purple-600 text-white' : 'bg-white border border-slate-200 text-slate-500'">Sistema</button>
+                        <button @click="userFilterGrupo='docente';userFilterRol=''" title="Solo docentes" class="px-2 py-1.5 rounded-lg text-[9px] font-bold"
+                            :class="userFilterGrupo==='docente' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-500'">Docentes</button>
+                        <button @click="userFilterGrupo='alumno';userFilterRol=''" title="Solo alumnos" class="px-2 py-1.5 rounded-lg text-[9px] font-bold"
+                            :class="userFilterGrupo==='alumno' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-500'">Alumnos</button>
+                    </div>
+                    <select x-model="userFilterRol" @change="if(userFilterRol)userFilterGrupo=''" class="px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] w-28">
+                        <option value="">Rol…</option>
                         <option value="alumno">Alumno</option>
                         <option value="docente">Docente</option>
                         <option value="academico">Académico</option>

@@ -274,7 +274,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     if (empty($rolesActivos)) {
         $pdo->prepare("UPDATE users SET role = 'student' WHERE id = ?")->execute([$userId]);
     } else {
-        $jerarquia = ['admin' => 4, 'academico' => 3, 'docente' => 2, 'alumno' => 1];
+        $jerarquia = ['admin' => 4, 'administrador_plataforma' => 4, 'academico' => 3, 'academic' => 3,
+                      'docente' => 2, 'teacher' => 2, 'alumno' => 1, 'student' => 1];
         $maxRole = 'student';
         foreach ($rolesActivos as $r) {
             $er = normalize_role($r);

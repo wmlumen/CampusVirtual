@@ -815,6 +815,10 @@
                         <p id="curso-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.9rem"></p>
                         <p id="curso-info-alumno" style="margin-top:2px;font-size:0.68rem;color:#64748b"></p>
                     </div>
+                    <div id="mustchange-banner" style="display:none;background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:10px;color:#92400E;font-size:0.68rem;padding:10px 12px;margin-bottom:12px">
+                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad.
+                        <a href="perfil.html" style="font-weight:700;color:#92400E">Ir a mi perfil →</a>
+                    </div>
                     <div class="d-flex gap-2 mb-3" id="step3-links">
                         <a href="dashboard.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
                         <a href="perfil.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-person me-1"></i>Perfil</a>
@@ -985,7 +989,7 @@ async function verificarCedula(){
     if(!password){showLoginError("Debes ingresar tu contraseña.");return}
     showLoading('btn-buscar');
     try{const result=await CenturiaAPI.login(cedula,password);if(!result||!result.ok){const m=result?result.message:"Error de conexión.";if(loginSource!=='php'&&/conexi/i.test(m||'')&&verificarPasswordOffline(cedula,password)){hideLoading('btn-buscar');await entrarOffline(cedula);return}hideLoading('btn-buscar');showLoginError(m);return}
-    const u=result.user;sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',(u.nombre||u.firstname||'')+' '+(u.apellido||u.lastname||''));sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:u.nombre||u.firstname||'',apellido:u.apellido||u.lastname||''}));
+    const u=result.user;sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',(u.nombre||u.firstname||'')+' '+(u.apellido||u.lastname||''));sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:u.nombre||u.firstname||'',apellido:u.apellido||u.lastname||''}));sessionStorage.setItem('must_change',(u.must_change_password||u.must_change)?'1':'0');
     if(cedula==='1340130'){
         sessionStorage.setItem('rol','admin');
         sessionStorage.setItem('admin_general','true');
@@ -1030,7 +1034,7 @@ async function registrarYAcceder(){
     }
 
     const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesion.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);mostrarCursos(null)}
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');mostrarCursos(null)}
     catch(err){const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cedula ya esta registrada. Deseas recuperar tu contrasena?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
 }
 
@@ -1049,7 +1053,7 @@ async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,g
         }
     }catch(gasErr){console.warn('[GAS] Sin conexión a Sheets:',gasErr)}
     if(!sheetsOk)alert('Registrado en ESTE dispositivo.\n\nAviso: no se pudo anotar en Google (revisa tu internet). Si entras desde otro celular, regístrate de nuevo allí o avisa al administrador.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');loginSource='local';mostrarCursos(null);
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';mostrarCursos(null);
 }
 
 // ═══ QR ═══
@@ -1111,6 +1115,9 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
 
     // Ocultar Libreta para docentes
     document.querySelectorAll('.step3-student-only').forEach(el => { el.style.display = rol === 'alumno' ? '' : 'none'; });
+
+    // Aviso de provisoria por cambiar
+    try{document.getElementById('mustchange-banner').style.display=sessionStorage.getItem('must_change')==='1'?'block':'none'}catch(e){}
 
     if(cursosDirectos&&Array.isArray(cursosDirectos)&&cursosDirectos.length>0){renderCursos(cursosDirectos);return}
 
@@ -1179,12 +1186,13 @@ window.addEventListener('load',()=>{
             <label class="lbl" for="recuperar-cedula">Cédula de Identidad</label>
             <input type="text" id="recuperar-cedula" class="inp text-center" placeholder="SIN PUNTOS" style="font-size:0.95rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')">
             <button onclick="buscarContrasena()" class="btn-main" style="margin-top:14px"><i class="bi bi-search me-2"></i>Buscar mi contraseña</button>
+            <button onclick="enviarProvisoriaMail()" class="btn-ghost mt-2"><i class="bi bi-envelope me-2"></i>Enviar provisoria a mi email</button>
         </div>
         <div id="recuperar-paso2" style="display:none">
             <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:18px;text-align:center">
                 <p style="color:#64748b;font-size:0.7rem;margin-bottom:8px">Tu contraseña es:</p>
                 <div id="recuperar-password" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:1rem;font-weight:700;color:#0f172a;letter-spacing:2px;font-family:monospace;cursor:pointer;transition:0.2s" onclick="copiarContrasena()" title="Clic para copiar">---</div>
-                <p style="color:#64748b;font-size:0.6rem;margin-top:6px">Haz clic para copiar</p>
+                <p id="recuperar-nota" style="color:#64748b;font-size:0.6rem;margin-top:6px">Haz clic para copiar</p>
                 <p id="recuperar-copiado" style="color:var(--verde-medio);font-size:0.7rem;font-weight:600;margin-top:4px;display:none">✓ Copiado al portapapeles</p>
             </div>
             <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-top:12px"><p style="color:#92400E;font-size:0.65rem;text-align:center"><i class="bi bi-info-circle me-1"></i><strong>Recordá:</strong> Primera letra nombre(MAYÚS) + primera letra apellido(minús) + cédula + *</p></div>
@@ -1198,11 +1206,15 @@ window.addEventListener('load',()=>{
 function abrirRecuperarContrasena(){document.getElementById('modal-recuperar').style.display='flex';document.getElementById('recuperar-paso1').style.display='block';document.getElementById('recuperar-paso2').style.display='none';document.getElementById('recuperar-error').style.display='none';document.getElementById('recuperar-cedula').value='';document.getElementById('recuperar-cedula').focus()}
 function cerrarRecuperar(){document.getElementById('modal-recuperar').style.display='none'}
 async function buscarContrasena(){const c=document.getElementById('recuperar-cedula').value.trim().replace(/\./g,'');if(!c){alert('Ingresa tu cédula.');return}
-const mostrar=(n,a)=>{const p=n.charAt(0).toUpperCase()+a.charAt(0).toLowerCase()+c+'*';document.getElementById('recuperar-password').textContent=p;document.getElementById('recuperar-paso1').style.display='none';document.getElementById('recuperar-paso2').style.display='block';document.getElementById('recuperar-error').style.display='none'};
+const mostrarTexto=(p,nota)=>{document.getElementById('recuperar-password').textContent=p;document.getElementById('recuperar-nota').textContent=nota||'Haz clic para copiar';document.getElementById('recuperar-paso1').style.display='none';document.getElementById('recuperar-paso2').style.display='block';document.getElementById('recuperar-error').style.display='none'};
+const mostrar=(n,a)=>{mostrarTexto(n.charAt(0).toUpperCase()+a.charAt(0).toLowerCase()+c+'*','Haz clic para copiar')};
 const noEncontrado=()=>{document.getElementById('recuperar-error').style.display='block';document.getElementById('recuperar-error-text').textContent='Cédula no encontrada. Regístrese primero.';document.getElementById('recuperar-paso2').style.display='none'};
+try{const res=await fetch('../api/auth.php?action=recover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'cedula='+encodeURIComponent(c)});const data=await res.json();if(data&&data.found){if(data.tiene_provisoria&&data.provisional){mostrarTexto(data.provisional,'Provisoria: cámbiala al entrar (seguridad)');return}const fn=(data.nombre||'').split(' ')[0]||'';const ln=(data.apellido||'').split(' ')[0]||'';if(fn&&ln){mostrar(fn,ln);return}}}catch(e){}
 try{const res=await fetch('../api/auth.php?action=find_user&cedula='+encodeURIComponent(c));const data=await res.json();const u=data&&(data.user||(data.data&&data.data.user));if(data&&(data.found||(data.data&&data.data.found))&&u){const fn=(u.firstname||'').split(' ')[0]||'';const ln=(u.lastname||'').split(' ')[0]||'';if(fn&&ln){mostrar(fn,ln);return}}}catch(e){}
 try{const g=await gasCheckStudent(c);if(g.existe&&g.nombre){const p=g.nombre.trim().split(/\s+/);if(p[0])mostrar(p[0],p.slice(1).join(' '));return}}catch(e){}
 const u=buscarUsuarioLocal(c);if(u)mostrar(u.nombre,u.apellido);else noEncontrado()}
+async function enviarProvisoriaMail(){const c=document.getElementById('recuperar-cedula').value.trim().replace(/\./g,'');if(!c){alert('Ingresa tu cédula primero.');return}
+try{const res=await fetch('../api/auth.php?action=recover_send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'cedula='+encodeURIComponent(c)});const d=await res.json();alert(d.mensaje||d.error||'Listo')}catch(e){alert('Error de conexión. En GitHub pide tu provisoria al administrador.')}}
 function copiarContrasena(){const p=document.getElementById('recuperar-password').textContent;navigator.clipboard.writeText(p).then(()=>{document.getElementById('recuperar-copiado').style.display='block';setTimeout(()=>document.getElementById('recuperar-copiado').style.display='none',2000)})}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrarRecuperar();cerrarInfo()}});
 function abrirInfo(){document.getElementById('modal-info').style.display='flex'}

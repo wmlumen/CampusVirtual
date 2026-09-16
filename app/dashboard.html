@@ -251,6 +251,11 @@
             <a href="dashboard.html">Inicio</a> / Dashboard
         </div>
 
+        <div id="pw-banner-dash" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #d4a843;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.68rem;color:#92400E">
+            <i class="bi bi-shield-lock me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad.
+            <a href="perfil.html" style="font-weight:700;color:#92400E">Ir a mi perfil →</a>
+        </div>
+
         <!-- HEADER INSTITUCIONAL -->
         <div class="hdr">
             <div class="hdr-left">
@@ -415,6 +420,13 @@
             const carrera = user ? (user.carrera || '') : (localStorage.getItem('centuria_carrera') || '');
             const filial = user ? (user.filial || '') : (localStorage.getItem('centuria_filial') || '');
             const cedulaVal = user ? (user.username || cedula || '') : (cedula || '');
+
+            // Aviso de provisoria por cambiar
+            try {
+                let mc = sessionStorage.getItem('must_change') === '1';
+                if (!mc && user) mc = !!user.must_change_password;
+                document.getElementById('pw-banner-dash').style.display = mc ? 'block' : 'none';
+            } catch (e) {}
 
             // Render header
             document.getElementById('dash-name').textContent = nombre + ' ' + apellido;

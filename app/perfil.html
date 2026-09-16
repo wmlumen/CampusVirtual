@@ -184,6 +184,11 @@
         </div>
 
         <div class="card-body">
+            <div id="pw-banner" style="display:none;background:#FEFCE8;border:1px solid #FDE68A;border-left:4px solid var(--dorado);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+                <div style="font-size:.72rem;font-weight:800;color:#92400E"><i class="bi bi-shield-lock"></i> Cambia tu contraseña provisoria</div>
+                <div style="font-size:.62rem;color:#92400E;margin:4px 0 10px">Por seguridad debes poner una propia. Hasta entonces verás este aviso.</div>
+                <button onclick="abrirModalPassword()" style="padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:700;background:var(--verde);color:#fff;border:none;cursor:pointer;font-family:'Montserrat'"><i class="bi bi-key"></i> Cambiar ahora</button>
+            </div>
             <!-- Datos Personales -->
             <div class="sec">
                 <div class="sec-title"><i class="bi bi-person"></i> Datos Personales</div>
@@ -313,6 +318,7 @@ function mostrar(user) {
     document.getElementById('hdr-name').textContent = n + ' ' + a;
     pintarIniciales(n, a);
     resolverFoto(user);
+    pintarAvisoProvisoria();
 
     const badge = document.getElementById('hdr-badge');
     const config = {alumno:'Alumno',docente:'Docente',admin:'Admin',academico:'Académico',administrador_plataforma:'Admin Plataforma',admin_filial:'Admin Filial'};
@@ -344,6 +350,7 @@ function mostrarLocal() {
     document.getElementById('hdr-name').textContent = n + ' ' + a;
     pintarIniciales(n, a);
     resolverFoto(null);
+    pintarAvisoProvisoria();
 
     document.getElementById('p-cedula').textContent = c;
     document.getElementById('p-nombre').textContent = n;
@@ -508,6 +515,12 @@ async function cambiarPassword() {
         if (data.ok || data.success) {
             showToast('Contraseña actualizada correctamente', 'success');
             cerrarModalPassword();
+            try { sessionStorage.setItem('must_change', '0'); } catch (e) {}
+            try {
+                const raw = localStorage.getItem('centuria_user');
+                if (raw) { const u = JSON.parse(raw); u.must_change_password = 0; localStorage.setItem('centuria_user', JSON.stringify(u)); }
+            } catch (e) {}
+            pintarAvisoProvisoria();
         } else {
             errEl.textContent = data.error || 'Error al cambiar contraseña';
             errEl.style.display = 'block';
@@ -696,6 +709,17 @@ function quitarFoto() {
         if (ced && typeof gasDeletePhoto === 'function') gasDeletePhoto(ced);
     } catch(e) {}
     showToast('Foto eliminada', 'success');
+}
+
+function pintarAvisoProvisoria() {
+    let mc = sessionStorage.getItem('must_change') === '1';
+    if (!mc) {
+        try {
+            const raw = localStorage.getItem('centuria_user');
+            if (raw) mc = !!JSON.parse(raw).must_change_password;
+        } catch (e) {}
+    }
+    document.getElementById('pw-banner').style.display = mc ? 'block' : 'none';
 }
 
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarFoto(); });

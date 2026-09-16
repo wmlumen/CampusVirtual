@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.10
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 07.0
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -34,6 +34,9 @@
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
+ * v07.0 (2026-09-16): CONSTRUCTOR ACADÉMICO (hojas propias SubjectDrafts/Programs/Units/
+ *         Blocks/Activities/Evaluations/QuestionBank/Reviews + CRUD + flujo editorial +
+ *         ponderación ≤100% + duplicar; sin tocar producción ni TIC)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
 
@@ -76,6 +79,13 @@ function doGet(e) {
       var d = diagnosticoSheets(ss);
       return responderJSON({ ok: true, data: { api: { ok: true }, googleSheets: { ok: true, planilla: d.planilla_nombre }, auth: { ok: true } }, requestId: 'health-' + Date.now() });
     }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── CONSTRUCTOR ACADÉMICO v07.0: lectura ──
+  if (action === 'constructor_list_drafts' || action === 'constructor_get_subject' ||
+      action === 'constructor_list_bank' || action === 'constructor_list_reviews') {
+    try { return responderJSON(ctRead(ss, action, e.parameter)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -374,6 +384,12 @@ function doPost(e) {
   // ── JUSTIFICAR AUSENCIA del alumno (v06.10) ──
   if (data.action === 'justificar_ausencia') {
     try { return responderJSON(guardarJustificacion(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── CONSTRUCTOR ACADÉMICO v07.0: escritura ──
+  if (data.action && data.action.indexOf('constructor_') === 0) {
+    try { return responderJSON(ctWrite(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -2546,4 +2562,382 @@ function ticGuardar(ss, data) {
     sheet.getRange(index<0 ? sheet.getLastRow()+1 : index+2,1,1,fila.length).setNumberFormat('@').setValues([fila]);
   } finally {lock.releaseLock();}
   return {ok:true};
+}
+
+// ══════════════════════════════════════════════════════════════
+// v07.0 CONSTRUCTOR ACADÉMICO DE ASIGNATURAS (hojas propias, no toca producción)
+// ══════════════════════════════════════════════════════════════
+var CT_SHEETS = {
+  SubjectDrafts: ['ID', 'Codigo', 'Nombre', 'Carrera', 'Grado', 'Semestre', 'Modalidad', 'CargaHoraria', 'DocenteCedula', 'Estado', 'Version', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  Programs: ['ID', 'SubjectID', 'Fundamentacion', 'ObjetivoGeneral', 'ObjetivosEspecificos', 'Competencias', 'Capacidades', 'Metodologia', 'Requisitos', 'Bibliografia', 'CreatedAt', 'UpdatedAt'],
+  Units: ['ID', 'SubjectID', 'Numero', 'Titulo', 'Resumen', 'Objetivos', 'Indicadores', 'DuracionMin', 'Estado', 'FechaPublicacion', 'Orden', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  Blocks: ['ID', 'UnitID', 'Tipo', 'Titulo', 'Contenido', 'Orden', 'Visible', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  Activities: ['ID', 'SubjectID', 'UnitID', 'Titulo', 'Instrucciones', 'Objetivo', 'Puntaje', 'Rubrica', 'FechaEntrega', 'PermiteTardia', 'TiposArchivo', 'TamMaxMB', 'Modalidad', 'Estado', 'Retroalimentacion', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  Evaluations: ['ID', 'SubjectID', 'Nombre', 'Tipo', 'PuntajeMax', 'Ponderacion', 'FechaApertura', 'FechaCierre', 'DuracionMin', 'IntentosMax', 'Modalidad', 'Aleatorizar', 'PublicarResultados', 'Estado', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  QuestionBank: ['ID', 'SubjectID', 'UnitID', 'Tipo', 'Pregunta', 'OpcionesJson', 'Correcta', 'Indicador', 'Dificultad', 'Puntaje', 'Retroalimentacion', 'Estado', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],
+  Reviews: ['ID', 'SubjectID', 'DeEstado', 'AEstado', 'PorRol', 'PorCedula', 'Comentario', 'CreatedAt']
+};
+var CT_ESTADOS = ['borrador', 'en_revision', 'observado', 'corregido', 'aprobado', 'publicado', 'archivado'];
+
+function ctSheet(ss, name) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(CT_SHEETS[name]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function ctHeaders(sheet) {
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
+
+function ctNewId(prefix) {
+  return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 6);
+}
+
+function ctRowToObj(headers, row) {
+  var o = {};
+  for (var j = 0; j < headers.length; j++) o[headers[j]] = row[j];
+  return o;
+}
+
+function ctUpsert(ss, name, id, obj) {
+  var sheet = ctSheet(ss, name);
+  var headers = ctHeaders(sheet);
+  var idx = {};
+  for (var j = 0; j < headers.length; j++) idx[headers[j]] = j;
+  var ts = new Date().toISOString();
+  var vals = sheet.getDataRange().getValues();
+  var row = -1;
+  if (id) {
+    for (var i = 1; i < vals.length; i++) {
+      if (String(vals[i][idx['ID']]) === String(id)) { row = i + 1; break; }
+    }
+  }
+  if (!id) id = ctNewId(name.substr(0, 4).toUpperCase());
+  var fila = headers.map(function (h) {
+    if (h === 'ID') return id;
+    if (h === 'CreatedAt') return (row > 0 && vals[row - 1][idx[h]]) ? vals[row - 1][idx[h]] : ts;
+    if (h === 'UpdatedAt') return ts;
+    if (obj && obj[h] !== undefined) return obj[h];
+    return (row > 0) ? vals[row - 1][idx[h]] : '';
+  });
+  if (row > 0) sheet.getRange(row, 1, 1, headers.length).setValues([fila]);
+  else sheet.appendRow(fila);
+  return id;
+}
+
+function ctList(ss, name, filter) {
+  var sheet = ctSheet(ss, name);
+  var headers = ctHeaders(sheet);
+  var vals = sheet.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < vals.length; i++) {
+    var o = ctRowToObj(headers, vals[i]);
+    if (o.DeletedAt) continue;
+    var ok = true;
+    if (filter) {
+      for (var k in filter) {
+        if (filter[k] !== '' && String(o[k]) !== String(filter[k])) { ok = false; break; }
+      }
+    }
+    if (ok) out.push(o);
+  }
+  return out;
+}
+
+function ctGet(ss, name, id) {
+  var list = ctList(ss, name, { ID: id });
+  return list.length ? list[0] : null;
+}
+
+function ctBorradoLogico(ss, name, id) {
+  var sheet = ctSheet(ss, name);
+  var headers = ctHeaders(sheet);
+  if (headers.indexOf('DeletedAt') < 0) return false;
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]) === String(id)) {
+      sheet.getRange(i + 1, headers.indexOf('DeletedAt') + 1).setValue(new Date().toISOString());
+      sheet.getRange(i + 1, headers.indexOf('UpdatedAt') + 1).setValue(new Date().toISOString());
+      return true;
+    }
+  }
+  return false;
+}
+
+function ctSetEstado(ss, name, id, estado) {
+  var sheet = ctSheet(ss, name);
+  var headers = ctHeaders(sheet);
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]) === String(id)) {
+      sheet.getRange(i + 1, headers.indexOf('Estado') + 1).setValue(estado);
+      sheet.getRange(i + 1, headers.indexOf('UpdatedAt') + 1).setValue(new Date().toISOString());
+      return true;
+    }
+  }
+  return false;
+}
+
+function ctSumaPonderacion(ss, subjectID, excludeId) {
+  var evs = ctList(ss, 'Evaluations', { SubjectID: subjectID });
+  var s = 0;
+  for (var i = 0; i < evs.length; i++) {
+    if (excludeId && String(evs[i].ID) === String(excludeId)) continue;
+    s += parseFloat(evs[i].Ponderacion) || 0;
+  }
+  return s;
+}
+
+function ctReview(ss, subjectID, deEstado, aEstado, porRol, porCedula, comentario) {
+  var sheet = ctSheet(ss, 'Reviews');
+  sheet.appendRow([ctNewId('REV'), subjectID, deEstado, aEstado, porRol || '', porCedula || '',
+    comentario || '', new Date().toISOString()]);
+}
+
+// ── Lectura ──
+function ctRead(ss, action, p) {
+  p = p || {};
+  if (action === 'constructor_list_drafts') {
+    var f = {};
+    if (p.estado) f.Estado = p.estado;
+    if (p.carrera) f.Carrera = p.carrera;
+    return { ok: true, drafts: ctList(ss, 'SubjectDrafts', f) };
+  }
+  if (action === 'constructor_get_subject') {
+    var id = p.id || '';
+    var draft = ctGet(ss, 'SubjectDrafts', id);
+    if (!draft) return { ok: false, error: 'Asignatura no encontrada' };
+    var units = ctList(ss, 'Units', { SubjectID: id });
+    units.sort(function (a, b) { return (parseFloat(a.Orden) || 0) - (parseFloat(b.Orden) || 0); });
+    for (var i = 0; i < units.length; i++) {
+      var blocks = ctList(ss, 'Blocks', { UnitID: units[i].ID });
+      blocks.sort(function (a, b) { return (parseFloat(a.Orden) || 0) - (parseFloat(b.Orden) || 0); });
+      units[i].blocks = blocks;
+    }
+    return {
+      ok: true,
+      draft: draft,
+      program: ctList(ss, 'Programs', { SubjectID: id })[0] || null,
+      units: units,
+      activities: ctList(ss, 'Activities', { SubjectID: id }),
+      evaluations: ctList(ss, 'Evaluations', { SubjectID: id }),
+      reviews: ctList(ss, 'Reviews', { SubjectID: id })
+    };
+  }
+  if (action === 'constructor_list_bank') {
+    var fb = {};
+    if (p.subjectID) fb.SubjectID = p.subjectID;
+    if (p.unitID) fb.UnitID = p.unitID;
+    if (p.tipo) fb.Tipo = p.tipo;
+    var all = ctList(ss, 'QuestionBank', fb);
+    // Nunca exponer la correcta en listados
+    return {
+      ok: true,
+      questions: all.map(function (q) {
+        return { ID: q.ID, SubjectID: q.SubjectID, UnitID: q.UnitID, Tipo: q.Tipo, Pregunta: q.Pregunta,
+          OpcionesJson: q.OpcionesJson, Indicador: q.Indicador, Dificultad: q.Dificultad,
+          Puntaje: q.Puntaje, Retroalimentacion: q.Retroalimentacion, Estado: q.Estado };
+      })
+    };
+  }
+  if (action === 'constructor_list_reviews') {
+    return { ok: true, reviews: ctList(ss, 'Reviews', p.subjectID ? { SubjectID: p.subjectID } : null) };
+  }
+  return { ok: false, error: 'Acción no válida' };
+}
+
+// ── Escritura ──
+function ctWrite(ss, data) {
+  var a = data.action;
+  var ts = new Date().toISOString();
+
+  if (a === 'constructor_save_draft') {
+    if (!data.nombre) return { ok: false, error: 'Falta nombre' };
+    var id = ctUpsert(ss, 'SubjectDrafts', data.id || '', {
+      Codigo: data.codigo || '', Nombre: data.nombre || '', Carrera: data.carrera || '',
+      Grado: data.grado || '', Semestre: data.semestre || '', Modalidad: data.modalidad || '',
+      CargaHoraria: data.carga_horaria || 0, DocenteCedula: data.docente_cedula || '',
+      Estado: data.estado || 'borrador', Version: data.version || 1
+    });
+    return { ok: true, id: id };
+  }
+
+  if (a === 'constructor_save_program') {
+    if (!data.subjectID) return { ok: false, error: 'Falta subjectID' };
+    var ex = ctList(ss, 'Programs', { SubjectID: data.subjectID })[0];
+    var pid = ctUpsert(ss, 'Programs', ex ? ex.ID : '', {
+      SubjectID: data.subjectID, Fundamentacion: data.fundamentacion || '',
+      ObjetivoGeneral: data.objetivo_general || '', ObjetivosEspecificos: data.objetivos_especificos || '',
+      Competencias: data.competencias || '', Capacidades: data.capacidades || '',
+      Metodologia: data.metodologia || '', Requisitos: data.requisitos || '',
+      Bibliografia: data.bibliografia || ''
+    });
+    return { ok: true, id: pid };
+  }
+
+  if (a === 'constructor_save_unit') {
+    if (!data.subjectID || !data.titulo) return { ok: false, error: 'Faltan datos' };
+    var uid = ctUpsert(ss, 'Units', data.id || '', {
+      SubjectID: data.subjectID, Numero: data.numero || '', Titulo: data.titulo || '',
+      Resumen: data.resumen || '', Objetivos: data.objetivos || '', Indicadores: data.indicadores || '',
+      DuracionMin: data.duracion_min || 0, Estado: data.estado || 'borrador',
+      FechaPublicacion: data.fecha_publicacion || '', Orden: data.orden || 0
+    });
+    return { ok: true, id: uid };
+  }
+
+  if (a === 'constructor_delete_unit') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    return { ok: ctBorradoLogico(ss, 'Units', data.id) };
+  }
+
+  if (a === 'constructor_save_block') {
+    if (!data.unitID || !data.tipo) return { ok: false, error: 'Faltan datos' };
+    var bid = ctUpsert(ss, 'Blocks', data.id || '', {
+      UnitID: data.unitID, Tipo: data.tipo, Titulo: data.titulo || '',
+      Contenido: data.contenido || '', Orden: data.orden || 0,
+      Visible: data.visible === false ? false : true
+    });
+    return { ok: true, id: bid };
+  }
+
+  if (a === 'constructor_delete_block') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    return { ok: ctBorradoLogico(ss, 'Blocks', data.id) };
+  }
+
+  if (a === 'constructor_save_activity') {
+    if (!data.subjectID || !data.titulo) return { ok: false, error: 'Faltan datos' };
+    var aid = ctUpsert(ss, 'Activities', data.id || '', {
+      SubjectID: data.subjectID, UnitID: data.unitID || '', Titulo: data.titulo || '',
+      Instrucciones: data.instrucciones || '', Objetivo: data.objetivo || '',
+      Puntaje: data.puntaje || 0, Rubrica: data.rubrica || '',
+      FechaEntrega: data.fecha_entrega || '', PermiteTardia: data.permite_tardia || false,
+      TiposArchivo: data.tipos_archivo || '', TamMaxMB: data.tam_max || 0,
+      Modalidad: data.modalidad || 'individual', Estado: data.estado || 'borrador',
+      Retroalimentacion: data.retroalimentacion || ''
+    });
+    return { ok: true, id: aid };
+  }
+
+  if (a === 'constructor_save_evaluation') {
+    if (!data.subjectID || !data.nombre) return { ok: false, error: 'Faltan datos' };
+    var pond = parseFloat(data.ponderacion) || 0;
+    var suma = ctSumaPonderacion(ss, data.subjectID, data.id || '');
+    if (suma + pond > 100) {
+      return { ok: false, error: 'La suma de ponderaciones superaría 100% (actual ' + suma + '%)' };
+    }
+    var eid = ctUpsert(ss, 'Evaluations', data.id || '', {
+      SubjectID: data.subjectID, Nombre: data.nombre || '', Tipo: data.tipo || 'parcial',
+      PuntajeMax: data.puntaje_max || 0, Ponderacion: pond,
+      FechaApertura: data.fecha_apertura || '', FechaCierre: data.fecha_cierre || '',
+      DuracionMin: data.duracion_min || 0, IntentosMax: data.intentos_max || 1,
+      Modalidad: data.modalidad || 'virtual', Aleatorizar: data.aleatorizar || false,
+      PublicarResultados: data.publicar_resultados || false, Estado: data.estado || 'borrador'
+    });
+    return { ok: true, id: eid, suma_ponderacion: suma + pond };
+  }
+
+  if (a === 'constructor_save_question') {
+    if (!data.subjectID || !data.pregunta) return { ok: false, error: 'Faltan datos' };
+    var qid = ctUpsert(ss, 'QuestionBank', data.id || '', {
+      SubjectID: data.subjectID, UnitID: data.unitID || '', Tipo: data.tipo || 'multiple',
+      Pregunta: data.pregunta || '', OpcionesJson: data.opciones_json || '[]',
+      Correcta: data.correcta || '', Indicador: data.indicador || '',
+      Dificultad: data.dificultad || 'media', Puntaje: data.puntaje || 0,
+      Retroalimentacion: data.retroalimentacion || '', Estado: data.estado || 'activo'
+    });
+    return { ok: true, id: qid };
+  }
+
+  if (a === 'constructor_delete_question') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    return { ok: ctBorradoLogico(ss, 'QuestionBank', data.id) };
+  }
+
+  if (a === 'constructor_submit_review') {
+    var sub = ctGet(ss, 'SubjectDrafts', data.id || '');
+    if (!sub) return { ok: false, error: 'Asignatura no encontrada' };
+    if (['borrador', 'observado', 'corregido'].indexOf(sub.Estado) < 0) {
+      return { ok: false, error: 'Solo borrador/observado/corregido pueden enviarse' };
+    }
+    ctSetEstado(ss, 'SubjectDrafts', sub.ID, 'en_revision');
+    ctReview(ss, sub.ID, sub.Estado, 'en_revision', data.por_rol || 'docente', data.por_cedula || '', data.comentario || '');
+    return { ok: true };
+  }
+
+  if (a === 'constructor_review_decision') {
+    var rev = ctGet(ss, 'SubjectDrafts', data.id || '');
+    if (!rev) return { ok: false, error: 'Asignatura no encontrada' };
+    if (rev.Estado !== 'en_revision') return { ok: false, error: 'No está en revisión' };
+    var decision = data.decision || '';
+    var nuevo = decision === 'aprobar' ? 'aprobado' : (decision === 'observar' ? 'observado' : '');
+    if (!nuevo) return { ok: false, error: 'Decisión inválida (aprobar/observar)' };
+    ctSetEstado(ss, 'SubjectDrafts', rev.ID, nuevo);
+    ctReview(ss, rev.ID, 'en_revision', nuevo, data.por_rol || 'academico', data.por_cedula || '', data.comentario || '');
+    return { ok: true };
+  }
+
+  if (a === 'constructor_publish') {
+    var pub = ctGet(ss, 'SubjectDrafts', data.id || '');
+    if (!pub) return { ok: false, error: 'Asignatura no encontrada' };
+    if (pub.Estado !== 'aprobado') return { ok: false, error: 'Solo se publica lo aprobado' };
+    ctSetEstado(ss, 'SubjectDrafts', pub.ID, 'publicado');
+    var sheet = ctSheet(ss, 'SubjectDrafts');
+    var headers = ctHeaders(sheet);
+    var vals = sheet.getDataRange().getValues();
+    for (var i = 1; i < vals.length; i++) {
+      if (String(vals[i][0]) === String(pub.ID)) {
+        sheet.getRange(i + 1, headers.indexOf('Version') + 1).setValue((parseInt(pub.Version) || 1));
+        sheet.getRange(i + 1, headers.indexOf('UpdatedAt') + 1).setValue(new Date().toISOString());
+        break;
+      }
+    }
+    ctReview(ss, pub.ID, 'aprobado', 'publicado', data.por_rol || 'admin', data.por_cedula || '', data.comentario || '');
+    return { ok: true };
+  }
+
+  if (a === 'constructor_archive') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    var arc = ctGet(ss, 'SubjectDrafts', data.id || '');
+    if (!arc) return { ok: false, error: 'Asignatura no encontrada' };
+    ctSetEstado(ss, 'SubjectDrafts', arc.ID, 'archivado');
+    ctReview(ss, arc.ID, arc.Estado, 'archivado', data.por_rol || 'admin', data.por_cedula || '', data.comentario || '');
+    return { ok: true };
+  }
+
+  if (a === 'constructor_duplicate') {
+    var orig = ctGet(ss, 'SubjectDrafts', data.id || '');
+    if (!orig) return { ok: false, error: 'Asignatura no encontrada' };
+    var nid = ctUpsert(ss, 'SubjectDrafts', '', {
+      Codigo: (orig.Codigo || '') + '-Copia', Nombre: (orig.Nombre || '') + ' (copia)',
+      Carrera: orig.Carrera || '', Grado: orig.Grado || '', Semestre: orig.Semestre || '',
+      Modalidad: orig.Modalidad || '', CargaHoraria: orig.CargaHoraria || 0,
+      DocenteCedula: data.docente_cedula || orig.DocenteCedula || '',
+      Estado: 'borrador', Version: 1
+    });
+    var uorig = ctList(ss, 'Units', { SubjectID: orig.ID });
+    for (var u = 0; u < uorig.length; u++) {
+      var nu = ctUpsert(ss, 'Units', '', {
+        SubjectID: nid, Numero: uorig[u].Numero, Titulo: uorig[u].Titulo,
+        Resumen: uorig[u].Resumen, Objetivos: uorig[u].Objetivos,
+        Indicadores: uorig[u].Indicadores, DuracionMin: uorig[u].DuracionMin,
+        Estado: 'borrador', FechaPublicacion: '', Orden: uorig[u].Orden
+      });
+      var borig = ctList(ss, 'Blocks', { UnitID: uorig[u].ID });
+      for (var b = 0; b < borig.length; b++) {
+        ctUpsert(ss, 'Blocks', '', {
+          UnitID: nu, Tipo: borig[b].Tipo, Titulo: borig[b].Titulo,
+          Contenido: borig[b].Contenido, Orden: borig[b].Orden, Visible: borig[b].Visible
+        });
+      }
+    }
+    return { ok: true, id: nid };
+  }
+
+  return { ok: false, error: 'Acción no válida' };
 }

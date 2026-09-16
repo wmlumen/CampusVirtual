@@ -739,7 +739,7 @@
 
                     <hr class="sep">
                     <div class="alert-info"><i class="bi bi-info-circle me-2"></i>Espacio académico oficial del Instituto Superior Centuria.</div>
-                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r7</div>
+                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r8</div>
                 </div>
 
                 <!-- PASO 2: Registro -->
@@ -788,7 +788,7 @@
                             <div class="sec-head"><span class="num">2</span> Datos Académicos</div>
                             <div class="mb-2"><label class="lbl" for="reg-grado">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
                             <div class="mb-2"><label class="lbl" for="reg-carrera">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
-                            <div class="mb-2"><label class="lbl">Sección</label><div class="inp-select" style="background:#f0fdf4;border-color:var(--verde-medio);font-weight:700">S026 · Sábado (fija)</div></div>
+                            <div class="mb-2"><label class="lbl" for="reg-seccion">Sección</label><select class="inp-select" id="reg-seccion"><option value="" selected disabled>Cargando secciones...</option></select></div>
                         </div>
                         <div class="d-flex gap-2 mt-2"><button class="btn-ghost" onclick="regPaso1()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button><button class="btn-main" onclick="regPaso3()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Revisar</button></div>
                     </div>
@@ -1011,7 +1011,7 @@ async function registrarYAcceder(){
     const nombre=document.getElementById('reg-nombre').value.trim().toUpperCase();const apellido=document.getElementById('reg-apellido').value.trim().toUpperCase();
     const email=document.getElementById('reg-email').value.trim();const telefono=document.getElementById('reg-telefono').value.trim();
     const grado=document.getElementById('reg-grado').value||'';const carrera=document.getElementById('reg-carrera').value||'';
-    const seccion='S026';
+    const seccion=(document.getElementById('reg-seccion').value||'').trim().toUpperCase();
     const password=nombre.charAt(0).toUpperCase()+apellido.charAt(0).toLowerCase()+cedula+'*';
     if(!cedula||!nombre||!apellido){alert('Completa CEDULA, NOMBRE y APELLIDO.');return}
     try{const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:'alumno'};
@@ -1019,19 +1019,24 @@ async function registrarYAcceder(){
     if(!regResult||!regResult.ok){const rm=(regResult&&regResult.message)||'Error al registrar.';if(/conexi/i.test(rm)){await registrarOffline(userData,cedula,nombre,apellido,email,telefono,grado,carrera,seccion);return}throw new Error(rm)}
 
     // ═══ SINCRONIZAR CON GOOGLE SHEETS (backup) + verificación de lectura ═══
+    let sheetsOk = false;
     try {
         if (typeof gasRegisterStudent === 'function') {
             await gasRegisterStudent(cedula, nombre + ' ' + apellido, email, carrera, seccion);
             console.log('[GAS] Alumno enviado a Google Sheets');
             if (typeof gasCheckStudent === 'function') {
                 const chk = await gasCheckStudent(cedula);
-                if (chk && chk.existe) console.log('[GAS] Verificado en Sheets: ' + cedula);
+                sheetsOk = !!(chk && chk.existe);
+                if (sheetsOk) console.log('[GAS] Verificado en Sheets: ' + cedula);
                 else console.warn('[GAS] Sheets aún no refleja a ' + cedula + ' (revisar planilla conectada)');
             }
         }
     } catch(gasErr) {
         console.warn('[GAS] Error sincronizando con Google Sheets (no bloqueante):', gasErr);
     }
+    // Copia local de respaldo (permite reintentar el envío a Google luego)
+    try{const db=getUsersDB();db[cedula]={nombre:nombre,apellido:apellido,email:email||'',telefono:telefono||'',grado:grado||'',carrera:carrera||'',seccion:seccion||'',rol:'alumno',foto:userData.foto||''};saveUsersDB(db)}catch(e){}
+    if (!sheetsOk) alert('Registrado correctamente.\n\nAviso: no se pudo anotar en Google ahora (revisa tu internet). Quedó guardado y se reintentará al entrar.');
 
     const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesion.');
     sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');location.href='perfil.html'}
@@ -1056,6 +1061,24 @@ async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,g
     sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';location.href='perfil.html';
 }
 
+// Reintenta subir a Google el registro guardado en este dispositivo (una vez por sesión)
+let syncReintentado = false;
+function reintentarSyncSheets(cedula) {
+    if (syncReintentado || !cedula) return;
+    syncReintentado = true;
+    (async () => {
+        try {
+            if (typeof gasCheckStudent !== 'function' || typeof gasRegisterStudent !== 'function') return;
+            const chk = await gasCheckStudent(cedula);
+            if (chk && chk.existe) return;
+            const u = buscarUsuarioLocal(cedula);
+            if (!u) return;
+            await gasRegisterStudent(cedula, (u.nombre + ' ' + u.apellido).trim(), u.email || '', u.carrera || '', u.seccion || '');
+            console.log('[GAS] Sincronización reintentada: ' + cedula);
+        } catch (e) {}
+    })();
+}
+
 // ═══ QR ═══
 function mostrarQR(){const url=window.location.href.split('?')[0];let m=document.getElementById('qr-modal');if(!m){m=document.createElement('div');m.id='qr-modal';m.innerHTML='<div class="qr-overlay" onclick="cerrarQR(event)" style="display:flex"><div class="qr-box" onclick="event.stopPropagation()"><button onclick="cerrarQR()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#0f172a;font-size:1.2rem;cursor:pointer">&times;</button><h4 style="color:var(--dorado);font-family:Montserrat;margin-bottom:10px;font-size:0.88rem"><i class="bi bi-qr-code me-2"></i>Accede desde tu celular</h4><img id="qr-img" style="width:200px;height:200px;border-radius:10px;margin:8px auto;display:block"><p style="color:#64748b;font-size:0.65rem;margin-top:8px">Escanea para abrir en tu celular</p><p id="qr-url" style="color:var(--dorado);font-size:0.58rem;word-break:break-all;margin-top:4px"></p></div></div>';document.body.appendChild(m)}
 document.getElementById('qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url);document.getElementById('qr-url').textContent=url;m.style.display='block'}
@@ -1072,12 +1095,12 @@ function eliminarFoto(){document.getElementById('reg-foto').value='';document.ge
 
 // ═══ NAVEGACIÓN ═══
 function volverPaso1(){document.getElementById('step-2-register').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none';if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=document.getElementById('foto-video');if(v)v.style.display='none'}
-function mostrarRegistro(){document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='block';regPaso1();if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
+function mostrarRegistro(){document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='block';regPaso1();cargarSecciones();if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
 function regPaso1(){document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none'}
 function regPaso2(){if(!document.getElementById('reg-cedula').value.trim()||!document.getElementById('reg-nombre').value.trim()||!document.getElementById('reg-apellido').value.trim()){alert('Completa CÉDULA, NOMBRE y APELLIDO.');return}document.getElementById('reg-paso-1').style.display='none';document.getElementById('reg-paso-2').style.display='block';document.getElementById('reg-paso-3').style.display='none'}
 function regPaso3(){document.getElementById('reg-paso-1').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='block';document.getElementById('reg-volver-login').style.display='block';
 const c=document.getElementById('reg-cedula').value.trim();const n=document.getElementById('reg-nombre').value.trim().toUpperCase();const a=document.getElementById('reg-apellido').value.trim().toUpperCase();
-const e=document.getElementById('reg-email').value.trim();const t=document.getElementById('reg-telefono').value.trim();const g=document.getElementById('reg-grado').value;const ca=document.getElementById('reg-carrera').value;const s='S026';
+const e=document.getElementById('reg-email').value.trim();const t=document.getElementById('reg-telefono').value.trim();const g=document.getElementById('reg-grado').value;const ca=document.getElementById('reg-carrera').value;const s=(document.getElementById('reg-seccion').value||'S026');
 const p=n.charAt(0).toUpperCase()+a.charAt(0).toLowerCase()+c+'*';let h='<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px">';
 h+='<b style="color:var(--dorado)">Cédula:</b><span>'+c+'</span>';h+='<b style="color:var(--dorado)">Nombre:</b><span>'+n+'</span>';h+='<b style="color:var(--dorado)">Apellido:</b><span>'+a+'</span>';
 if(e)h+='<b style="color:var(--dorado)">Email:</b><span>'+e+'</span>';if(t)h+='<b style="color:var(--dorado)">Teléfono:</b><span>'+t+'</span>';
@@ -1104,6 +1127,7 @@ function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('cen
 
 // ═══ CURSOS ═══
 async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
+    reintentarSyncSheets(sessionStorage.getItem('current_cedula'));
     document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='none';
     const pr=document.getElementById('step-2-roles');if(pr)pr.style.display='none';
     const p3=document.getElementById('step-3-cursos');p3.style.display='block';

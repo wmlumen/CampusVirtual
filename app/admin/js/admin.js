@@ -53,6 +53,7 @@ document.addEventListener('alpine:init', () => {
         catalogosCarreras: [],
         catalogosSecciones: [],
         catalogosGrados: [],
+        cfgMail: { remitente: '', nombre: '' },
         formRol: { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person' },
         editRol: null,
 
@@ -185,8 +186,54 @@ document.addEventListener('alpine:init', () => {
                 this.cargarFiliales(),
                 this.cargarAdminsPorFilial(),
                 this.cargarSolicitudes(),
-                this.cargarCatalogosAdmin()
+                this.cargarCatalogosAdmin(),
+                this.cargarRemitente()
             ]);
+        },
+
+        // --- Correo remitente de comunicaciones ---
+        async cargarRemitente() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=get', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const d = await r.json();
+                const c = d.config || {};
+                this.cfgMail = { remitente: c.mail_remitente || '', nombre: c.mail_nombre || '' };
+            } catch (e) { console.error('Error cargando remitente:', e); }
+        },
+
+        async guardarRemitente() {
+            if (this.cfgMail.remitente && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.cfgMail.remitente)) {
+                alert('El mail remitente no es válido'); return;
+            }
+            try {
+                const pares = [['mail_remitente', this.cfgMail.remitente || ''], ['mail_nombre', this.cfgMail.nombre || 'Instituto Superior Centuria']];
+                for (const [clave, valor] of pares) {
+                    const fd = new FormData();
+                    fd.append('clave', clave);
+                    fd.append('valor', valor);
+                    await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=set', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                        body: fd
+                    });
+                }
+                alert('Remitente guardado. Las provisorias saldrán desde: ' + (this.cfgMail.remitente || '(Gmail del sistema)'));
+            } catch (e) { alert('Error de conexión'); }
+        },
+
+        async probarRemitente() {
+            if (!this.cfgMail.remitente) { alert('Primero guarda un mail remitente'); return; }
+            if (!confirm('Enviar correo de prueba a ' + this.cfgMail.remitente + '?')) return;
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=test_mail', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const d = await r.json();
+                alert(d.mensaje || d.error || 'Listo');
+            } catch (e) { alert('Error de conexión'); }
         },
 
         // --- Catálogos para asignar roles y unir asignaturas (carrera + sección + grado) ---
@@ -460,12 +507,12 @@ document.addEventListener('alpine:init', () => {
             finally { this.loading = false; }
         },
 
-        // --- RESET PASSWORD ---
+        // --- RESET PASSWORD: provisoria aleatoria + aviso por mail + cambio obligatorio ---
         async resetPasswordUsuario(usuario) {
             if (!usuario) return;
-            if (!confirm('¿Resetear la contraseña de ' + usuario.nombre_completo + '? Se generara una nueva contrasena institucional.')) return;
+            if (!confirm('¿Generar provisoria a ' + usuario.nombre_completo + '? Se envía a su mail y deberá cambiarla.')) return;
             this.loading = true;
-            this.loadingText = 'Reseteando contrasena...';
+            this.loadingText = 'Generando provisoria...';
             try {
                 const fd = new FormData();
                 fd.append('user_id', usuario.id);
@@ -475,11 +522,25 @@ document.addEventListener('alpine:init', () => {
                     body: fd
                 });
                 const data = await r.json();
-                if (data.ok || data.success) {
-                    alert('Contrasena reseteada.\nNueva contrasena: ' + (data.new_password || data.password || 'Verificar'));
-                } else {
+                if (!(data.ok || data.success)) {
                     alert('Error: ' + (data.error || 'No se pudo resetear'));
+                    return;
                 }
+                // Intentar envío por Gmail del sistema si PHP no pudo
+                let mailedMsg = data.email_enviado || '';
+                if (!data.mailed && typeof gasEnviarProvisoria === 'function' && usuario.email) {
+                    try {
+                        const g = await gasEnviarProvisoria(
+                            usuario.email, usuario.nombre_completo,
+                            data.new_password, this.cfgMail.remitente, this.cfgMail.nombre
+                        );
+                        if (g && g.ok) mailedMsg = 'Enviada por Google a ' + usuario.email;
+                    } catch (e) {}
+                }
+                alert('Provisoria generada: ' + (data.new_password || '?') +
+                    '\n' + mailedMsg +
+                    '\nEl usuario deberá cambiarla al entrar (seguridad).');
+                await this.cargarUsuarios();
             } catch (e) { console.error(e); alert('Error de conexion.'); }
             finally { this.loading = false; }
         },

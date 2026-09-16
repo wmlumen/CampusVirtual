@@ -461,6 +461,27 @@ class Database {
             $this->pdo->exec($sql);
         }
 
+        // ═══ Tabla configuracion (ajustes del sistema, ej. mail remitente) ═══
+        try {
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS configuracion (
+                clave TEXT PRIMARY KEY,
+                valor TEXT DEFAULT '',
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $seed = [
+                'mail_remitente' => '',
+                'mail_nombre' => 'Instituto Superior Centuria'
+            ];
+            foreach ($seed as $k => $v) {
+                $chk = $this->pdo->prepare("SELECT COUNT(*) FROM configuracion WHERE clave = ?");
+                $chk->execute([$k]);
+                if (!$chk->fetchColumn()) {
+                    $ins = $this->pdo->prepare("INSERT INTO configuracion (clave, valor) VALUES (?, ?)");
+                    $ins->execute([$k, $v]);
+                }
+            }
+        } catch (Exception $e) {}
+
         // ═══ Migración: columna activo en filiales (list/delete la usan) ═══
         try {
             $fcols = [];
@@ -483,6 +504,9 @@ class Database {
                 'deleted_at'  => "ALTER TABLE users ADD COLUMN deleted_at DATETIME",
                 'sync_version'=> "ALTER TABLE users ADD COLUMN sync_version INTEGER DEFAULT 1",
                 'sync_status' => "ALTER TABLE users ADD COLUMN sync_status TEXT DEFAULT 'sincronizado'",
+                'provisional_password' => "ALTER TABLE users ADD COLUMN provisional_password TEXT DEFAULT ''",
+                'must_change_password' => "ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0",
+                'password_updated_at'  => "ALTER TABLE users ADD COLUMN password_updated_at DATETIME",
             ];
             foreach ($faltantes as $c => $sql) {
                 if (!in_array($c, $cols)) { $this->pdo->exec($sql); }

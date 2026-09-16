@@ -4,7 +4,7 @@
 
 ## 0. Reglas del juego
 - Stack: PHP 7.4 + SQLite (`api/centuria.db`), frontend estático en GitHub Pages (`app/` → raíz), Google Apps Script (`app/Backend_Scripts/01_Script_Google_Completo.gs`) + planilla **TIC DATOS** (`1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`).
-- URL GAS oficial nueva: `https://script.google.com/macros/s/AKfycbwsDs3j12qNHaWX9xje2PvGerrL7UBjS2NofJ7iIJBsUcDetdZlAJFGSx7naKzjX9GTlw/exec` (la vieja `AKfycbwRHS9q…` queda obsoleta).
+- URL GAS oficial: `https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec` (planilla BasedeDatosCampus; anteriores obsoletas).
 - Prohibido romper lo que funciona: cada cambio se prueba con los comandos de §5 antes de commitear.
 - Commits atómicos en español + push a `main` (Pages redespliega solo).
 - Nunca inventar datos de personas reales; solo filas de prueba `99xxxxx` y borrarlas después.

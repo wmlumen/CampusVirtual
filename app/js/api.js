@@ -7,8 +7,9 @@ const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'acad
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
 // Google Apps Script URL (planilla BasedeDatosCampus = única base en la nube)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7/exec';
-// URL anterior (obsoleta, otra planilla): AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec';
+// Anteriores (obsoletas): AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7,
+// AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ
 
 // Helper: verificar alumno en Google Sheets (GET) con timeout de 2s
 function gasCheckStudent(cedula) {
@@ -120,6 +121,22 @@ function gasGetRoles(cedula) {
         .catch(() => { clearTimeout(timeout); return { roles: [] }; });
 }
 
+// Helper: enviar provisoria por Gmail vía GAS v06.7 (remitente configurable en admin).
+// Devuelve {ok}. Nunca lanza.
+function gasEnviarProvisoria(email, nombre, password, remitente, remitenteNombre) {
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'enviar_provisoria',
+            email: email || '',
+            nombre: nombre || '',
+            password: password || '',
+            remitente: remitente || '',
+            remitente_nombre: remitenteNombre || 'Instituto Superior Centuria'
+        })
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
 // Helper genérico: catálogo simple desde Google (grados/carreras/secciones, v06.5). Nunca lanza.
 function gasGetCatalogo(tipo) {
     const controller = new AbortController();
@@ -179,7 +196,8 @@ function mapUser(u) {
         firstname: u.firstname,
         lastname: u.lastname,
         role: role,
-        email: u.email
+        email: u.email,
+        must_change_password: u.must_change_password ? 1 : 0
     };
 }
 

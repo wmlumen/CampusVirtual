@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.6
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.8
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -29,6 +29,8 @@
  * v06.4 (2026-09-16): sembrar_todo por URL (datos conocidos) + TIC sin clave obligatoria
  * v06.5 (2026-09-16): registro sin asignatura forzada + listar_grados/carreras/secciones para el formulario
  * v06.6 (2026-09-16): verificar_alumno también busca en Roles (admin/docente entran en GitHub)
+ * v06.7 (2026-09-16): enviar_provisoria por Gmail (remitente/replyTo configurable)
+ * v06.8 (2026-09-16): seeds alineados a datos corregidos (12 carreras G-/E-/M-/D-, 9 secciones S026/LV026/MJ026)
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -343,6 +345,12 @@ function doPost(e) {
   // ── ESPEJO DE ASIGNATURAS SQLite -> Sheets (v06.2) ──
   if (data.action === 'guardar_asignatura') {
     try { return responderJSON(guardarAsignaturaDrive(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── ENVIAR PROVISORIA POR EMAIL (v06.7, remitente configurable) ──
+  if (data.action === 'enviar_provisoria') {
+    try { return responderJSON(enviarProvisoria(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -2007,6 +2015,28 @@ function obtenerFotoDrive(ss, cedula) {
   return { ok: true, existe: false };
 }
 
+// Envía la contraseña provisoria al mail del alumno (v06.7).
+// El remitente se configura en el panel admin (se usa como replyTo y nombre).
+function enviarProvisoria(ss, data) {
+  var email = (data.email || '').toString().trim();
+  var nombre = (data.nombre || '').toString().trim();
+  var pass = (data.password || '').toString();
+  if (!email || !pass) return { ok: false, error: 'Falta email o contraseña' };
+  var remitente = (data.remitente || '').toString().trim();
+  var rnombre = (data.remitente_nombre || 'Instituto Superior Centuria').toString();
+  try {
+    var opts = {
+      to: email,
+      subject: 'Tu contraseña provisoria - ' + rnombre,
+      body: 'Hola ' + nombre + ',\n\nTu contraseña provisoria es: ' + pass +
+        '\n\nPor seguridad, cambiala en tu primer ingreso (Mi Perfil > Contraseña).\n\n' + rnombre
+    };
+    if (remitente) { opts.replyTo = remitente; opts.name = rnombre; }
+    MailApp.sendEmail(opts);
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
 function diagnosticoSheets(ss) {
   var nombres = ['RegistroAlumnos', 'Roles', 'Matriculaciones', 'FormulariosCarrera',
     'FormulariosAlumno', 'AttendanceEvents', 'AttendanceRecords', 'CalendarEvents',
@@ -2175,15 +2205,22 @@ function poblarCatalogosBase() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var res = { carreras: 0, grados: 0, secciones: 0, modalidades: 0 };
 
-  // Carreras
+  // Carreras corregidas (12: 3 bases x 4 grados)
   var cSheet = ss.getSheetByName('Carreras');
   if (cSheet.getLastRow() <= 1) {
     var carreras = [
-      ['CARR-001', 'CARR-001', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', true],
-      ['CARR-002', 'CARR-002', 'CONTABILIDAD', 'GRADO', true],
-      ['CARR-003', 'CARR-003', 'INFORMÁTICA', 'GRADO', true],
-      ['CARR-004', 'CARR-004', 'DERECHO', 'GRADO', true],
-      ['CARR-005', 'CARR-005', 'ENFERMERÍA', 'GRADO', true],
+      ['CARR-G-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'G-AGP', 'GRADO', true],
+      ['CARR-G-AE', 'ADMINISTRACION DE EMPRESAS', 'G-AE', 'GRADO', true],
+      ['CARR-G-AD', 'ADMINISTRACIÓN ADUANERA', 'G-AD', 'GRADO', true],
+      ['CARR-E-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'E-AGP', 'ESPECIALIZACION', true],
+      ['CARR-E-AE', 'ADMINISTRACION DE EMPRESAS', 'E-AE', 'ESPECIALIZACION', true],
+      ['CARR-E-AD', 'ADMINISTRACIÓN ADUANERA', 'E-AD', 'ESPECIALIZACION', true],
+      ['CARR-M-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'M-AGP', 'MAESTRIA', true],
+      ['CARR-M-AE', 'ADMINISTRACION DE EMPRESAS', 'M-AE', 'MAESTRIA', true],
+      ['CARR-M-AD', 'ADMINISTRACIÓN ADUANERA', 'M-AE', 'MAESTRIA', true],
+      ['CARR-D-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'D-AGP', 'DOCTORADO', true],
+      ['CARR-D-AE', 'ADMINISTRACION DE EMPRESAS', 'D-AE', 'DOCTORADO', true],
+      ['CARR-D-AD', 'ADMINISTRACIÓN ADUANERA', 'D-AD', 'DOCTORADO', true],
     ];
     carreras.forEach(function(c) { cSheet.appendRow(['', 'CARR-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(c)); });
     res.carreras = carreras.length;
@@ -2202,13 +2239,19 @@ function poblarCatalogosBase() {
     res.grados = grados.length;
   }
 
-  // Secciones (algunas por defecto)
+  // Secciones corregidas (9: S026/LV026/MJ026 x 3 carreras)
   var sSheet = ss.getSheetByName('Secciones');
   if (sSheet.getLastRow() <= 1) {
     var secciones = [
-      ['SEC-001', 'SEC-001', 'S026', 'SÁBADO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
-      ['SEC-002', 'SEC-002', 'S027', 'NOCTURNO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
-      ['SEC-003', 'SEC-003', 'M001', 'MATUTINO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-S026-AGP', 'SABADO', 'S026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true],
+      ['SEC-S026-AE', 'SABADO', 'S026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-S026-AD', 'SABADO', 'S026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true],
+      ['SEC-LV026-AGP', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true],
+      ['SEC-LV026-AE', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-LV026-AD', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true],
+      ['SEC-MJ026-AGP', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true],
+      ['SEC-MJ026-AE', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-MJ026-AD', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true],
     ];
     secciones.forEach(function(s) { sSheet.appendRow(['', 'SEC-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(s)); });
     res.secciones = secciones.length;
@@ -2275,11 +2318,20 @@ function sembrarTodo(ss) {
     return filas.length;
   }
 
-  // 2) Carreras conocidas
+  // 2) Carreras corregidas (12: 3 bases x 4 grados, códigos G-/E-/M-/D-)
   sembrar('Carreras', [
-    ['', 'CARR-001', 'TECNOLOGIA DE LA INFORMACION Y COMUNICACION', 'TIC', 'GRADO', true, ts, ts],
-    ['', 'CARR-002', 'ADMINISTRACION DE EMPRESAS', 'ADE', 'GRADO', true, ts, ts],
-    ['', 'CARR-003', 'CONTABILIDAD', 'CON', 'GRADO', true, ts, ts]
+    ['', 'CARR-G-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'G-AGP', 'GRADO', true, ts, ts],
+    ['', 'CARR-G-AE', 'ADMINISTRACION DE EMPRESAS', 'G-AE', 'GRADO', true, ts, ts],
+    ['', 'CARR-G-AD', 'ADMINISTRACIÓN ADUANERA', 'G-AD', 'GRADO', true, ts, ts],
+    ['', 'CARR-E-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'E-AGP', 'ESPECIALIZACION', true, ts, ts],
+    ['', 'CARR-E-AE', 'ADMINISTRACION DE EMPRESAS', 'E-AE', 'ESPECIALIZACION', true, ts, ts],
+    ['', 'CARR-E-AD', 'ADMINISTRACIÓN ADUANERA', 'E-AD', 'ESPECIALIZACION', true, ts, ts],
+    ['', 'CARR-M-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'M-AGP', 'MAESTRIA', true, ts, ts],
+    ['', 'CARR-M-AE', 'ADMINISTRACION DE EMPRESAS', 'M-AE', 'MAESTRIA', true, ts, ts],
+    ['', 'CARR-M-AD', 'ADMINISTRACIÓN ADUANERA', 'M-AE', 'MAESTRIA', true, ts, ts],
+    ['', 'CARR-D-AGP', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'D-AGP', 'DOCTORADO', true, ts, ts],
+    ['', 'CARR-D-AE', 'ADMINISTRACION DE EMPRESAS', 'D-AE', 'DOCTORADO', true, ts, ts],
+    ['', 'CARR-D-AD', 'ADMINISTRACIÓN ADUANERA', 'D-AD', 'DOCTORADO', true, ts, ts]
   ]);
 
   // 3) Grados conocidos
@@ -2290,10 +2342,17 @@ function sembrarTodo(ss) {
     ['', 'GRD-004', 'DOCTORADO', true, ts, ts]
   ]);
 
-  // 4) Secciones conocidas (S026 = SABADO)
+  // 4) Secciones corregidas (9: S026=SABADO, LV026=LUNES-VIERNES, MJ026=MARTES-JUEVES x 3 carreras)
   sembrar('Secciones', [
-    ['', 'SEC-001', 'SABADO', 'S026', 'TECNOLOGIA DE LA INFORMACION Y COMUNICACION', 'GRADO', 40, true, ts, ts],
-    ['', 'SEC-002', 'SABADO', 'S027', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true, ts, ts]
+    ['', 'SEC-S026-AGP', 'SABADO', 'S026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-S026-AE', 'SABADO', 'S026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-S026-AD', 'SABADO', 'S026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-LV026-AGP', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-LV026-AE', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-LV026-AD', 'LUNES - VIERNES', 'LV026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-MJ026-AGP', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-MJ026-AE', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-MJ026-AD', 'MARTES - JUEVES', 'MJ026', 'ADMINISTRACIÓN ADUANERA', 'GRADO', 40, true, ts, ts]
   ]);
 
   // 5) Modalidades

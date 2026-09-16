@@ -30,7 +30,7 @@ flowchart TD
 
 ### Google Apps Script v05 (endpoint en la nube)
 ```
-https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec
+https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec
 ```
 
 ### PHP local (XAMPP)

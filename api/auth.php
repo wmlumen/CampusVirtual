@@ -18,6 +18,48 @@ function verify_password($password, $hash) {
     return password_verify($password, $hash);
 }
 
+// Helper: generar contraseña provisoria aleatoria (sin caracteres ambiguos)
+function generar_provisoria($len = 10) {
+    $abc = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    $out = '';
+    for ($i = 0; $i < $len; $i++) $out .= $abc[random_int(0, strlen($abc) - 1)];
+    return $out;
+}
+
+// Helper: leer remitente configurado (crea la tabla si falta)
+function mail_config($pdo) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS configuracion (clave TEXT PRIMARY KEY, valor TEXT DEFAULT '', updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+        $stmt = $pdo->prepare("SELECT clave, valor FROM configuracion WHERE clave IN ('mail_remitente','mail_nombre')");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        return [
+            'remitente' => $rows['mail_remitente'] ?? '',
+            'nombre' => $rows['mail_nombre'] ?? 'Instituto Superior Centuria'
+        ];
+    } catch (Exception $e) {
+        return ['remitente' => '', 'nombre' => 'Instituto Superior Centuria'];
+    }
+}
+
+// Helper: intentar enviar provisoria por mail PHP. Devuelve ['mailed'=>bool]
+function enviar_provisoria_mail($pdo, $email, $nombre, $provisoria) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return ['mailed' => false, 'motivo' => 'sin-email'];
+    $cfg = mail_config($pdo);
+    $asunto = 'Tu contraseña provisoria - ' . $cfg['nombre'];
+    $cuerpo = "Hola $nombre,\n\nTu contraseña provisoria es: $provisoria\n\nPor seguridad, cámbiala en tu primer ingreso (Mi Perfil > Contraseña).\n\n" . $cfg['nombre'];
+    $cab = "Content-Type: text/plain; charset=UTF-8\r\n";
+    if ($cfg['remitente'] !== '') $cab .= "From: {$cfg['nombre']} <{$cfg['remitente']}>\r\nReply-To: {$cfg['remitente']}\r\n";
+    $ok = @mail($email, $asunto, $cuerpo, $cab);
+    return ['mailed' => (bool)$ok, 'motivo' => $ok ? '' : 'smtp-no-disponible'];
+}
+
+function email_mascarado($email) {
+    $p = explode('@', $email);
+    if (count($p) !== 2 || $p[0] === '') return '';
+    return substr($p[0], 0, 1) . '***@' . $p[1];
+}
+
 // Helper: Generate session token
 function generate_token($length = 32) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -84,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     }
     
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT id, username, password, role, firstname, lastname, email, estado FROM users WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT id, username, password, role, firstname, lastname, email, estado, must_change_password FROM users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -149,7 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
             'lastname' => $user['lastname'],
             'email' => $user['email'] ?? '',
             'role' => $primary_role,
-            'roles' => $roles
+            'roles' => $roles,
+            'must_change_password' => intval($user['must_change_password'] ?? 0)
         ]
     ]);
 }
@@ -186,14 +229,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     // Hash password
     $hashed_password = hash_password($password);
     
-    // Insert new user
+    // Insert new user (la contraseña generada se guarda como provisoria y debe cambiarse)
     $stmt = $pdo->prepare(
-        "INSERT INTO users (username, password, firstname, lastname, email, course_id, role, telefono, grado, carrera, seccion, foto) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users (username, password, firstname, lastname, email, course_id, role, telefono, grado, carrera, seccion, foto, provisional_password, must_change_password, password_updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)"
     );
-    
+
     try {
-        $stmt->execute([$username, $hashed_password, $firstname, $lastname, $email, $course_id, $role, $telefono, $grado, $carrera, $seccion, $foto]);
+        $stmt->execute([$username, $hashed_password, $firstname, $lastname, $email, $course_id, $role, $telefono, $grado, $carrera, $seccion, $foto, $password]);
         
         $user_id = $pdo->lastInsertId();
         
@@ -220,7 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
                 'grado' => $grado,
                 'carrera' => $carrera,
                 'seccion' => $seccion,
-                'foto' => $foto
+                'foto' => $foto,
+                'must_change_password' => 1
             ]
         ], 201);
     } catch (PDOException $e) {
@@ -267,13 +311,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     
     // Verify token against sessions table
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT s.user_id, s.expires, u.role, u.firstname, u.lastname, u.username 
-                           FROM sessions s 
-                           JOIN users u ON s.user_id = u.id 
+    $stmt = $pdo->prepare("SELECT s.user_id, s.expires, u.role, u.firstname, u.lastname, u.username, u.must_change_password
+                           FROM sessions s
+                           JOIN users u ON s.user_id = u.id
                            WHERE s.token = ? AND s.expires > datetime('now')");
     $stmt->execute([$token]);
     $session = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($session) {
         api_response([
             'valid' => true,
@@ -282,7 +326,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
                 'username' => $session['username'],
                 'firstname' => $session['firstname'],
                 'lastname' => $session['lastname'],
-                'role' => $session['role']
+                'role' => $session['role'],
+                'must_change_password' => intval($session['must_change_password'] ?? 0)
             ]
         ]);
     } else {
@@ -338,7 +383,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     }
 
     $new_hash = hash_password($new_password);
-    $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, provisional_password = '', must_change_password = 0, password_updated_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$new_hash, $decoded->user_id]);
 
     api_response(['ok' => true, 'mensaje' => 'Contrasena actualizada correctamente']);
@@ -363,22 +408,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
 
     $pdo = db();
 
-    // Si NO se proporciona contrasena, generar la institucional
+    $stmt = $pdo->prepare("SELECT username, firstname, lastname, email FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$u) {
+        api_error('Usuario no encontrado', 404);
+    }
+
+    // Si NO se proporciona contrasena, generar provisoria ALEATORIA (debe cambiarla)
     if (empty($new_password)) {
-        $stmt = $pdo->prepare("SELECT username, firstname, lastname FROM users WHERE id = ?");
-        $stmt->execute([$user_id]);
-        $u = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$u) {
-            api_error('Usuario no encontrado', 404);
-        }
-        $fn = strtoupper(substr($u['firstname'],0,1));
-        $ln = strtolower(substr($u['lastname'],0,1));
-        $new_password = $fn . $ln . $u['username'] . '*';
+        $new_password = generar_provisoria(10);
     }
 
     $new_hash = hash_password($new_password);
-    $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-    $stmt->execute([$new_hash, $user_id]);
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, provisional_password = ?, must_change_password = 1, password_updated_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt->execute([$new_hash, $new_password, $user_id]);
 
-    api_response(['ok' => true, 'mensaje' => 'Contrasena reseteada', 'new_password' => $new_password]);
+    $nombre = trim($u['firstname'] . ' ' . $u['lastname']);
+    $envio = enviar_provisoria_mail($pdo, $u['email'] ?? '', $nombre, $new_password);
+
+    api_response([
+        'ok' => true,
+        'mensaje' => 'Contrasena provisoria generada. Debe cambiarla por seguridad.',
+        'new_password' => $new_password,
+        'mailed' => $envio['mailed'],
+        'email' => email_mascarado($u['email'] ?? ''),
+        'email_enviado' => $envio['mailed'] ? ('Enviada a ' . email_mascarado($u['email'] ?? '')) : 'No se pudo enviar por mail (sin SMTP o sin email). Entrégala por otro medio.'
+    ]);
+}
+
+// ═══ #3 Recuperar: ver provisoria guardada (público, misma exposición que la fórmula) ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'recover') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    $cedula = trim($input['cedula'] ?? '');
+
+    if ($cedula === '') api_error('Cédula requerida', 400);
+
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT firstname, lastname, email, provisional_password, must_change_password FROM users WHERE username = ?");
+    $stmt->execute([$cedula]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$u) api_response(['found' => false]);
+
+    $fn = explode(' ', trim($u['firstname']))[0] ?? '';
+    $ln = explode(' ', trim($u['lastname']))[0] ?? '';
+    api_response([
+        'found' => true,
+        'nombre' => $fn,
+        'apellido' => $ln,
+        'tiene_provisoria' => ($u['provisional_password'] ?? '') !== '',
+        'provisional' => $u['provisional_password'] ?? '',
+        'email_masked' => email_mascarado($u['email'] ?? ''),
+        'must_change' => intval($u['must_change_password'] ?? 0)
+    ]);
+}
+
+// ═══ #4 Enviar provisoria NUEVA al mail (público, con antispam 2 min) ═══
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'recover_send') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+    $cedula = trim($input['cedula'] ?? '');
+
+    if ($cedula === '') api_error('Cédula requerida', 400);
+
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT id, firstname, lastname, email, password_updated_at FROM users WHERE username = ?");
+    $stmt->execute([$cedula]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$u) api_response(['found' => false]);
+    if (!filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
+        api_response(['found' => true, 'mailed' => false, 'mensaje' => 'No tienes email registrado. Pide tu provisoria al administrador.']);
+    }
+    if (!empty($u['password_updated_at']) && (time() - strtotime($u['password_updated_at']) < 120)) {
+        api_error('Espera 2 minutos antes de pedir otra provisoria', 429);
+    }
+
+    $nueva = generar_provisoria(10);
+    $stmt = $pdo->prepare("UPDATE users SET password = ?, provisional_password = ?, must_change_password = 1, password_updated_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt->execute([hash_password($nueva), $nueva, $u['id']]);
+
+    $nombre = trim($u['firstname'] . ' ' . $u['lastname']);
+    $envio = enviar_provisoria_mail($pdo, $u['email'], $nombre, $nueva);
+
+    api_response([
+        'found' => true,
+        'mailed' => $envio['mailed'],
+        'email_masked' => email_mascarado($u['email']),
+        'mensaje' => $envio['mailed']
+            ? 'Provisoria enviada a ' . email_mascarado($u['email']) . '. Cámbiala al entrar.'
+            : 'No se pudo enviar por mail. Pide tu provisoria al administrador.'
+    ]);
 }

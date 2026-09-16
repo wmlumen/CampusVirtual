@@ -65,6 +65,37 @@
             </div>
         </div>
 
+        <!-- CORREO DE COMUNICACIONES -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+            <h3 class="text-xs font-bold text-slate-700 mb-4 border-b pb-2">
+                <i class="bi bi-envelope-fill me-2 text-emerald-600"></i>Correo de Comunicaciones
+            </h3>
+            <p class="text-[10px] text-slate-500 mb-3">Desde este mail salen las contraseñas provisorias y avisos a los alumnos.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400 uppercase">Mail remitente</label>
+                    <input type="email" x-model="cfgMail.remitente" placeholder="instituto@centuria.edu.py"
+                        class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-xs">
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400 uppercase">Nombre que se muestra</label>
+                    <input type="text" x-model="cfgMail.nombre" placeholder="Instituto Superior Centuria"
+                        class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-xs">
+                </div>
+                <div class="flex gap-2">
+                    <button @click="guardarRemitente()"
+                        class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                        <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
+                    <button @click="probarRemitente()"
+                        class="flex-1 py-2 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-50 transition">
+                        <i class="bi bi-send me-1"></i>Enviar prueba
+                    </button>
+                </div>
+                <p class="text-[9px] text-slate-400">El envío real sale por Gmail del sistema (Google). Si PHP no tiene SMTP, igual queda guardado y se envía por Google.</p>
+            </div>
+        </div>
+
         <!-- ACCIONES -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
             <h3 class="text-xs font-bold text-slate-700 mb-4 border-b pb-2">

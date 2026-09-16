@@ -796,7 +796,7 @@
     </div>
 </footer>
 
-<script src="js/api.js?v=8"></script>
+<script src="js/api.js?v=9"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -812,10 +812,16 @@ function a11yContrast() {
 
 <script>
 // ═══ CATÁLOGOS ═══
-async function cargarCatalogos(){try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=grados');const d=await r.json();const g=d.grados||d.items||[];try{localStorage.setItem('centuria_cache_grados',JSON.stringify(g))}catch(x){}pintarGrados(g)}catch(e){let g=[];try{g=JSON.parse(localStorage.getItem('centuria_cache_grados')||'[]')}catch(x){}if(!g.length)g=[{nombre:'GRADO'}];pintarGrados(g)}}
+async function cargarCatalogos(){try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=grados');const d=await r.json();const g=d.grados||d.items||[];try{localStorage.setItem('centuria_cache_grados',JSON.stringify(g))}catch(x){}pintarGrados(g)}catch(e){pintarGrados(await catalogoConRespaldo('grados','centuria_cache_grados',[{nombre:'GRADO'}]))}}
 function pintarGrados(g){const s=document.getElementById('reg-grado');if(s)s.innerHTML='<option value="" selected disabled>Seleccionar...</option>'+g.map(x=>'<option value="'+x.nombre+'">'+x.nombre+'</option>').join('')}
-async function cargarCarrerasPorGrado(){const grado=document.getElementById('reg-grado').value;const s=document.getElementById('reg-carrera');if(!grado){s.innerHTML='<option value="" selected disabled>Primero selecciona un grado...</option>';s.disabled=true;return}let lista=null;try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=carreras');const d=await r.json();lista=d.carreras||d.items||[];try{localStorage.setItem('centuria_cache_carreras',JSON.stringify(lista))}catch(x){}}catch(e){try{lista=JSON.parse(localStorage.getItem('centuria_cache_carreras')||'[]')}catch(x){lista=[]}if(!lista.length)lista=[{nombre:'TECNOLOGIA DE LA INFORMACION Y COMUNICACION',grado:'GRADO'}]}const c=(lista||[]).filter(x=>!x.grado||x.grado===grado);s.innerHTML='<option value="" selected disabled>Selecciona tu carrera...</option>';c.forEach(x=>{const o=document.createElement('option');o.value=x.nombre;o.textContent=x.nombre;s.appendChild(o)});s.disabled=c.length===0;if(s.disabled)s.innerHTML='<option value="" selected disabled>No hay carreras para este grado</option>'}
-async function cargarSecciones(){const s=document.getElementById('reg-seccion');let sec=null;try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=secciones');const d=await r.json();sec=d.secciones||d.items||[];try{localStorage.setItem('centuria_cache_secciones',JSON.stringify(sec))}catch(x){}}catch(e){try{sec=JSON.parse(localStorage.getItem('centuria_cache_secciones')||'[]')}catch(x){sec=[]}if(!sec.length)sec=[{codigo:'S026',carrera:'TECNOLOGIA DE LA INFORMACION Y COMUNICACION'}]}s.innerHTML='<option value="" selected disabled>Selecciona tu sección...</option>';sec.forEach(x=>{const o=document.createElement('option');o.value=x.codigo;o.textContent=x.codigo+(x.carrera?' — '+x.carrera:'');s.appendChild(o)});if(s.options.length<=1)s.innerHTML='<option value="" selected disabled>No hay secciones creadas aún</option>'}
+async function cargarCarrerasPorGrado(){const grado=document.getElementById('reg-grado').value;const s=document.getElementById('reg-carrera');if(!grado){s.innerHTML='<option value="" selected disabled>Primero selecciona un grado...</option>';s.disabled=true;return}let lista=null;try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=carreras');const d=await r.json();lista=d.carreras||d.items||[];try{localStorage.setItem('centuria_cache_carreras',JSON.stringify(lista))}catch(x){}}catch(e){lista=await catalogoConRespaldo('carreras','centuria_cache_carreras',[{nombre:'TECNOLOGIA DE LA INFORMACION Y COMUNICACION',grado:'GRADO'}])}const c=(lista||[]).filter(x=>!x.grado||x.grado===grado);s.innerHTML='<option value="" selected disabled>Selecciona tu carrera...</option>';c.forEach(x=>{const o=document.createElement('option');o.value=x.nombre;o.textContent=x.nombre;s.appendChild(o)});s.disabled=c.length===0;if(s.disabled)s.innerHTML='<option value="" selected disabled>No hay carreras para este grado</option>'}
+async function cargarSecciones(){const s=document.getElementById('reg-seccion');let sec=null;try{const r=await fetch(CenturiaAPI.baseUrl+'catalogos.php?action=list&tipo=secciones');const d=await r.json();sec=d.secciones||d.items||[];try{localStorage.setItem('centuria_cache_secciones',JSON.stringify(sec))}catch(x){}}catch(e){sec=await catalogoConRespaldo('secciones','centuria_cache_secciones',[{codigo:'S026',carrera:'TECNOLOGIA DE LA INFORMACION Y COMUNICACION'}])}s.innerHTML='<option value="" selected disabled>Selecciona tu sección...</option>';sec.forEach(x=>{const o=document.createElement('option');o.value=x.codigo;o.textContent=x.codigo+(x.carrera?' — '+x.carrera:'');s.appendChild(o)});if(s.options.length<=1)s.innerHTML='<option value="" selected disabled>No hay secciones creadas aún</option>'}
+// Catálogo con respaldo: PHP -> Google Sheets -> caché -> valores base (misma base)
+async function catalogoConRespaldo(tipo,cacheKey,defecto){
+    try{if(typeof gasGetCatalogo==='function'){const g=await gasGetCatalogo(tipo);if(g&&g.length){try{localStorage.setItem(cacheKey,JSON.stringify(g))}catch(x){}return g}}}catch(e){}
+    try{const c=JSON.parse(localStorage.getItem(cacheKey)||'[]');if(c.length)return c}catch(x){}
+    return defecto;
+}
 document.addEventListener('DOMContentLoaded',cargarCatalogos);
 
 let cedulaActual='';let rolesActuales=[];let loginFase='idle';let loginSource='php';let loginGasUser=null;

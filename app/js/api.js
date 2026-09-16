@@ -6,8 +6,9 @@
 const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'academico',inactive:'inactivo'};
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
-// Google Apps Script URL (base de datos Sheets como backup/sync)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec';
+// Google Apps Script URL (planilla BasedeDatosCampus = única base en la nube)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7/exec';
+// URL anterior (obsoleta, otra planilla): AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ
 
 // Helper: verificar alumno en Google Sheets (GET) con timeout de 2s
 function gasCheckStudent(cedula) {
@@ -117,6 +118,18 @@ function gasGetRoles(cedula) {
         .then(r => { clearTimeout(timeout); return r.json(); })
         .then(d => ({ roles: (d && d.roles) || [] }))
         .catch(() => { clearTimeout(timeout); return { roles: [] }; });
+}
+
+// Helper genérico: catálogo simple desde Google (grados/carreras/secciones, v06.5). Nunca lanza.
+function gasGetCatalogo(tipo) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const acts = { grados: 'listar_grados', carreras: 'listar_carreras', secciones: 'listar_secciones' };
+    const keys = { grados: 'grados', carreras: 'carreras', secciones: 'secciones' };
+    return fetch(GAS_URL + '?action=' + (acts[tipo] || 'listar_carreras'), { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .then(d => (d && d[keys[tipo]]) || [])
+        .catch(() => { clearTimeout(timeout); return []; });
 }
 
 // Helper: espejo de asignatura SQLite -> hoja Asignaturas vía GAS v06.2 (POST guardar_asignatura)

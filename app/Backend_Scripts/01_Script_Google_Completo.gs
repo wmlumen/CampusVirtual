@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.4
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.5
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -27,6 +27,7 @@
  * v06.2 (2026-09-16): Misma base en ambos lados: guardar_asignatura (upsert por Codigo)
  * v06.3 (2026-09-16): inicializarBaseDatos + poblarCatalogosBase (28 hojas)
  * v06.4 (2026-09-16): sembrar_todo por URL (datos conocidos) + TIC sin clave obligatoria
+ * v06.5 (2026-09-16): registro sin asignatura forzada + listar_grados/carreras/secciones para el formulario
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -269,6 +270,20 @@ function doGet(e) {
     return responderJSON({ asignaturas: asignaturas });
   }
 
+  // ── CATÁLOGOS para el formulario de registro (v06.5) ──
+  if (action === 'listar_grados') {
+    try { return responderJSON({ grados: listarCatalogoSimple(ss, 'Grados') }); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (action === 'listar_carreras') {
+    try { return responderJSON({ carreras: listarCatalogoSimple(ss, 'Carreras') }); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (action === 'listar_secciones') {
+    try { return responderJSON({ secciones: listarCatalogoSimple(ss, 'Secciones') }); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
   // ── DEFAULT: Notas (fallback) ──
   var sheetNotas = ss.getSheetByName('Notas') || ss.getActiveSheet();
   var dataNotas = sheetNotas.getDataRange().getValues();
@@ -345,7 +360,7 @@ function doPost(e) {
     var ts = new Date().toLocaleString('es-ES', { timeZone: 'America/Asuncion' });
     sheetRoles.appendRow([
       data.cedula, nombre + ' ' + apellido, 'alumno',
-      data.carrera || '', data.seccion || '', data.asignatura || 'TIC',
+      data.carrera || '', data.seccion || '', data.asignatura || '',
       'activo', ts, 'auto-registro'
     ]);
 
@@ -1783,6 +1798,31 @@ function listarAsignaturas(ss) {
     }
   }
   return asignaturas;
+}
+
+// Lee una hoja de catálogo y devuelve [{nombre, codigo, grado, carrera}] (v06.5)
+function listarCatalogoSimple(ss, nombreHoja) {
+  var sheet = ss.getSheetByName(nombreHoja);
+  if (!sheet) return [];
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var idx = {};
+  for (var j = 0; j < headers.length; j++) idx[headers[j]] = j;
+  var data = sheet.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    var nombre = (idx['Nombre'] !== undefined ? data[i][idx['Nombre']] : '') || '';
+    if (!nombre) continue;
+    var act = idx['Activo'] !== undefined ? data[i][idx['Activo']] : '';
+    var off = act === false || act === 0 || act === '0' || ['false', 'no', 'inactivo', 'inactiva'].indexOf(String(act).toLowerCase()) >= 0;
+    if (off) continue;
+    out.push({
+      nombre: nombre.toString(),
+      codigo: (idx['Codigo'] !== undefined ? data[i][idx['Codigo']] : '') || '',
+      grado: (idx['Grado'] !== undefined ? data[i][idx['Grado']] : '') || '',
+      carrera: (idx['Carrera'] !== undefined ? data[i][idx['Carrera']] : '') || ''
+    });
+  }
+  return out;
 }
 
 function crearAsignatura(ss, data) {

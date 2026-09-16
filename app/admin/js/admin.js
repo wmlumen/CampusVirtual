@@ -180,8 +180,68 @@ document.addEventListener('alpine:init', () => {
                 this.cargarUsuarios(),
                 this.cargarRolesConfig(),
                 this.cargarFiliales(),
-                this.cargarAdminsPorFilial()
+                this.cargarAdminsPorFilial(),
+                this.cargarSolicitudes()
             ]);
+        },
+
+        // --- Solicitudes de cátedra (docente pide, admin aprueba con carrera+sección) ---
+        solicitudes: [],
+
+        async cargarSolicitudes() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=pending_requests', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const data = await r.json();
+                this.solicitudes = (data.solicitudes || []).map(s => ({
+                    ...s,
+                    carrera_aprob: s.carrera_sugerida || s.carrera || '',
+                    seccion_aprob: s.seccion || ''
+                }));
+            } catch (e) { console.error('Error cargando solicitudes:', e); this.solicitudes = []; }
+        },
+
+        async aprobarSolicitud(s) {
+            if (!s.carrera_aprob) { alert('Indica la carrera para aprobar'); return; }
+            if (!confirm('Aprobar "' + (s.asignatura_nombre || s.asignatura) + '" a ' + s.docente + ' (' + s.cedula + ') en ' + s.carrera_aprob + (s.seccion_aprob ? ' • ' + s.seccion_aprob : '') + '?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('id', s.id);
+                fd.append('carrera', s.carrera_aprob || '');
+                fd.append('seccion', s.seccion_aprob || '');
+                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=approve_request', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.status === 'Exito' || data.status === 'Éxito') {
+                    alert(data.mensaje || 'Aprobada');
+                    await this.cargarSolicitudes();
+                } else {
+                    alert('Error: ' + (data.error || data.mensaje));
+                }
+            } catch (e) { console.error(e); alert('Error de conexión'); }
+        },
+
+        async rechazarSolicitud(s) {
+            if (!confirm('¿Rechazar la solicitud de ' + s.docente + ' (' + (s.asignatura_nombre || s.asignatura) + ')?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('id', s.id);
+                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=reject_request', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
+                    body: fd
+                });
+                const data = await r.json();
+                if (data.status === 'Exito' || data.status === 'Éxito') {
+                    await this.cargarSolicitudes();
+                } else {
+                    alert('Error: ' + (data.error || data.mensaje));
+                }
+            } catch (e) { console.error(e); alert('Error de conexión'); }
         },
 
         async cargarAdminsPorFilial() {

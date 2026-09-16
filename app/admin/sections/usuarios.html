@@ -31,6 +31,13 @@
             :class="usuariosTab==='asignaturas' ? 'bg-green-600 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
             <i class="bi bi-book"></i> Asignaturas
         </button>
+        <button @click="usuariosTab='solicitudes'; cargarSolicitudes()"
+            class="flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all flex items-center justify-center gap-1"
+            :class="usuariosTab==='solicitudes' ? 'bg-orange-500 text-white shadow' : 'text-slate-500 hover:bg-slate-50'">
+            <i class="bi bi-inbox"></i> Solicitudes
+            <span x-show="solicitudes.length > 0"
+                class="ml-1 bg-white/30 px-1.5 rounded text-[8px]" x-text="solicitudes.length"></span>
+        </button>
     </div>
 
     <!-- ═══ TAB: PENDIENTES DE APROBACIÓN ═══ -->
@@ -549,6 +556,67 @@
                     </button>
                     <button @click="cerrarAsignar()" class="text-[10px] text-slate-500 hover:underline px-2 py-2">Cancelar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: SOLICITUDES DE CÁTEDRA ═══ -->
+    <div x-show="usuariosTab==='solicitudes'" style="display:none;">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-3 border-b bg-orange-50 flex justify-between items-center">
+                <h3 class="text-xs font-bold text-orange-800">
+                    <i class="bi bi-inbox me-1"></i>Solicitudes de Cátedra
+                    <span class="text-orange-500 font-normal" x-text="'(' + solicitudes.length + ' pendientes)'"></span>
+                </h3>
+                <button @click="cargarSolicitudes()" class="text-[9px] text-orange-600 hover:underline">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                </button>
+            </div>
+            <div class="p-3 text-[9px] text-slate-500 bg-orange-50/50 border-b">
+                El docente busca la materia desde su panel y la solicita. Aquí le asignas <strong>carrera + sección</strong> y el sistema le muestra los nombres de sus alumnos.
+            </div>
+            <table class="w-full text-xs">
+                <thead><tr class="border-b border-slate-200 bg-slate-50/50">
+                    <th class="text-left py-2 px-3 text-slate-500 font-bold">Docente</th>
+                    <th class="text-left py-2 px-3 text-slate-500 font-bold">Materia</th>
+                    <th class="text-left py-2 px-3 text-slate-500 font-bold">Carrera</th>
+                    <th class="text-left py-2 px-3 text-slate-500 font-bold">Sección</th>
+                    <th class="text-left py-2 px-3 text-slate-500 font-bold">Acciones</th>
+                </tr></thead>
+                <tbody>
+                    <template x-for="s in solicitudes" :key="s.id">
+                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                            <td class="py-2 px-3">
+                                <div class="font-bold text-[10px]" x-text="s.docente"></div>
+                                <div class="text-[9px] text-slate-400" x-text="'C.I: ' + s.cedula"></div>
+                            </td>
+                            <td class="py-2 px-3">
+                                <div class="font-bold text-[10px]" x-text="s.asignatura_nombre || s.asignatura"></div>
+                                <div class="text-[9px] text-slate-400" x-text="s.asignatura"></div>
+                            </td>
+                            <td class="py-2 px-3">
+                                <input type="text" x-model="s.carrera_aprob" placeholder="Carrera"
+                                    class="px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] w-40">
+                            </td>
+                            <td class="py-2 px-3">
+                                <input type="text" x-model="s.seccion_aprob" placeholder="Sección"
+                                    class="px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] w-20">
+                            </td>
+                            <td class="py-2 px-3 whitespace-nowrap">
+                                <button @click="aprobarSolicitud(s)" class="px-2 py-1 bg-emerald-600 text-white rounded-lg text-[9px] font-bold me-1">
+                                    <i class="bi bi-check-lg"></i> Aprobar
+                                </button>
+                                <button @click="rechazarSolicitud(s)" class="px-2 py-1 bg-rose-100 text-rose-600 rounded-lg text-[9px] font-bold">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <div x-show="solicitudes.length === 0" class="text-center py-8 text-slate-400">
+                <i class="bi bi-inbox text-2xl mb-2 block"></i>
+                <p class="text-[10px] font-bold">Sin solicitudes pendientes</p>
             </div>
         </div>
     </div>

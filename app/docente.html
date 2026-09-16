@@ -105,6 +105,16 @@
     <!-- Tabs Asignaturas -->
     <div class="asig-tabs" id="asigTabs"></div>
 
+    <!-- Solicitar asignatura -->
+    <div class="sec" id="sec-solicitar">
+        <div class="sec-title"><i class="bi bi-plus-circle"></i> Solicitar Asignatura</div>
+        <p style="font-size:.62rem;color:#475569;margin-bottom:8px">Busca una materia y pídela. Queda <strong>pendiente</strong> hasta que el administrador te asigne carrera y sección; ahí el sistema te muestra los nombres de tus alumnos.</p>
+        <input id="inp-buscar-asig" placeholder="Buscar por nombre o código..." oninput="filtrarDisponibles()"
+            style="width:100%;padding:8px 12px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;margin-bottom:8px;outline:none">
+        <div id="lista-disponibles" style="display:grid;gap:8px"></div>
+        <div id="lista-pendientes" style="margin-top:8px"></div>
+    </div>
+
     <!-- Stats de la asignatura seleccionada -->
     <div class="stats" id="statsRow">
         <div class="stat"><div class="stat-val" style="color:var(--azul)" id="st-alumnos">0</div><div class="stat-lbl">Alumnos</div></div>
@@ -160,7 +170,7 @@
 
 <div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
-<script src="js/api.js?v=7"></script>
+<script src="js/api.js?v=8"></script>
 <script src="js/logout.js?v=2"></script>
 <script>
 // ═══ ESTADO ═══
@@ -182,6 +192,8 @@ async function cargarPanel() {
 
     // 1) Cargar asignaturas del docente
     await cargarMisAsignaturas(cedula);
+    // 2) Catálogo para solicitar (busca y queda pendiente)
+    await cargarDisponibles();
 }
 
 // ═══ CARGAR ASIGNATURAS ASIGNADAS ═══
@@ -243,19 +255,30 @@ async function cargarDatosAsignatura(codigo) {
     const tbody = document.getElementById('tbodyAlumnos');
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt2)"><i class="bi bi-hourglass-split"></i> Cargando datos...</td></tr>';
 
+    // Alcance de la asignación: el sistema estira los nombres de esa carrera + sección
+    let carA = (asigActual && (asigActual.carrera_asignada || asigActual.carrera)) || '';
+    let secA = (asigActual && asigActual.seccion_asignada) || '';
     try {
         // Cargar todos los usuarios
         const rUsers = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
             headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
         });
         const dUsers = await rUsers.json();
-        const todos = dUsers.usuarios || [];
+        const todos = dUsers.usuarios || dUsers.data || [];
 
-        // Filtrar alumnos (rol alumno, carrera de la asignatura)
+        // Filtrar alumnos (rol alumno + carrera/sección asignadas al docente)
         alumnosData = todos.filter(u => {
             const roles = u.roles || [];
-            return roles.some(r => r.rol === 'alumno' && (!r.carrera || r.carrera === asigActual.carrera));
+            return roles.some(r => r.rol === 'alumno'
+                && (!r.carrera || !carA || r.carrera === carA)
+                && (!r.seccion || !secA || r.seccion === secA));
         });
+        if (!alumnosData.length) {
+            // Sin token o sin coincidencias: nómina pública por carrera + sección
+            const rM = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_alumnos&carrera=' + encodeURIComponent(carA) + '&seccion=' + encodeURIComponent(secA));
+            const dM = await rM.json();
+            alumnosData = (dM.alumnos || []).map(a => ({ id: null, cedula: a.cedula, nombre_completo: a.nombre, carrera: a.carrera, seccion: a.seccion, roles: [{ rol: 'alumno' }] }));
+        }
 
         // Cargar notas
         try {
@@ -279,7 +302,17 @@ async function cargarDatosAsignatura(codigo) {
 
     } catch(e) {
         console.error('Error:', e);
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
+        // Fallback sin sesión (GitHub Pages): nómina pública por carrera + sección
+        try {
+            const rM = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_alumnos&carrera=' + encodeURIComponent(carA) + '&seccion=' + encodeURIComponent(secA));
+            const dM = await rM.json();
+            alumnosData = (dM.alumnos || []).map(a => ({ id: null, cedula: a.cedula, nombre_completo: a.nombre, carrera: a.carrera, seccion: a.seccion, roles: [{ rol: 'alumno' }] }));
+            notasData = [];
+            asistData = [];
+            renderTabla();
+        } catch (e2) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
+        }
     }
 }
 
@@ -477,6 +510,71 @@ function generarActa() {
     w.document.write(contenido);
     w.document.close();
     w.print();
+}
+
+// ═══ SOLICITAR ASIGNATURA ═══
+let disponiblesData = [];
+let pendientesData = [];
+
+async function cargarDisponibles() {
+    const cedula = sessionStorage.getItem('current_cedula');
+    if (!cedula) return;
+    const listEl = document.getElementById('lista-disponibles');
+    const pendEl = document.getElementById('lista-pendientes');
+    try {
+        const [rA, rP] = await Promise.all([
+            fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list').then(r => r.json()).catch(() => ({})),
+            fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_solicitudes&cedula=' + encodeURIComponent(cedula)).then(r => r.json()).catch(() => ({}))
+        ]);
+        const todas = rA.items || rA.asignaturas || [];
+        pendientesData = rP.solicitudes || [];
+        const asigCodigos = new Set(misAsignaturas.map(s => s.codigo));
+        const pendCodigos = new Set(pendientesData.filter(p => p.estado === 'pendiente').map(p => p.asignatura));
+        disponiblesData = todas.filter(s => !asigCodigos.has(s.codigo) && !pendCodigos.has(s.codigo));
+        filtrarDisponibles();
+        pendEl.innerHTML = pendientesData.filter(p => p.estado === 'pendiente').map(p =>
+            '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;font-size:.7rem;color:#92400E;margin-bottom:6px">' +
+            '<span><i class="bi bi-hourglass-split me-1"></i><strong>' + (p.asignatura_nombre || p.asignatura) + '</strong> (' + p.asignatura + ')</span>' +
+            '<span class="badge">En espera del administrador</span></div>'
+        ).join('');
+    } catch (e) {
+        console.error('Error cargando disponibles:', e);
+        listEl.innerHTML = '<p style="font-size:.65rem;color:#94a3b8">No se pudo cargar el catálogo.</p>';
+    }
+}
+
+function filtrarDisponibles() {
+    const q = (document.getElementById('inp-buscar-asig').value || '').toLowerCase().trim();
+    const listEl = document.getElementById('lista-disponibles');
+    const rows = disponiblesData.filter(s =>
+        !q || (s.nombre || '').toLowerCase().includes(q) || (s.codigo || '').toLowerCase().includes(q)
+    );
+    if (!rows.length) {
+        listEl.innerHTML = '<p style="font-size:.65rem;color:#94a3b8">' + (q ? 'Sin resultados.' : 'No hay materias por solicitar.') + '</p>';
+        return;
+    }
+    listEl.innerHTML = rows.map(s =>
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:1px solid var(--bdr);border-radius:8px">' +
+        '<div><div style="font-size:.72rem;font-weight:700;color:#0f172a">' + (s.nombre || s.codigo) + '</div>' +
+        '<div style="font-size:.6rem;color:#64748b">' + s.codigo + (s.carrera ? ' • ' + s.carrera : '') + '</div></div>' +
+        '<button onclick="solicitarAsignatura(\'' + s.codigo + '\')" style="padding:6px 14px;border-radius:8px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;background:var(--azul);color:#fff">Solicitar</button></div>'
+    ).join('');
+}
+
+async function solicitarAsignatura(codigo) {
+    const cedula = sessionStorage.getItem('current_cedula');
+    if (!cedula || !codigo) return;
+    if (!confirm('Solicitar la asignatura ' + codigo + '? Quedará pendiente de aprobación.')) return;
+    try {
+        const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=request_subject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'cedula=' + encodeURIComponent(cedula) + '&asignatura=' + encodeURIComponent(codigo)
+        });
+        const d = await r.json();
+        alert(d.mensaje || d.error || 'Solicitud enviada');
+        await cargarDisponibles();
+    } catch (e) { alert('Error de conexión'); }
 }
 
 // ═══ INIT ═══

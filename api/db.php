@@ -208,6 +208,7 @@ class Database {
                 direccion TEXT DEFAULT '',
                 telefono TEXT DEFAULT '',
                 estado TEXT DEFAULT 'activo',
+                activo INTEGER DEFAULT 1,
                 creado_por TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
@@ -459,6 +460,17 @@ class Database {
         foreach ($schema as $sql) {
             $this->pdo->exec($sql);
         }
+
+        // ═══ Migración: columna activo en filiales (list/delete la usan) ═══
+        try {
+            $fcols = [];
+            foreach ($this->pdo->query("PRAGMA table_info(filiales)") as $r) { $fcols[] = $r['name']; }
+            if (!in_array('activo', $fcols)) {
+                $this->pdo->exec("ALTER TABLE filiales ADD COLUMN activo INTEGER DEFAULT 1");
+                $this->pdo->exec("UPDATE filiales SET activo = 1 WHERE estado = 'activo' OR estado IS NULL");
+                $this->pdo->exec("UPDATE filiales SET activo = 0 WHERE estado = 'inactivo'");
+            }
+        } catch (Exception $e) {}
 
         // ═══ Migración: columnas que el login y la sync necesitan en users ═══
         // (el UPDATE de last_login en auth.php daba 500 si la columna no existía)

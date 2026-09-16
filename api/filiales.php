@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     
     $id = intval($_POST['id'] ?? 0);
     $pdo = db();
-    $stmt = $pdo->prepare("UPDATE filiales SET activo=0 WHERE id=?");
+    $stmt = $pdo->prepare("UPDATE filiales SET activo=0, estado='inactivo' WHERE id=?");
     $stmt->execute([$id]);
     api_response(['status' => 'Exito']);
 }

@@ -666,7 +666,7 @@ async function buscarContrasena() {
 
     // 2) Buscar en Google Sheets
     try {
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec';
         const gasResult = await fetch(GAS_URL + '?action=verificar_alumno&cedula=' + encodeURIComponent(cedulaLimpia)).then(r => r.json()).catch(() => ({existe:false}));
         if (gasResult.existe && gasResult.nombre) {
             const partes = gasResult.nombre.trim().split(/\s+/);

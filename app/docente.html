@@ -526,7 +526,21 @@ async function cargarDisponibles() {
             fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list').then(r => r.json()).catch(() => ({})),
             fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_solicitudes&cedula=' + encodeURIComponent(cedula)).then(r => r.json()).catch(() => ({}))
         ]);
-        const todas = rA.items || rA.asignaturas || [];
+        let todas = rA.items || rA.asignaturas || [];
+        // Sin PHP (GitHub Pages): misma base desde Google Sheets
+        if (!todas.length && typeof gasGetSubjects === 'function') {
+            try {
+                const g = await gasGetSubjects();
+                todas = (g.asignaturas || []).map(s => ({
+                    codigo: s.Codigo || s.codigo || '',
+                    nombre: s.Nombre || s.nombre || '',
+                    carrera: s.Carrera || s.carrera || '',
+                    grado: s.Grado || s.grado || '',
+                    color: s.Color || '#16813D',
+                    icono: s.Icono || 'bi-book'
+                })).filter(s => s.codigo);
+            } catch (e) {}
+        }
         pendientesData = rP.solicitudes || [];
         const asigCodigos = new Set(misAsignaturas.map(s => s.codigo));
         const pendCodigos = new Set(pendientesData.filter(p => p.estado === 'pendiente').map(p => p.asignatura));
@@ -574,7 +588,7 @@ async function solicitarAsignatura(codigo) {
         const d = await r.json();
         alert(d.mensaje || d.error || 'Solicitud enviada');
         await cargarDisponibles();
-    } catch (e) { alert('Error de conexión'); }
+    } catch (e) { alert('Sin conexión al servidor: pide al administrador que registre tu solicitud de ' + codigo); }
 }
 
 // ═══ INIT ═══

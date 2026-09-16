@@ -89,6 +89,10 @@
                 class="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
         </div>
         <span class="text-[10px] text-slate-400" x-text="filteredAsignaturas.length + ' resultados'"></span>
+        <button @click="subirAsignaturasGoogle()" title="Subir todas a Google (misma base)"
+            class="px-3 py-2 rounded-lg text-xs font-bold bg-sky-600 text-white flex items-center gap-1">
+            <i class="bi bi-cloud-upload"></i>Subir a Google
+        </button>
     </div>
 
     <!-- TABLA -->

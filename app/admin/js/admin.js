@@ -690,6 +690,23 @@ document.addEventListener('alpine:init', () => {
             this.formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
         },
 
+        // --- Espejo a Google: misma base en SQLite y Sheets ---
+        async subirAsignaturasGoogle() {
+            if (!this.asignaturas.length) { alert('No hay asignaturas para subir'); return; }
+            if (!confirm('Subir ' + this.asignaturas.length + ' asignaturas a Google (misma base)?')) return;
+            this.loading = true;
+            let ok = 0, fail = 0;
+            for (const a of this.asignaturas) {
+                try {
+                    const r = await gasUploadSubject(a);
+                    if (r && r.ok) ok++; else fail++;
+                } catch (e) { fail++; }
+                this.loadingText = 'Subiendo ' + (ok + fail) + '/' + this.asignaturas.length + '...';
+            }
+            this.loading = false;
+            alert('Espejo listo: ' + ok + ' subidas' + (fail ? ', ' + fail + ' con error' : '') + '.');
+        },
+
         async eliminarAsignatura(a) {
             if (!confirm('¿Eliminar asignatura "' + a.nombre + '"?')) return;
             this.loading = true;

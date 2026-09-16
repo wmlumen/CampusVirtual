@@ -521,9 +521,15 @@
                     <option value="bi-file-earmark-text">📄 Documento</option>
                 </select>
             </div>
-            <button @click="guardarAsignatura()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
-                <i class="bi bi-plus-lg me-1"></i>Guardar Asignatura
-            </button>
+            <div class="flex gap-2">
+                <button @click="guardarAsignatura()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                    <i class="bi bi-plus-lg me-1"></i>Guardar Asignatura
+                </button>
+                <button @click="subirAsignaturasGoogle()" title="Subir todas a Google (misma base)"
+                    class="bg-sky-600 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                    <i class="bi bi-cloud-upload me-1"></i>Subir a Google
+                </button>
+            </div>
 
             <!-- Tabla -->
             <div class="mt-4 overflow-x-auto">

@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.2
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -24,6 +24,8 @@
  * v05 (2026-09-15): Matrícula, asistencia con código, calendario, formularios, filiales
  * v06 (2026-09-15): Fotos de perfil en Google Drive (subir_foto, obtener_foto, eliminar_foto)
  * v06.1 (2026-09-16): Diagnóstico (action=diagnostico: nombre/ID de planilla + conteo de filas)
+ * v06.2 (2026-09-16): Misma base en ambos lados: guardar_asignatura (upsert por Codigo)
+ *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
 
@@ -284,6 +286,12 @@ function doPost(e) {
   // ── ASISTENCIA TIC ──
   if (data.action === 'guardar_clase_tic' || data.action === 'justificar_ausencia_tic') {
     try { return responderJSON(ticGuardar(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── ESPEJO DE ASIGNATURAS SQLite -> Sheets (v06.2) ──
+  if (data.action === 'guardar_asignatura') {
+    try { return responderJSON(guardarAsignaturaDrive(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -701,11 +709,18 @@ function obtenerRoles(ss, cedula) {
 }
 
 function obtenerCursosPorRol(ss, cedula, rol, carrera) {
+  // Fuente única: hoja Asignaturas (espejo de SQLite). Sin hoja, usa valores base.
+  var mapa = mapaAsignaturas(ss);
+
   if (rol === 'admin' || rol === 'academico') {
-    return [
-      { id: 'TIC', nombre: 'TIC - Tecnología de la Información y Comunicación', codigo: 'ADE18', seccion: '', color: '#007A33', icono: 'bi-laptop', rol: rol },
-      { id: 'ADMIN', nombre: 'Panel de Administración', codigo: 'ADM', seccion: '', color: '#2D2D2D', icono: 'bi-gear', rol: 'admin' }
-    ];
+    var todas = Object.keys(mapa).map(function (k) { return cursoDesdeMapa(mapa[k], rol, '', ''); });
+    if (todas.length === 0) {
+      todas = [{ id: 'TIC', nombre: 'TIC - Tecnología de la Información y Comunicación', codigo: 'ADE18', seccion: '', color: '#007A33', icono: 'bi-laptop', rol: rol }];
+    }
+    if (rol === 'admin') {
+      todas.push({ id: 'ADMIN', nombre: 'Panel de Administración', codigo: 'ADM', seccion: '', color: '#2D2D2D', icono: 'bi-gear', rol: 'admin' });
+    }
+    return todas;
   }
 
   var sheetRoles = ss.getSheetByName('Roles');
@@ -718,15 +733,20 @@ function obtenerCursosPorRol(ss, cedula, rol, carrera) {
         var asignatura = data[i][5] || 'TIC';
         var car = data[i][3] || '';
         var sec = data[i][4] || '';
-        cursos.push({
-          id: asignatura.replace(/\s+/g, '_'),
-          nombre: asignatura + (car ? ' - ' + car : ''),
-          codigo: car || (rol === 'docente' ? 'DOC' : 'ADE18'),
-          seccion: sec,
-          color: rol === 'docente' ? '#00B140' : '#007A33',
-          icono: rol === 'docente' ? 'bi-easel' : (asignatura.toUpperCase().includes('TIC') ? 'bi-laptop' : 'bi-book'),
-          rol: rol
-        });
+        var det = mapa[asignatura.toString().toUpperCase()];
+        if (det) {
+          cursos.push(cursoDesdeMapa(det, rol, car, sec));
+        } else {
+          cursos.push({
+            id: asignatura.replace(/\s+/g, '_'),
+            nombre: asignatura + (car ? ' - ' + car : ''),
+            codigo: car || (rol === 'docente' ? 'DOC' : 'ADE18'),
+            seccion: sec,
+            color: rol === 'docente' ? '#00B140' : '#007A33',
+            icono: rol === 'docente' ? 'bi-easel' : (asignatura.toUpperCase().includes('TIC') ? 'bi-laptop' : 'bi-book'),
+            rol: rol
+          });
+        }
       }
     }
   }
@@ -740,6 +760,97 @@ function obtenerCursosPorRol(ss, cedula, rol, carrera) {
   }
 
   return cursos;
+}
+
+// Mapa codigo(UPPER) -> {nombre, codigo, carrera, grado, color, icono} desde la hoja Asignaturas
+function mapaAsignaturas(ss) {
+  var map = {};
+  var sheet = ss.getSheetByName('Asignaturas');
+  if (!sheet) return map;
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var idx = {};
+  for (var j = 0; j < headers.length; j++) idx[headers[j]] = j;
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    var cod = (data[i][idx['Codigo']] || '').toString().toUpperCase();
+    if (!cod) continue;
+    var est = (idx['Estado'] !== undefined ? data[i][idx['Estado']] : 'activo') || 'activo';
+    if (est !== 'activo') continue;
+    map[cod] = {
+      nombre: data[i][idx['Nombre']] || cod,
+      codigo: (data[i][idx['Codigo']] || '').toString(),
+      carrera: (idx['Carrera'] !== undefined ? data[i][idx['Carrera']] : '') || '',
+      grado: (idx['Grado'] !== undefined ? data[i][idx['Grado']] : '') || '',
+      color: (idx['Color'] !== undefined ? data[i][idx['Color']] : '') || '#007A33',
+      icono: (idx['Icono'] !== undefined ? data[i][idx['Icono']] : '') || 'bi-book'
+    };
+  }
+  return map;
+}
+
+function cursoDesdeMapa(det, rol, car, sec) {
+  return {
+    id: det.codigo.replace(/\s+/g, '_'),
+    nombre: det.nombre + ((car || det.carrera) ? ' - ' + (car || det.carrera) : ''),
+    codigo: det.codigo,
+    carrera: car || det.carrera || '',
+    seccion: sec || '',
+    color: det.color,
+    icono: rol === 'docente' ? 'bi-easel' : det.icono,
+    rol: rol
+  };
+}
+
+// Espejo SQLite -> Sheets: crea o actualiza por Codigo (misma base en ambos lados)
+function guardarAsignaturaDrive(ss, data) {
+  var HEADERS = ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre',
+    'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt'];
+  var sheet = ss.getSheetByName('Asignaturas');
+  if (!sheet) {
+    sheet = ss.insertSheet('Asignaturas');
+    sheet.appendRow(HEADERS);
+  } else {
+    var h0 = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    for (var h = 0; h < HEADERS.length; h++) {
+      if (h0.indexOf(HEADERS[h]) < 0) sheet.getRange(1, sheet.getLastColumn() + 1).setValue(HEADERS[h]);
+    }
+  }
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var idx = {};
+  for (var j = 0; j < headers.length; j++) idx[headers[j]] = j;
+  if (idx['Codigo'] === undefined) return { ok: false, error: 'Sin columna Codigo' };
+
+  var codigo = (data.codigo || '').toString().toUpperCase();
+  if (!codigo) return { ok: false, error: 'Falta codigo' };
+
+  var vals = sheet.getDataRange().getValues();
+  var row = -1;
+  for (var i = 1; i < vals.length; i++) {
+    if ((vals[i][idx['Codigo']] || '').toString().toUpperCase() === codigo) { row = i + 1; break; }
+  }
+  var ts = new Date().toISOString();
+  var prev = row > 0 ? vals[row - 1] : null;
+  var fila = headers.map(function (hh) {
+    switch (hh) {
+      case 'ID': return (prev && prev[idx['ID']]) || data.id || '';
+      case 'UUID': return (prev && prev[idx['UUID']]) || data.uuid || ('ASIG-' + Date.now());
+      case 'Nombre': return data.nombre || '';
+      case 'Codigo': return codigo;
+      case 'Carrera': return data.carrera || '';
+      case 'Grado': return data.grado || '';
+      case 'Semestre': return data.semestre || '';
+      case 'CargaHoraria': return data.carga_horaria || 0;
+      case 'Color': return data.color || '#10b981';
+      case 'Icono': return data.icono || 'bi-book';
+      case 'Estado': return data.estado || 'activo';
+      case 'CreatedAt': return (prev && prev[idx['CreatedAt']]) || ts;
+      case 'UpdatedAt': return ts;
+      default: return prev ? prev[idx[hh]] : '';
+    }
+  });
+  if (row > 0) sheet.getRange(row, 1, 1, headers.length).setValues([fila]);
+  else sheet.appendRow(fila);
+  return { ok: true, codigo: codigo };
 }
 
 function obtenerPagos(ss, cedula) {

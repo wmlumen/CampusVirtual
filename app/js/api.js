@@ -119,6 +119,40 @@ function gasGetRoles(cedula) {
         .catch(() => { clearTimeout(timeout); return { roles: [] }; });
 }
 
+// Helper: espejo de asignatura SQLite -> hoja Asignaturas vía GAS v06.2 (POST guardar_asignatura)
+// Misma base en ambos lados (upsert por codigo). Devuelve {ok, codigo}.
+function gasUploadSubject(a) {
+    a = a || {};
+    const payload = {
+        action: 'guardar_asignatura',
+        id: a.id || '',
+        nombre: a.nombre_completo || a.nombre || '',
+        codigo: a.codigo || '',
+        carrera: a.carrera || '',
+        grado: a.grado || '',
+        semestre: a.semestre || '',
+        carga_horaria: a.carga_horaria || 0,
+        color: a.color || '#10b981',
+        icono: a.icono || 'bi-book',
+        estado: a.estado || 'activo'
+    };
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
+// Helper: catálogo de asignaturas desde Google Sheets vía GAS (GET listar_asignaturas)
+// Devuelve {asignaturas:[{Nombre,Codigo,Carrera,Grado,...}]}. Nunca lanza.
+function gasGetSubjects() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    return fetch(GAS_URL + '?action=listar_asignaturas', { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .then(d => ({ asignaturas: (d && d.asignaturas) || (Array.isArray(d) ? d : []) }))
+        .catch(() => { clearTimeout(timeout); return { asignaturas: [] }; });
+}
+
 // Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
     u = u || {};

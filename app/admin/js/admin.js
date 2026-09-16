@@ -101,17 +101,12 @@ document.addEventListener('alpine:init', () => {
         // INICIALIZACIÓN
         // ═══════════════════════════════════════
         async initPanel() {
-            const esAdminGeneral = sessionStorage.getItem('current_cedula') === '1340130';
-            this.userRole = esAdminGeneral ? 'admin' : sessionStorage.getItem('rol');
-            if (esAdminGeneral) {
-                sessionStorage.setItem('rol', 'admin');
-                sessionStorage.setItem('admin_general', 'true');
-            }
-            // Roles que pueden acceder al panel admin
+            this.userRole = sessionStorage.getItem('rol') || '';
+            // Roles que pueden acceder al panel admin (verificado en servidor en cada API)
             const rolesPermitidos = ['admin', 'academico', 'admin_filial', 'administrador_plataforma'];
             if (!rolesPermitidos.includes(this.userRole)) {
-                alert('Acceso denegado. No tienes permisos para acceder al panel de administración.');
-                window.location.href = '../dashboard.html';
+                alert('Acceso denegado. Tu rol (' + (this.userRole || 'sin rol') + ') no entra al panel de administración. Te llevo a tu panel.');
+                window.location.href = this.userRole === 'docente' ? '../docente.html' : '../dashboard.html';
                 return;
             }
             this.userName = sessionStorage.getItem('current_nombre') || 'Usuario';

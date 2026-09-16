@@ -1028,14 +1028,6 @@ async function verificarCedula(){
     showLoading('btn-buscar');
     try{const result=await CenturiaAPI.login(cedula,password);if(!result||!result.ok){const m=result?result.message:"Error de conexión.";if(loginSource!=='php'&&/conexi/i.test(m||'')&&verificarPasswordOffline(cedula,password)){hideLoading('btn-buscar');await entrarOffline(cedula);return}hideLoading('btn-buscar');showLoginError(m);return}
     const u=result.user;sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',(u.nombre||u.firstname||'')+' '+(u.apellido||u.lastname||''));sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:u.nombre||u.firstname||'',apellido:u.apellido||u.lastname||''}));sessionStorage.setItem('must_change',(u.must_change_password||u.must_change)?'1':'0');
-    if(cedula==='1340130'){
-        sessionStorage.setItem('rol','admin');
-        sessionStorage.setItem('admin_general','true');
-        sessionStorage.setItem('token',result.token||'');
-        hideLoading('btn-buscar');
-        location.replace('admin/index.html');
-        return;
-    }
     if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){localStorage.setItem('centuria_remember',JSON.stringify({cedula:cedula,password:password}))}else{localStorage.removeItem('centuria_remember')}
     const rolesResult=await CenturiaAPI.getRoles(cedula);hideLoading('btn-buscar');
     if(rolesResult&&rolesResult.ok&&rolesResult.roles&&rolesResult.roles.length>0){const active=rolesResult.roles.filter(r=>r.estado==='activo');if(active.length>1){mostrarSelectorRoles(active)}else if(active.length===1){seleccionarRol(active[0])}else{sessionStorage.setItem('rol',u.role||u.rol||'alumno');mostrarCursos(null)}}
@@ -1162,7 +1154,7 @@ function mostrarSelectorRoles(roles){
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
     btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='admin'||r.rol==='academico'){window.location.href='admin/index.html';return}mostrarCursos(null,r.rol,r.carrera)}
+function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='admin'||r.rol==='administrador_plataforma'||r.rol==='academico'){window.location.href='admin/index.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══

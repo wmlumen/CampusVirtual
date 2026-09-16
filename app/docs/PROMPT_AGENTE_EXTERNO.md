@@ -117,7 +117,49 @@ GitHub Pages → api.js → Apps Script → Google Sheets (fuente principal)
   operación; logout revoca; roles de backend; persistencia tras recarga; cero 404 a `/api/*.php` en Pages;
   SQLite no requerido en producción; respaldo verificable; sin secretos; pruebas en verde.
 
-## 11. Forma de trabajo y entregables
+## 11. Arquitectura autoritativa (una sola verdad, sin mezclar responsabilidades)
+
+```text
+                 PRODUCCIÓN
+Frontend GitHub Pages → Google Apps Script → Google Sheets (FUENTE OFICIAL)
+                                                     ↓ solo exportación/respaldo
+                                              PHP + SQLite (herramienta local)
+```
+
+Y más adelante (NO ahora):
+
+```text
+Moodle → Integración Centuria → API oficial (GAS) → Google Sheets
+```
+
+1. **Google Sheets es la única base principal.** Usuarios, roles, matrícula, asistencia y calificaciones nacen
+   y se actualizan allí. SQLite nunca compite: solo respalda, exporta, audita y recupera.
+2. **PHP no es backend de producción.** Sirve para administración local, respaldo, importación/exportación y
+   recuperación. Limpiarlo (seguridad, configuración, migraciones) sí; hacerlo "mini-Moodle", no.
+3. **Sync en una sola dirección**: `Google Sheets → SQLite` siempre. El camino inverso solo manual, autenticado
+   y con revisión de diferencias (ya existe `app/admin/sync_sheets.html` para usuarios; extender el patrón, no
+   automatizarlo). Jamás sobrescribir datos nuevos de Sheets con copias viejas de la PC.
+4. **No compartir sesiones** entre PHP y GAS: son sistemas distintos (tokens PHP solo local; web sin sesión
+   servidora salvo que §6 la implemente en Sheets).
+5. **Autenticación en producción = GAS.** PHP mantiene su login solo para la herramienta admin local.
+6. **Identificadores estables**: toda fila lleva `UUID`/`usuario_id` permanente (ya existen las columnas; hacer
+   backfill donde falten: `ASIG-…`, `CARR-…`, `SEC-…`, y `usr_…` para usuarios). La cédula es identificador
+   funcional, pero nada debe depender del número físico de fila ni del autoincremental local.
+7. **Roles canónicos únicos** en todo el proyecto: `alumno, docente, academico, administrador,
+   administrador_general`. Eliminar variantes (`student/teacher/estudiante/Alumno/STUDENT`) mediante tabla de
+   equivalencias + migración de datos (Sheets y SQLite), manteniendo compatibilidad de lectura durante la
+   transición. Verificar que ningún filtro dependa de la variante inglesa.
+8. **Una sola autoridad por módulo**: Usuarios/Roles/Matrículas/Asignaturas/Asistencia/Calificaciones → Sheets;
+   Sesiones web → GAS; Backup → SQLite.
+9. **Archivos por referencia**: `foto_url, foto_id/fileId, updated_at` (ya implementado en hoja `Fotos` + Drive);
+   no duplicar binarios en bases. Aplicar el mismo patrón a futuros comprobantes/documentos.
+10. **Moodle después, como capa aparte** vía la API oficial (GAS). Ahora no se integra ni se imita nada de Moodle.
+
+Criterios: ningún módulo escribe en dos bases a la vez; ningún ID depende de filas; `grep` de variantes de rol
+en inglés devuelve cero en lógica (solo queda el mapa de compatibilidad); el flujo inverso exige confirmación
+explícita del admin con reporte de diferencias.
+
+## 12. Forma de trabajo y entregables
 
 - Rama de reparación, cambios pequeños verificables, sin `catch` vacíos que oculten errores, sin datos simulados,
   sin declarar terminado sin probar, sin borrar datos de Sheets (respaldo antes de migrar).

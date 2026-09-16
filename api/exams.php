@@ -85,6 +85,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         exit;
     }
 
+    // ── IPs sospechosas en exámenes (solo admin): misma IP, varias cuentas o muchos intentos ──
+    if ($action === 'ips_sospechosas') {
+        $decoded3 = require_auth();
+        if (!in_array($decoded3->role, ['admin','administrador_plataforma','academico','academic'])) {
+            http_response_code(403); echo json_encode(['error'=>'Solo administración']); exit;
+        }
+        $examen = $_GET['examen'] ?? '';
+        $sql = "SELECT ip, examen, COUNT(DISTINCT user_id) AS usuarios, COUNT(*) AS intentos
+                FROM exam_attempts WHERE ip <> ''";
+        $params = [];
+        if ($examen !== '') { $sql .= " AND examen = ?"; $params[] = $examen; }
+        $sql .= " GROUP BY ip, examen HAVING usuarios > 1 OR intentos > 3 ORDER BY usuarios DESC, intentos DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        echo json_encode(['ok' => true, 'sospechosas' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error'=>'Accion no valida']);
     exit;
@@ -122,8 +140,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $stmt = $pdo->prepare("INSERT INTO exam_attempts (user_id, examen, puntuacion, total_preguntas, respuestas, completado) VALUES (?, ?, ?, ?, ?, 1)");
-        $stmt->execute([$user_id, $examen, $puntuacion, $total, json_encode($respuestas)]);
+        $ip = get_client_ip();
+        $disp = substr(!empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '', 0, 200);
+
+        $stmt = $pdo->prepare("INSERT INTO exam_attempts (user_id, examen, puntuacion, total_preguntas, respuestas, completado, ip, dispositivo) VALUES (?, ?, ?, ?, ?, 1, ?, ?)");
+        $stmt->execute([$user_id, $examen, $puntuacion, $total, json_encode($respuestas), $ip, $disp]);
 
         echo json_encode(['ok'=>true,'mensaje'=>'Intento guardado','id'=>$pdo->lastInsertId()]);
         exit;

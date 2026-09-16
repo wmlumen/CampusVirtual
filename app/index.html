@@ -1126,7 +1126,7 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
         try{const cedula=localStorage.getItem('centuria_cedula')||sessionStorage.getItem('current_cedula');
         const resp=await fetch(CenturiaAPI.baseUrl+'docente.php?action=my_subjects&cedula='+encodeURIComponent(cedula));
         const data=await resp.json();
-        const subjects=(data.subjects||[]).filter(s=>{const a=data.assignments||[];return a.some(x=>x.asignatura===s.codigo&&x.rol==='docente')});
+        const subjects=(data.subjects||[]).filter(s=>{const a=data.assignments||[];return a.some(x=>x.asignatura===s.codigo&&['docente','teacher'].includes(x.rol))});
         if(subjects.length>0){const cm=subjects.map(c=>({id:c.codigo,nombre:c.nombre_completo||c.nombre,codigo:c.codigo,seccion:sec||c.seccion_asignada||'',color:c.color||'#2563EB',icono:c.icono||'bi-book',rol:rol,carrera:c.carrera||'',semestre:c.semestre||'',carga_horaria:c.carga_horaria||0,unidades:c.unidades||10}));
         renderCursos(cm);return}else{
         document.getElementById('lista-cursos').innerHTML='<div style="text-align:center;padding:20px;color:#64748b"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:0.75rem"><strong>Sin asignaturas asignadas</strong></p><p style="font-size:0.65rem;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';return}}catch(e){}}

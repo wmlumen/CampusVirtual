@@ -14,6 +14,32 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt
 // AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7,
 // AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ
 
+// Configuración central (una sola fuente; nada de URLs dispersas)
+window.CENTURIA_CONFIG = {
+    environment: (typeof location !== 'undefined' && /github\.io/.test(location.hostname)) ? 'production' : 'local',
+    appBasePath: (function () {
+        try {
+            var i = location.pathname.indexOf('/app/');
+            return i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
+        } catch (e) { return './'; }
+    })(),
+    apiProvider: 'google-apps-script',
+    googleAppsScriptUrl: (typeof GAS_URL !== 'undefined' ? GAS_URL : ''),
+    requestTimeout: 15000,
+    // Los fallbacks offline existen y funcionan (login/registro/recuperación vía Sheets+local).
+    // Solo desactivar con migración de usuarios previa.
+    allowOfflineAuthentication: true
+};
+
+// URLs relativas a la raíz de la app (Pages /CampusVirtual/app/, local /app/, subcarpetas)
+function appUrl(relativePath) {
+    try {
+        var base = (window.CENTURIA_CONFIG && CENTURIA_CONFIG.appBasePath) || './';
+        if (base === './') return new URL(relativePath, document.baseURI).href;
+        return new URL(relativePath.replace(/^\.\//, ''), location.origin + base).href;
+    } catch (e) { return relativePath; }
+}
+
 // Helper: verificar alumno en Google Sheets (GET) con timeout de 2s
 function gasCheckStudent(cedula) {
     const controller = new AbortController();
@@ -138,6 +164,25 @@ function gasEnviarProvisoria(email, nombre, password, remitente, remitenteNombre
             remitente_nombre: remitenteNombre || 'Instituto Superior Centuria'
         })
     }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
+// IP pública del cliente (para registro antifraude en Sheets) + info de dispositivo. Nunca lanza.
+let _clientIPCache = null;
+function getClientIP() {
+    if (_clientIPCache) return Promise.resolve(_clientIPCache);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    return fetch('https://api.ipify.org?format=json', { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .then(d => { _clientIPCache = (d && d.ip) || ''; return _clientIPCache; })
+        .catch(() => { clearTimeout(timeout); return ''; });
+}
+function getDeviceInfo() {
+    try {
+        const ua = navigator.userAgent || '';
+        const mob = /Android|iPhone|iPad|Mobile/i.test(ua) ? 'movil' : 'pc';
+        return (mob + ' ' + (navigator.platform || '')).trim().slice(0, 120);
+    } catch (e) { return ''; }
 }
 
 // Helper genérico: catálogo simple desde Google (grados/carreras/secciones, v06.5). Nunca lanza.

@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.9
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.10
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -32,6 +32,7 @@
  * v06.7 (2026-09-16): enviar_provisoria por Gmail (remitente/replyTo configurable)
  * v06.8 (2026-09-16): seeds alineados a datos corregidos (12 carreras G-/E-/M-/D-, 9 secciones S026/LV026/MJ026)
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
+ * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -66,6 +67,15 @@ function doGet(e) {
   // ── SEMBRAR TODO con datos conocidos (v06.4, solo rellena hojas vacías) ──
   if (action === 'sembrar_todo') {
     try { return responderJSON(sembrarTodo(ss)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── HEALTH para el panel de salud (v06.9) ──
+  if (action === 'health') {
+    try {
+      var d = diagnosticoSheets(ss);
+      return responderJSON({ ok: true, data: { api: { ok: true }, googleSheets: { ok: true, planilla: d.planilla_nombre }, auth: { ok: true } }, requestId: 'health-' + Date.now() });
+    }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -300,6 +310,12 @@ function doGet(e) {
     return responderJSON({ asignaturas: asignaturas });
   }
 
+  // ── HISTORIAL DE JUSTIFICACIONES del alumno (v06.10) ──
+  if (action === 'mis_justificaciones') {
+    try { return responderJSON({ ok: true, justificaciones: misJustificaciones(ss, e.parameter.cedula) }); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
   // ── CATÁLOGOS para el formulario de registro (v06.5) ──
   if (action === 'listar_grados') {
     try { return responderJSON({ grados: listarCatalogoSimple(ss, 'Grados') }); }
@@ -352,6 +368,12 @@ function doPost(e) {
   // ── ENVIAR PROVISORIA POR EMAIL (v06.7, remitente configurable) ──
   if (data.action === 'enviar_provisoria') {
     try { return responderJSON(enviarProvisoria(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── JUSTIFICAR AUSENCIA del alumno (v06.10) ──
+  if (data.action === 'justificar_ausencia') {
+    try { return responderJSON(guardarJustificacion(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -436,15 +458,20 @@ function doPost(e) {
     return responderJSON({ status: "Error", mensaje: "Rol no encontrado" });
   }
 
-  // ── 4. MARCAR ASISTENCIA ──
+  // ── 4. MARCAR ASISTENCIA (v06.10: + IP y Dispositivo al final) ──
   if (data.action === 'marcar_asistencia') {
     var sheetAsistencia = ss.getSheetByName('Asistencias');
     if (!sheetAsistencia) {
       sheetAsistencia = ss.insertSheet('Asistencias');
-      sheetAsistencia.appendRow(['Fecha/Hora', 'Cédula', 'Unidad/Lugar', 'Observación']);
+      sheetAsistencia.appendRow(['Fecha/Hora', 'Cédula', 'Unidad/Lugar', 'Observación', 'IP', 'Dispositivo']);
+    } else {
+      var ha = sheetAsistencia.getRange(1, 1, 1, sheetAsistencia.getLastColumn()).getValues()[0];
+      if (ha.indexOf('IP') < 0) sheetAsistencia.getRange(1, sheetAsistencia.getLastColumn() + 1).setValue('IP');
+      if (ha.indexOf('Dispositivo') < 0) sheetAsistencia.getRange(1, sheetAsistencia.getLastColumn() + 1).setValue('Dispositivo');
     }
     var ts3 = new Date().toLocaleString('es-ES', { timeZone: 'America/Asuncion' });
-    sheetAsistencia.appendRow([ts3, data.cedula, data.unidad || "Presencial", data.observacion || ""]);
+    sheetAsistencia.appendRow([ts3, data.cedula, data.unidad || "Presencial", data.observacion || "",
+      data.ip || '', data.dispositivo || '']);
     return responderJSON({ status: "Éxito" });
   }
 
@@ -2025,6 +2052,42 @@ function obtenerFotoDrive(ss, cedula) {
   return { ok: true, existe: false };
 }
 
+// Justificación de ausencia del alumno (v06.10). Hoja JustificacionesTIC.
+function guardarJustificacion(ss, data) {
+  var cedula = (data.cedula || '').toString().trim();
+  var fecha = (data.fechaAusencia || data.fecha || '').toString().trim();
+  var motivo = (data.motivo || '').toString().trim();
+  if (!cedula || !fecha || !motivo) return { ok: false, error: 'Faltan datos' };
+  var sheet = ss.getSheetByName('JustificacionesTIC');
+  if (!sheet) {
+    sheet = ss.insertSheet('JustificacionesTIC');
+    sheet.appendRow(['Fecha', 'Cédula', 'Nombre', 'Motivo', 'Observacion', 'Estado', 'IP']);
+  } else {
+    var h = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var need = ['Nombre', 'Observacion', 'Estado', 'IP'];
+    for (var k = 0; k < need.length; k++) {
+      if (h.indexOf(need[k]) < 0) sheet.getRange(1, sheet.getLastColumn() + 1).setValue(need[k]);
+    }
+  }
+  sheet.appendRow([fecha, cedula, data.nombre || '', motivo,
+    data.observacion || '', 'Pendiente', data.ip || '']);
+  return { ok: true };
+}
+
+function misJustificaciones(ss, cedula) {
+  cedula = (cedula || '').toString().trim();
+  var sheet = ss.getSheetByName('JustificacionesTIC');
+  if (!sheet || !cedula) return [];
+  var data = sheet.getDataRange().getValues();
+  var out = [];
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][1].toString() === cedula) {
+      out.push({ Fecha: data[i][0] || '', Motivo: data[i][3] || '', Estado: data[i][5] || 'Pendiente', MarcaTemporal: data[i][0] || '' });
+    }
+  }
+  return out;
+}
+
 // Envía la contraseña provisoria al mail del alumno (v06.7).
 // El remitente se configura en el panel admin (se usa como replyTo y nombre).
 function enviarProvisoria(ss, data) {
@@ -2146,10 +2209,10 @@ function inicializarBaseDatos() {
   asegurarHoja(ss, 'ClasesTIC', ['Fecha', 'Carrera', 'Sección'], creadas);
 
   // 17. Asistencias
-  asegurarHoja(ss, 'Asistencias', ['Fecha', 'Cédula', 'Unidad/Lugar', 'Observación'], creadas);
+  asegurarHoja(ss, 'Asistencias', ['Fecha/Hora', 'Cédula', 'Unidad/Lugar', 'Observación', 'IP', 'Dispositivo'], creadas);
 
   // 18. JustificacionesTIC
-  asegurarHoja(ss, 'JustificacionesTIC', ['Fecha', 'Cédula', 'Motivo'], creadas);
+  asegurarHoja(ss, 'JustificacionesTIC', ['Fecha', 'Cédula', 'Nombre', 'Motivo', 'Observacion', 'Estado', 'IP'], creadas);
 
   // 19. ProgresoUnidades
   asegurarHoja(ss, 'ProgresoUnidades', ['Fecha/Hora', 'Cédula', 'Unidad', 'Sección', 'Estado'], creadas);

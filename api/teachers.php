@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
 
     $stmt = $pdo->prepare("
         INSERT INTO user_roles (user_id, rol, carrera, seccion, asignatura, asignado_por, estado)
-        VALUES (?, 'teacher', ?, ?, ?, ?, 'activo')
+        VALUES (?, 'docente', ?, ?, ?, ?, 'activo')
     ");
     $stmt->execute([$userId, $carrera, $seccion, $asignatura, $auth->username]);
 

@@ -227,11 +227,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="asistencia_' . date('Y-m-d') . '.csv"');
         $output = fopen('php://output', 'w');
-        fputcsv($output, ['Cédula','Nombre','Carrera','Sección','Grado','Estado','Fecha','Hora','Evento','Código']);
+        fputcsv($output, ['Cédula','Nombre','Carrera','Sección','Grado','Estado','Fecha','Hora','Evento','Código','IP']);
         foreach ($rows as $r) {
-            fputcsv($output, [$r['cedula'],$r['nombre'],$r['carrera'],$r['seccion'],$r['grado'],$r['estado'],$r['fecha'],$r['hora'],$r['event_title'],$r['event_code']]);
+            fputcsv($output, [$r['cedula'],$r['nombre'],$r['carrera'],$r['seccion'],$r['grado'],$r['estado'],$r['fecha'],$r['hora'],$r['event_title'],$r['event_code'],$r['ip'] ?? '']);
         }
         fclose($output);
+        exit;
+    }
+
+    // IPs sospechosas: misma IP usada por varias cédulas (posible fraude, solo admin)
+    if ($action === 'ips_sospechosas') {
+        $a2 = require_auth();
+        if (!in_array($a2->role, ['admin','administrador_plataforma','academico','academic'])) {
+            http_response_code(403); echo json_encode(['error'=>'Solo administración']); exit;
+        }
+        $event_id = intval($_GET['event_id'] ?? 0);
+        $sql = "SELECT ip, COUNT(DISTINCT cedula) AS cedulas, GROUP_CONCAT(DISTINCT cedula) AS lista
+                FROM attendance_records WHERE ip <> ''";
+        $params = [];
+        if ($event_id) { $sql .= " AND event_id = ?"; $params[] = $event_id; }
+        $sql .= " GROUP BY ip HAVING cedulas > 1 ORDER BY cedulas DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        echo json_encode(['ok' => true, 'sospechosas' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
         exit;
     }
 
@@ -356,12 +374,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Registrar con fecha + hora + minutos
+        // Registrar con fecha + hora + minutos (+ IP/dispositivo antifraude)
         $fecha = date('Y-m-d');
         $hora = date('H:i');
+        $ip = get_client_ip();
+        $disp = substr(!empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '', 0, 200);
 
-        $stmt = $pdo->prepare("INSERT INTO attendance_records (event_id, event_code, cedula, nombre, carrera, seccion, grado, estado, fecha, hora, observacion) VALUES (?, ?, ?, ?, ?, ?, ?, 'presente', ?, ?, ?)");
-        $stmt->execute([$event['id'], $code, $cedula, strtoupper($nombre), $carrera, $seccion, $grado, $fecha, $hora, $observacion]);
+        $stmt = $pdo->prepare("INSERT INTO attendance_records (event_id, event_code, cedula, nombre, carrera, seccion, grado, estado, fecha, hora, observacion, ip, dispositivo) VALUES (?, ?, ?, ?, ?, ?, ?, 'presente', ?, ?, ?, ?, ?)");
+        $stmt->execute([$event['id'], $code, $cedula, strtoupper($nombre), $carrera, $seccion, $grado, $fecha, $hora, $observacion, $ip, $disp]);
 
         echo json_encode([
             'ok'=>true,

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salud del Sistema — Campus Virtual Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde:#00B140;--verde-dark:#007A33}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fdf4;min-height:100vh;margin:0}
+        .topbar{background:var(--verde-dark);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+        .topbar a{color:#fff;text-decoration:none;font-size:.7rem;font-weight:600}
+        .wrap{max-width:800px;margin:0 auto;padding:20px 16px 60px}
+        h1{font-size:1.05rem;font-weight:800;color:var(--verde-dark)}
+        .sub{font-size:.7rem;color:#64748b;margin-bottom:14px}
+        table{width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);font-size:.75rem}
+        th{background:#f8fafc;color:#64748b;text-transform:uppercase;font-size:.6rem;padding:8px 12px;text-align:left}
+        td{padding:9px 12px;border-top:1px solid #f1f5f9}
+        .st{padding:3px 12px;border-radius:20px;font-size:.65rem;font-weight:800}
+        .VERDE{background:#D1FAE5;color:#065F46}.AMARILLO{background:#FEF3C7;color:#92400E}
+        .ROJO{background:#FEE2E2;color:#991B1B}.GRIS{background:#F1F5F9;color:#64748b}
+        .btn{padding:9px 18px;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;background:var(--verde);color:#fff}
+        .det{font-size:.65rem;color:#64748b}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div style="font-weight:800;font-size:.85rem">🏛 Salud del Sistema</div>
+        <a href="index.html">← Portal</a>
+    </div>
+    <div class="wrap">
+        <h1><i class="bi bi-heart-pulse"></i> Estado de componentes</h1>
+        <div class="sub">VERDE funciona · AMARILLO revisar · ROJO roto · GRIS no configurado</div>
+        <button class="btn mb-3" onclick="ejecutar()"><i class="bi bi-play-fill"></i> Ejecutar diagnóstico</button>
+        <table>
+            <thead><tr><th>Componente</th><th>Estado</th><th>Detalle</th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="3" class="text-center text-muted">Pulsa Ejecutar diagnóstico.</td></tr></tbody>
+        </table>
+    </div>
+    <script src="js/api.js?v=11"></script>
+    <script>
+        const filas = [];
+        function fila(nombre, estado, detalle) {
+            filas.push({ nombre, estado, detalle });
+        }
+        function pintar() {
+            document.getElementById('tbody').innerHTML = filas.map(f =>
+                `<tr><td><b>${f.nombre}</b></td><td><span class="st ${f.estado}">${f.estado}</span></td><td class="det">${f.detalle}</td></tr>`
+            ).join('');
+        }
+        async function get(url, ms) {
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), ms || 8000);
+            try {
+                const r = await fetch(url, { signal: c.signal });
+                clearTimeout(t);
+                return { ok: r.ok, status: r.status, json: await r.json().catch(() => null) };
+            } catch (e) { clearTimeout(t); return { ok: false, error: String(e && e.message || e) }; }
+        }
+        async function ejecutar() {
+            filas.length = 0;
+            document.getElementById('tbody').innerHTML = '<tr><td colspan="3" class="text-center">Diagnosticando…</td></tr>';
+
+            // 1. Frontend
+            fila('Frontend (esta página)', 'VERDE', location.href);
+
+            // 2. Rutas esenciales
+            for (const p of ['index.html', 'dashboard.html', 'perfil.html']) {
+                const r = await get(p, 8000);
+                fila('Ruta ' + p, r.ok ? 'VERDE' : 'ROJO', r.ok ? ('HTTP ' + r.status) : 'no responde');
+            }
+
+            // 3. Google Apps Script health
+            let gasOk = false, planilla = '';
+            try {
+                const r = await get(GAS_URL + '?action=health', 12000);
+                gasOk = !!(r.json && r.json.ok);
+                planilla = (r.json && r.json.data && r.json.data.googleSheets && r.json.data.googleSheets.planilla) || '';
+            } catch (e) {}
+            fila('Google Apps Script', gasOk ? 'VERDE' : 'ROJO', gasOk ? ('health OK' + (planilla ? ' · ' + planilla : '')) : 'sin respuesta (¿publicado?)');
+
+            // 4. Google Sheets (diagnóstico)
+            try {
+                const r = await get(GAS_URL + '?action=diagnostico', 12000);
+                const c = (r.json && r.json.conteos) || null;
+                if (c) {
+                    const vacias = Object.keys(c).filter(k => c[k] === 0);
+                    const ausentes = Object.keys(c).filter(k => c[k] < 0);
+                    fila('Google Sheets', ausentes.length ? 'AMARILLO' : 'VERDE',
+                        'RegistroAlumnos:' + c.RegistroAlumnos + ' Roles:' + c.Roles + ' Asignaturas:' + c.Asignaturas +
+                        (vacias.length ? ' · vacías: ' + vacias.join(',') : '') +
+                        (ausentes.length ? ' · faltan: ' + ausentes.join(',') : ''));
+                } else fila('Google Sheets', 'ROJO', 'sin conteos');
+            } catch (e) { fila('Google Sheets', 'ROJO', 'sin respuesta'); }
+
+            // 5. Autenticación local (PHP, solo PC)
+            try {
+                const r = await get((CenturiaAPI.baseUrl || '') + 'upload.php?action=health', 4000);
+                fila('PHP local', (r.json && (r.json.status === 'ok' || r.json.success)) ? 'VERDE' : 'GRIS',
+                    (r.json && (r.json.status === 'ok' || r.json.success)) ? 'responde' : 'no disponible (normal en GitHub)');
+            } catch (e) { fila('PHP local', 'GRIS', 'no disponible (normal en GitHub)'); }
+
+            // 6. Sesión actual
+            const ced = sessionStorage.getItem('current_cedula');
+            fila('Sesión', ced ? 'VERDE' : 'GRIS', ced ? ('activa: ' + ced) : 'sin sesión en este navegador');
+
+            // 7. Respaldo
+            fila('Respaldo SQLite', 'GRIS', 'manual desde la PC del admin (ver PROMPT_MEJORA P1.3)');
+
+            pintar();
+        }
+    </script>
+</body>
+</html>

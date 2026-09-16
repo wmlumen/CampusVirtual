@@ -455,7 +455,7 @@
                         <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
-                            <div class="hint">PDF, JPG, PNG (Máx. 5MB)</div>
+                            <div class="hint">Se anota el nombre del archivo (PDF, JPG, PNG). Entrega el documento físico al docente.</div>
                         </div>
                         <input type="file" class="file-input" id="fileInput" 
                                accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event)">
@@ -500,7 +500,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js?v=11"></script>
     <script src="../js/session-guard.js"></script>
     <script>
         // ═══════════════════════════════════════════════════════
@@ -648,29 +648,21 @@
             // Preparar datos
             const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
             
+            let ip = '';
+            try { if (typeof getClientIP === 'function') ip = await getClientIP(); } catch (e) {}
+
             const formData = {
-                action: 'justificar',
+                action: 'justificar_ausencia',
                 cedula: userData.username,
                 nombre: `${userData.firstname} ${userData.lastname}`,
                 fechaAusencia: document.getElementById('absenceDate').value,
                 motivo: selectedMotivo,
-                observacion: document.getElementById('description').value
+                observacion: document.getElementById('description').value,
+                fileName: selectedFile ? selectedFile.name : '',
+                ip: ip
             };
-            
-            // Si hay archivo, convertir a base64
-            if (selectedFile) {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const base64 = e.target.result.split(',')[1];
-                    formData.fileData = base64;
-                    formData.fileName = selectedFile.name;
-                    
-                    await sendJustification(formData);
-                };
-                reader.readAsDataURL(selectedFile);
-            } else {
-                await sendJustification(formData);
-            }
+
+            await sendJustification(formData);
         }
 
         async function sendJustification(formData) {
@@ -679,7 +671,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
             
             try {
-                const response = await fetch(API_GAS_URL, {
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
@@ -717,7 +709,7 @@
             const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
             
             try {
-                const response = await fetch(`${API_GAS_URL}?modo=justificaciones&cedula=${userData.username}`);
+                const response = await fetch(`${GAS_URL}?action=mis_justificaciones&cedula=${userData.username}`);
                 const data = await response.json();
                 
                 const tbody = document.getElementById('historyBody');

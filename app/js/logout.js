@@ -36,5 +36,9 @@ function centuriaLogout(confirmar) {
     localStorage.removeItem('centuria_user');
 
     // Redirigir al index (replace para evitar botón "atrás")
-    window.location.replace(appRoot + 'index.html');
+    try {
+        window.location.replace((typeof appUrl === 'function') ? appUrl('index.html') : (appRoot + 'index.html'));
+    } catch (e) {
+        window.location.replace(appRoot + 'index.html');
+    }
 }

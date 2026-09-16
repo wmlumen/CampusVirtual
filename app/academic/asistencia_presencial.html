@@ -101,8 +101,9 @@
         </div>
     </div>
 
+    <script src="../js/api.js?v=11"></script>
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec';
+        const SCRIPT_URL = (typeof GAS_URL !== 'undefined' ? GAS_URL : 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec');
         let cedulaActual = '';
 
         function showLoading(btnId) {
@@ -187,14 +188,22 @@
             });
         }
 
-        function marcarAsistencia() {
+        async function marcarAsistencia() {
             let obs = document.getElementById('inp-obs').value.trim();
             showLoading('btn-marcar');
+
+            let ip = '', disp = '';
+            try {
+                if (typeof getClientIP === 'function') ip = await getClientIP();
+                if (typeof getDeviceInfo === 'function') disp = getDeviceInfo();
+            } catch (e) {}
 
             let payload = {
                 action: 'marcar_asistencia',
                 cedula: cedulaActual,
-                observacion: obs
+                observacion: obs,
+                ip: ip,
+                dispositivo: disp
             };
 
             fetch(SCRIPT_URL, {

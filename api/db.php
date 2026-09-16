@@ -260,7 +260,7 @@ class Database {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
 
-            // exam_attempts: intentos de examen por alumno
+            // exam_attempts: intentos de examen por alumno (+ IP/dispositivo antifraude)
             "CREATE TABLE IF NOT EXISTS exam_attempts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
@@ -269,6 +269,8 @@ class Database {
                 total_preguntas INTEGER DEFAULT 0,
                 respuestas TEXT DEFAULT '{}',
                 completado INTEGER DEFAULT 0,
+                ip TEXT DEFAULT '',
+                dispositivo TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )",
@@ -428,6 +430,8 @@ class Database {
                 hora TEXT NOT NULL,
                 observacion TEXT DEFAULT '',
                 recorded_by INTEGER DEFAULT 0,
+                ip TEXT DEFAULT '',
+                dispositivo TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (event_id) REFERENCES attendance_events(id)
             )");
@@ -507,6 +511,16 @@ class Database {
                     $ins = $this->pdo->prepare("INSERT INTO configuracion (clave, valor) VALUES (?, ?)");
                     $ins->execute([$k, $v]);
                 }
+            }
+        } catch (Exception $e) {}
+
+        // ═══ Migración: IP/dispositivo antifraude en registros y exámenes ═══
+        try {
+            foreach (['attendance_records', 'exam_attempts'] as $tabla) {
+                $cols = [];
+                foreach ($this->pdo->query("PRAGMA table_info($tabla)") as $r) { $cols[] = $r['name']; }
+                if (!in_array('ip', $cols)) { $this->pdo->exec("ALTER TABLE $tabla ADD COLUMN ip TEXT DEFAULT ''"); }
+                if (!in_array('dispositivo', $cols)) { $this->pdo->exec("ALTER TABLE $tabla ADD COLUMN dispositivo TEXT DEFAULT ''"); }
             }
         } catch (Exception $e) {}
 

@@ -34,6 +34,7 @@
 // ══════════════════════════════════════════════════════════════
 
 function doGet(e) {
+  if (!e || !e.parameter) return responderJSON({ ok: false, error: 'Falta parámetro action' });
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var action = e.parameter.action;
 
@@ -1972,6 +1973,188 @@ function eliminarFotoDrive(ss, data) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// v06.3: INICIALIZACIÓN DE BASE DE DATOS GOOGLE SHEETS
+// Crea todas las hojas requeridas con cabeceras correctas.
+// Ejecutar UNA VEZ desde el editor (▶ inicializarBaseDatos) tras publicar.
+// ═══════════════════════════════════════════════════════════════
+
+function inicializarBaseDatos() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var creadas = [];
+
+  // 1. RegistroAlumnos (ya existe con 29 filas, solo asegurar cabeceras)
+  asegurarHoja(ss, 'RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección'], creadas);
+
+  // 2. Roles
+  asegurarHoja(ss, 'Roles', ['Cédula', 'Nombre', 'Rol', 'Carrera', 'Sección', 'Asignatura', 'Estado', 'FechaAsignación', 'AsignadoPor'], creadas);
+
+  // 3. Asignaturas (catálogo maestro)
+  asegurarHoja(ss, 'Asignaturas', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre', 'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 4. Secciones
+  asegurarHoja(ss, 'Secciones', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Capacidad', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 5. Carreras (catálogo)
+  asegurarHoja(ss, 'Carreras', ['ID', 'UUID', 'Nombre', 'Codigo', 'Grado', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 6. Grados (catálogo)
+  asegurarHoja(ss, 'Grados', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 7. Modalidades (catálogo)
+  asegurarHoja(ss, 'Modalidades', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 8. Matriculaciones
+  asegurarHoja(ss, 'Matriculaciones', ['ID', 'UUID', 'UserId', 'CodigoFormulario', 'LegajoNumero', 'FechaInscripcion', 'Nombres', 'Apellidos', 'Cedula', 'LugarNacimiento', 'FechaNacimiento', 'Pais', 'Direccion', 'Ciudad', 'Departamento', 'BarrioCompania', 'TelefonoFijo', 'TelefonoMovil', 'CorreoElectronico', 'TituloBachiller', 'InstitucionOrigen', 'CiudadPaisEstudio', 'AnioPromocion', 'Semestre', 'Carrera', 'TipoAlumno', 'MatriculaGuaranies', 'Mensualidad', 'PlanPago', 'AsignaturasPendientes', 'SemestresPendientes', 'InformacionAdicional', 'AceptaDeclaracion', 'Firma', 'Estado', 'RegistradoPor', 'Observaciones', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 9. FormulariosCarrera
+  asegurarHoja(ss, 'FormulariosCarrera', ['ID', 'UUID', 'Codigo', 'Nombre', 'Carrera', 'Tipo', 'CamposJson', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 10. FormulariosAlumno
+  asegurarHoja(ss, 'FormulariosAlumno', ['ID', 'UUID', 'FormularioId', 'UserId', 'Cedula', 'Datos', 'Estado', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 11. AttendanceEvents
+  asegurarHoja(ss, 'AttendanceEvents', ['ID', 'UUID', 'CodigoUnico', 'Asignatura', 'Unidad', 'Lugar', 'Fecha', 'HoraInicio', 'HoraFin', 'CreadoPor', 'Estado', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 12. AttendanceRecords
+  asegurarHoja(ss, 'AttendanceRecords', ['ID', 'UUID', 'EventId', 'UserId', 'Cedula', 'Estado', 'HoraRegistro', 'Observacion', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 13. CalendarEvents
+  asegurarHoja(ss, 'CalendarEvents', ['ID', 'UUID', 'Titulo', 'Descripcion', 'FechaInicio', 'FechaFin', 'HoraInicio', 'HoraFin', 'Tipo', 'Color', 'CreadoPor', 'Asignatura', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 14. Filiales
+  asegurarHoja(ss, 'Filiales', ['ID', 'UUID', 'Nombre', 'Codigo', 'Direccion', 'Telefono', 'Estado', 'CreadoPor', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 15. Fotos
+  asegurarHoja(ss, 'Fotos', ['Cedula', 'Nombre', 'FileId', 'Url', 'Fecha'], creadas);
+
+  // 16. ClasesTIC
+  asegurarHoja(ss, 'ClasesTIC', ['Fecha', 'Carrera', 'Sección'], creadas);
+
+  // 17. Asistencias
+  asegurarHoja(ss, 'Asistencias', ['Fecha', 'Cédula', 'Unidad/Lugar', 'Observación'], creadas);
+
+  // 18. JustificacionesTIC
+  asegurarHoja(ss, 'JustificacionesTIC', ['Fecha', 'Cédula', 'Motivo'], creadas);
+
+  // 19. ProgresoUnidades
+  asegurarHoja(ss, 'ProgresoUnidades', ['Fecha/Hora', 'Cédula', 'Unidad', 'Sección', 'Estado'], creadas);
+
+  // 20. ProgresoDetalle
+  asegurarHoja(ss, 'ProgresoDetalle', ['Fecha/Hora', 'Cédula', 'Unidad', 'Sección', 'Leído', 'Página'], creadas);
+
+  // 21. Notas
+  asegurarHoja(ss, 'Notas', ['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final'], creadas);
+
+  // 22. Pagos
+  asegurarHoja(ss, 'Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor'], creadas);
+
+  // 23. Accesos
+  asegurarHoja(ss, 'Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo'], creadas);
+
+  // 24. Catálogos
+  asegurarHoja(ss, 'Catálogos', ['ID', 'UUID', 'Tipo', 'Nombre', 'Codigo', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 25. Planificaciones
+  asegurarHoja(ss, 'Planificaciones', ['ID', 'UUID', 'Titulo', 'Descripcion', 'Fecha', 'Asignatura', 'Carrera', 'Seccion', 'Docente', 'Estado', 'CreatedAt', 'UpdatedAt'], creadas);
+
+  // 26. ProgresoG (grupal)
+  asegurarHoja(ss, 'ProgresoG', ['Fecha/Hora', 'Carrera', 'Seccion', 'Unidad', 'TotalAlumnos', 'Completados', 'Porcentaje'], creadas);
+
+  // 27. Auditoria
+  asegurarHoja(ss, 'Auditoria', ['Fecha/Hora', 'Usuario', 'Accion', 'Tabla', 'RegistroId', 'DatosAntes', 'DatosDespues', 'IP'], creadas);
+
+  // 28. SyncControl
+  asegurarHoja(ss, 'SyncControl', ['Tabla', 'UltimoSync', 'Errores', 'Estado'], creadas);
+
+  return { ok: true, mensaje: 'Base de datos inicializada', hojas_creadas: creadas.length, detalle: creadas };
+}
+
+function asegurarHoja(ss, nombre, cabeceras, creadas) {
+  var sheet = ss.getSheetByName(nombre);
+  if (!sheet) {
+    sheet = ss.insertSheet(nombre);
+    sheet.appendRow(cabeceras);
+    // Formato cabecera: negrita, fondo, congelar
+    var range = sheet.getRange(1, 1, 1, cabeceras.length);
+    range.setFontWeight('bold');
+    range.setBackground('#007A33');
+    range.setFontColor('#FFFFFF');
+    sheet.setFrozenRows(1);
+    creadas.push(nombre + ' (' + cabeceras.length + ' cols)');
+  } else {
+    // Verificar que la cabecera coincida (primera fila)
+    var actual = sheet.getRange(1, 1, 1, cabeceras.length).getValues()[0];
+    var coincide = true;
+    for (var i = 0; i < cabeceras.length; i++) {
+      if ((actual[i] || '').toString().trim() !== cabeceras[i]) { coincide = false; break; }
+    }
+    if (!coincide) {
+      sheet.getRange(1, 1, 1, cabeceras.length).setValues([cabeceras]);
+      creadas.push(nombre + ' (cabeceras actualizadas)');
+    }
+  }
+}
+
+// Función para poblar catálogos base si están vacíos
+function poblarCatalogosBase() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var res = { carreras: 0, grados: 0, secciones: 0, modalidades: 0 };
+
+  // Carreras
+  var cSheet = ss.getSheetByName('Carreras');
+  if (cSheet.getLastRow() <= 1) {
+    var carreras = [
+      ['CARR-001', 'CARR-001', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', true],
+      ['CARR-002', 'CARR-002', 'CONTABILIDAD', 'GRADO', true],
+      ['CARR-003', 'CARR-003', 'INFORMÁTICA', 'GRADO', true],
+      ['CARR-004', 'CARR-004', 'DERECHO', 'GRADO', true],
+      ['CARR-005', 'CARR-005', 'ENFERMERÍA', 'GRADO', true],
+    ];
+    carreras.forEach(function(c) { cSheet.appendRow(['', 'CARR-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(c)); });
+    res.carreras = carreras.length;
+  }
+
+  // Grados
+  var gSheet = ss.getSheetByName('Grados');
+  if (gSheet.getLastRow() <= 1) {
+    var grados = [
+      ['GRD-001', 'GRD-001', 'GRADO', true],
+      ['GRD-002', 'GRD-002', 'ESPECIALIZACIÓN', true],
+      ['GRD-003', 'GRD-003', 'MAESTRÍA', true],
+      ['GRD-004', 'GRD-004', 'DOCTORADO', true],
+    ];
+    grados.forEach(function(g) { gSheet.appendRow(['', 'GRD-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(g)); });
+    res.grados = grados.length;
+  }
+
+  // Secciones (algunas por defecto)
+  var sSheet = ss.getSheetByName('Secciones');
+  if (sSheet.getLastRow() <= 1) {
+    var secciones = [
+      ['SEC-001', 'SEC-001', 'S026', 'SÁBADO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-002', 'SEC-002', 'S027', 'NOCTURNO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
+      ['SEC-003', 'SEC-003', 'M001', 'MATUTINO', 'ADMINISTRACIÓN DE EMPRESAS', 'GRADO', 40, true],
+    ];
+    secciones.forEach(function(s) { sSheet.appendRow(['', 'SEC-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(s)); });
+    res.secciones = secciones.length;
+  }
+
+  // Modalidades
+  var mSheet = ss.getSheetByName('Modalidades');
+  if (mSheet.getLastRow() <= 1) {
+    var modalidades = [
+      ['MOD-001', 'MOD-001', 'PRESENCIAL', true],
+      ['MOD-002', 'MOD-002', 'SEMIPRESENCIAL', true],
+      ['MOD-003', 'MOD-003', 'VIRTUAL', true],
+    ];
+    modalidades.forEach(function(m) { mSheet.appendRow(['', 'MOD-' + Date.now() + '-' + Math.random().toString(36).substr(2,5)].concat(m)); });
+    res.modalidades = modalidades.length;
+  }
+
+  return { ok: true, mensaje: 'Catálogos base poblados', ...res };
+}
+
+// ════════════════════════════════════════════════════════════════
 // v06.2: ASISTENCIA TIC (antes en Asistencia_Por_Fechas.gs)
 // ═══════════════════════════════════════════════════════════════
 

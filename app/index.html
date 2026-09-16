@@ -456,53 +456,58 @@
         .curso-name { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
         .curso-meta { font-size: 0.62rem; color: #64748b; margin-top: 1px; }
 
-        /* Footer */
+        /* Footer sobrio y compacto */
         .footer {
             position: relative;
             z-index: 1;
             background: #091f0f;
             border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 16px 24px;
+            padding: 10px 16px 8px;
             color: #c8e6d0;
+            max-width: 100%;
+            overflow: hidden;
         }
         .footer-grid {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 20px;
-            font-size: 0.68rem;
+            gap: 12px;
+            font-size: 0.62rem;
         }
+        .footer-col { min-width: 0; }
         .footer-col h4 {
-            font-size: 0.65rem;
+            font-size: 0.58rem;
             font-weight: 700;
             color: var(--dorado);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         .footer-col p, .footer-col a {
             color: #94a3b8;
-            font-size: 0.65rem;
-            line-height: 1.6;
+            font-size: 0.6rem;
+            line-height: 1.5;
             text-decoration: none;
+            overflow-wrap: anywhere;
+            margin: 0 0 2px;
         }
         .footer-col a:hover { color: var(--verde-hover); }
         .footer-social {
             display: flex;
-            gap: 10px;
-            margin-top: 8px;
+            gap: 6px;
+            margin-top: 6px;
         }
         .footer-social a {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
             border: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #94a3b8;
-            font-size: 0.8rem;
+            font-size: 0.65rem;
             transition: all 0.2s;
         }
         .footer-social a:hover {
@@ -511,12 +516,12 @@
             border-color: var(--verde-medio);
         }
         .footer-bottom {
-            max-width: 1100px;
-            margin: 12px auto 0;
-            padding-top: 12px;
+            max-width: 1000px;
+            margin: 8px auto 0;
+            padding-top: 8px;
             border-top: 1px solid rgba(255,255,255,0.06);
             text-align: center;
-            font-size: 0.58rem;
+            font-size: 0.55rem;
             color: #64748b;
         }
 
@@ -576,7 +581,8 @@
         @media (max-width: 480px) {
             .login-body { padding: 20px 16px 24px; }
             .brand-features { grid-template-columns: 1fr 1fr; }
-            .footer-grid { grid-template-columns: 1fr; }
+            .footer { padding: 8px 12px 6px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 8px; }
         }
     </style>
 </head>
@@ -762,7 +768,7 @@
     <div class="footer-grid">
         <div class="footer-col">
             <h4>Instituto Superior Centuria</h4>
-            <p>Formando líderes con tecnología y excelencia desde nuestra fundación. Comprometidos con la educación de calidad y la formación integral de profesionales.</p>
+            <p>Formando líderes con tecnología y excelencia.</p>
             <div class="footer-social">
                 <a href="#" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                 <a href="#" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>

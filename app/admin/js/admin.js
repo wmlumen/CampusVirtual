@@ -27,6 +27,10 @@ document.addEventListener('alpine:init', () => {
         userFilterRol: '',
         userFilterEstado: '',
         userFilterGrupo: '',
+        showRegistroRapido: false,
+        showCrearRol: false,
+        showCrearFilial: false,
+        showCatalogForm: false,
         stats: { totalCedulas: 0, alumnos: 0, docentes: 0 },
         rolesConfig: [],
         filiales: [],
@@ -46,6 +50,7 @@ document.addEventListener('alpine:init', () => {
             { id: 'gestionar_usuarios', label: 'Gestionar usuarios' },
             { id: 'gestionar_roles', label: 'Gestionar roles' },
             { id: 'ver_reportes', label: 'Ver reportes' },
+            { id: 'ver_tesoreria', label: 'Ver tesorería' },
             { id: 'ver_config', label: 'Ver configuración' },
         ],
         formPendiente: { cedula: '', nombre: '', apellido: '', email: '', telefono: '', grado: '', carrera: '', seccion: '', rol: 'alumno' },
@@ -55,7 +60,7 @@ document.addEventListener('alpine:init', () => {
         catalogosSecciones: [],
         catalogosGrados: [],
         cfgMail: { remitente: '', nombre: '' },
-        formRol: { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person' },
+        formRol: { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person', base_rol: '' },
         editRol: null,
 
         // ═══ VISTA PREVIA POR ROL ═══
@@ -375,6 +380,7 @@ document.addEventListener('alpine:init', () => {
                 const data = await r.json();
                 if (data.status === 'Exito' || data.status === 'Éxito') {
                     this.formPendiente = { cedula: '', nombre: '', apellido: '', email: '', telefono: '', grado: '', carrera: '', seccion: '', rol: 'alumno' };
+                    this.showRegistroRapido = false;
                     await this.cargarPendientes();
                     await this.cargarUsuarios();
                 } else {
@@ -452,6 +458,37 @@ document.addEventListener('alpine:init', () => {
             };
         },
 
+        // Roles personalizados del catálogo (para asignar)
+        get rolesPersonalizados() {
+            const base = ['alumno', 'docente', 'academico', 'admin'];
+            return (this.rolesConfig || []).filter(r => !base.includes((r.nombre || '').toLowerCase()));
+        },
+
+        // Color de insignia por rol (personalizados en gris)
+        claseBadgeRol(rol) {
+            const n = (rol || '').toLowerCase();
+            if (n === 'alumno' || n === 'student') return 'bg-emerald-100 text-emerald-700';
+            if (n === 'docente' || n === 'teacher') return 'bg-blue-100 text-blue-700';
+            if (n === 'academico' || n === 'academic') return 'bg-purple-100 text-purple-700';
+            if (n === 'admin' || n === 'administrador_plataforma') return 'bg-rose-100 text-rose-700';
+            return 'bg-slate-200 text-slate-600';
+        },
+
+        // Grupo de un rol (personalizados resuelven por base_rol del catálogo)
+        grupoDeRol(rolNombre) {
+            const n = (rolNombre || '').toLowerCase();
+            const g = this.gruposRoles;
+            if (g.sistema.includes(n)) return 'sistema';
+            if (g.docente.includes(n)) return 'docente';
+            if (g.alumno.includes(n)) return 'alumno';
+            const cfg = (this.rolesConfig || []).find(r => (r.nombre || '').toLowerCase() === n);
+            const b = ((cfg && cfg.base_rol) || '').toLowerCase();
+            if (g.sistema.includes(b)) return 'sistema';
+            if (g.docente.includes(b)) return 'docente';
+            if (g.alumno.includes(b)) return 'alumno';
+            return '';
+        },
+
         get filteredUsuarios() {
             let result = this.usuarios;
             if (this.userSearch.trim()) {
@@ -461,9 +498,9 @@ document.addEventListener('alpine:init', () => {
                     (u.nombre_completo || '').toLowerCase().includes(q)
                 );
             }
-            if (this.userFilterGrupo && this.gruposRoles[this.userFilterGrupo]) {
-                const set = this.gruposRoles[this.userFilterGrupo];
-                result = result.filter(u => (u.roles || []).some(r => set.includes(r.rol)));
+            if (this.userFilterGrupo) {
+                const gr = this.userFilterGrupo;
+                result = result.filter(u => (u.roles || []).some(r => this.grupoDeRol(r.rol) === gr));
             }
             if (this.userFilterRol) {
                 result = result.filter(u => (u.roles || []).some(r => r.rol === this.userFilterRol));
@@ -636,6 +673,7 @@ document.addEventListener('alpine:init', () => {
                 fd.append('permisos', JSON.stringify(this.formRol.permisos));
                 fd.append('color', this.formRol.color);
                 fd.append('icono', this.formRol.icono);
+                fd.append('base_rol', this.formRol.base_rol || '');
                 const action = isEdit ? 'update' : 'create';
                 if (isEdit) fd.append('id', this.editRol.id);
                 const r = await fetch(CenturiaAPI.baseUrl + 'roles.php?action=' + action, {
@@ -661,13 +699,16 @@ document.addEventListener('alpine:init', () => {
                 descripcion: r.descripcion || '',
                 permisos: [...(r.permisos || [])],
                 color: r.color || '#64748b',
-                icono: r.icono || 'bi-person'
+                icono: r.icono || 'bi-person',
+                base_rol: r.base_rol || ''
             };
+            this.showCrearRol = true;
         },
 
         cancelarEditRol() {
             this.editRol = null;
-            this.formRol = { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person' };
+            this.showCrearRol = false;
+            this.formRol = { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person', base_rol: '' };
         },
 
         async eliminarRol(r) {
@@ -1049,6 +1090,7 @@ document.addEventListener('alpine:init', () => {
         switchCatalogTab(tab) {
             this.catalogTab = tab;
             this.editItem = null;
+            this.showCatalogForm = false;
             this.catalogSearch = '';
             this.form = { codigo: '', nombre: '', carrera: '', grado: '', capacidad: 40, tipo_prog: '' };
         },
@@ -1060,10 +1102,12 @@ document.addEventListener('alpine:init', () => {
                 carrera: item.carrera || '', grado: item.grado || '',
                 capacidad: item.capacidad || 40, tipo_prog: item.tipo || ''
             };
+            this.showCatalogForm = true;
         },
 
         cancelarEdicion() {
             this.editItem = null;
+            this.showCatalogForm = false;
             this.form = { codigo: '', nombre: '', carrera: '', grado: '', capacidad: 40, tipo_prog: '' };
         },
 
@@ -1076,7 +1120,8 @@ document.addEventListener('alpine:init', () => {
             if (tipo === 'secciones') {
                 fd.append('codigo', this.form.codigo.toUpperCase());
                 fd.append('nombre', this.form.nombre);
-                fd.append('carrera', this.form.carrera);
+                // Las secciones no llevan carrera: en edición se conserva la existente sin mostrarla
+                fd.append('carrera', isEdit ? (this.editItem.carrera || '') : '');
                 fd.append('grado', this.form.grado);
                 fd.append('capacidad', this.form.capacidad || 40);
                 if (!this.form.codigo) { alert('Codigo requerido'); this.loading = false; return; }

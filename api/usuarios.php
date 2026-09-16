@@ -206,6 +206,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     api_response(['status' => 'Éxito', 'mensaje' => 'Registro rechazado']);
 }
 
+// Rol sistema máximo según roles activos (bilingüe + equivalencia de personalizados)
+function max_system_role($pdo, $userId) {
+    $jerarquia = ['admin' => 4, 'administrador_plataforma' => 4, 'academico' => 3, 'academic' => 3,
+                  'docente' => 2, 'teacher' => 2, 'alumno' => 1, 'student' => 1];
+    $stmt = $pdo->prepare("SELECT DISTINCT rol FROM user_roles WHERE user_id = ? AND estado = 'activo'");
+    $stmt->execute([$userId]);
+    $max = 'student';
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $r) {
+        $er = normalize_role($r);
+        if ($er === 'student') {
+            $b = $pdo->prepare("SELECT base_rol FROM roles_config WHERE nombre = ?");
+            $b->execute([$r]);
+            if ($base = $b->fetchColumn()) $er = normalize_role($base);
+        }
+        if (isset($jerarquia[$er]) && $jerarquia[$er] > ($jerarquia[$max] ?? 0)) $max = $er;
+    }
+    return $max;
+}
+
 // ═══ AGREGAR ROL ADICIONAL ═══
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'add_role') {
     $auth = require_auth();
@@ -231,21 +250,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $stmt = $pdo->prepare("INSERT INTO user_roles (user_id, rol, carrera, seccion, asignatura, asignado_por, estado) VALUES (?,?,?,?,?,?,?)");
     $stmt->execute([$userId, $rol, $carrera, $seccion, $asignatura, $auth->username, 'activo']);
 
-    // Actualizar role_sistema del users table al más "alto"
-    $jerarquia = ['admin' => 4, 'academico' => 3, 'docente' => 2, 'alumno' => 1];
-    $stmt = $pdo->prepare("SELECT DISTINCT rol FROM user_roles WHERE user_id = ? AND estado = 'activo'");
-    $stmt->execute([$userId]);
-    $rolesActivos = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $maxRole = 'student';
-    foreach ($rolesActivos as $r) {
-        $er = normalize_role($r);
-        if (isset($jerarquia[$er]) && $jerarquia[$er] > ($jerarquia[$maxRole] ?? 0)) {
-            $maxRole = $er;
-        }
-    }
-    $pdo->prepare("UPDATE users SET role = ? WHERE id = ?")->execute([$maxRole, $userId]);
+    // Actualizar role_sistema al más alto (incluye equivalencias)
+    $pdo->prepare("UPDATE users SET role = ? WHERE id = ?")->execute([max_system_role($pdo, $userId), $userId]);
 
     api_response(['status' => 'Éxito', 'mensaje' => 'Rol asignado', 'role_id' => $pdo->lastInsertId()]);
+}
+
+// ═══ PERMISOS EFECTIVOS (roles base + personalizados con equivalencia) ═══
+// Admin ve cualquiera; un usuario ve los suyos. Para puertas como Tesorería.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'permisos') {
+    $auth = require_auth();
+    $cedula = trim($_GET['cedula'] ?? '');
+    if ($cedula === '') api_error('Cédula requerida', 400);
+    if (!in_array($auth->role, ['admin','administrador_plataforma']) && $auth->username !== $cedula) {
+        api_error('Solo administradores o el propio usuario', 403);
+    }
+
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+    $stmt->execute([$cedula]);
+    $uid = $stmt->fetchColumn();
+    if (!$uid) api_error('Usuario no encontrado', 404);
+
+    // Permisos base según rol sistema
+    $basePerms = [
+        'student' => ['ver_cursos','ver_notas','ver_asistencia','ver_calendario','ver_documentos'],
+        'alumno'  => ['ver_cursos','ver_notas','ver_asistencia','ver_calendario','ver_documentos'],
+        'teacher' => ['ver_cursos','editar_cursos','ver_notas','editar_notas','ver_asistencia','editar_asistencia','ver_calendario','ver_documentos','ver_reportes'],
+        'docente' => ['ver_cursos','editar_cursos','ver_notas','editar_notas','ver_asistencia','editar_asistencia','ver_calendario','ver_documentos','ver_reportes'],
+        'academic' => ['ver_cursos','ver_notas','ver_asistencia','ver_calendario','ver_documentos','ver_reportes','gestionar_docentes'],
+        'academico' => ['ver_cursos','ver_notas','ver_asistencia','ver_calendario','ver_documentos','ver_reportes','gestionar_docentes'],
+        'admin' => ['*'],
+        'administrador_plataforma' => ['*'],
+    ];
+
+    $stmt = $pdo->prepare("SELECT rol FROM user_roles WHERE user_id = ? AND estado = 'activo'");
+    $stmt->execute([$uid]);
+    $roles = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $permisos = [];
+    $detalle = [];
+    foreach ($roles as $r) {
+        $rl = mb_strtolower(trim($r), 'UTF-8');
+        if (isset($basePerms[$rl])) {
+            $permisos = array_merge($permisos, $basePerms[$rl]);
+            $detalle[] = ['rol' => $r, 'origen' => 'base'];
+        } else {
+            $c = $pdo->prepare("SELECT permisos, base_rol FROM roles_config WHERE nombre = ?");
+            $c->execute([$r]);
+            if ($cfg = $c->fetch(PDO::FETCH_ASSOC)) {
+                $pp = json_decode($cfg['permisos'] ?? '[]', true) ?: [];
+                $permisos = array_merge($permisos, $pp);
+                if (!empty($cfg['base_rol'])) {
+                    $b = mb_strtolower(trim($cfg['base_rol']), 'UTF-8');
+                    if (isset($basePerms[$b])) $permisos = array_merge($permisos, $basePerms[$b]);
+                }
+                $detalle[] = ['rol' => $r, 'origen' => 'personalizado'];
+            } else {
+                $detalle[] = ['rol' => $r, 'origen' => 'desconocido'];
+            }
+        }
+    }
+    $permisos = array_values(array_unique($permisos));
+
+    api_response(['roles' => $roles, 'permisos' => $permisos, 'detalle' => $detalle]);
 }
 
 // ═══ QUITAR ROL ═══
@@ -267,24 +335,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $stmt = $pdo->prepare("DELETE FROM user_roles WHERE id = ?");
     $stmt->execute([$roleId]);
 
-    // Recalcular role_sistema
-    $stmt = $pdo->prepare("SELECT DISTINCT rol FROM user_roles WHERE user_id = ? AND estado = 'activo'");
-    $stmt->execute([$userId]);
-    $rolesActivos = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    if (empty($rolesActivos)) {
-        $pdo->prepare("UPDATE users SET role = 'student' WHERE id = ?")->execute([$userId]);
-    } else {
-        $jerarquia = ['admin' => 4, 'administrador_plataforma' => 4, 'academico' => 3, 'academic' => 3,
-                      'docente' => 2, 'teacher' => 2, 'alumno' => 1, 'student' => 1];
-        $maxRole = 'student';
-        foreach ($rolesActivos as $r) {
-            $er = normalize_role($r);
-            if (isset($jerarquia[$er]) && $jerarquia[$er] > ($jerarquia[$maxRole] ?? 0)) {
-                $maxRole = $er;
-            }
-        }
-        $pdo->prepare("UPDATE users SET role = ? WHERE id = ?")->execute([$maxRole, $userId]);
-    }
+    // Recalcular role_sistema (incluye equivalencias)
+    $pdo->prepare("UPDATE users SET role = ? WHERE id = ?")->execute([max_system_role($pdo, $userId), $userId]);
 
     api_response(['status' => 'Éxito', 'mensaje' => 'Rol eliminado']);
 }

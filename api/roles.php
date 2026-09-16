@@ -35,6 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $permisos  = $_POST['permisos'] ?? '{}';
     $color     = trim($_POST['color'] ?? '#64748b');
     $icono     = trim($_POST['icono'] ?? 'bi-person');
+    $base_rol  = trim($_POST['base_rol'] ?? '');
+    if (!in_array($base_rol, ['', 'alumno', 'docente', 'academico', 'admin'])) $base_rol = '';
 
     if (empty($nombre)) api_error('Nombre requerido', 400);
 
@@ -46,9 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     }
 
     $pdo = db();
-    $stmt = $pdo->prepare("INSERT INTO roles_config (nombre, descripcion, permisos, color, icono) VALUES (?,?,?,?,?)");
+    try { $pdo->exec("ALTER TABLE roles_config ADD COLUMN base_rol TEXT DEFAULT ''"); } catch (Exception $e) {}
+    $stmt = $pdo->prepare("INSERT INTO roles_config (nombre, descripcion, permisos, color, icono, base_rol) VALUES (?,?,?,?,?,?)");
     try {
-        $stmt->execute([$nombre, $desc, json_encode($permisosArr), $color, $icono]);
+        $stmt->execute([$nombre, $desc, json_encode($permisosArr), $color, $icono, $base_rol]);
     } catch (PDOException $e) {
         if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe un rol con ese nombre', 409);
         api_error('Error: ' . $e->getMessage(), 500);
@@ -68,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $permisos = $_POST['permisos'] ?? '{}';
     $color    = trim($_POST['color'] ?? '#64748b');
     $icono    = trim($_POST['icono'] ?? 'bi-person');
+    $base_rol  = trim($_POST['base_rol'] ?? '');
+    if (!in_array($base_rol, ['', 'alumno', 'docente', 'academico', 'admin'])) $base_rol = '';
 
     if (!$roleId) api_error('ID requerido', 400);
 
@@ -78,9 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     }
 
     $pdo = db();
-    $stmt = $pdo->prepare("UPDATE roles_config SET nombre=?, descripcion=?, permisos=?, color=?, icono=? WHERE id=?");
+    try { $pdo->exec("ALTER TABLE roles_config ADD COLUMN base_rol TEXT DEFAULT ''"); } catch (Exception $e) {}
+    $stmt = $pdo->prepare("UPDATE roles_config SET nombre=?, descripcion=?, permisos=?, color=?, icono=?, base_rol=? WHERE id=?");
     try {
-        $stmt->execute([$nombre, $desc, json_encode($permisosArr), $color, $icono, $roleId]);
+        $stmt->execute([$nombre, $desc, json_encode($permisosArr), $color, $icono, $base_rol, $roleId]);
     } catch (PDOException $e) {
         if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe un rol con ese nombre', 409);
         api_error('Error', 500);

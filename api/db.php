@@ -163,6 +163,8 @@ class Database {
                 carrera TEXT DEFAULT '',
                 seccion TEXT DEFAULT '',
                 asignatura TEXT DEFAULT '',
+                filial TEXT DEFAULT '',
+                periodo TEXT DEFAULT '',
                 estado TEXT DEFAULT 'activo' CHECK(estado IN ('activo','inactivo','pendiente')),
                 asignado_por TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -177,6 +179,7 @@ class Database {
                 permisos TEXT DEFAULT '{}',
                 color TEXT DEFAULT '#64748b',
                 icono TEXT DEFAULT 'bi-person',
+                base_rol TEXT DEFAULT '',
                 activo INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
@@ -512,6 +515,21 @@ class Database {
                     $ins->execute([$k, $v]);
                 }
             }
+        } catch (Exception $e) {}
+
+        // ═══ Migración: base_rol en roles_config (a qué rol base equivale) ═══
+        try {
+            $rcols = [];
+            foreach ($this->pdo->query("PRAGMA table_info(roles_config)") as $r) { $rcols[] = $r['name']; }
+            if (!in_array('base_rol', $rcols)) { $this->pdo->exec("ALTER TABLE roles_config ADD COLUMN base_rol TEXT DEFAULT ''"); }
+        } catch (Exception $e) {}
+
+        // ═══ Migración: periodo/filial en user_roles para planificación mensual ═══
+        try {
+            $urcols = [];
+            foreach ($this->pdo->query("PRAGMA table_info(user_roles)") as $r) { $urcols[] = $r['name']; }
+            if (!in_array('periodo', $urcols)) { $this->pdo->exec("ALTER TABLE user_roles ADD COLUMN periodo TEXT DEFAULT ''"); }
+            if (!in_array('filial', $urcols)) { $this->pdo->exec("ALTER TABLE user_roles ADD COLUMN filial TEXT DEFAULT ''"); }
         } catch (Exception $e) {}
 
         // ═══ Migración: IP/dispositivo antifraude en registros y exámenes ═══

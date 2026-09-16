@@ -141,9 +141,23 @@
         const badgeTipo = t => '<span class="badge b-' + (t || 'otro') + '">' + (t || 'otro').toUpperCase() + '</span>';
         const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-        document.addEventListener('DOMContentLoaded', () => {
+        async function tieneAcceso() {
             const r = rol();
-            if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(r)) {
+            if (['admin', 'administrador_plataforma', 'academico', 'academic'].includes(r)) return true;
+            try {
+                const ced = sessionStorage.getItem('current_cedula') || '';
+                if (!ced || !token()) return false;
+                const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=permisos&cedula=' + encodeURIComponent(ced), {
+                    headers: { 'Authorization': 'Bearer ' + token() }
+                });
+                const d = await resp.json();
+                const p = d.permisos || [];
+                return p.includes('*') || p.includes('ver_tesoreria') || p.includes('gestionar_usuarios');
+            } catch (e) { return false; }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!(await tieneAcceso())) {
                 document.getElementById('acceso-denegado').style.display = 'block';
                 return;
             }

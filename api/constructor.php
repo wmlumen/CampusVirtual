@@ -124,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         $f = [];
         if (!empty($_GET['estado'])) $f['estado'] = $_GET['estado'];
         if (!empty($_GET['carrera'])) $f['carrera'] = $_GET['carrera'];
+        if (!empty($_GET['docente'])) $f['docente_cedula'] = $_GET['docente'];
         api_response(['ok' => true, 'drafts' => ct_list($pdo, 'subject_drafts', $f)]);
     }
 

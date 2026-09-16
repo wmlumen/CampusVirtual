@@ -2705,6 +2705,7 @@ function ctRead(ss, action, p) {
     var f = {};
     if (p.estado) f.Estado = p.estado;
     if (p.carrera) f.Carrera = p.carrera;
+    if (p.docente) f.DocenteCedula = p.docente;
     return { ok: true, drafts: ctList(ss, 'SubjectDrafts', f) };
   }
   if (action === 'constructor_get_subject') {

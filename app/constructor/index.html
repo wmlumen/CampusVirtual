@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constructor Académico — Campus Virtual</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--dorado:#d4a843;--txt2:#2D2D2D;--txt3:#64748b;--border:#C8E6C9}
+        *{box-sizing:border-box}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fdf4;color:var(--txt2);margin:0;min-height:100vh}
+        .topbar{background:var(--verde-dark);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+        .topbar a{color:#fff;text-decoration:none;font-size:.7rem;font-weight:600}
+        .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 80px}
+        h1{font-size:1.05rem;font-weight:800;color:var(--verde-dark)}
+        .sub{font-size:.7rem;color:var(--txt3);margin-bottom:14px}
+        .cardx{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:18px;margin-bottom:14px}
+        .cardx h2{font-size:.85rem;font-weight:800;color:var(--verde-dark);margin-bottom:10px}
+        .fld{margin-bottom:10px}
+        .fld label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-bottom:4px}
+        .fld input,.fld select,.fld textarea{width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.78rem;outline:none;font-family:inherit}
+        .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--verde)}
+        .fld textarea{min-height:70px;resize:vertical}
+        .btn{padding:9px 16px;border-radius:9px;font-size:.7rem;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark)}
+        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
+        .btn-r{background:#FEE2E2;color:#991B1B}.btn-r:hover{background:#fca5a5}
+        .btn-a{background:#FEF3C7;color:#92400E}
+        .btn-s{background:#F1F5F9;color:var(--txt2)}
+        .badge{padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
+        .b-borrador{background:#F1F5F9;color:#475569}.b-en_revision{background:#FEF3C7;color:#92400E}
+        .b-observado{background:#FEE2E2;color:#991B1B}.b-corregido{background:#E0F2FE;color:#075985}
+        .b-aprobado{background:#D1FAE5;color:#065F46}.b-publicado{background:#007A33;color:#fff}
+        .b-archivado{background:#e2e8f0;color:#64748b}
+        .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+        .tab{padding:8px 14px;border-radius:9px;font-size:.68rem;font-weight:700;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--txt3)}
+        .tab.active{background:var(--verde-dark);color:#fff;border-color:var(--verde-dark)}
+        .draft{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+        .toast-error{background:#FEE2E2;color:#991B1B;border-color:#fca5a5}
+        .pondbar{height:10px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin:6px 0}
+        .pondbar div{height:100%;background:var(--verde);transition:width .3s}
+        .block{border:1px solid var(--border);border-left:4px solid var(--verde);border-radius:8px;padding:10px;margin-bottom:8px;background:#fbfefb}
+        .pv-sidebar{background:#007A33;color:#fff;border-radius:10px;padding:14px}
+        .pv-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--verde);border-radius:8px;padding:12px;margin-bottom:10px}
+        .footer{text-align:center;padding:8px;background:var(--verde-dark);color:rgba(255,255,255,.6);font-size:.55rem;position:fixed;bottom:0;left:0;right:0}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div style="font-weight:800;font-size:.85rem">🏗 Constructor Académico</div>
+        <div class="d-flex gap-3">
+            <a href="../dashboard.html">Dashboard</a>
+            <a href="../docente.html">Panel docente</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <h1><i class="bi bi-hammer"></i> Constructor de Asignaturas <small class="text-muted" style="font-size:.65rem">modelo TIC · sin tocar lo publicado</small></h1>
+        <div class="sub" id="fuente-datos">Conectando…</div>
+
+        <div id="sin-acceso" style="display:none" class="cardx text-center">
+            <p style="color:#991B1B;font-weight:700">Solo docentes y administración.</p>
+            <a href="../dashboard.html" class="btn btn-g">Volver</a>
+        </div>
+
+        <div id="app" style="display:none">
+            <!-- LISTA -->
+            <div id="view-list">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h1 style="margin:0">Mis asignaturas</h1>
+                    <button class="btn btn-p" onclick="nuevoDraft()"><i class="bi bi-plus-lg"></i> Nueva</button>
+                </div>
+                <div id="lista-drafts"></div>
+            </div>
+
+            <!-- EDITOR -->
+            <div id="view-edit" style="display:none">
+                <button class="btn btn-s mb-2" onclick="volverLista()"><i class="bi bi-arrow-left"></i> Volver</button>
+                <h1 id="ed-titulo">Editar</h1>
+                <div class="sub"><span id="ed-estado"></span> · <span id="ed-pond"></span></div>
+                <div class="tabs" id="ed-tabs">
+                    <div class="tab active" data-t="prog" onclick="tabEditor('prog',this)">Programa</div>
+                    <div class="tab" data-t="units" onclick="tabEditor('units',this)">Unidades</div>
+                    <div class="tab" data-t="evals" onclick="tabEditor('evals',this)">Evaluaciones</div>
+                    <div class="tab" data-t="bank" onclick="tabEditor('bank',this)">Banco</div>
+                    <div class="tab" data-t="flow" onclick="tabEditor('flow',this)">Flujo</div>
+                    <div class="tab" data-t="prev" onclick="tabEditor('prev',this)">Vista previa</div>
+                </div>
+
+                <div id="tab-prog" class="cardx">
+                    <h2>Datos generales</h2>
+                    <div class="row g-2">
+                        <div class="col-md-3"><div class="fld"><label>Código *</label><input id="p-codigo"></div></div>
+                        <div class="col-md-9"><div class="fld"><label>Nombre *</label><input id="p-nombre"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><div class="fld"><label>Carrera</label><input id="p-carrera"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Grado</label><input id="p-grado"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Semestre</label><input id="p-semestre"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Carga horaria</label><input id="p-carga" type="number" min="0"></div></div>
+                    </div>
+                    <div class="fld"><label>Fundamentación</label><textarea id="p-fund"></textarea></div>
+                    <div class="fld"><label>Objetivo general</label><textarea id="p-objg"></textarea></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Objetivos específicos</label><textarea id="p-obje"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Competencias</label><textarea id="p-comp"></textarea></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Capacidades</label><textarea id="p-capa"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Metodología</label><textarea id="p-met"></textarea></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Requisitos</label><textarea id="p-req"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Bibliografía</label><textarea id="p-bib"></textarea></div></div>
+                    </div>
+                    <button class="btn btn-p" onclick="guardarPrograma()"><i class="bi bi-check-lg"></i> Guardar programa</button>
+                </div>
+
+                <div id="tab-units" class="cardx" style="display:none">
+                    <h2>Unidades</h2>
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-2"><div class="fld"><label>N°</label><input id="u-num" type="number" min="1"></div></div>
+                        <div class="col-md-10"><div class="fld"><label>Título *</label><input id="u-tit"></div></div>
+                    </div>
+                    <div class="fld"><label>Resumen</label><textarea id="u-res"></textarea></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Objetivos</label><textarea id="u-obj"></textarea></div></div>
+                        <div class="col-md-4"><div class="fld"><label>Indicadores</label><textarea id="u-ind"></textarea></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Duración (min)</label><input id="u-dur" type="number" min="0"></div></div>
+                    </div>
+                    <button class="btn btn-p" onclick="guardarUnidad()"><i class="bi bi-plus-lg"></i> Agregar unidad</button>
+                    <hr>
+                    <div id="lista-units"></div>
+                </div>
+
+                <div id="tab-evals" class="cardx" style="display:none">
+                    <h2>Evaluaciones <small class="text-muted">(la suma debe dar 100%)</small></h2>
+                    <div class="pondbar"><div id="pond-fill" style="width:0%"></div></div>
+                    <div id="pond-txt" class="sub">0% asignado</div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><div class="fld"><label>Nombre *</label><input id="e-nom" placeholder="Parcial 1"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Tipo</label><select id="e-tipo"><option value="parcial">Parcial</option><option value="trabajo">Trabajo</option><option value="proyecto">Proyecto</option><option value="final">Final</option><option value="recuperatorio">Recuperatorio</option></select></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Puntaje máx</label><input id="e-pts" type="number" min="0"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Ponderación % *</label><input id="e-pond" type="number" min="0" max="100"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Duración (min)</label><input id="e-dur" type="number" min="0"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-3"><div class="fld"><label>Apertura</label><input id="e-ap" type="date"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Cierre</label><input id="e-ci" type="date"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Intentos</label><input id="e-int" type="number" min="1" value="1"></div></div>
+                        <div class="col-md-4 d-flex align-items-end gap-3 pb-2">
+                            <label style="font-size:.72rem"><input type="checkbox" id="e-ale"> Aleatorizar</label>
+                            <label style="font-size:.72rem"><input type="checkbox" id="e-pub"> Publicar notas</label>
+                        </div>
+                    </div>
+                    <button class="btn btn-p" onclick="guardarEvaluacion()"><i class="bi bi-plus-lg"></i> Agregar evaluación</button>
+                    <hr>
+                    <div id="lista-evals"></div>
+                </div>
+
+                <div id="tab-bank" class="cardx" style="display:none">
+                    <h2>Banco de preguntas</h2>
+                    <div class="fld"><label>Pregunta *</label><textarea id="q-pre"></textarea></div>
+                    <div class="row g-2">
+                        <div class="col-md-3"><div class="fld"><label>Tipo</label><select id="q-tipo"><option value="multiple">Múltiple</option><option value="vf">V/F</option><option value="corta">Corta</option><option value="desarrollo">Desarrollo</option></select></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Unidad (ID)</label><input id="q-unit" placeholder="opcional"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Dificultad</label><select id="q-dif"><option value="baja">Baja</option><option value="media" selected>Media</option><option value="alta">Alta</option></select></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Puntaje</label><input id="q-pts" type="number" min="0"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Opciones (una por línea, solo múltiple)</label><textarea id="q-opt"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Correcta (no se muestra al alumno)</label><input id="q-ok"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Indicador</label><input id="q-ind"></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Retroalimentación</label><input id="q-ret"></div></div>
+                    </div>
+                    <button class="btn btn-p" onclick="guardarPregunta()"><i class="bi bi-plus-lg"></i> Agregar pregunta</button>
+                    <hr>
+                    <div id="lista-bank"></div>
+                </div>
+
+                <div id="tab-flow" class="cardx" style="display:none">
+                    <h2>Flujo editorial</h2>
+                    <div id="flujo-estado" class="mb-2"></div>
+                    <div class="d-flex gap-2 flex-wrap mb-3" id="flujo-btns"></div>
+                    <div class="fld"><label>Comentario (para enviar/observar/aprobar)</label><input id="flujo-com"></div>
+                    <h2>Historial</h2>
+                    <div id="lista-reviews"></div>
+                </div>
+
+                <div id="tab-prev" style="display:none">
+                    <div class="pv-sidebar mb-2"><b>Vista previa (como estudiante)</b><br><small id="pv-carrera"></small></div>
+                    <div id="pv-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Constructor Académico · Centuria © 2026</div>
+    <div id="toast-wrap"></div>
+
+    <script src="../js/api.js?v=12"></script>
+    <script>
+        const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
+        const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
+        const PUEDO = ['docente', 'teacher', 'admin', 'administrador_plataforma', 'academico', 'academic'].includes(MI_ROL);
+        let cur = null; // borrador actual completo
+
+        function toast(m, err) {
+            const t = document.createElement('div');
+            t.className = 'toast' + (err ? ' toast-error' : '');
+            t.textContent = m;
+            document.getElementById('toast-wrap').appendChild(t);
+            setTimeout(() => t.remove(), 3200);
+        }
+
+        // Capa API: PHP primero, Google después (mismas reglas)
+        async function api(accion, params, body) {
+            params = params || {};
+            const q = new URLSearchParams({ action: accion, ...params }).toString();
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'constructor.php?' + q, {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const d = await r.json();
+                if (d && (d.ok || d.drafts || d.questions !== undefined || d.reviews)) return { fuente: 'PHP', d };
+                throw new Error('PHP no disponible');
+            } catch (e) {
+                const gmap = {
+                    list_drafts: 'constructor_list_drafts', get_subject: 'constructor_get_subject',
+                    list_bank: 'constructor_list_bank', list_reviews: 'constructor_list_reviews',
+                    save_draft: 'constructor_save_draft', save_program: 'constructor_save_program',
+                    save_unit: 'constructor_save_unit', delete_unit: 'constructor_delete_unit',
+                    save_block: 'constructor_save_block', delete_block: 'constructor_delete_block',
+                    save_activity: 'constructor_save_activity', save_evaluation: 'constructor_save_evaluation',
+                    save_question: 'constructor_save_question', delete_question: 'constructor_delete_question',
+                    submit_review: 'constructor_submit_review', review_decision: 'constructor_review_decision',
+                    publish: 'constructor_publish', archive: 'constructor_archive', duplicate: 'constructor_duplicate'
+                };
+                const g = gmap[accion] || accion;
+                if (body) {
+                    const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: g, ...body }) });
+                    return { fuente: 'Google', d: await r.json() };
+                }
+                const r2 = await fetch(GAS_URL + '?' + new URLSearchParams({ action: g, ...params }).toString());
+                return { fuente: 'Google', d: await r2.json() };
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!PUEDO) {
+                document.getElementById('sin-acceso').style.display = 'block';
+                return;
+            }
+            document.getElementById('app').style.display = 'block';
+            await cargarDrafts();
+        });
+
+        function badge(e) { return `<span class="badge b-${e}">${e.replace(/_/g, ' ')}</span>`; }
+
+        async function cargarDrafts() {
+            const params = (MI_ROL === 'docente' || MI_ROL === 'teacher') && MI_CEDULA ? { docente: MI_CEDULA } : {};
+            const { fuente, d } = await api('list_drafts', params);
+            document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente + ' · ' + (d.drafts || []).length + ' asignatura(s)';
+            const el = document.getElementById('lista-drafts');
+            if (!(d.drafts || []).length) { el.innerHTML = '<p class="text-muted">Sin asignaturas. Crea la primera.</p>'; return; }
+            el.innerHTML = d.drafts.map(x => `
+                <div class="draft">
+                    <div><b>${x.Nombre || x.nombre || '(sin nombre)'}</b> <small class="text-muted">${x.Codigo || x.codigo || ''}</small><br>${badge(x.Estado || x.estado || 'borrador')} <small class="text-muted">v${x.Version || x.version || 1}</small></div>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button class="btn btn-p" onclick="abrirDraft('${x.ID || x.id}')">Abrir</button>
+                        <button class="btn btn-s" onclick="duplicarDraft('${x.ID || x.id}')">Duplicar</button>
+                        <button class="btn btn-r" onclick="archivarDraft('${x.ID || x.id}')">Archivar</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function nuevoDraft() {
+            cur = null;
+            ['p-codigo', 'p-nombre', 'p-carrera', 'p-grado', 'p-semestre', 'p-carga', 'p-fund', 'p-objg', 'p-obje', 'p-comp', 'p-capa', 'p-met', 'p-req', 'p-bib'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('view-list').style.display = 'none';
+            document.getElementById('view-edit').style.display = 'block';
+            document.getElementById('ed-titulo').textContent = 'Nueva asignatura';
+            tabEditor('prog', document.querySelector('#ed-tabs .tab'));
+        }
+
+        async function abrirDraft(id) {
+            const { d } = await api('get_subject', { id });
+            if (!d || !d.ok) { toast('No se pudo abrir', true); return; }
+            cur = d;
+            const dr = d.draft;
+            document.getElementById('p-codigo').value = dr.Codigo || '';
+            document.getElementById('p-nombre').value = dr.Nombre || '';
+            document.getElementById('p-carrera').value = dr.Carrera || '';
+            document.getElementById('p-grado').value = dr.Grado || '';
+            document.getElementById('p-semestre').value = dr.Semestre || '';
+            document.getElementById('p-carga').value = dr.CargaHoraria || '';
+            const pr = d.program || {};
+            document.getElementById('p-fund').value = pr.Fundamentacion || '';
+            document.getElementById('p-objg').value = pr.ObjetivoGeneral || '';
+            document.getElementById('p-obje').value = pr.ObjetivosEspecificos || '';
+            document.getElementById('p-comp').value = pr.Competencias || '';
+            document.getElementById('p-capa').value = pr.Capacidades || '';
+            document.getElementById('p-met').value = pr.Metodologia || '';
+            document.getElementById('p-req').value = pr.Requisitos || '';
+            document.getElementById('p-bib').value = pr.Bibliografia || '';
+            document.getElementById('view-list').style.display = 'none';
+            document.getElementById('view-edit').style.display = 'block';
+            pintarEditor();
+            tabEditor('prog', document.querySelector('#ed-tabs .tab'));
+        }
+
+        function volverLista() {
+            document.getElementById('view-edit').style.display = 'none';
+            document.getElementById('view-list').style.display = 'block';
+            cargarDrafts();
+        }
+
+        function tabEditor(t, el) {
+            document.querySelectorAll('#ed-tabs .tab').forEach(x => x.classList.remove('active'));
+            if (el) el.classList.add('active');
+            ['prog', 'units', 'evals', 'bank', 'flow', 'prev'].forEach(k => {
+                document.getElementById('tab-' + k).style.display = k === t ? 'block' : 'none';
+            });
+            if (t === 'prev') pintarPreview();
+            if (t === 'flow') pintarFlujo();
+        }
+
+        function pintarEditor() {
+            if (!cur) return;
+            const dr = cur.draft;
+            document.getElementById('ed-titulo').textContent = (dr.Nombre || 'Asignatura') + ' (' + (dr.Codigo || '') + ')';
+            document.getElementById('ed-estado').innerHTML = badge(dr.Estado || 'borrador') + ' v' + (dr.Version || 1);
+            const evs = cur.evaluations || [];
+            const suma = evs.reduce((s, e) => s + (parseFloat(e.Ponderacion) || 0), 0);
+            document.getElementById('ed-pond').textContent = 'Ponderación: ' + suma + '%';
+            document.getElementById('lista-units').innerHTML = (cur.units || []).map(u => `
+                <div class="block"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b>
+                <small class="text-muted">(${(u.blocks || []).length} bloques)</small>
+                <div class="mt-1 d-flex gap-1 flex-wrap">
+                    <button class="btn btn-s" onclick="verBloques('${u.ID}')">Bloques</button>
+                    <button class="btn btn-r" onclick="borrarUnidad('${u.ID}')">Quitar</button>
+                </div><div id="bl-${u.ID}" class="mt-2"></div></div>`).join('') || '<p class="text-muted">Sin unidades.</p>';
+            document.getElementById('lista-evals').innerHTML = evs.map(e => `
+                <div class="block"><b>${e.Nombre}</b> <small class="text-muted">${e.Tipo} · ${e.Ponderacion}% · máx ${e.PuntajeMax}</small></div>`).join('') || '<p class="text-muted">Sin evaluaciones.</p>';
+            document.getElementById('pond-fill').style.width = Math.min(100, suma) + '%';
+            document.getElementById('pond-txt').textContent = suma + '% asignado' + (suma > 100 ? ' (EXCEDE)' : '');
+        }
+
+        async function guardarPrograma() {
+            const dr = (cur && cur.draft) || {};
+            const body = {
+                subjectID: dr.ID, codigo: document.getElementById('p-codigo').value.trim(),
+                nombre: document.getElementById('p-nombre').value.trim(),
+                carrera: document.getElementById('p-carrera').value.trim(),
+                grado: document.getElementById('p-grado').value.trim(),
+                semestre: document.getElementById('p-semestre').value.trim(),
+                carga_horaria: document.getElementById('p-carga').value || 0,
+                docente_cedula: MI_CEDULA,
+                fundamentacion: document.getElementById('p-fund').value,
+                objetivo_general: document.getElementById('p-objg').value,
+                objetivos_especificos: document.getElementById('p-obje').value,
+                competencias: document.getElementById('p-comp').value,
+                capacidades: document.getElementById('p-capa').value,
+                metodologia: document.getElementById('p-met').value,
+                requisitos: document.getElementById('p-req').value,
+                bibliografia: document.getElementById('p-bib').value
+            };
+            if (!body.nombre) { toast('Falta el nombre', true); return; }
+            // 1) borrador + 2) programa (el id del borrador alimenta al programa)
+            let r = await api('save_draft', {}, body);
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            body.subjectID = r.d.id;
+            r = await api('save_program', {}, body);
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Programa guardado (' + r.fuente + ')');
+            await abrirDraft(body.subjectID);
+        }
+
+        async function guardarUnidad() {
+            if (!cur) { toast('Abre una asignatura primero', true); return; }
+            const tit = document.getElementById('u-tit').value.trim();
+            if (!tit) { toast('Falta el título', true); return; }
+            const r = await api('save_unit', {}, {
+                subjectID: cur.draft.ID, numero: document.getElementById('u-num').value || '',
+                titulo: tit, resumen: document.getElementById('u-res').value,
+                objetivos: document.getElementById('u-obj').value, indicadores: document.getElementById('u-ind').value,
+                duracion_min: document.getElementById('u-dur').value || 0,
+                orden: (cur.units || []).length + 1
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Unidad agregada');
+            ['u-num', 'u-tit', 'u-res', 'u-obj', 'u-ind', 'u-dur'].forEach(id => document.getElementById(id).value = '');
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function borrarUnidad(id) {
+            if (!confirm('¿Quitar unidad?')) return;
+            const r = await api('delete_unit', {}, { id });
+            if (!r.d.ok) { toast('Error', true); return; }
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function verBloques(unitID) {
+            const box = document.getElementById('bl-' + unitID);
+            const u = (cur.units || []).find(x => x.ID === unitID);
+            const tipo = prompt('Tipo de bloque (texto,titulo,lista,tabla,cita,definicion,ejemplo,imagen,video,actividad,pregunta,rubrica,bibliografia,aviso):', 'texto');
+            if (!tipo) return;
+            const contenido = prompt('Contenido del bloque:') || '';
+            if (!contenido && !confirm('Bloque vacío, ¿guardar igual?')) return;
+            const r = await api('save_block', {}, {
+                unitID, tipo, titulo: '', contenido,
+                orden: ((u.blocks || []).length) + 1, visible: true
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            await abrirDraft(cur.draft.ID);
+            toast('Bloque agregado (edición completa en fase 2)');
+        }
+
+        async function guardarEvaluacion() {
+            if (!cur) return;
+            const r = await api('save_evaluation', {}, {
+                subjectID: cur.draft.ID, nombre: document.getElementById('e-nom').value.trim(),
+                tipo: document.getElementById('e-tipo').value, puntaje_max: document.getElementById('e-pts').value || 0,
+                ponderacion: document.getElementById('e-pond').value || 0,
+                fecha_apertura: document.getElementById('e-ap').value, fecha_cierre: document.getElementById('e-ci').value,
+                duracion_min: document.getElementById('e-dur').value || 0, intentos_max: document.getElementById('e-int').value || 1,
+                aleatorizar: document.getElementById('e-ale').checked, publicar_resultados: document.getElementById('e-pub').checked
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Evaluación guardada (total ' + (r.d.suma_ponderacion || '?') + '%)');
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function guardarPregunta() {
+            if (!cur) return;
+            const pre = document.getElementById('q-pre').value.trim();
+            if (!pre) { toast('Falta la pregunta', true); return; }
+            const r = await api('save_question', {}, {
+                subjectID: cur.draft.ID, unitID: document.getElementById('q-unit').value.trim(),
+                tipo: document.getElementById('q-tipo').value, pregunta: pre,
+                opciones_json: JSON.stringify(document.getElementById('q-opt').value.split('\n').map(s => s.trim()).filter(Boolean)),
+                correcta: document.getElementById('q-ok').value.trim(), indicador: document.getElementById('q-ind').value.trim(),
+                dificultad: document.getElementById('q-dif').value, puntaje: document.getElementById('q-pts').value || 0,
+                retroalimentacion: document.getElementById('q-ret').value.trim()
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Pregunta guardada (la correcta nunca se muestra al alumno)');
+            document.getElementById('q-pre').value = '';
+            document.getElementById('q-ok').value = '';
+            const { d } = await api('list_bank', { subjectID: cur.draft.ID });
+            document.getElementById('lista-bank').innerHTML = (d.questions || []).map(q =>
+                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small></div>`
+            ).join('') || '<p class="text-muted">Sin preguntas.</p>';
+        }
+
+        function pintarFlujo() {
+            if (!cur) return;
+            const est = cur.draft.Estado || 'borrador';
+            document.getElementById('flujo-estado').innerHTML = 'Estado: ' + badge(est);
+            const B = (t, fn, cls) => `<button class="btn ${cls}" onclick="${fn}()">${t}</button>`;
+            let h = '';
+            if (['borrador', 'observado', 'corregido'].includes(est)) h += B('Enviar a revisión', 'flujoEnviar', 'btn-a');
+            if (est === 'en_revision') h += B('Aprobar', 'flujoAprobar', 'btn-p') + B('Observar', 'flujoObservar', 'btn-r');
+            if (est === 'aprobado') h += B('Publicar', 'flujoPublicar', 'btn-p');
+            document.getElementById('flujo-btns').innerHTML = h || '<small class="text-muted">Sin acciones disponibles.</small>';
+            document.getElementById('lista-reviews').innerHTML = (cur.reviews || []).map(r =>
+                `<div class="block"><b>${r.DeEstado} → ${r.AEstado}</b> <small class="text-muted">${r.PorRol || ''} ${r.PorCedula || ''} · ${r.CreatedAt || ''}</small><br>${r.Comentario || ''}</div>`
+            ).join('') || '<p class="text-muted">Sin movimientos.</p>';
+        }
+
+        async function flujoAccion(accion, extra) {
+            const body = { id: cur.draft.ID, por_rol: MI_ROL, por_cedula: MI_CEDULA, comentario: document.getElementById('flujo-com').value, ...(extra || {}) };
+            const r = await api(accion, {}, body);
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Listo');
+            await abrirDraft(cur.draft.ID);
+        }
+        function flujoEnviar() { flujoAccion('submit_review'); }
+        function flujoAprobar() { flujoAccion('review_decision', { decision: 'aprobar' }); }
+        function flujoObservar() { flujoAccion('review_decision', { decision: 'observar' }); }
+        function flujoPublicar() { if (confirm('¿Publicar esta versión? No genera HTML todavía (fase 2).')) flujoAccion('publish'); }
+
+        async function duplicarDraft(id) {
+            const r = await api('duplicate', {}, { id, docente_cedula: MI_CEDULA });
+            if (!r.d.ok) { toast('Error', true); return; }
+            toast('Duplicada como borrador');
+            cargarDrafts();
+        }
+
+        async function archivarDraft(id) {
+            if (!confirm('¿Archivar?')) return;
+            const r = await api('archive', {}, { id });
+            if (!r.d.ok) { toast('Error', true); return; }
+            cargarDrafts();
+        }
+
+        function pintarPreview() {
+            if (!cur) return;
+            const dr = cur.draft;
+            document.getElementById('pv-carrera').textContent = (dr.Carrera || '') + ' · ' + (dr.Codigo || '');
+            let h = `<div class="pv-card"><b>PROGRAMA — ${dr.Nombre || ''}</b><br><small>${dr.Fundamentacion || (cur.program || {}).Fundamentacion || ''}</small></div>`;
+            (cur.units || []).forEach(u => {
+                h += `<div class="pv-card"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b><br><small>${u.Resumen || ''}</small>`;
+                (u.blocks || []).filter(b => b.Visible !== false && b.Visible !== 'false').forEach(b => {
+                    h += `<div style="margin-top:6px"><b>[${b.Tipo}]</b> ${b.Titulo || ''}<br><small>${(b.Contenido || '').slice(0, 300)}</small></div>`;
+                });
+                h += `</div>`;
+            });
+            document.getElementById('pv-body').innerHTML = h || '<p class="text-muted">Sin contenido.</p>';
+        }
+    </script>
+</body>
+</html>

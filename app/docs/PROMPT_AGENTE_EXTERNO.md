@@ -159,7 +159,51 @@ Criterios: ningún módulo escribe en dos bases a la vez; ningún ID depende de 
 en inglés devuelve cero en lógica (solo queda el mapa de compatibilidad); el flujo inverso exige confirmación
 explícita del admin con reporte de diferencias.
 
-## 12. Forma de trabajo y entregables
+## 12. Zonas del proyecto (qué va dónde)
+
+| Elemento | GitHub | Pages | Motivo |
+|---|---|---|---|
+| `app/` HTML/CSS/JS, imágenes públicas | ✅ | ✅ | Frontend público |
+| `README.md`, `docs/`, `tests/` | ✅ | ❌ | Documentación y pruebas |
+| `.github/workflows/deploy-pages.yml` | ✅ | ❌ | Despliegue |
+| `.gitignore`, `.env.example` | ✅ | ❌ | Plantillas sin secretos |
+| Código `.gs` sin secretos | ✅ | ❌ | Versionado del backend |
+| PHP local sin secretos | ✅ solo repo | ❌ | Herramienta local |
+| `*.db`, `.env`, backups, logs, fotos reales, tokens | ❌ Nunca | ❌ | Datos/secretos |
+
+Regla: GitHub guarda código y docs; Pages publica **solo** `app/`; Google guarda datos y secretos (vía
+`PropertiesService`); la PC guarda SQLite, respaldos y administración. El workflow publica únicamente estáticos
+y debe fallar si producción depende de `/api/*.php`. `.gitignore` ya cubre `*.db/.env/logs/backups/exports/
+secrets/moodle/`. `JWT_SECRET` se lee de `CENTURIA_JWT_SECRET` con fallback local.
+
+## 13. Evolución a Centuria Core (por fases, sin rewrite)
+
+Destino: LMS propio **Campus Virtual Centuria** (código, API, datos e identidad propios; Moodle solo como
+integración opcional futura en `integrations/`, cuya eliminación no debe romper nada).
+
+- **FASE 0**: respaldo; **FASE 1**: auditoría `docs/audit/` + semáforo VERDE/AMARILLO/ROJO (no sustituir verdes sin
+  causa técnica); **FASE 2**: `app/salud.html` + `?action=health` (alias de `diagnostico`); **FASE 3**:
+  `window.CENTURIA_CONFIG` central (entorno, `appBasePath`, proveedor, timeout) + `appUrl()` y cero rutas
+  absolutas; **FASE 4+**: RBAC, sesiones, académico y backup por módulos, con informe por fase
+  (FASE/ANTES/CAMBIOS/PRUEBAS/RIESGOS/SALUD).
+- Docs a crear: `ARCHITECTURE.md, SECURITY.md, API.md, DATA_MODEL.md, BACKUP.md, RECOVERY.md, SYNC.md,
+  DEPLOYMENT.md, THIRD_PARTY_LICENSES.md, CHANGELOG.md` (+ `docs/{architecture,audit,migrations,security,
+  integrations}/`). Licencias de CDN (Bootstrap, Icons, Alpine, fuentes) registradas.
+- PHP 8.3 como meta de entorno (hoy XAMPP 7.4 local); migraciones versionadas; `PRAGMA foreign_keys=ON`.
+
+## 14. Decisiones que se MANTIENEN aunque otro prompt diga lo contrario
+
+1. **Roles canónicos en español**: `alumno, docente, academico, administrador, administrador_general`
+   (coinciden con datos, UI y filtros vivos). No adoptar el set inglés. Migración = equivalencias + limpieza.
+2. **`provisional_password` se mantiene** (construido a pedido, con `must_change_password` y borrado al cambiar).
+   Eliminarlo solo cuando exista un flujo de activación por enlace que lo reemplace.
+3. **No reescribir `api.js` ni el `.gs**`: evolucionar (homogeneizar `{ok,data,error}`, agregar acciones al estilo
+   existente). El despachador único y `Centuria API v1` son meta, no punto de partida.
+4. **Sesiones actuales hasta reemplazo probado** (tokens + expiración + revocación en logout ya verificados).
+5. **Offline con bandera**: los fallbacks existen y funcionan; si se restringen, con `allowOfflineAuthentication`
+   explícito y migración de usuarios previa (§2).
+
+## 15. Forma de trabajo y entregables
 
 - Rama de reparación, cambios pequeños verificables, sin `catch` vacíos que oculten errores, sin datos simulados,
   sin declarar terminado sin probar, sin borrar datos de Sheets (respaldo antes de migrar).

@@ -32,8 +32,9 @@ if (is_dir($sessionPath) && is_writable($sessionPath)) {
 }
 session_start();
 
-// JWT settings
-define('JWT_SECRET', 'Centuria2024SecretKeyChangeInProduction');
+// JWT settings (clave por variable de entorno; el valor fijo es solo fallback local)
+$__envSecret = getenv('CENTURIA_JWT_SECRET');
+define('JWT_SECRET', ($__envSecret !== false && $__envSecret !== '') ? $__envSecret : 'Centuria2024SecretKeyChangeInProduction');
 define('JWT_EXPIRY', 3600); // 1 hour in seconds
 
 // Error reporting (development only)

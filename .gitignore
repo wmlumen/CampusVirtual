@@ -8,6 +8,30 @@ composer.lock
 *.db-journal
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
+database/*.sqlite
+database/*.db
+
+# === Backups y exportaciones (datos personales) ===
+backups/
+backup/
+exports/
+export/
+*.backup
+
+# === Secretos y credenciales ===
+secrets/
+credentials/
+*.key
+*.pem
+
+# === Datos privados ===
+uploads/private/
+storage/private/
+user-data/
+logs/
+*.log
 
 # === PHP sessions ===
 *.log

@@ -456,17 +456,72 @@
         .curso-name { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
         .curso-meta { font-size: 0.62rem; color: #64748b; margin-top: 1px; }
 
-        /* Footer sobrio y compacto */
+        /* Logo visible solo en móviles */
+        .mobile-brand {
+            display: none;
+            position: relative;
+            z-index: 1;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 16px 2px;
+            text-align: left;
+        }
+        .mobile-brand img { height: 52px; width: auto; }
+        .mobile-brand strong {
+            display: block;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        .mobile-brand small {
+            display: block;
+            color: var(--dorado);
+            font-size: 0.55rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        /* Footer corto + modal de informaciones */
         .footer {
             position: relative;
             z-index: 1;
             background: #091f0f;
             border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 10px 16px 8px;
+            padding: 8px 16px;
             color: #c8e6d0;
             max-width: 100%;
             overflow: hidden;
         }
+        .footer-short {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.62rem;
+            color: #94a3b8;
+        }
+        .info-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #c8e6d0;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 0.65rem;
+            font-family: 'Montserrat';
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .info-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        #modal-info .modal-box { color: #0f172a; }
+        #modal-info .footer-grid { grid-template-columns: 1fr 1fr; }
+        #modal-info .footer-col p { color: #475569; }
+        #modal-info .footer-col a { color: #2563EB; }
+        #modal-info .footer-social a { border-color: #e2e8f0; color: #64748b; }
         .footer-grid {
             max-width: 1000px;
             margin: 0 auto;
@@ -573,16 +628,18 @@
             .footer, .a11y-bar { display: none !important; }
         }
         @media (max-width: 900px) {
-            .main-container { flex-direction: column; gap: 20px; padding: 16px; }
+            .main-container { flex-direction: column; gap: 12px; padding: 8px 16px 16px; }
             .brand { display: none; }
+            .mobile-brand { display: flex; }
             .login-panel { flex: 0 0 auto; width: 100%; max-width: 100%; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 480px) {
             .login-body { padding: 20px 16px 24px; }
             .brand-features { grid-template-columns: 1fr 1fr; }
-            .footer { padding: 8px 12px 6px; }
-            .footer-grid { grid-template-columns: 1fr; gap: 8px; }
+            .footer { padding: 6px 12px; }
+            .footer-short { font-size: 0.58rem; }
+            #modal-info .footer-grid { grid-template-columns: 1fr; gap: 8px; }
+            #modal-info .modal-box { padding: 20px 16px; }
         }
     </style>
 </head>
@@ -599,6 +656,15 @@
     <button class="a11y-btn" onclick="a11yContrast()" id="btn-contrast" title="Alto contraste" aria-label="Alternar alto contraste">
         <i class="bi bi-circle-half"></i>
     </button>
+</div>
+
+<!-- ═══ LOGO EN MÓVILES (el bloque brand se oculta en pantallas chicas) ═══ -->
+<div class="mobile-brand">
+    <img src="images/logo_centuria_blanco_1.png" alt="Instituto Superior Centuria" onerror="this.style.display='none'">
+    <div>
+        <strong>CAMPUS VIRTUAL</strong>
+        <small>PORTAL ACADÉMICO INSTITUCIONAL</small>
+    </div>
 </div>
 
 <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
@@ -763,44 +829,51 @@
     </div>
 </div>
 
-<!-- ═══ FOOTER INSTITUCIONAL ═══ -->
+<!-- ═══ FOOTER CORTO + PESTAÑA INFORMACIONES ═══ -->
 <footer class="footer">
-    <div class="footer-grid">
-        <div class="footer-col">
-            <h4>Instituto Superior Centuria</h4>
-            <p>Formando líderes con tecnología y excelencia.</p>
-            <div class="footer-social">
-                <a href="#" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                <a href="#" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                <a href="#" title="YouTube" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
-                <a href="#" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
-            </div>
-        </div>
-        <div class="footer-col">
-            <h4>Contacto</h4>
-            <p><i class="bi bi-geo-alt me-1"></i> Av. Principal s/n</p>
-            <p><i class="bi bi-telephone me-1"></i> (04) 123-4567</p>
-            <p><i class="bi bi-envelope me-1"></i> info@centuria.edu.ec</p>
-        </div>
-        <div class="footer-col">
-            <h4>Enlaces</h4>
-            <p><a href="#">Portal Académico</a></p>
-            <p><a href="#">Biblioteca Virtual</a></p>
-            <p><a href="#">Servicios al Estudiante</a></p>
-            <p><a href="#">Normativa Institucional</a></p>
-        </div>
-        <div class="footer-col">
-            <h4>Horario</h4>
-            <p>Lunes a Viernes</p>
-            <p style="font-weight:600;color:#c8e6d0">07:00 — 21:00</p>
-            <p style="margin-top:6px">Sábados</p>
-            <p style="font-weight:600;color:#c8e6d0">08:00 — 13:00</p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        &copy; 2026 Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" — Todos los derechos reservados
+    <div class="footer-short">
+        <span>&copy; 2026 Instituto Superior Centuria</span>
+        <button class="info-btn" onclick="abrirInfo()"><i class="bi bi-info-circle me-1"></i>Informaciones</button>
     </div>
 </footer>
+
+<div id="modal-info" class="modal-overlay" onclick="if(event.target===this)cerrarInfo()">
+    <div class="modal-box" style="max-width:560px">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>Instituto Superior Centuria</h4>
+                <p>Formando líderes con tecnología y excelencia.</p>
+                <div class="footer-social">
+                    <a href="#" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" title="YouTube" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                    <a href="#" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <p><i class="bi bi-geo-alt me-1"></i> Av. Principal s/n</p>
+                <p><i class="bi bi-telephone me-1"></i> (04) 123-4567</p>
+                <p><i class="bi bi-envelope me-1"></i> info@centuria.edu.ec</p>
+            </div>
+            <div class="footer-col">
+                <h4>Enlaces</h4>
+                <p><a href="#">Portal Académico</a></p>
+                <p><a href="#">Biblioteca Virtual</a></p>
+                <p><a href="#">Servicios al Estudiante</a></p>
+                <p><a href="#">Normativa Institucional</a></p>
+            </div>
+            <div class="footer-col">
+                <h4>Horario</h4>
+                <p>Lunes a Viernes</p>
+                <p style="font-weight:600;color:#0d2c16">07:00 — 21:00</p>
+                <p style="margin-top:6px">Sábados</p>
+                <p style="font-weight:600;color:#0d2c16">08:00 — 13:00</p>
+            </div>
+        </div>
+        <button class="btn-ghost mt-3" onclick="cerrarInfo()">Cerrar</button>
+    </div>
+</div>
 
 <script src="js/api.js?v=10"></script>
 <script>
@@ -1131,7 +1204,9 @@ try{const res=await fetch('../api/auth.php?action=find_user&cedula='+encodeURICo
 try{const g=await gasCheckStudent(c);if(g.existe&&g.nombre){const p=g.nombre.trim().split(/\s+/);if(p[0])mostrar(p[0],p.slice(1).join(' '));return}}catch(e){}
 const u=buscarUsuarioLocal(c);if(u)mostrar(u.nombre,u.apellido);else noEncontrado()}
 function copiarContrasena(){const p=document.getElementById('recuperar-password').textContent;navigator.clipboard.writeText(p).then(()=>{document.getElementById('recuperar-copiado').style.display='block';setTimeout(()=>document.getElementById('recuperar-copiado').style.display='none',2000)})}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarRecuperar()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrarRecuperar();cerrarInfo()}});
+function abrirInfo(){document.getElementById('modal-info').style.display='flex'}
+function cerrarInfo(){document.getElementById('modal-info').style.display='none'}
 
 (function(){})();
 </script>

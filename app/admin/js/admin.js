@@ -50,6 +50,8 @@ document.addEventListener('alpine:init', () => {
         formPendiente: { cedula: '', nombre: '', apellido: '', email: '', telefono: '', grado: '', carrera: '', seccion: '', rol: 'alumno' },
         formUsuario: { firstname: '', lastname: '', email: '', telefono: '', grado: '', carrera: '', seccion: '', estado: 'activo' },
         nuevoRol: { rol: 'alumno', carrera: '', seccion: '', asignatura: '' },
+        catalogosCarreras: [],
+        catalogosSecciones: [],
         formRol: { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person' },
         editRol: null,
 
@@ -181,8 +183,33 @@ document.addEventListener('alpine:init', () => {
                 this.cargarRolesConfig(),
                 this.cargarFiliales(),
                 this.cargarAdminsPorFilial(),
-                this.cargarSolicitudes()
+                this.cargarSolicitudes(),
+                this.cargarCatalogosAdmin()
             ]);
+        },
+
+        // --- Catálogos para asignar roles (carrera + sección desde la base) ---
+        async cargarCatalogosAdmin() {
+            try {
+                const [rc, rs] = await Promise.all([
+                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras', {
+                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                    }).then(r => r.json()).catch(() => ({})),
+                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones', {
+                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                    }).then(r => r.json()).catch(() => ({}))
+                ]);
+                this.catalogosCarreras = rc.carreras || rc.items || [];
+                this.catalogosSecciones = rs.secciones || rs.items || [];
+            } catch (e) { console.error('Error cargando catálogos:', e); }
+        },
+
+        // Al elegir sección, trae su carrera automáticamente
+        alCambiarSeccionRol() {
+            if (!this.nuevoRol.carrera && this.nuevoRol.seccion) {
+                const s = (this.catalogosSecciones || []).find(x => x.codigo === this.nuevoRol.seccion);
+                if (s && s.carrera) this.nuevoRol.carrera = s.carrera;
+            }
         },
 
         // --- Solicitudes de cátedra (docente pide, admin aprueba con carrera+sección) ---

@@ -389,12 +389,15 @@ function doPost(e) {
 
   // ════ ACCIONES LEGACY (v04) ════
 
-  // ── 1. REGISTRAR ALUMNO ──
+  // ── 1. REGISTRAR ALUMNO (v06.10: + FechaHora de registro) ──
   if (data.action === 'registrar_alumno') {
     var sheetAlumnos = ss.getSheetByName('RegistroAlumnos');
     if (!sheetAlumnos) {
       sheetAlumnos = ss.insertSheet('RegistroAlumnos');
-      sheetAlumnos.appendRow(['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección']);
+      sheetAlumnos.appendRow(['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección', 'FechaHora']);
+    } else {
+      var hReg = sheetAlumnos.getRange(1, 1, 1, sheetAlumnos.getLastColumn()).getValues()[0];
+      if (hReg.indexOf('FechaHora') < 0) sheetAlumnos.getRange(1, sheetAlumnos.getLastColumn() + 1).setValue('FechaHora');
     }
     var nombre = '', apellido = '';
     if (data.nombre_separado) {
@@ -405,9 +408,10 @@ function doPost(e) {
       nombre = partes[0] || '';
       apellido = partes.slice(1).join(' ');
     }
+    var tsReg = Utilities.formatDate(new Date(), 'America/Asuncion', 'yyyy-MM-dd HH:mm:ss');
     sheetAlumnos.appendRow([
       data.cedula, nombre, apellido, data.email || '',
-      data.grado || '', data.carrera || '', data.seccion || ''
+      data.grado || '', data.carrera || '', data.seccion || '', tsReg
     ]);
 
     var sheetRoles = ss.getSheetByName('Roles');
@@ -897,7 +901,7 @@ function cursoDesdeMapa(det, rol, car, sec) {
 
 // Espejo SQLite -> Sheets: crea o actualiza por Codigo (misma base en ambos lados)
 function guardarAsignaturaDrive(ss, data) {
-  var HEADERS = ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre',
+  var HEADERS = ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre', 'Modulo',
     'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt'];
   var sheet = ss.getSheetByName('Asignaturas');
   if (!sheet) {
@@ -933,6 +937,7 @@ function guardarAsignaturaDrive(ss, data) {
       case 'Carrera': return data.carrera || '';
       case 'Grado': return data.grado || '';
       case 'Semestre': return data.semestre || '';
+      case 'Modulo': return data.modulo || '';
       case 'CargaHoraria': return data.carga_horaria || 0;
       case 'Color': return data.color || '#10b981';
       case 'Icono': return data.icono || 'bi-book';
@@ -2160,8 +2165,8 @@ function inicializarBaseDatos() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var creadas = [];
 
-  // 1. RegistroAlumnos (ya existe con 29 filas, solo asegurar cabeceras)
-  asegurarHoja(ss, 'RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección'], creadas);
+  // 1. RegistroAlumnos (v06.10: + FechaHora de registro)
+  asegurarHoja(ss, 'RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección', 'FechaHora'], creadas);
 
   // 2. Roles
   asegurarHoja(ss, 'Roles', ['Cédula', 'Nombre', 'Rol', 'Carrera', 'Sección', 'Asignatura', 'Estado', 'FechaAsignación', 'AsignadoPor'], creadas);
@@ -2355,9 +2360,9 @@ function sembrarTodo(ss) {
 
   // 1) Asegurar hojas (reusa v06.3)
   var defs = [
-    ['RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección']],
+    ['RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección', 'FechaHora']],
     ['Roles', ['Cédula', 'Nombre', 'Rol', 'Carrera', 'Sección', 'Asignatura', 'Estado', 'FechaAsignación', 'AsignadoPor']],
-    ['Asignaturas', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre', 'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt']],
+    ['Asignaturas', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre', 'Modulo', 'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt']],
     ['Secciones', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Capacidad', 'Activo', 'CreatedAt', 'UpdatedAt']],
     ['Carreras', ['ID', 'UUID', 'Nombre', 'Codigo', 'Grado', 'Activo', 'CreatedAt', 'UpdatedAt']],
     ['Grados', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt']],

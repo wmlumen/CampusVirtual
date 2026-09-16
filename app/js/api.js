@@ -246,6 +246,7 @@ function gasUploadSubject(a) {
         carrera: a.carrera || '',
         grado: a.grado || '',
         semestre: a.semestre || '',
+        modulo: a.modulo || '',
         carga_horaria: a.carga_horaria || 0,
         color: a.color || '#10b981',
         icono: a.icono || 'bi-book',

@@ -672,11 +672,14 @@ document.addEventListener('alpine:init', () => {
         asignaturaSearch: '',
         asignaturaFilterCarrera: '',
         selectedAsignatura: null,
-        formAsignatura: { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
+        showAsignaturaForm: false,
+        formAsignatura: { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, modulo: '', carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
+        filtroEstadoAsig: 'todas',
 
         async cargarAsignaturas() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list', {
+                const est = this.filtroEstadoAsig || 'todas';
+                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list&estado=' + est, {
                     headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
                 });
                 const data = await r.json();
@@ -707,10 +710,17 @@ document.addEventListener('alpine:init', () => {
                 carrera: a.carrera || '',
                 grado: a.grado || '',
                 semestre: a.semestre || 1,
+                modulo: a.modulo || '',
                 carga_horaria: a.carga_horaria || 0,
                 color: a.color || '#10b981',
                 icono: a.icono || 'bi-book'
             };
+        },
+
+        // Editar desde la pestaña (abre el formulario colapsable con los datos)
+        editarAsignatura(a) {
+            this.seleccionarAsignatura(a);
+            this.showAsignaturaForm = true;
         },
 
         async guardarAsignatura() {
@@ -725,6 +735,7 @@ document.addEventListener('alpine:init', () => {
                 fd.append('carrera', f.carrera);
                 fd.append('grado', f.grado || '');
                 fd.append('semestre', f.semestre);
+                fd.append('modulo', f.modulo || '');
                 fd.append('carga_horaria', f.carga_horaria);
                 fd.append('color', f.color);
                 fd.append('icono', f.icono);
@@ -748,7 +759,8 @@ document.addEventListener('alpine:init', () => {
 
         cancelarEditAsignatura() {
             this.selectedAsignatura = null;
-            this.formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
+            this.showAsignaturaForm = false;
+            this.formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, modulo: '', carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
         },
 
         // --- Espejo a Google: misma base en SQLite y Sheets ---

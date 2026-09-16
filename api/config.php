@@ -2,6 +2,9 @@
 // API Configuration - Centuria Portal Standalone
 // Usa SQLite para persistencia, sin MySQL/Docker
 
+// Zona horaria oficial: todo día/hora (registros, exámenes, asistencia) en hora local
+date_default_timezone_set('America/Asuncion');
+
 // Base path for API routes
 define('API_BASE_PATH', '/api/');
 

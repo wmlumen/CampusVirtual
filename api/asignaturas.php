@@ -8,7 +8,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 
-// ═══ ASEGURAR TABLA ═══
+// ═══ ASEGURAR TABLA (+ columna modulo/Mes) ═══
 function ensureAsignaturasTable($pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS asignaturas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,6 +18,7 @@ function ensureAsignaturasTable($pdo) {
         carrera TEXT DEFAULT '',
         grado TEXT DEFAULT '',
         semestre TEXT DEFAULT '',
+        modulo TEXT DEFAULT '',
         carga_horaria INTEGER DEFAULT 0,
         unidades INTEGER DEFAULT 10,
         descripcion TEXT DEFAULT '',
@@ -26,24 +27,40 @@ function ensureAsignaturasTable($pdo) {
         estado TEXT DEFAULT 'activo',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
+    try {
+        $cols = [];
+        foreach ($pdo->query("PRAGMA table_info(asignaturas)") as $r) { $cols[] = $r['name']; }
+        if (!in_array('modulo', $cols)) { $pdo->exec("ALTER TABLE asignaturas ADD COLUMN modulo TEXT DEFAULT ''"); }
+    } catch (Exception $e) {}
 }
 
-// ═══ LISTAR ═══
+// ═══ LISTAR (con docente vinculado; ?estado=todas|activo|inactivo, por defecto activo) ═══
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'list') {
     $pdo = db();
     ensureAsignaturasTable($pdo);
-    
-    $carrera = $_GET['carrera'] ?? '';
-    $where = '';
-    if ($carrera) {
-        $where = " WHERE carrera = '" . addslashes($carrera) . "' AND estado = 'activo'";
-    } else {
-        $where = " WHERE estado = 'activo'";
-    }
-    
-    $stmt = $pdo->query("SELECT * FROM asignaturas{$where} ORDER BY carrera, semestre, nombre");
+
+    $carrera = trim($_GET['carrera'] ?? '');
+    $estado = trim($_GET['estado'] ?? 'activo');
+    if (!in_array($estado, ['activo', 'inactivo', 'todas'])) $estado = 'activo';
+
+    $where = [];
+    $params = [];
+    if ($carrera !== '') { $where[] = "a.carrera = ?"; $params[] = $carrera; }
+    if ($estado !== 'todas') { $where[] = "a.estado = ?"; $params[] = $estado; }
+
+    $sql = "SELECT a.*,
+                GROUP_CONCAT(TRIM(u.firstname || ' ' || u.lastname) || ' (' || u.username || ')', ' | ') AS docentes,
+                COUNT(DISTINCT CASE WHEN ur.estado = 'activo' THEN ur.user_id END) AS total_docentes
+            FROM asignaturas a
+            LEFT JOIN user_roles ur ON ur.asignatura = a.codigo AND ur.rol IN ('docente','teacher') AND ur.estado = 'activo'
+            LEFT JOIN users u ON u.id = ur.user_id";
+    if ($where) $sql .= " WHERE " . implode(' AND ', $where);
+    $sql .= " GROUP BY a.id ORDER BY a.carrera, a.semestre, a.nombre";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    api_response(['items' => $items, 'count' => count($items)]);
+    api_response(['items' => $items, 'count' => count($items), 'estado' => $estado]);
 }
 
 // ═══ OBTENER POR CÓDIGO ═══
@@ -81,17 +98,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $carrera = trim($input['carrera'] ?? '');
     $grado = trim($input['grado'] ?? '');
     $semestre = trim($input['semestre'] ?? '');
+    $modulo = trim($input['modulo'] ?? '');
     $carga_horaria = intval($input['carga_horaria'] ?? 0);
     $unidades = intval($input['unidades'] ?? 10);
     $descripcion = trim($input['descripcion'] ?? '');
     $color = trim($input['color'] ?? '#00B140');
     $icono = trim($input['icono'] ?? 'bi-book');
-    
+
     if (empty($codigo) || empty($nombre)) api_error('Codigo y nombre requeridos', 400);
-    
-    $stmt = $pdo->prepare("INSERT INTO asignaturas (codigo, nombre, nombre_completo, carrera, grado, semestre, carga_horaria, unidades, descripcion, color, icono) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+
+    $stmt = $pdo->prepare("INSERT INTO asignaturas (codigo, nombre, nombre_completo, carrera, grado, semestre, modulo, carga_horaria, unidades, descripcion, color, icono) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     try {
-        $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $carga_horaria, $unidades, $descripcion, $color, $icono]);
+        $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $modulo, $carga_horaria, $unidades, $descripcion, $color, $icono]);
         api_response(['status' => 'Exito', 'mensaje' => 'Asignatura creada', 'id' => $pdo->lastInsertId()]);
     } catch (PDOException $e) {
         if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe una asignatura con ese codigo', 409);
@@ -121,16 +139,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $carrera = trim($input['carrera'] ?? '');
     $grado = trim($input['grado'] ?? '');
     $semestre = trim($input['semestre'] ?? '');
+    $modulo = trim($input['modulo'] ?? '');
     $carga_horaria = intval($input['carga_horaria'] ?? 0);
     $unidades = intval($input['unidades'] ?? 10);
     $descripcion = trim($input['descripcion'] ?? '');
     $color = trim($input['color'] ?? '#00B140');
     $icono = trim($input['icono'] ?? 'bi-book');
     $estado = trim($input['estado'] ?? 'activo');
-    
-    $stmt = $pdo->prepare("UPDATE asignaturas SET codigo=?, nombre=?, nombre_completo=?, carrera=?, grado=?, semestre=?, carga_horaria=?, unidades=?, descripcion=?, color=?, icono=?, estado=? WHERE id=?");
+
+    $stmt = $pdo->prepare("UPDATE asignaturas SET codigo=?, nombre=?, nombre_completo=?, carrera=?, grado=?, semestre=?, modulo=?, carga_horaria=?, unidades=?, descripcion=?, color=?, icono=?, estado=? WHERE id=?");
     try {
-        $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $carga_horaria, $unidades, $descripcion, $color, $icono, $estado, $id]);
+        $stmt->execute([$codigo, $nombre, $nombre_completo, $carrera, $grado, $semestre, $modulo, $carga_horaria, $unidades, $descripcion, $color, $icono, $estado, $id]);
         api_response(['status' => 'Exito', 'mensaje' => 'Asignatura actualizada']);
     } catch (PDOException $e) {
         if (strpos($e->getMessage(), 'UNIQUE') !== false) api_error('Ya existe otra asignatura con ese codigo', 409);

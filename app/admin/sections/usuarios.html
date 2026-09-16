@@ -157,6 +157,7 @@
                                 <th class="py-2 px-3 border-b">Nombre</th>
                                 <th class="py-2 px-3 border-b">Roles</th>
                                 <th class="py-2 px-3 border-b">Carrera</th>
+                                <th class="py-2 px-3 border-b">Registro</th>
                                 <th class="py-2 px-3 border-b">Estado</th>
                                 <th class="py-2 px-3 border-b text-right">Acción</th>
                             </tr>
@@ -484,8 +485,26 @@
     <!-- ═══ PESTAÑA: ASIGNATURAS ═══ -->
     <div x-show="usuariosTab==='asignaturas'" style="display:none;">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-            <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="bi bi-book me-1"></i>Gestión de Asignaturas</h3>
-            
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-slate-800"><i class="bi bi-book me-1"></i>Gestión de Asignaturas</h3>
+                <div class="flex gap-1 items-center">
+                    <button @click="filtroEstadoAsig='todas';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
+                        :class="filtroEstadoAsig==='todas' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'">Todas</button>
+                    <button @click="filtroEstadoAsig='activo';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
+                        :class="filtroEstadoAsig==='activo' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'">Activas</button>
+                    <button @click="filtroEstadoAsig='inactivo';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
+                        :class="filtroEstadoAsig==='inactivo' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500'">Inactivas</button>
+                    <button @click="showAsignaturaForm=!showAsignaturaForm; if(!showAsignaturaForm)cancelarEditAsignatura()"
+                        class="px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                        :class="showAsignaturaForm ? 'bg-slate-200 text-slate-700' : 'btn-primary'">
+                        <i class="bi" :class="showAsignaturaForm ? 'bi-chevron-up' : 'bi-plus-lg'"></i>
+                        <span x-text="showAsignaturaForm ? 'Ocultar' : 'Nueva'"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulario colapsable (oculto por defecto) -->
+            <div x-show="showAsignaturaForm" x-transition style="display:none;">
             <!-- Formulario (unido al catálogo: carrera y grado salen de la base) -->
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <input type="text" x-model="formAsignatura.codigo" placeholder="Código (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
@@ -504,6 +523,7 @@
                     </template>
                 </select>
                 <input type="text" x-model="formAsignatura.semestre" placeholder="Semestre" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="formAsignatura.modulo" placeholder="Módulo / Mes (ej: Módulo 3)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
                 <input type="number" x-model="formAsignatura.carga_horaria" placeholder="Horas" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
                 <input type="number" x-model="formAsignatura.unidades" placeholder="Unidades" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
                 <input type="color" x-model="formAsignatura.color" class="border border-slate-200 rounded-lg px-3 py-2 text-xs h-10">
@@ -530,15 +550,18 @@
                     <i class="bi bi-cloud-upload me-1"></i>Subir a Google
                 </button>
             </div>
+            </div>
 
-            <!-- Tabla -->
+            <!-- Tabla (activas e inactivas según filtro) -->
             <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-xs">
                     <thead><tr class="border-b border-slate-200">
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Código</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Nombre</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Docente</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Carrera</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Semestre</th>
+                        <th class="text-left py-2 px-2 text-slate-500 font-bold">Mes</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Horas</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Estado</th>
                         <th class="text-left py-2 px-2 text-slate-500 font-bold">Acciones</th>
@@ -551,8 +574,10 @@
                                     <span x-text="a.nombre"></span>
                                     <div class="text-[9px] text-slate-400" x-text="a.nombre_completo"></div>
                                 </td>
+                                <td class="py-2 px-2 text-slate-600 text-[10px]" x-text="a.docentes || '— sin asignar —'"></td>
                                 <td class="py-2 px-2 text-slate-600" x-text="a.carrera"></td>
                                 <td class="py-2 px-2 text-slate-600" x-text="a.semestre"></td>
+                                <td class="py-2 px-2 text-slate-600" x-text="a.modulo || '—'"></td>
                                 <td class="py-2 px-2 text-slate-600" x-text="a.carga_horaria + 'h'"></td>
                                 <td class="py-2 px-2">
                                     <span class="px-2 py-0.5 rounded text-[9px] font-bold"

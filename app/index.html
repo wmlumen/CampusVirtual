@@ -456,6 +456,12 @@
         .curso-name { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
         .curso-meta { font-size: 0.62rem; color: #64748b; margin-top: 1px; }
 
+        /* Intro con video del logo (una vez por sesión) */
+        #intro-video{display:none;position:fixed;inset:0;z-index:10001;background:#091f0f;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+        #intro-video video{width:min(88vw,420px);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+        #intro-video .skip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:8px 22px;font-size:.72rem;font-weight:700;font-family:'Montserrat';cursor:pointer}
+        #intro-video .skip:hover{background:rgba(255,255,255,.22)}
+
         /* Logo visible solo en móviles */
         .mobile-brand {
             display: none;
@@ -672,6 +678,27 @@
         <small>PORTAL ACADÉMICO INSTITUCIONAL</small>
     </div>
 </div>
+
+<!-- ═══ INTRO CON VIDEO (una vez por sesión) ═══ -->
+<div id="intro-video" role="dialog" aria-label="Introducción">
+    <video id="intro-video-el" src="images/generar_una_animacion.mp4" autoplay muted playsinline preload="auto"></video>
+    <button class="skip" onclick="cerrarIntro()">Entrar <i class="bi bi-arrow-right"></i></button>
+</div>
+<script>
+(function(){
+    try{
+        if(sessionStorage.getItem('intro_visto'))return;
+        var box=document.getElementById('intro-video');
+        var v=document.getElementById('intro-video-el');
+        var done=false;
+        window.cerrarIntro=function(){if(done)return;done=true;box.style.display='none';try{sessionStorage.setItem('intro_visto','1')}catch(e){}try{v.pause()}catch(e){}};
+        box.style.display='flex';
+        v.addEventListener('ended',cerrarIntro);
+        v.addEventListener('error',function(){setTimeout(cerrarIntro,1200)});
+        setTimeout(function(){if(!done&&v.readyState===0)cerrarIntro()},4000);
+    }catch(e){}
+})();
+</script>
 
 <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
 <div class="main-container">

@@ -13,7 +13,7 @@
             </h2>
             <p class="text-xs text-slate-500 mt-1">Gestión de asignaturas del sistema</p>
         </div>
-        <button @click="showForm = !showForm; selectedAsignatura = null; formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' }"
+        <button @click="showForm = !showForm; selectedAsignatura = null; formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, modulo: '', carga_horaria: 0, color: '#10b981', icono: 'bi-book' }"
             class="btn-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
             <i class="bi" :class="showForm ? 'bi-x-lg' : 'bi-plus-lg'"></i>
             <span x-text="showForm ? 'Cancelar' : 'Nueva Asignatura'"></span>
@@ -62,6 +62,10 @@
                 </select>
             </div>
             <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Módulo / Mes</label>
+                <input type="text" x-model="formAsignatura.modulo" placeholder="Ej: Módulo 3" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+            </div>
+            <div>
                 <label class="text-[10px] font-bold text-slate-500 uppercase">Carga Horaria</label>
                 <input type="number" x-model="formAsignatura.carga_horaria" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" min="0">
             </div>
@@ -89,6 +93,12 @@
                 class="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
         </div>
         <span class="text-[10px] text-slate-400" x-text="filteredAsignaturas.length + ' resultados'"></span>
+        <button @click="filtroEstadoAsig='todas';cargarAsignaturas()" class="px-2 py-2 rounded-lg text-[10px] font-bold"
+            :class="filtroEstadoAsig==='todas' ? 'bg-slate-700 text-white' : 'bg-white border border-slate-200 text-slate-500'">Todas</button>
+        <button @click="filtroEstadoAsig='activo';cargarAsignaturas()" class="px-2 py-2 rounded-lg text-[10px] font-bold"
+            :class="filtroEstadoAsig==='activo' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-500'">Activas</button>
+        <button @click="filtroEstadoAsig='inactivo';cargarAsignaturas()" class="px-2 py-2 rounded-lg text-[10px] font-bold"
+            :class="filtroEstadoAsig==='inactivo' ? 'bg-rose-500 text-white' : 'bg-white border border-slate-200 text-slate-500'">Inactivas</button>
         <button @click="subirAsignaturasGoogle()" title="Subir todas a Google (misma base)"
             class="px-3 py-2 rounded-lg text-xs font-bold bg-sky-600 text-white flex items-center gap-1">
             <i class="bi bi-cloud-upload"></i>Subir a Google
@@ -102,9 +112,12 @@
                 <tr>
                     <th class="text-left px-4 py-3 font-bold text-slate-600">Asignatura</th>
                     <th class="text-left px-4 py-3 font-bold text-slate-600">Código</th>
+                    <th class="text-left px-4 py-3 font-bold text-slate-600">Docente</th>
                     <th class="text-left px-4 py-3 font-bold text-slate-600">Carrera</th>
                     <th class="text-left px-4 py-3 font-bold text-slate-600">Semestre</th>
+                    <th class="text-left px-4 py-3 font-bold text-slate-600">Mes</th>
                     <th class="text-left px-4 py-3 font-bold text-slate-600">Horas</th>
+                    <th class="text-left px-4 py-3 font-bold text-slate-600">Estado</th>
                     <th class="text-center px-4 py-3 font-bold text-slate-600">Acciones</th>
                 </tr>
             </thead>
@@ -120,9 +133,16 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.codigo"></td>
+                        <td class="px-4 py-3 text-slate-500 text-[11px]" x-text="a.docentes || '— sin asignar —'"></td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.carrera || '-'"></td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.semestre + '°'"></td>
+                        <td class="px-4 py-3 text-slate-500" x-text="a.modulo || '—'"></td>
                         <td class="px-4 py-3 text-slate-500" x-text="a.carga_horaria + 'h'"></td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[9px] font-bold"
+                                :class="a.estado==='activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                x-text="a.estado"></span>
+                        </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <button @click="abrirAsignar(a)" class="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition" title="Asignar a docente">
                                 <i class="bi bi-person-plus text-xs"></i>
@@ -137,7 +157,7 @@
                     </tr>
                 </template>
                 <tr x-show="filteredAsignaturas.length === 0">
-                    <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                    <td colspan="9" class="px-4 py-8 text-center text-slate-400">
                         <i class="bi bi-inbox text-2xl mb-2 block"></i>
                         <p class="text-xs">No hay asignaturas registradas</p>
                     </td>

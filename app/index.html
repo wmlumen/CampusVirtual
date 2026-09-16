@@ -739,7 +739,7 @@
 
                     <hr class="sep">
                     <div class="alert-info"><i class="bi bi-info-circle me-2"></i>Espacio académico oficial del Instituto Superior Centuria.</div>
-                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r5</div>
+                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r6</div>
                 </div>
 
                 <!-- PASO 2: Registro -->
@@ -1011,7 +1011,7 @@ async function registrarYAcceder(){
     const nombre=document.getElementById('reg-nombre').value.trim().toUpperCase();const apellido=document.getElementById('reg-apellido').value.trim().toUpperCase();
     const email=document.getElementById('reg-email').value.trim();const telefono=document.getElementById('reg-telefono').value.trim();
     const grado=document.getElementById('reg-grado').value||'';const carrera=document.getElementById('reg-carrera').value||'';
-    const seccion=document.getElementById('reg-seccion').value.trim().toUpperCase();
+    const seccion='S026';
     const password=nombre.charAt(0).toUpperCase()+apellido.charAt(0).toLowerCase()+cedula+'*';
     if(!cedula||!nombre||!apellido){alert('Completa CEDULA, NOMBRE y APELLIDO.');return}
     try{const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:'alumno'};
@@ -1034,7 +1034,7 @@ async function registrarYAcceder(){
     }
 
     const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesion.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');mostrarCursos(null)}
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');location.href='perfil.html'}
     catch(err){const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cedula ya esta registrada. Deseas recuperar tu contrasena?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
 }
 
@@ -1053,7 +1053,7 @@ async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,g
         }
     }catch(gasErr){console.warn('[GAS] Sin conexión a Sheets:',gasErr)}
     if(!sheetsOk)alert('Registrado en ESTE dispositivo.\n\nAviso: no se pudo anotar en Google (revisa tu internet). Si entras desde otro celular, regístrate de nuevo allí o avisa al administrador.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';mostrarCursos(null);
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';location.href='perfil.html';
 }
 
 // ═══ QR ═══
@@ -1077,7 +1077,7 @@ function regPaso1(){document.getElementById('reg-paso-1').style.display='block';
 function regPaso2(){if(!document.getElementById('reg-cedula').value.trim()||!document.getElementById('reg-nombre').value.trim()||!document.getElementById('reg-apellido').value.trim()){alert('Completa CÉDULA, NOMBRE y APELLIDO.');return}document.getElementById('reg-paso-1').style.display='none';document.getElementById('reg-paso-2').style.display='block';document.getElementById('reg-paso-3').style.display='none'}
 function regPaso3(){document.getElementById('reg-paso-1').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='block';document.getElementById('reg-volver-login').style.display='block';
 const c=document.getElementById('reg-cedula').value.trim();const n=document.getElementById('reg-nombre').value.trim().toUpperCase();const a=document.getElementById('reg-apellido').value.trim().toUpperCase();
-const e=document.getElementById('reg-email').value.trim();const t=document.getElementById('reg-telefono').value.trim();const g=document.getElementById('reg-grado').value;const ca=document.getElementById('reg-carrera').value;const s=document.getElementById('reg-seccion').value;
+const e=document.getElementById('reg-email').value.trim();const t=document.getElementById('reg-telefono').value.trim();const g=document.getElementById('reg-grado').value;const ca=document.getElementById('reg-carrera').value;const s='S026';
 const p=n.charAt(0).toUpperCase()+a.charAt(0).toLowerCase()+c+'*';let h='<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px">';
 h+='<b style="color:var(--dorado)">Cédula:</b><span>'+c+'</span>';h+='<b style="color:var(--dorado)">Nombre:</b><span>'+n+'</span>';h+='<b style="color:var(--dorado)">Apellido:</b><span>'+a+'</span>';
 if(e)h+='<b style="color:var(--dorado)">Email:</b><span>'+e+'</span>';if(t)h+='<b style="color:var(--dorado)">Teléfono:</b><span>'+t+'</span>';

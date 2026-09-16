@@ -184,6 +184,11 @@
         </div>
 
         <div class="card-body">
+            <div id="cta-matricula" style="display:none;margin-bottom:12px;background:#E6F4EA;border:1px solid var(--verde);border-left:4px solid var(--verde-dark);border-radius:12px;padding:12px 14px">
+                <div style="font-size:.72rem;font-weight:800;color:var(--verde-dark)"><i class="bi bi-file-earmark-text"></i> Completa tu Formulario de Matrícula</div>
+                <div style="font-size:.62rem;color:#2D2D2D;margin:4px 0 10px">Ya ves tu entorno. Ahora completa el formulario oficial para terminar tu inscripción.</div>
+                <a href="formulario-matricula.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none"><i class="bi bi-pencil-square"></i> Completar formulario</a>
+            </div>
             <div id="pw-banner" style="display:none;background:#FEFCE8;border:1px solid #FDE68A;border-left:4px solid var(--dorado);border-radius:12px;padding:12px 14px;margin-bottom:12px">
                 <div style="font-size:.72rem;font-weight:800;color:#92400E"><i class="bi bi-shield-lock"></i> Cambia tu contraseña provisoria</div>
                 <div style="font-size:.62rem;color:#92400E;margin:4px 0 10px">Por seguridad debes poner una propia. Hasta entonces verás este aviso.</div>
@@ -319,6 +324,7 @@ function mostrar(user) {
     pintarIniciales(n, a);
     resolverFoto(user);
     pintarAvisoProvisoria();
+    pintarCTA(r);
 
     const badge = document.getElementById('hdr-badge');
     const config = {alumno:'Alumno',docente:'Docente',admin:'Admin',academico:'Académico',administrador_plataforma:'Admin Plataforma',admin_filial:'Admin Filial'};
@@ -351,6 +357,7 @@ function mostrarLocal() {
     pintarIniciales(n, a);
     resolverFoto(null);
     pintarAvisoProvisoria();
+    pintarCTA(r);
 
     document.getElementById('p-cedula').textContent = c;
     document.getElementById('p-nombre').textContent = n;
@@ -709,6 +716,11 @@ function quitarFoto() {
         if (ced && typeof gasDeletePhoto === 'function') gasDeletePhoto(ced);
     } catch(e) {}
     showToast('Foto eliminada', 'success');
+}
+
+function pintarCTA(rol) {
+    const r = (rol || '').toLowerCase();
+    document.getElementById('cta-matricula').style.display = (r === 'alumno' || r === 'student' || r === '') ? 'block' : 'none';
 }
 
 function pintarAvisoProvisoria() {

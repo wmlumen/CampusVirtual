@@ -1,6 +1,6 @@
-# Campus Virtual Centuria
+# Campus Virtual
 
-> **Instituto Superior Centuria** — Sistema Académico Digital
+> Sistema académico digital con roles múltiples, panel administrativo y respaldo en la nube.
 
 Portal web académico con sistema multi-roles, panel administrativo, dashboards por rol, formularios de matrícula, asistencia, calendario y gestión de asignaturas.
 
@@ -18,6 +18,7 @@ Portal web académico con sistema multi-roles, panel administrativo, dashboards 
 - Gestión de asignaturas y docentes
 - Calificaciones y planilla de avance por unidad
 - Exámenes dinámicos con banco de preguntas
+- Tablero de tesorería con facturas
 - Sincronización con Google Sheets como respaldo
 
 ## Tecnologías
@@ -71,6 +72,7 @@ CampusVirtual/
 │   ├── dashboard.html     ← Dashboard por rol
 │   ├── perfil.html        ← Perfil de usuario
 │   ├── formulario-matricula.html ← Formulario de matrícula
+│   ├── tesoreria.html     ← Tablero de tesorería
 │   ├── admin/             ← Panel administrativo
 │   ├── academic/          ← Módulos académicos
 │   ├── Formatos/          ← Formatos del docente
@@ -91,7 +93,7 @@ CampusVirtual/
 
 ## Estado actual
 
-El sistema cuenta con autenticación, roles múltiples, panel administrativo, dashboards, formularios de matrícula, asistencia, calendario y gestión de asignaturas. El frontend está desplegado en GitHub Pages. El backend PHP requiere un servidor local o futuro alojamiento web.
+El sistema cuenta con autenticación, roles múltiples, panel administrativo, dashboards, formularios de matrícula, asistencia, calendario, tesorería y gestión de asignaturas. El frontend está desplegado en GitHub Pages. El backend PHP requiere un servidor local o futuro alojamiento web.
 
 ## GitHub Pages
 
@@ -101,9 +103,9 @@ GitHub Pages publica únicamente el frontend (archivos HTML, CSS y JS). Las func
 
 La documentación técnica completa se encuentra en:
 
-- `app/docs/PROMPT_MAESTRO_CENTURIA.md` — Arquitectura, APIs, base de datos, sincronización, roadmap
+- `app/docs/PROMPT_MAESTRO.md` — Arquitectura, APIs, base de datos, sincronización, roadmap
 - `app/docs/prompt_maestro_materiales.md` — Guía de generación de materiales de clase
 
 ---
 
-Instituto Superior Centuria © 2026
+Creado por **wmlumen@gmail.com** © 2026

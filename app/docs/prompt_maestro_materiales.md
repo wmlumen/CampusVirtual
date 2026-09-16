@@ -1,7 +1,7 @@
 ﻿# Prompt Maestro para Materiales de Clase — v3.0
 
 > **Este archivo contiene las reglas de generación de materiales de clase.**
-> **La documentación técnica completa del sistema se encuentra en `PROMPT_MAESTRO_CENTURIA.md`.**
+> **La documentación técnica completa del sistema se encuentra en `PROMPT_MAESTRO.md`.**
 
 ---
 
@@ -16,7 +16,7 @@ Para información sobre:
 - Seguridad y permisos
 - Roadmap de desarrollo
 
-Consultar: **`PROMPT_MAESTRO_CENTURIA.md`**
+Consultar: **`PROMPT_MAESTRO.md`**
 
 ---
 
@@ -103,4 +103,4 @@ NUM_UNIDADES: 10
 
 Fecha de actualización: 2026-09-15
 Última versión: v3.0
-Referencia técnica: `PROMPT_MAESTRO_CENTURIA.md`
+Referencia técnica: `PROMPT_MAESTRO.md`

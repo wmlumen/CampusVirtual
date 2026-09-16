@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.2
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.4
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -25,6 +25,8 @@
  * v06 (2026-09-15): Fotos de perfil en Google Drive (subir_foto, obtener_foto, eliminar_foto)
  * v06.1 (2026-09-16): Diagnóstico (action=diagnostico: nombre/ID de planilla + conteo de filas)
  * v06.2 (2026-09-16): Misma base en ambos lados: guardar_asignatura (upsert por Codigo)
+ * v06.3 (2026-09-16): inicializarBaseDatos + poblarCatalogosBase (28 hojas)
+ * v06.4 (2026-09-16): sembrar_todo por URL (datos conocidos) + TIC sin clave obligatoria
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -53,6 +55,12 @@ function doGet(e) {
   // ── DIAGNÓSTICO: qué planilla está conectada y cuántas filas tiene (v06) ──
   if (action === 'diagnostico') {
     try { return responderJSON(diagnosticoSheets(ss)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── SEMBRAR TODO con datos conocidos (v06.4, solo rellena hojas vacías) ──
+  if (action === 'sembrar_todo') {
+    try { return responderJSON(sembrarTodo(ss)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -1935,7 +1943,7 @@ function obtenerFotoDrive(ss, cedula) {
 function diagnosticoSheets(ss) {
   var nombres = ['RegistroAlumnos', 'Roles', 'Matriculaciones', 'FormulariosCarrera',
     'FormulariosAlumno', 'AttendanceEvents', 'AttendanceRecords', 'CalendarEvents',
-    'Filiales', 'Asignaturas', 'Fotos'];
+    'Filiales', 'Asignaturas', 'Fotos', 'Secciones', 'Carreras', 'Grados', 'Modalidades'];
   var conteos = {};
   for (var i = 0; i < nombres.length; i++) {
     var sh = ss.getSheetByName(nombres[i]);
@@ -2154,7 +2162,126 @@ function poblarCatalogosBase() {
   return { ok: true, mensaje: 'Catálogos base poblados', ...res };
 }
 
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// v06.4: SEMBRAR TODO con los datos conocidos (solo rellena vacías)
+// Se ejecuta por URL: ?action=sembrar_todo (una vez tras publicar)
+// ══════════════════════════════════════════════════════════════
+
+function sembrarTodo(ss) {
+  var res = { hojas_creadas: [], filas: {} };
+
+  // 1) Asegurar hojas (reusa v06.3)
+  var defs = [
+    ['RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección']],
+    ['Roles', ['Cédula', 'Nombre', 'Rol', 'Carrera', 'Sección', 'Asignatura', 'Estado', 'FechaAsignación', 'AsignadoPor']],
+    ['Asignaturas', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Semestre', 'CargaHoraria', 'Color', 'Icono', 'Estado', 'CreatedAt', 'UpdatedAt']],
+    ['Secciones', ['ID', 'UUID', 'Nombre', 'Codigo', 'Carrera', 'Grado', 'Capacidad', 'Activo', 'CreatedAt', 'UpdatedAt']],
+    ['Carreras', ['ID', 'UUID', 'Nombre', 'Codigo', 'Grado', 'Activo', 'CreatedAt', 'UpdatedAt']],
+    ['Grados', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt']],
+    ['Modalidades', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt']],
+    ['Filiales', ['ID', 'UUID', 'Nombre', 'Codigo', 'Direccion', 'Telefono', 'Estado', 'CreadoPor', 'CreatedAt', 'UpdatedAt']],
+    ['Matriculaciones', ['ID', 'UUID', 'UserId', 'CodigoFormulario', 'LegajoNumero', 'FechaInscripcion', 'Nombres', 'Apellidos', 'Cedula', 'Carrera', 'Semestre', 'TipoAlumno', 'TelefonoMovil', 'CorreoElectronico', 'Estado', 'CreatedAt', 'UpdatedAt']],
+    ['FormulariosCarrera', ['ID', 'UUID', 'Codigo', 'Nombre', 'Carrera', 'Tipo', 'CamposJson', 'Activo', 'CreatedAt', 'UpdatedAt']],
+    ['FormulariosAlumno', ['ID', 'UUID', 'FormularioId', 'UserId', 'Cedula', 'Datos', 'Estado', 'CreatedAt', 'UpdatedAt']],
+    ['AttendanceEvents', ['ID', 'UUID', 'CodigoUnico', 'Asignatura', 'Unidad', 'Lugar', 'Fecha', 'HoraInicio', 'HoraFin', 'CreadoPor', 'Estado', 'CreatedAt', 'UpdatedAt']],
+    ['AttendanceRecords', ['ID', 'UUID', 'EventId', 'UserId', 'Cedula', 'Estado', 'HoraRegistro', 'Observacion', 'CreatedAt', 'UpdatedAt']],
+    ['CalendarEvents', ['ID', 'UUID', 'Titulo', 'Descripcion', 'FechaInicio', 'FechaFin', 'HoraInicio', 'HoraFin', 'Tipo', 'Color', 'CreadoPor', 'Asignatura', 'CreatedAt', 'UpdatedAt']],
+    ['Fotos', ['Cedula', 'Nombre', 'FileId', 'Url', 'Fecha']],
+    ['Notas', ['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final']],
+    ['Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor']],
+    ['Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo']]
+  ];
+  var antes = [];
+  for (var d = 0; d < defs.length; d++) asegurarHoja(ss, defs[d][0], defs[d][1], antes);
+  res.hojas_creadas = antes;
+
+  var ts = new Date().toISOString();
+  function vacia(nombre) {
+    var sh = ss.getSheetByName(nombre);
+    return sh && sh.getLastRow() <= 1;
+  }
+  function sembrar(nombre, filas) {
+    if (!vacia(nombre)) return 0;
+    var sh = ss.getSheetByName(nombre);
+    for (var i = 0; i < filas.length; i++) sh.appendRow(filas[i]);
+    res.filas[nombre] = filas.length;
+    return filas.length;
+  }
+
+  // 2) Carreras conocidas
+  sembrar('Carreras', [
+    ['', 'CARR-001', 'TECNOLOGIA DE LA INFORMACION Y COMUNICACION', 'TIC', 'GRADO', true, ts, ts],
+    ['', 'CARR-002', 'ADMINISTRACION DE EMPRESAS', 'ADE', 'GRADO', true, ts, ts],
+    ['', 'CARR-003', 'CONTABILIDAD', 'CON', 'GRADO', true, ts, ts]
+  ]);
+
+  // 3) Grados conocidos
+  sembrar('Grados', [
+    ['', 'GRD-001', 'GRADO', true, ts, ts],
+    ['', 'GRD-002', 'ESPECIALIZACION', true, ts, ts],
+    ['', 'GRD-003', 'MAESTRIA', true, ts, ts],
+    ['', 'GRD-004', 'DOCTORADO', true, ts, ts]
+  ]);
+
+  // 4) Secciones conocidas (S026 = SABADO)
+  sembrar('Secciones', [
+    ['', 'SEC-001', 'SABADO', 'S026', 'TECNOLOGIA DE LA INFORMACION Y COMUNICACION', 'GRADO', 40, true, ts, ts],
+    ['', 'SEC-002', 'SABADO', 'S027', 'ADMINISTRACION DE EMPRESAS', 'GRADO', 40, true, ts, ts]
+  ]);
+
+  // 5) Modalidades
+  sembrar('Modalidades', [
+    ['', 'MOD-001', 'PRESENCIAL', true, ts, ts],
+    ['', 'MOD-002', 'SEMIPRESENCIAL', true, ts, ts],
+    ['', 'MOD-003', 'VIRTUAL', true, ts, ts]
+  ]);
+
+  // 6) Asignaturas conocidas (10)
+  sembrar('Asignaturas', [
+    ['', 'ASIG-TIC', 'Tecnologia de la Informacion y Comunicacion', 'TIC', 'TECNOLOGIA DE LA INFORMACION Y COMUNICACION', 'GRADO', '3er Semestre', 120, '#00B140', 'bi-laptop', 'activo', ts, ts],
+    ['', 'ASIG-SOC', 'Sociologia General', 'SOC', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '2do Semestre', 80, '#7C4DFF', 'bi-people', 'activo', ts, ts],
+    ['', 'ASIG-DER', 'Derecho Empresarial', 'DER', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '3er Semestre', 80, '#FF6B9D', 'bi-balance-scale', 'activo', ts, ts],
+    ['', 'ASIG-CON', 'Contabilidad General', 'CON', 'CONTABILIDAD', 'GRADO', '1er Semestre', 120, '#4A90D9', 'bi-calculator', 'activo', ts, ts],
+    ['', 'ASIG-ADM', 'Administracion General', 'ADM', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '2do Semestre', 100, '#FF8C42', 'bi-briefcase', 'activo', ts, ts],
+    ['', 'ASIG-ECO', 'Economia Empresarial', 'ECO', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '1er Semestre', 80, '#C5A55A', 'bi-graph-up', 'activo', ts, ts],
+    ['', 'ASIG-MAT', 'Matematica Aplicada', 'MAT', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '1er Semestre', 100, '#E91E63', 'bi-percent', 'activo', ts, ts],
+    ['', 'ASIG-ING', 'Ingles Empresarial', 'ING', 'ADMINISTRACION DE EMPRESAS', 'GRADO', '1er Semestre', 80, '#00BCD4', 'bi-translate', 'activo', ts, ts],
+    ['', 'ASIG-AUD', 'Auditoria Financiera', 'AUD', 'CONTABILIDAD', 'GRADO', '4to Semestre', 100, '#9C27B0', 'bi-search', 'activo', ts, ts],
+    ['', 'ASIG-TRI', 'Gestion Tributaria', 'TRI', 'CONTABILIDAD', 'GRADO', '4to Semestre', 80, '#F44336', 'bi-file-earmark-text', 'activo', ts, ts]
+  ]);
+
+  // 7) Filiales conocidas (6)
+  sembrar('Filiales', [
+    ['', 'FIL-001', 'Asuncion', '001', 'Avda Herrera', '', 'activo', 'admin', ts, ts],
+    ['', 'FIL-002', 'Sede Central', 'SC', 'Instituto Superior Centuria - Sede Principal', '', 'activo', 'admin', ts, ts],
+    ['', 'FIL-003', 'Filial Este', 'FE', 'Zona Este - Centuria', '', 'activo', 'admin', ts, ts],
+    ['', 'FIL-004', 'Filial Norte', 'FN', 'Zona Norte - Centuria', '', 'activo', 'admin', ts, ts],
+    ['', 'FIL-005', 'Filial Oeste', 'FO', 'Zona Oeste - Centuria', '', 'activo', 'admin', ts, ts],
+    ['', 'FIL-006', 'Filial Sur', 'FS', 'Zona Sur - Centuria', '', 'activo', 'admin', ts, ts]
+  ]);
+
+  // 8) Roles conocidos (9 usuarios, sin contraseñas: el login usa la formula)
+  sembrar('Roles', [
+    ['1340130', 'CHRISTHIAN KEIM', 'admin', '', '', '', 'activo', ts, 'sistema'],
+    ['1340125', 'Natalie Keim', 'teacher', '', '', '', 'activo', ts, 'sistema'],
+    ['1801234', 'Carlos Mendoza', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1801235', 'Maria Garcia', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1801236', 'Luis Rodriguez', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1801237', 'Ana Torres', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1801238', 'Pedro Lopez', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1801239', 'Sofia Ramirez', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema'],
+    ['1886139', 'CHRISTHIAN JOSE RAUL KEIM JARA', 'alumno', '', '', 'TIC', 'activo', ts, 'sistema']
+  ]);
+
+  // 9) Formulario de matricula base
+  sembrar('FormulariosCarrera', [
+    ['', 'FORM-001', 'CEN-AS-SM-AGP005', 'Formulario de Matricula - Instituto Superior Centuria', '', 'matricula', '[]', 1, ts, ts]
+  ]);
+
+  return { ok: true, mensaje: 'Siembra completa (solo hojas vacías)', planilla: ss.getName(), detalle: res };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // v06.2: ASISTENCIA TIC (antes en Asistencia_Por_Fechas.gs)
 // ═══════════════════════════════════════════════════════════════
 
@@ -2192,7 +2319,7 @@ function ticResumen(ss, cedula) {
 
 function ticGuardar(ss, data) {
   var clave=PropertiesService.getScriptProperties().getProperty('TIC_DOCENTE_KEY');
-  if(!clave || data.clave!==clave) throw Error('Clave docente incorrecta o no configurada.');
+  if(clave && data.clave!==clave) throw Error('Clave docente incorrecta.');
   var fecha=ticFecha(data.fecha);
   if(!fecha || fecha!==data.fecha) throw Error('Fecha inválida.');
   var nombre, headers, fila, coincide;

@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     
     // Get assigned subjects from user_roles
     $stmt = $pdo->prepare("
-        SELECT ur.asignatura, ur.carrera, ur.seccion, ur.rol, ur.estado
+        SELECT ur.asignatura, ur.carrera, ur.seccion, ur.rol, ur.estado, ur.periodo
         FROM user_roles ur
         WHERE ur.user_id = ? AND ur.estado = 'activo' AND ur.rol IN ('docente', 'teacher')
     ");
@@ -200,18 +200,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     api_response(['status' => 'Éxito', 'mensaje' => 'Solicitud rechazada']);
 }
 
-// ═══ MIS ALUMNOS (nombres por carrera + sección; público para el panel docente) ═══
-// Si no se indica carrera ni sección, devuelve todos los alumnos activos.
+// ═══ MIS ALUMNOS (nombres por carrera + sección) ═══
+// Requiere al menos un filtro (nunca vuelca la nómina completa).
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'mis_alumnos') {
     $carrera = trim($_GET['carrera'] ?? '');
     $seccion = trim($_GET['seccion'] ?? '');
+    if ($carrera === '' && $seccion === '') {
+        http_response_code(400); echo json_encode(['error' => 'carrera o seccion requeridos']); exit;
+    }
 
     $pdo = db();
-    $sql = "SELECT id, username AS cedula, TRIM(firstname || ' ' || lastname) AS nombre, carrera, seccion FROM users WHERE role IN ('student','alumno') AND (estado IS NULL OR estado = 'activo')";
+    $sql = "SELECT DISTINCT u.id, u.username AS cedula, TRIM(u.firstname || ' ' || u.lastname) AS nombre, ur.carrera, ur.seccion
+            FROM user_roles ur JOIN users u ON u.id = ur.user_id
+            WHERE ur.rol IN ('alumno','student') AND ur.estado = 'activo' AND (u.estado IS NULL OR u.estado = 'activo')";
     $params = [];
-    if ($carrera !== '') { $sql .= " AND carrera = ?"; $params[] = $carrera; }
-    if ($seccion !== '') { $sql .= " AND seccion = ?"; $params[] = $seccion; }
-    $sql .= " ORDER BY lastname, firstname";
+    if ($carrera !== '') { $sql .= " AND ur.carrera = ?"; $params[] = $carrera; }
+    if ($seccion !== '') { $sql .= " AND ur.seccion = ?"; $params[] = $seccion; }
+    $sql .= " ORDER BY u.lastname, u.firstname";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $alumnos = $stmt->fetchAll(PDO::FETCH_ASSOC);

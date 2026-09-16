@@ -81,9 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     $decoded = require_auth();
     $role = $decoded->role;
     $user_id = $decoded->user_id;
-    
+
     // Teachers, admins, and academic staff can record grades
-    if (!in_array($role, ['teacher', 'admin', 'academic'])) {
+    if (!in_array($role, ['teacher', 'docente', 'admin', 'academic', 'academico', 'administrador_plataforma'])) {
         api_error('Permission denied: only teacher/admin/academic can record grades', 403);
     }
     
@@ -127,6 +127,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQ
     try {
         $stmt->execute([$user_id_target, $course_id, $component, $score, $max_score]);
         api_response(['success' => true, 'message' => 'Grade recorded/updated successfully']);
+    } catch (PDOException $e) {
+        api_error('Database error: ' . $e->getMessage(), 500);
+    }
+}
+
+// Record grade by SUBJECT code (modelo Centuria: el docente califica por asignatura).
+// Resuelve/crea la fila de course automáticamente. Hace upsert.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['action']) && $_REQUEST['action'] === 'record_subject') {
+    $decoded = require_auth();
+    $role = $decoded->role;
+
+    if (!in_array($role, ['teacher', 'docente', 'admin', 'academic', 'academico', 'administrador_plataforma'])) {
+        api_error('Permission denied: only teacher/admin/academic can record grades', 403);
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) $input = $_POST;
+
+    $user_id = intval($input['user_id'] ?? 0);
+    $cedula = trim($input['cedula'] ?? '');
+    $asignatura = strtoupper(trim($input['asignatura'] ?? $input['codigo'] ?? ''));
+    $component = trim($input['componente'] ?? '');
+    $score = floatval($input['score'] ?? 0);
+    $max_score = floatval($input['max_score'] ?? 100);
+
+    if ((!$user_id && $cedula === '') || $asignatura === '' || $component === '') {
+        api_error('user_id o cedula, asignatura y componente requeridos', 400);
+    }
+
+    $pdo = db();
+
+    if (!$user_id && $cedula !== '') {
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$cedula]);
+        $user_id = intval($stmt->fetchColumn());
+        if (!$user_id) api_error('Alumno no encontrado', 404);
+    }
+
+    // Resolver o crear curso para la asignatura
+    $stmt = $pdo->prepare("SELECT id FROM courses WHERE shortname = ?");
+    $stmt->execute([$asignatura]);
+    $course_id = $stmt->fetchColumn();
+    if (!$course_id) {
+        $nom = $pdo->prepare("SELECT nombre, nombre_completo FROM asignaturas WHERE codigo = ?");
+        $nom->execute([$asignatura]);
+        $a = $nom->fetch(PDO::FETCH_ASSOC);
+        $nombre = $a ? ($a['nombre_completo'] ?: $a['nombre']) : $asignatura;
+        $ins = $pdo->prepare("INSERT INTO courses (name, shortname, description, created_by) VALUES (?, ?, ?, ?)");
+        $ins->execute([$nombre, $asignatura, 'Curso auto-generado desde asignatura', $decoded->user_id]);
+        $course_id = $pdo->lastInsertId();
+    }
+
+    try { $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_grades_ucc ON grades(user_id, course_id, component)"); } catch (Exception $e) {}
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO grades (user_id, course_id, component, score, max_score)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(user_id, course_id, component)
+         DO UPDATE SET score = excluded.score, max_score = excluded.max_score, updated_at = CURRENT_TIMESTAMP"
+    );
+
+    try {
+        $stmt->execute([$user_id, $course_id, $component, $score, $max_score]);
+        api_response(['ok' => true, 'message' => 'Nota guardada', 'course_id' => $course_id]);
     } catch (PDOException $e) {
         api_error('Database error: ' . $e->getMessage(), 500);
     }

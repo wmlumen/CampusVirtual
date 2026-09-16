@@ -273,8 +273,8 @@ async function cargarDatosAsignatura(codigo) {
                 && (!r.carrera || !carA || r.carrera === carA)
                 && (!r.seccion || !secA || r.seccion === secA));
         });
-        if (!alumnosData.length) {
-            // Sin token o sin coincidencias: nómina pública por carrera + sección
+        if (!alumnosData.length && (carA || secA)) {
+            // Sin coincidencias: nómina por carrera + sección (requiere al menos un filtro)
             const rM = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_alumnos&carrera=' + encodeURIComponent(carA) + '&seccion=' + encodeURIComponent(secA));
             const dM = await rM.json();
             alumnosData = (dM.alumnos || []).map(a => ({ id: null, cedula: a.cedula, nombre_completo: a.nombre, carrera: a.carrera, seccion: a.seccion, roles: [{ rol: 'alumno' }] }));
@@ -302,7 +302,11 @@ async function cargarDatosAsignatura(codigo) {
 
     } catch(e) {
         console.error('Error:', e);
-        // Fallback sin sesión (GitHub Pages): nómina pública por carrera + sección
+        // Fallback sin sesión (GitHub Pages): nómina por carrera + sección (con filtro)
+        if (!carA && !secA) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
+            return;
+        }
         try {
             const rM = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=mis_alumnos&carrera=' + encodeURIComponent(carA) + '&seccion=' + encodeURIComponent(secA));
             const dM = await rM.json();
@@ -443,13 +447,13 @@ function editarAlumno(uid, nombre) {
     async function guardarNota(componente, valor) {
         if (valor === '' || valor === null) return;
         const fd = new FormData();
-        fd.append('action', 'create');
+        fd.append('action', 'record_subject');
         fd.append('user_id', uid);
         fd.append('asignatura', asigActual.codigo);
         fd.append('componente', componente);
         fd.append('score', valor);
         fd.append('curso_id', asigActual.codigo);
-        await fetch(CenturiaAPI.baseUrl + 'grades.php?action=create', {
+        await fetch(CenturiaAPI.baseUrl + 'grades.php?action=record_subject', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
             body: fd

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesorería — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--dorado:#d4a843;--txt2:#2D2D2D;--txt3:#64748b;--border:#C8E6C9}
+        *{box-sizing:border-box}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fdf4;color:var(--txt2);min-height:100vh;margin:0}
+        .topbar{background:var(--verde-dark);border-bottom:2px solid var(--verde);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+        .topbar-brand{font-size:.85rem;font-weight:700;color:#fff}
+        .topbar-nav{display:flex;gap:6px}
+        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.62rem;font-weight:600;padding:5px 10px;border-radius:6px}
+        .topbar-nav a:hover,.topbar-nav a.active{background:var(--verde);color:#fff}
+        .wrap{max-width:1050px;margin:0 auto;padding:20px 16px 80px}
+        .page-title{font-size:1.1rem;font-weight:800;color:var(--verde-dark);display:flex;align-items:center;gap:8px;margin-bottom:4px}
+        .page-sub{font-size:.7rem;color:var(--txt3);margin-bottom:16px}
+        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+        .kpi{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);text-align:center;border-top:4px solid var(--verde)}
+        .kpi .val{font-size:1.15rem;font-weight:800;color:var(--verde-dark)}
+        .kpi .lbl{font-size:.58rem;font-weight:700;color:var(--txt3);text-transform:uppercase}
+        .cardx{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:18px;margin-bottom:16px}
+        .cardx h2{font-size:.85rem;font-weight:800;color:var(--verde-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+        .fld{margin-bottom:10px}
+        .fld label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-bottom:4px}
+        .fld input,.fld select{width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.8rem;outline:none}
+        .fld input:focus,.fld select:focus{border-color:var(--verde)}
+        .btn{padding:9px 18px;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark)}
+        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
+        .btn-r{background:#FEE2E2;color:#991B1B}
+        .btn-a{background:#FEF3C7;color:#92400E}
+        table{width:100%;border-collapse:collapse;font-size:.75rem}
+        th{background:#f8fafc;color:var(--txt3);text-transform:uppercase;font-size:.6rem;padding:8px;text-align:left}
+        td{padding:8px;border-top:1px solid #f1f5f9;vertical-align:middle}
+        .badge{padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
+        .b-pagado{background:#D1FAE5;color:#065F46}.b-pendiente{background:#FEF3C7;color:#92400E}.b-anulado{background:#F1F5F9;color:#64748b}
+        .b-modulo{background:#E0F2FE;color:#075985}.b-curso{background:#EDE9FE;color:#5B21B6}.b-seminario{background:#FCE7F3;color:#9D174D}.b-otro{background:#F1F5F9;color:#475569}
+        .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+        .filters input,.filters select{padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.75rem}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+        .toast-success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+        .toast-error{background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5}
+        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px;background:var(--verde-dark);color:rgba(255,255,255,.6);font-size:.55rem}
+        @media(max-width:768px){.kpis{grid-template-columns:repeat(2,1fr)}.topbar{flex-direction:column;gap:6px}}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-brand">🏛 Tesorería Centuria</div>
+        <div class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="admin/index.html">Admin</a>
+            <a href="tesoreria.html" class="active">Tesorería</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="page-title"><i class="bi bi-cash-coin"></i> Tablero de Tesorería</div>
+        <div class="page-sub">Pagos de módulos, cursos y seminarios con número de factura. Solo administración.</div>
+
+        <div id="acceso-denegado" style="display:none" class="cardx text-center">
+            <p style="color:#991B1B;font-weight:700">Acceso restringido a administración.</p>
+            <a href="dashboard.html" class="btn btn-g">Volver al Dashboard</a>
+        </div>
+
+        <div id="contenido" style="display:none">
+            <!-- KPIs -->
+            <div class="kpis">
+                <div class="kpi"><div class="val" id="k-recaudado">-</div><div class="lbl">Recaudado</div></div>
+                <div class="kpi" style="border-color:var(--dorado)"><div class="val" id="k-pendiente">-</div><div class="lbl">Pendiente</div></div>
+                <div class="kpi" style="border-color:#2563EB"><div class="val" id="k-facturas">-</div><div class="lbl">Facturas</div></div>
+                <div class="kpi" style="border-color:#64748b"><div class="val" id="k-total">-</div><div class="lbl">Registros</div></div>
+            </div>
+
+            <!-- REGISTRAR -->
+            <div class="cardx">
+                <h2><i class="bi bi-plus-circle"></i> Registrar pago / factura</h2>
+                <div class="row g-2">
+                    <div class="col-md-3"><div class="fld"><label>Cédula *</label><input id="f-cedula" placeholder="SIN PUNTOS"></div></div>
+                    <div class="col-md-5"><div class="fld"><label>Alumno</label><input id="f-nombre" placeholder="Nombre (o pulsa Buscar)"></div></div>
+                    <div class="col-md-4"><div class="fld"><label>&nbsp;</label><button class="btn btn-g w-100" onclick="buscarAlumno()"><i class="bi bi-search"></i> Buscar alumno</button></div></div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-5"><div class="fld"><label>Concepto * (módulo, curso, seminario)</label><input id="f-concepto" placeholder="Ej: Módulo 3 - TIC"></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Tipo</label><select id="f-tipo"><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select></div></div>
+                    <div class="col-md-2"><div class="fld"><label>Monto *</label><input id="f-monto" type="number" min="0" placeholder="0"></div></div>
+                    <div class="col-md-2"><div class="fld"><label>Moneda</label><select id="f-moneda"><option>Gs.</option><option>USD</option></select></div></div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-3"><div class="fld"><label>Fecha</label><input id="f-fecha" type="date"></div></div>
+                    <div class="col-md-3"><div class="fld"><label>N° Factura</label><input id="f-factura" placeholder="Ej: 001-004-0001234"></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Estado</label><select id="f-estado"><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Comprobante</label><input id="f-comprobante" placeholder="N° recibo / obs."></div></div>
+                </div>
+                <button class="btn btn-p" onclick="guardarPago()"><i class="bi bi-check-lg"></i> Guardar pago</button>
+            </div>
+
+            <!-- LISTA -->
+            <div class="cardx">
+                <h2><i class="bi bi-list-ul"></i> Movimientos</h2>
+                <div class="filters">
+                    <input id="q" placeholder="Buscar cédula, nombre, factura..." oninput="cargarPagos()" style="flex:1;min-width:180px">
+                    <select id="f-estado" onchange="cargarPagos()"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select>
+                    <select id="f-tipo" onchange="cargarPagos()"><option value="">Todos los tipos</option><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select>
+                    <button class="btn btn-g" onclick="cargarTodo()"><i class="bi bi-arrow-clockwise"></i></button>
+                    <button class="btn btn-g" onclick="exportarCSV()"><i class="bi bi-download"></i> CSV</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Fecha</th><th>Factura</th><th>Alumno</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Instituto Superior Centuria — Tesorería © 2026</div>
+
+    <script src="js/api.js?v=11"></script>
+    <script>
+        let pagosCache = [];
+        const token = () => CenturiaAPI.getToken();
+        const rol = () => (sessionStorage.getItem('rol') || '').toLowerCase();
+
+        function toast(msg, type) {
+            const t = document.createElement('div');
+            t.className = 'toast toast-' + (type || 'success');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3200);
+        }
+
+        const fmtMonto = (m, mon) => (mon || 'Gs.') + ' ' + Number(m || 0).toLocaleString('es-ES');
+        const badgeEstado = e => '<span class="badge b-' + e + '">' + e.toUpperCase() + '</span>';
+        const badgeTipo = t => '<span class="badge b-' + (t || 'otro') + '">' + (t || 'otro').toUpperCase() + '</span>';
+        const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const r = rol();
+            if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(r)) {
+                document.getElementById('acceso-denegado').style.display = 'block';
+                return;
+            }
+            document.getElementById('contenido').style.display = 'block';
+            document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+            cargarTodo();
+        });
+
+        async function cargarTodo() {
+            await Promise.all([cargarStats(), cargarPagos()]);
+        }
+
+        async function cargarStats() {
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=stats', {
+                    headers: { 'Authorization': 'Bearer ' + token() }
+                });
+                const d = await r.json();
+                document.getElementById('k-recaudado').textContent = 'Gs. ' + Number(d.recaudado || 0).toLocaleString('es-ES');
+                document.getElementById('k-pendiente').textContent = 'Gs. ' + Number(d.pendiente || 0).toLocaleString('es-ES');
+                document.getElementById('k-facturas').textContent = d.facturas || 0;
+                document.getElementById('k-total').textContent = d.total || 0;
+            } catch (e) {}
+        }
+
+        async function cargarPagos() {
+            const tb = document.getElementById('tbody');
+            const q = document.getElementById('q').value.trim();
+            const est = document.getElementById('f-estado').value;
+            const tipo = document.getElementById('f-tipo').value;
+            let url = CenturiaAPI.baseUrl + 'pagos.php?action=list';
+            if (est) url += '&estado=' + est;
+            if (tipo) url += '&tipo=' + tipo;
+            if (q) url += '&q=' + encodeURIComponent(q);
+            try {
+                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
+                const d = await r.json();
+                pagosCache = d.pagos || [];
+                if (!pagosCache.length) {
+                    tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Sin movimientos</td></tr>';
+                    return;
+                }
+                tb.innerHTML = pagosCache.map(p => `
+                    <tr>
+                        <td>${esc(p.fecha) || '-'}</td>
+                        <td><b>${esc(p.factura_numero) || '-'}</b></td>
+                        <td>${esc(p.nombre)}<br><small class="text-muted">${esc(p.cedula)}</small></td>
+                        <td>${esc(p.concepto)}</td>
+                        <td>${badgeTipo(p.tipo)}</td>
+                        <td><b>${fmtMonto(p.monto, p.moneda)}</b></td>
+                        <td>${badgeEstado(p.estado)}</td>
+                        <td style="white-space:nowrap">
+                            ${p.estado !== 'pagado' ? `<button class="btn btn-g btn-sm" onclick="cambiarEstado(${p.id},'pagado')" title="Marcar pagado"><i class="bi bi-check-lg"></i></button>` : ''}
+                            ${p.estado !== 'anulado' ? `<button class="btn btn-a btn-sm" onclick="cambiarEstado(${p.id},'anulado')" title="Anular"><i class="bi bi-x-lg"></i></button>` : ''}
+                            <button class="btn btn-r btn-sm" onclick="eliminarPago(${p.id})" title="Eliminar"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>`).join('');
+            } catch (e) {
+                tb.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error de conexión</td></tr>';
+            }
+        }
+
+        async function buscarAlumno() {
+            const c = document.getElementById('f-cedula').value.trim().replace(/\./g, '');
+            if (!c) { toast('Ingresa la cédula', 'error'); return; }
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=find_user&cedula=' + encodeURIComponent(c));
+                const d = await r.json();
+                if (d.found) {
+                    document.getElementById('f-nombre').value = ((d.user.firstname || '') + ' ' + (d.user.lastname || '')).trim();
+                    toast('Alumno encontrado');
+                } else {
+                    toast('Cédula no registrada: escribe el nombre manual', 'error');
+                }
+            } catch (e) { toast('Error de conexión', 'error'); }
+        }
+
+        async function guardarPago() {
+            const datos = {
+                cedula: document.getElementById('f-cedula').value.trim().replace(/\./g, ''),
+                nombre: document.getElementById('f-nombre').value.trim(),
+                concepto: document.getElementById('f-concepto').value.trim(),
+                tipo: document.getElementById('f-tipo').value,
+                monto: parseFloat(document.getElementById('f-monto').value) || 0,
+                moneda: document.getElementById('f-moneda').value,
+                fecha: document.getElementById('f-fecha').value,
+                factura_numero: document.getElementById('f-factura').value.trim(),
+                estado: document.getElementById('f-estado').value,
+                comprobante: document.getElementById('f-comprobante').value.trim()
+            };
+            if (!datos.cedula || !datos.concepto) { toast('Cédula y concepto requeridos', 'error'); return; }
+            try {
+                const fd = new FormData();
+                Object.keys(datos).forEach(k => fd.append(k, datos[k]));
+                const r = await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=save', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token() },
+                    body: fd
+                });
+                const d = await r.json();
+                if (d.status === 'Exito' || d.status === 'Éxito') {
+                    // Espejo en Google (no bloqueante)
+                    try {
+                        if (typeof gasRegistrarPago === 'function') {
+                            await gasRegistrarPago({ ...datos, registrado_por: sessionStorage.getItem('current_cedula') || 'admin' });
+                        }
+                    } catch (e) {}
+                    toast('Pago guardado' + (datos.factura_numero ? ' · Factura ' + datos.factura_numero : ''));
+                    ['f-cedula', 'f-nombre', 'f-concepto', 'f-monto', 'f-factura', 'f-comprobante'].forEach(id => document.getElementById(id).value = '');
+                    cargarTodo();
+                } else {
+                    toast('Error: ' + (d.error || 'No se pudo guardar'), 'error');
+                }
+            } catch (e) { toast('Error de conexión', 'error'); }
+        }
+
+        async function cambiarEstado(id, estado) {
+            const extra = estado === 'pagado'
+                ? (prompt('N° de factura (vacío para no cambiar):') || '')
+                : '';
+            if (estado === 'pagado' && extra === null) return;
+            if (!confirm('Marcar como ' + estado.toUpperCase() + '?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('id', id);
+                fd.append('estado', estado);
+                if (extra) fd.append('factura_numero', extra);
+                await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=update_status', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token() },
+                    body: fd
+                });
+                toast('Actualizado');
+                cargarTodo();
+            } catch (e) { toast('Error de conexión', 'error'); }
+        }
+
+        async function eliminarPago(id) {
+            if (!confirm('¿Eliminar este registro?')) return;
+            try {
+                const fd = new FormData();
+                fd.append('id', id);
+                await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=delete', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token() },
+                    body: fd
+                });
+                toast('Eliminado');
+                cargarTodo();
+            } catch (e) { toast('Error de conexión', 'error'); }
+        }
+
+        function exportarCSV() {
+            if (!pagosCache.length) { toast('Nada para exportar', 'error'); return; }
+            let csv = 'Fecha,Factura,Cedula,Nombre,Concepto,Tipo,Monto,Moneda,Estado\n';
+            pagosCache.forEach(p => {
+                csv += [p.fecha, p.factura_numero, p.cedula, p.nombre, p.concepto, p.tipo, p.monto, p.moneda, p.estado]
+                    .map(v => '"' + String(v || '').replace(/"/g, '""') + '"').join(',') + '\n';
+            });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = 'tesoreria_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>

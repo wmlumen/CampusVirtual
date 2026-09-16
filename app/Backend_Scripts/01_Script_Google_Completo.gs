@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.8
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.9
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -31,6 +31,7 @@
  * v06.6 (2026-09-16): verificar_alumno también busca en Roles (admin/docente entran en GitHub)
  * v06.7 (2026-09-16): enviar_provisoria por Gmail (remitente/replyTo configurable)
  * v06.8 (2026-09-16): seeds alineados a datos corregidos (12 carreras G-/E-/M-/D-, 9 secciones S026/LV026/MJ026)
+ * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -514,18 +515,23 @@ function doPost(e) {
     return responderJSON({ status: "Éxito", mensaje: "Progreso detallado registrado" });
   }
 
-  // ── 9. REGISTRAR PAGO ──
+  // ── 9. REGISTRAR PAGO (v06.9: + Factura y Tipo al final, sin mover columnas) ──
   if (data.action === 'registrar_pago') {
     var sheetPagos = ss.getSheetByName('Pagos');
     if (!sheetPagos) {
       sheetPagos = ss.insertSheet('Pagos');
-      sheetPagos.appendRow(['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor']);
+      sheetPagos.appendRow(['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor', 'Factura', 'Tipo']);
+    } else {
+      var hp = sheetPagos.getRange(1, 1, 1, sheetPagos.getLastColumn()).getValues()[0];
+      if (hp.indexOf('Factura') < 0) sheetPagos.getRange(1, sheetPagos.getLastColumn() + 1).setValue('Factura');
+      if (hp.indexOf('Tipo') < 0) sheetPagos.getRange(1, sheetPagos.getLastColumn() + 1).setValue('Tipo');
     }
     var ts6 = new Date().toLocaleString('es-ES', { timeZone: 'America/Asuncion' });
     sheetPagos.appendRow([
-      data.cedula || '', data.nombre || '', data.modulo || '',
+      data.cedula || '', data.nombre || '', data.modulo || data.concepto || '',
       data.monto || 0, data.fecha || ts6, data.estado || 'pendiente',
-      data.comprobante || '', data.registrado_por || 'admin'
+      data.comprobante || '', data.registrado_por || 'admin',
+      data.factura || data.factura_numero || '', data.tipo || 'modulo'
     ]);
     return responderJSON({ status: "Éxito", mensaje: "Pago registrado correctamente" });
   }
@@ -537,9 +543,11 @@ function doPost(e) {
       var pagosData = sheetPagos2.getDataRange().getValues();
       for (var q = 1; q < pagosData.length; q++) {
         if (pagosData[q][0].toString() === data.cedula.toString() &&
-          pagosData[q][2] === (data.modulo || '')) {
+          pagosData[q][2] === (data.modulo || data.concepto || '')) {
           if (data.estado) sheetPagos2.getRange(q + 1, 6).setValue(data.estado);
           if (data.comprobante) sheetPagos2.getRange(q + 1, 7).setValue(data.comprobante);
+          if (data.factura || data.factura_numero) sheetPagos2.getRange(q + 1, 9).setValue(data.factura || data.factura_numero);
+          if (data.tipo) sheetPagos2.getRange(q + 1, 10).setValue(data.tipo);
           return responderJSON({ status: "Éxito", mensaje: "Pago actualizado" });
         }
       }
@@ -929,7 +937,9 @@ function obtenerPagos(ss, cedula) {
         fecha: data[i][4] || '',
         estado: data[i][5] || 'pendiente',
         comprobante: data[i][6] || '',
-        registrado_por: data[i][7] || ''
+        registrado_por: data[i][7] || '',
+        factura: data[i][8] || '',
+        tipo: data[i][9] || 'modulo'
       });
     }
   }
@@ -2150,8 +2160,8 @@ function inicializarBaseDatos() {
   // 21. Notas
   asegurarHoja(ss, 'Notas', ['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final'], creadas);
 
-  // 22. Pagos
-  asegurarHoja(ss, 'Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor'], creadas);
+  // 22. Pagos (v06.9: + Factura y Tipo al final)
+  asegurarHoja(ss, 'Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor', 'Factura', 'Tipo'], creadas);
 
   // 23. Accesos
   asegurarHoja(ss, 'Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo'], creadas);
@@ -2298,7 +2308,7 @@ function sembrarTodo(ss) {
     ['CalendarEvents', ['ID', 'UUID', 'Titulo', 'Descripcion', 'FechaInicio', 'FechaFin', 'HoraInicio', 'HoraFin', 'Tipo', 'Color', 'CreadoPor', 'Asignatura', 'CreatedAt', 'UpdatedAt']],
     ['Fotos', ['Cedula', 'Nombre', 'FileId', 'Url', 'Fecha']],
     ['Notas', ['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final']],
-    ['Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor']],
+    ['Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor', 'Factura', 'Tipo']],
     ['Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo']]
   ];
   var antes = [];

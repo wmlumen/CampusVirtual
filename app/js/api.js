@@ -152,6 +152,38 @@ function gasGetCatalogo(tipo) {
         .catch(() => { clearTimeout(timeout); return []; });
 }
 
+// Helper: registrar pago en Google Sheets vía GAS (POST registrar_pago, v06.9 con factura+tipo)
+function gasRegistrarPago(d) {
+    d = d || {};
+    const payload = {
+        action: 'registrar_pago',
+        cedula: d.cedula || '',
+        nombre: d.nombre || '',
+        modulo: d.concepto || d.modulo || '',
+        tipo: d.tipo || 'modulo',
+        monto: d.monto || 0,
+        fecha: d.fecha || '',
+        estado: d.estado || 'pendiente',
+        factura: d.factura_numero || d.factura || '',
+        comprobante: d.comprobante || '',
+        registrado_por: d.registrado_por || ''
+    };
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+}
+
+// Helper: consultar pagos de una cédula en Google Sheets (GET consultar_pagos)
+function gasConsultarPagos(cedula) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    return fetch(GAS_URL + '?action=consultar_pagos&cedula=' + encodeURIComponent(cedula || ''), { signal: controller.signal })
+        .then(r => { clearTimeout(timeout); return r.json(); })
+        .then(d => (d && d.pagos) || (Array.isArray(d) ? d : []))
+        .catch(() => { clearTimeout(timeout); return []; });
+}
+
 // Helper: espejo de asignatura SQLite -> hoja Asignaturas vía GAS v06.2 (POST guardar_asignatura)
 // Misma base en ambos lados (upsert por codigo). Devuelve {ok, codigo}.
 function gasUploadSubject(a) {

@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 06.5
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 06.6
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -28,6 +28,7 @@
  * v06.3 (2026-09-16): inicializarBaseDatos + poblarCatalogosBase (28 hojas)
  * v06.4 (2026-09-16): sembrar_todo por URL (datos conocidos) + TIC sin clave obligatoria
  * v06.5 (2026-09-16): registro sin asignatura forzada + listar_grados/carreras/secciones para el formulario
+ * v06.6 (2026-09-16): verificar_alumno también busca en Roles (admin/docente entran en GitHub)
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
@@ -86,6 +87,32 @@ function doGet(e) {
           carrera: data[i][5] || '',
           seccion: data[i][6] || ''
         });
+      }
+    }
+
+    // ── v06.6: también buscar en Roles (admin/docentes no están en RegistroAlumnos) ──
+    var sheetRoles = ss.getSheetByName('Roles');
+    if (sheetRoles) {
+      var dr = sheetRoles.getDataRange().getValues();
+      for (var k = 1; k < dr.length; k++) {
+        if (dr[k][0].toString() === cedula.toString()) {
+          var est = (dr[k][6] || 'activo').toString().toLowerCase();
+          if (est !== 'activo') continue;
+          var full = (dr[k][1] || '').toString().trim();
+          var parts = full.split(/\s+/);
+          var nn = parts[0] || '';
+          var aa = parts.slice(1).join(' ') || '';
+          return responderJSON({
+            existe: true,
+            nombre: full,
+            nombre_separado: { nombre: nn, apellido: aa },
+            email: '',
+            grado: '',
+            carrera: dr[k][3] || '',
+            seccion: dr[k][4] || '',
+            rol: dr[k][2] || ''
+          });
+        }
       }
     }
     return responderJSON({ existe: false });

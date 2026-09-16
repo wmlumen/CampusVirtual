@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sincronizar con Google — Admin Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--border:#C8E6C9}
+        body{font-family:'Montserrat',system-ui,sans-serif;background:#f0fdf4;min-height:100vh}
+        .topbar{background:var(--verde-dark);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+        .topbar a{color:#fff;text-decoration:none;font-size:.7rem;font-weight:600}
+        .wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+        .cardx{background:#fff;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:20px;margin-bottom:16px}
+        .cardx h2{font-size:.95rem;font-weight:800;color:var(--verde-dark);margin-bottom:4px}
+        .cardx p.desc{font-size:.72rem;color:#64748b;margin-bottom:14px}
+        .btnx{padding:9px 18px;border-radius:10px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark)}
+        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
+        .btnx:disabled{background:#cbd5e1;cursor:not-allowed}
+        .badge-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
+        .badge-no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
+        .badge-wait{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
+        table{width:100%;font-size:.72rem}
+        th{background:#f8fafc;color:#64748b;text-transform:uppercase;font-size:.6rem;padding:8px}
+        td{padding:8px;border-top:1px solid #f1f5f9}
+        #log{background:#0f172a;color:#a7f3d0;border-radius:10px;padding:12px;font-size:.68rem;font-family:monospace;max-height:220px;overflow-y:auto;white-space:pre-wrap}
+        .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.75rem;margin:10px 0}
+        .kv b{color:var(--verde-dark)}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div style="font-weight:800;font-size:.85rem">🏛 Sincronizar con Google</div>
+        <a href="index.html"><i class="bi bi-arrow-left"></i> Volver al Admin</a>
+    </div>
+
+    <div class="wrap">
+        <div class="cardx">
+            <h2><i class="bi bi-hdd-network"></i> 1. ¿Qué Google está conectado?</h2>
+            <p class="desc">Consulta al script publicado qué planilla está leyendo y cuántos registros tiene cada hoja. Si falla, el script en Google aún no está actualizado a v06.</p>
+            <button class="btnx btn-p" id="btn-diag" onclick="consultarDiagnostico()"><i class="bi bi-search"></i> Consultar conexión</button>
+            <div id="diag-out" style="margin-top:12px"></div>
+        </div>
+
+        <div class="cardx">
+            <h2><i class="bi bi-people"></i> 2. Usuarios locales vs Google</h2>
+            <p class="desc">Compara los usuarios de tu PC (SQLite) con la hoja <b>RegistroAlumnos</b> de Google. Requiere sesión de administrador en este equipo.</p>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btnx btn-p" id="btn-cargar" onclick="cargarComparacion()"><i class="bi bi-list-check"></i> Cargar comparación</button>
+                <button class="btnx btn-g" id="btn-sync" onclick="sincronizarFaltantes()" disabled><i class="bi bi-cloud-upload"></i> Sincronizar faltantes a Google</button>
+            </div>
+            <div id="sync-progress" style="margin-top:10px;font-size:.72rem;color:#64748b"></div>
+            <div class="table-responsive" style="margin-top:10px">
+                <table>
+                    <thead><tr><th>Cédula</th><th>Nombre</th><th>Rol</th><th>En Google</th></tr></thead>
+                    <tbody id="sync-body"><tr><td colspan="4" class="text-center text-muted">Sin datos. Pulsa "Cargar comparación".</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="cardx">
+            <h2><i class="bi bi-terminal"></i> Registro</h2>
+            <div id="log">Listo.</div>
+        </div>
+    </div>
+
+    <script src="../js/api.js?v=8"></script>
+    <script>
+        let faltantes = [];
+        function log(m) {
+            const el = document.getElementById('log');
+            el.textContent += '\n[' + new Date().toLocaleTimeString('es-ES') + '] ' + m;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function consultarDiagnostico() {
+            const out = document.getElementById('diag-out');
+            out.innerHTML = '<span class="badge-wait">Consultando...</span>';
+            try {
+                const r = await fetch(GAS_URL + '?action=diagnostico');
+                const d = await r.json();
+                if (!d || !d.ok) throw new Error('sin respuesta');
+                let rows = Object.keys(d.conteos || {}).map(k => {
+                    const v = d.conteos[k];
+                    const badge = v < 0 ? '<span class="badge-no">sin hoja</span>'
+                        : v === 0 ? '<span class="badge-wait">0 filas</span>'
+                        : '<span class="badge-ok">' + v + ' filas</span>';
+                    return '<tr><td>' + k + '</td><td class="text-end">' + badge + '</td></tr>';
+                }).join('');
+                out.innerHTML =
+                    '<div class="kv"><b>Planilla:</b><span>' + (d.planilla_nombre || '-') + '</span>' +
+                    '<b>ID:</b><span style="font-family:monospace;font-size:.65rem">' + (d.planilla_id || '-') + '</span></div>' +
+                    '<a class="btnx btn-g" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/' + d.planilla_id + '"><i class="bi bi-box-arrow-up-right"></i> Abrir planilla</a>' +
+                    '<div class="table-responsive" style="margin-top:10px"><table><thead><tr><th>Hoja</th><th class="text-end">Registros</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+                log('Diagnóstico OK: ' + d.planilla_nombre + ' (' + d.planilla_id + ')');
+            } catch (e) {
+                out.innerHTML = '<span class="badge-no">No responde</span><p class="desc" style="margin-top:8px">El script publicado en Google aún no tiene la acción <b>diagnostico</b> (v06.1). Publica la nueva versión del script y reintenta. La URL no cambia.</p>';
+                log('Diagnóstico falló: publica v06.1 del script en Google.');
+            }
+        }
+
+        async function cargarComparacion() {
+            const body = document.getElementById('sync-body');
+            const prog = document.getElementById('sync-progress');
+            document.getElementById('btn-sync').disabled = true;
+            faltantes = [];
+            body.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Cargando usuarios locales...</td></tr>';
+            let users = [];
+            try {
+                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                });
+                const d = await r.json();
+                users = d.users || d.data || [];
+            } catch (e) {
+                body.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Sin conexión al PHP local o sin sesión de admin. Abre esta página en la PC del servidor con sesión iniciada.</td></tr>';
+                log('ERROR: no se pudo listar usuarios locales.');
+                return;
+            }
+            if (!users.length) {
+                body.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay usuarios locales.</td></tr>';
+                return;
+            }
+            log('Usuarios locales: ' + users.length + '. Verificando en Google...');
+            body.innerHTML = '';
+            let i = 0;
+            for (const u of users) {
+                i++;
+                prog.textContent = 'Verificando ' + i + '/' + users.length + '...';
+                const ced = u.cedula || u.username || '';
+                const nom = (u.nombre_completo || ((u.firstname || '') + ' ' + (u.lastname || ''))).trim();
+                let enGoogle = false;
+                try {
+                    const g = await gasCheckStudent(ced);
+                    enGoogle = !!(g && g.existe);
+                } catch (e) {}
+                if (!enGoogle) faltantes.push({ cedula: ced, nombre: nom, email: u.email || '', carrera: u.carrera || '', seccion: u.seccion || '' });
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td><b>' + ced + '</b></td><td>' + nom + '</td><td>' + (u.role_sistema || u.role || '-') + '</td>' +
+                    '<td>' + (enGoogle ? '<span class="badge-ok">En Google</span>' : '<span class="badge-no">Falta</span>') + '</td>';
+                body.appendChild(tr);
+                await new Promise(r => setTimeout(r, 150));
+            }
+            prog.textContent = 'Listo: ' + users.length + ' locales, ' + faltantes.length + ' faltan en Google.';
+            log('Comparación lista. Faltan en Google: ' + faltantes.length);
+            document.getElementById('btn-sync').disabled = faltantes.length === 0;
+        }
+
+        async function sincronizarFaltantes() {
+            if (!faltantes.length) return;
+            const btn = document.getElementById('btn-sync');
+            btn.disabled = true;
+            const prog = document.getElementById('sync-progress');
+            let ok = 0;
+            for (let i = 0; i < faltantes.length; i++) {
+                const f = faltantes[i];
+                prog.textContent = 'Subiendo ' + (i + 1) + '/' + faltantes.length + ' (' + f.cedula + ')...';
+                try {
+                    await gasRegisterStudent(f.cedula, f.nombre, f.email, f.carrera, f.seccion);
+                    ok++;
+                    log('OK ' + f.cedula + ' ' + f.nombre);
+                } catch (e) {
+                    log('ERROR ' + f.cedula + ': ' + e.message);
+                }
+                await new Promise(r => setTimeout(r, 300));
+            }
+            prog.textContent = 'Sincronización terminada: ' + ok + '/' + faltantes.length + ' subidos.';
+            log('Fin. Vuelve a "Cargar comparación" para verificar.');
+        }
+    </script>
+</body>
+</html>

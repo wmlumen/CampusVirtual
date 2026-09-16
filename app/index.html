@@ -928,11 +928,16 @@ async function registrarYAcceder(){
     let regResult=null;try{regResult=await window.CenturiaAPI.auth.register(userData)}catch(re){regResult={ok:false,message:'Error de conexión con el servidor.'}}
     if(!regResult||!regResult.ok){const rm=(regResult&&regResult.message)||'Error al registrar.';if(/conexi/i.test(rm)){await registrarOffline(userData,cedula,nombre,apellido,email,telefono,grado,carrera,seccion);return}throw new Error(rm)}
 
-    // ═══ SINCRONIZAR CON GOOGLE SHEETS (backup) ═══
+    // ═══ SINCRONIZAR CON GOOGLE SHEETS (backup) + verificación de lectura ═══
     try {
         if (typeof gasRegisterStudent === 'function') {
             await gasRegisterStudent(cedula, nombre + ' ' + apellido, email, carrera, seccion);
-            console.log('[GAS] Alumno sincronizado en Google Sheets');
+            console.log('[GAS] Alumno enviado a Google Sheets');
+            if (typeof gasCheckStudent === 'function') {
+                const chk = await gasCheckStudent(cedula);
+                if (chk && chk.existe) console.log('[GAS] Verificado en Sheets: ' + cedula);
+                else console.warn('[GAS] Sheets aún no refleja a ' + cedula + ' (revisar planilla conectada)');
+            }
         }
     } catch(gasErr) {
         console.warn('[GAS] Error sincronizando con Google Sheets (no bloqueante):', gasErr);

@@ -23,6 +23,7 @@
  * Changelog:
  * v05 (2026-09-15): Matrícula, asistencia con código, calendario, formularios, filiales
  * v06 (2026-09-15): Fotos de perfil en Google Drive (subir_foto, obtener_foto, eliminar_foto)
+ * v06.1 (2026-09-16): Diagnóstico (action=diagnostico: nombre/ID de planilla + conteo de filas)
  * v04: Multi-rol, progreso automático, pagos por módulo
  */
 
@@ -43,6 +44,12 @@ function doGet(e) {
   // ── FOTO DE PERFIL EN DRIVE (v06) ──
   if (action === 'obtener_foto') {
     try { return responderJSON(obtenerFotoDrive(ss, e.parameter.cedula)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── DIAGNÓSTICO: qué planilla está conectada y cuántas filas tiene (v06) ──
+  if (action === 'diagnostico') {
+    try { return responderJSON(diagnosticoSheets(ss)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -1811,6 +1818,18 @@ function obtenerFotoDrive(ss, cedula) {
     }
   }
   return { ok: true, existe: false };
+}
+
+function diagnosticoSheets(ss) {
+  var nombres = ['RegistroAlumnos', 'Roles', 'Matriculaciones', 'FormulariosCarrera',
+    'FormulariosAlumno', 'AttendanceEvents', 'AttendanceRecords', 'CalendarEvents',
+    'Filiales', 'Asignaturas', 'Fotos'];
+  var conteos = {};
+  for (var i = 0; i < nombres.length; i++) {
+    var sh = ss.getSheetByName(nombres[i]);
+    conteos[nombres[i]] = sh ? Math.max(0, sh.getLastRow() - 1) : -1;
+  }
+  return { ok: true, planilla_nombre: ss.getName(), planilla_id: ss.getId(), conteos: conteos };
 }
 
 function eliminarFotoDrive(ss, data) {

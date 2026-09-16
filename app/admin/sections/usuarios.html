@@ -490,9 +490,9 @@
                 <div class="flex gap-1 items-center">
                     <button @click="filtroEstadoAsig='todas';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
                         :class="filtroEstadoAsig==='todas' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'">Todas</button>
-                    <button @click="filtroEstadoAsig='activo';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
+                    <button @click="filtroEstadoAsig='activo';cargarAsignaturas()" title="Con docente asignado" class="px-2 py-1 rounded-lg text-[9px] font-bold"
                         :class="filtroEstadoAsig==='activo' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'">Activas</button>
-                    <button @click="filtroEstadoAsig='inactivo';cargarAsignaturas()" class="px-2 py-1 rounded-lg text-[9px] font-bold"
+                    <button @click="filtroEstadoAsig='inactivo';cargarAsignaturas()" title="Sin docente asignado" class="px-2 py-1 rounded-lg text-[9px] font-bold"
                         :class="filtroEstadoAsig==='inactivo' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500'">Inactivas</button>
                     <button @click="showAsignaturaForm=!showAsignaturaForm; if(!showAsignaturaForm)cancelarEditAsignatura()"
                         class="px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1"

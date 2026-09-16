@@ -676,10 +676,12 @@ document.addEventListener('alpine:init', () => {
         formAsignatura: { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, modulo: '', carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
         filtroEstadoAsig: 'todas',
 
+        // Filtro: Activa = CON docente asignado · Inactiva = SIN docente
         async cargarAsignaturas() {
             try {
-                const est = this.filtroEstadoAsig || 'todas';
-                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list&estado=' + est, {
+                const f = this.filtroEstadoAsig || 'todas';
+                const q = f === 'todas' ? '' : ('&con_docente=' + (f === 'activo' ? 'si' : 'no'));
+                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list&estado=todas' + q, {
                     headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
                 });
                 const data = await r.json();

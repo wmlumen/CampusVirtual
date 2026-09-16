@@ -34,7 +34,9 @@ function ensureAsignaturasTable($pdo) {
     } catch (Exception $e) {}
 }
 
-// ═══ LISTAR (con docente vinculado; ?estado=todas|activo|inactivo, por defecto activo) ═══
+// ═══ LISTAR (con docente vinculado) ═══
+// ?estado=todas|activo|inactivo (columna, por defecto activo)
+// ?con_docente=si|no → Activa = CON docente asignado; Inactiva = SIN docente
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'list') {
     $pdo = db();
     ensureAsignaturasTable($pdo);
@@ -42,6 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     $carrera = trim($_GET['carrera'] ?? '');
     $estado = trim($_GET['estado'] ?? 'activo');
     if (!in_array($estado, ['activo', 'inactivo', 'todas'])) $estado = 'activo';
+    $conDoc = trim($_GET['con_docente'] ?? '');
+    if (!in_array($conDoc, ['si', 'no', ''])) $conDoc = '';
 
     $where = [];
     $params = [];
@@ -55,12 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
             LEFT JOIN user_roles ur ON ur.asignatura = a.codigo AND ur.rol IN ('docente','teacher') AND ur.estado = 'activo'
             LEFT JOIN users u ON u.id = ur.user_id";
     if ($where) $sql .= " WHERE " . implode(' AND ', $where);
-    $sql .= " GROUP BY a.id ORDER BY a.carrera, a.semestre, a.nombre";
+    $sql .= " GROUP BY a.id";
+    if ($conDoc === 'si') $sql .= " HAVING total_docentes > 0";
+    elseif ($conDoc === 'no') $sql .= " HAVING total_docentes = 0";
+    $sql .= " ORDER BY a.carrera, a.semestre, a.nombre";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    api_response(['items' => $items, 'count' => count($items), 'estado' => $estado]);
+    api_response(['items' => $items, 'count' => count($items), 'estado' => $estado, 'con_docente' => $conDoc]);
 }
 
 // ═══ OBTENER POR CÓDIGO ═══

@@ -203,7 +203,35 @@ integración opcional futura en `integrations/`, cuya eliminación no debe rompe
 5. **Offline con bandera**: los fallbacks existen y funcionan; si se restringen, con `allowOfflineAuthentication`
    explícito y migración de usuarios previa (§2).
 
-## 15. Forma de trabajo y entregables
+## 15. REGLA OBLIGATORIA — CÓDIGO Y DATOS REALES
+
+> **No simules funcionamiento con datos ficticios. Toda funcionalidad debe operar contra la fuente de datos real
+> asignada; tu tarea es programar el sistema, no poblarlo con información inventada.**
+
+El trabajo se limita a: crear, corregir, organizar y mejorar el código; usar únicamente los datos existentes de
+la base asignada; respetar estructura, registros, identificadores y relaciones; crear solo las estructuras
+(tabla/columna/índice/migración) necesarias para que lo implementado funcione, documentando el cambio antes,
+preservando datos, con respaldo si hay riesgo y sin cambios destructivos.
+
+Prohibido: inventar datos o usuarios; registros de demostración; notas/asistencias/matrículas/cursos/
+evaluaciones simuladas; hardcodear datos para aparentar funcionamiento; reemplazar datos reales por pruebas;
+eliminar registros sin instrucción explícita; modificar información real para pasar una prueba; duplicar datos;
+crear segunda base que compita con la oficial; arrays/JSON estáticos como sustituto de la base de datos.
+
+Flujo válido: `Frontend → API/servicio → base asignada → datos reales`. Nunca datos escritos en el código
+(`usuario = "Juan Pérez"`, `nota = 5`, etc.).
+
+Pruebas con datos temporales: solo en entorno separado, identificados como prueba, sin tocar producción y
+eliminados al finalizar cuando corresponda.
+
+Fuente de verdad: `Google Sheets` = datos productivos; `PHP + SQLite` = respaldo/administración local, sin
+generar información que contradiga a Sheets.
+
+Para declarar terminado: consulta la base real, guarda y recupera tras recargar, sin hardcode, sin duplicados,
+sin tocar registros ajenos, maneja inexistentes e informa errores reales. Si falta un dato/tabla/campo,
+repórtalo exactamente; no lo inventes.
+
+## 16. Forma de trabajo y entregables
 
 - Rama de reparación, cambios pequeños verificables, sin `catch` vacíos que oculten errores, sin datos simulados,
   sin declarar terminado sin probar, sin borrar datos de Sheets (respaldo antes de migrar).

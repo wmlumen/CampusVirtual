@@ -9,11 +9,22 @@ function centuriaLogout(confirmar) {
 
     const token = localStorage.getItem('centuria_auth_token') || sessionStorage.getItem('token');
 
+    // Raíz de la app (funciona en /app/, subcarpetas y GitHub /CampusVirtual/app/)
+    let appRoot = './';
+    try {
+        const i = location.pathname.indexOf('/app/');
+        appRoot = i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
+    } catch (e) {}
+
     // Intentar cerrar la sesión del servidor antes de eliminar el token local.
     if (token) {
-        fetch('/api/auth.php?action=logout', {
+        let logoutUrl = appRoot + 'api/auth.php?action=logout';
+        try {
+            if (window.CenturiaAPI && CenturiaAPI.baseUrl) logoutUrl = CenturiaAPI.baseUrl + 'auth.php?action=logout';
+        } catch (e) {}
+        fetch(logoutUrl, {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => {});
     }
 
@@ -25,5 +36,5 @@ function centuriaLogout(confirmar) {
     localStorage.removeItem('centuria_user');
 
     // Redirigir al index (replace para evitar botón "atrás")
-    window.location.replace('/index.html');
+    window.location.replace(appRoot + 'index.html');
 }

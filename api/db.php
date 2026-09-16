@@ -457,6 +457,34 @@ class Database {
             $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_mat_fecha ON matriculaciones(fecha_inscripcion)");
         } catch (Exception $e) {}
 
+        // ═══ Tabla pagos (tesorería: módulos, cursos, seminarios con factura) ═══
+        try {
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS pagos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                uuid TEXT UNIQUE,
+                user_id INTEGER,
+                cedula TEXT NOT NULL,
+                nombre TEXT DEFAULT '',
+                concepto TEXT NOT NULL,
+                tipo TEXT DEFAULT 'modulo' CHECK(tipo IN ('modulo','curso','seminario','otro')),
+                monto REAL DEFAULT 0,
+                moneda TEXT DEFAULT 'Gs.',
+                fecha TEXT DEFAULT '',
+                factura_numero TEXT DEFAULT '',
+                estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente','pagado','anulado')),
+                comprobante TEXT DEFAULT '',
+                registrado_por TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                sync_version INTEGER DEFAULT 1,
+                sync_status TEXT DEFAULT 'sincronizado',
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_pagos_cedula ON pagos(cedula)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_pagos_estado ON pagos(estado)");
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_pagos_factura ON pagos(factura_numero)");
+        } catch (Exception $e) {}
+
         foreach ($schema as $sql) {
             $this->pdo->exec($sql);
         }

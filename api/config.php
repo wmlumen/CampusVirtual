@@ -119,7 +119,7 @@ function get_db() {
 }
 
 function execute_schema(PDO $pdo) {
-    $schema = file_dirname(__DIR__) . '/db_schema.sql';
+    $schema = dirname(__DIR__) . '/db_schema.sql';
     if (file_exists($schema)) {
         $pdo->exec(file_get_contents($schema));
     }

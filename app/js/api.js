@@ -40,13 +40,18 @@ function appUrl(relativePath) {
     } catch (e) { return relativePath; }
 }
 
-// Helper: verificar alumno en Google Sheets (GET) con timeout de 2s
-function gasCheckStudent(cedula) {
+// Helper: verificar alumno en Google Sheets (GET). Timeout 12s + 1 reintento
+// (Google "despierta" lento en frío y con 2s fallaba el login).
+function gasCheckStudent(cedula, reintento) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
     return fetch(GAS_URL + '?action=verificar_alumno&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
         .then(r => { clearTimeout(timeout); return r.json(); })
-        .catch(() => { clearTimeout(timeout); return { existe: false }; });
+        .catch(() => {
+            clearTimeout(timeout);
+            if (!reintento) return gasCheckStudent(cedula, true);
+            return { existe: false };
+        });
 }
 
 // Helper: registrar alumno en Google Sheets (POST)
@@ -125,7 +130,7 @@ function gasUploadPhoto(cedula, nombre, dataUrl) {
 // Helper: obtener URL de foto de perfil desde Drive vía GAS v06 (GET)
 function gasGetPhoto(cedula) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     return fetch(GAS_URL + '?action=obtener_foto&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
         .then(r => { clearTimeout(timeout); return r.json(); })
         .catch(() => { clearTimeout(timeout); return { ok: false }; });
@@ -143,7 +148,7 @@ function gasDeletePhoto(cedula) {
 // Devuelve {roles:[{cedula,nombre,rol,carrera,seccion,asignatura,estado}]}. Nunca lanza.
 function gasGetRoles(cedula) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     return fetch(GAS_URL + '?action=verificar_roles&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
         .then(r => { clearTimeout(timeout); return r.json(); })
         .then(d => ({ roles: (d && d.roles) || [] }))
@@ -188,7 +193,7 @@ function getDeviceInfo() {
 // Helper genérico: catálogo simple desde Google (grados/carreras/secciones, v06.5). Nunca lanza.
 function gasGetCatalogo(tipo) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const acts = { grados: 'listar_grados', carreras: 'listar_carreras', secciones: 'listar_secciones' };
     const keys = { grados: 'grados', carreras: 'carreras', secciones: 'secciones' };
     return fetch(GAS_URL + '?action=' + (acts[tipo] || 'listar_carreras'), { signal: controller.signal })
@@ -222,7 +227,7 @@ function gasRegistrarPago(d) {
 // Helper: consultar pagos de una cédula en Google Sheets (GET consultar_pagos)
 function gasConsultarPagos(cedula) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     return fetch(GAS_URL + '?action=consultar_pagos&cedula=' + encodeURIComponent(cedula || ''), { signal: controller.signal })
         .then(r => { clearTimeout(timeout); return r.json(); })
         .then(d => (d && d.pagos) || (Array.isArray(d) ? d : []))
@@ -256,7 +261,7 @@ function gasUploadSubject(a) {
 // Devuelve {asignaturas:[{Nombre,Codigo,Carrera,Grado,...}]}. Nunca lanza.
 function gasGetSubjects() {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     return fetch(GAS_URL + '?action=listar_asignaturas', { signal: controller.signal })
         .then(r => { clearTimeout(timeout); return r.json(); })
         .then(d => ({ asignaturas: (d && d.asignaturas) || (Array.isArray(d) ? d : []) }))

@@ -52,6 +52,7 @@ document.addEventListener('alpine:init', () => {
         nuevoRol: { rol: 'alumno', carrera: '', seccion: '', asignatura: '' },
         catalogosCarreras: [],
         catalogosSecciones: [],
+        catalogosGrados: [],
         formRol: { nombre: '', descripcion: '', permisos: [], color: '#64748b', icono: 'bi-person' },
         editRol: null,
 
@@ -188,19 +189,23 @@ document.addEventListener('alpine:init', () => {
             ]);
         },
 
-        // --- Catálogos para asignar roles (carrera + sección desde la base) ---
+        // --- Catálogos para asignar roles y unir asignaturas (carrera + sección + grado) ---
         async cargarCatalogosAdmin() {
             try {
-                const [rc, rs] = await Promise.all([
+                const [rc, rs, rg] = await Promise.all([
                     fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras', {
                         headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
                     }).then(r => r.json()).catch(() => ({})),
                     fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones', {
                         headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+                    }).then(r => r.json()).catch(() => ({})),
+                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=grados', {
+                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
                     }).then(r => r.json()).catch(() => ({}))
                 ]);
                 this.catalogosCarreras = rc.carreras || rc.items || [];
                 this.catalogosSecciones = rs.secciones || rs.items || [];
+                this.catalogosGrados = rg.grados || rg.items || [];
             } catch (e) { console.error('Error cargando catálogos:', e); }
         },
 
@@ -606,7 +611,7 @@ document.addEventListener('alpine:init', () => {
         asignaturaSearch: '',
         asignaturaFilterCarrera: '',
         selectedAsignatura: null,
-        formAsignatura: { nombre: '', codigo: '', carrera: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
+        formAsignatura: { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' },
 
         async cargarAsignaturas() {
             try {
@@ -639,6 +644,7 @@ document.addEventListener('alpine:init', () => {
                 nombre: a.nombre || '',
                 codigo: a.codigo || '',
                 carrera: a.carrera || '',
+                grado: a.grado || '',
                 semestre: a.semestre || 1,
                 carga_horaria: a.carga_horaria || 0,
                 color: a.color || '#10b981',
@@ -656,6 +662,7 @@ document.addEventListener('alpine:init', () => {
                 fd.append('nombre', f.nombre);
                 fd.append('codigo', f.codigo.toUpperCase());
                 fd.append('carrera', f.carrera);
+                fd.append('grado', f.grado || '');
                 fd.append('semestre', f.semestre);
                 fd.append('carga_horaria', f.carga_horaria);
                 fd.append('color', f.color);
@@ -680,7 +687,7 @@ document.addEventListener('alpine:init', () => {
 
         cancelarEditAsignatura() {
             this.selectedAsignatura = null;
-            this.formAsignatura = { nombre: '', codigo: '', carrera: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
+            this.formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
         },
 
         async eliminarAsignatura(a) {

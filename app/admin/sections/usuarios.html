@@ -486,17 +486,28 @@
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
             <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="bi bi-book me-1"></i>Gestión de Asignaturas</h3>
             
-            <!-- Formulario -->
+            <!-- Formulario (unido al catálogo: carrera y grado salen de la base) -->
             <div class="grid grid-cols-2 gap-2 mb-4">
-                <input type="text" x-model="asignaturaForm.codigo" placeholder="Código (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="text" x-model="asignaturaForm.nombre" placeholder="Nombre (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="text" x-model="asignaturaForm.nombre_completo" placeholder="Nombre completo" class="border border-slate-200 rounded-lg px-3 py-2 text-xs col-span-2">
-                <input type="text" x-model="asignaturaForm.carrera" placeholder="Carrera" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="text" x-model="asignaturaForm.semestre" placeholder="Semestre" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="number" x-model="asignaturaForm.carga_horaria" placeholder="Horas" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="number" x-model="asignaturaForm.unidades" placeholder="Unidades" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
-                <input type="color" x-model="asignaturaForm.color" class="border border-slate-200 rounded-lg px-3 py-2 text-xs h-10">
-                <select x-model="asignaturaForm.icono" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="formAsignatura.codigo" placeholder="Código (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="formAsignatura.nombre" placeholder="Nombre (TIC)" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="text" x-model="formAsignatura.nombre_completo" placeholder="Nombre completo" class="border border-slate-200 rounded-lg px-3 py-2 text-xs col-span-2">
+                <select x-model="formAsignatura.carrera" class="border border-slate-200 rounded-lg px-3 py-2 text-xs bg-white">
+                    <option value="">— Carrera del catálogo —</option>
+                    <template x-for="c in catalogosCarreras" :key="c.id">
+                        <option :value="c.nombre" x-text="c.nombre"></option>
+                    </template>
+                </select>
+                <select x-model="formAsignatura.grado" class="border border-slate-200 rounded-lg px-3 py-2 text-xs bg-white">
+                    <option value="">— Grado del catálogo —</option>
+                    <template x-for="g in catalogosGrados" :key="g.id">
+                        <option :value="g.nombre" x-text="g.nombre"></option>
+                    </template>
+                </select>
+                <input type="text" x-model="formAsignatura.semestre" placeholder="Semestre" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="number" x-model="formAsignatura.carga_horaria" placeholder="Horas" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="number" x-model="formAsignatura.unidades" placeholder="Unidades" class="border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <input type="color" x-model="formAsignatura.color" class="border border-slate-200 rounded-lg px-3 py-2 text-xs h-10">
+                <select x-model="formAsignatura.icono" class="border border-slate-200 rounded-lg px-3 py-2 text-xs col-span-2">
                     <option value="bi-laptop">💻 Laptop</option>
                     <option value="bi-people">👥 Personas</option>
                     <option value="bi-book">📚 Libro</option>

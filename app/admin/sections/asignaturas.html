@@ -13,7 +13,7 @@
             </h2>
             <p class="text-xs text-slate-500 mt-1">Gestión de asignaturas del sistema</p>
         </div>
-        <button @click="showForm = !showForm; selectedAsignatura = null; formAsignatura = { nombre: '', codigo: '', carrera: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' }"
+        <button @click="showForm = !showForm; selectedAsignatura = null; formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, carga_horaria: 0, color: '#10b981', icono: 'bi-book' }"
             class="btn-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
             <i class="bi" :class="showForm ? 'bi-x-lg' : 'bi-plus-lg'"></i>
             <span x-text="showForm ? 'Cancelar' : 'Nueva Asignatura'"></span>
@@ -33,8 +33,22 @@
                 <input type="text" x-model="formAsignatura.codigo" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="Ej: TIC-101">
             </div>
             <div>
-                <label class="text-[10px] font-bold text-slate-500 uppercase">Carrera</label>
-                <input type="text" x-model="formAsignatura.carrera" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Carrera (catálogo)</label>
+                <select x-model="formAsignatura.carrera" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                    <option value="">— Seleccionar —</option>
+                    <template x-for="c in catalogosCarreras" :key="c.id">
+                        <option :value="c.nombre" x-text="c.nombre"></option>
+                    </template>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-500 uppercase">Grado (catálogo)</label>
+                <select x-model="formAsignatura.grado" class="w-full mt-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                    <option value="">— Seleccionar —</option>
+                    <template x-for="g in catalogosGrados" :key="g.id">
+                        <option :value="g.nombre" x-text="g.nombre"></option>
+                    </template>
+                </select>
             </div>
             <div>
                 <label class="text-[10px] font-bold text-slate-500 uppercase">Semestre</label>

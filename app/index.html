@@ -580,6 +580,12 @@
             color: #64748b;
         }
 
+        /* Overlay de carga global (avisa que hay que esperar) */
+        #global-loading{display:none;position:fixed;inset:0;z-index:10000;background:rgba(9,31,15,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+        #global-loading .spin{width:52px;height:52px;border-radius:50%;border:5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gsplspin .8s linear infinite}
+        @keyframes gsplspin{to{transform:rotate(360deg)}}
+        #global-loading p{color:#fff;font-size:.8rem;font-weight:600;margin:0;text-align:center;padding:0 20px}
+
         /* QR Modal */
         .qr-overlay {
             position: fixed;
@@ -739,7 +745,7 @@
 
                     <hr class="sep">
                     <div class="alert-info"><i class="bi bi-info-circle me-2"></i>Espacio académico oficial del Instituto Superior Centuria.</div>
-                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r8</div>
+                    <div style="text-align:center;font-size:.55rem;color:#cbd5e1;margin-top:10px">Campus Virtual Centuria • v2026.09.16-r9</div>
                 </div>
 
                 <!-- PASO 2: Registro -->
@@ -879,6 +885,8 @@
     </div>
 </div>
 
+<!-- Overlay de carga: avisa que hay que esperar a Google -->
+<div id="global-loading" role="status" aria-live="polite"><div class="spin"></div><p id="global-loading-text">Conectando con Google... espera</p></div>
 <script src="js/api.js?v=12"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
@@ -908,7 +916,7 @@ async function catalogoConRespaldo(tipo,cacheKey,defecto){
 document.addEventListener('DOMContentLoaded',cargarCatalogos);
 
 let cedulaActual='';let rolesActuales=[];let loginFase='idle';let loginSource='php';let loginGasUser=null;
-function mostrarPasoPassword(n,a){document.getElementById('login-success-text').textContent='Bienvenido(a) '+n+' '+a;showLoginSuccess();document.getElementById('password-section').style.display='block';document.getElementById('inp-password').focus();document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';loginFase='pass'}
+function mostrarPasoPassword(n,a){hideLoadingGlobal();document.getElementById('login-success-text').textContent='Bienvenido(a) '+n+' '+a;showLoginSuccess();document.getElementById('password-section').style.display='block';document.getElementById('inp-password').focus();document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';loginFase='pass'}
 // Fallback GitHub Pages (sin PHP): verifica la cédula en Google Sheets y en local
 async function verificarCedulaOffline(cedula){
     hideLoading('btn-buscar');
@@ -940,6 +948,7 @@ function verificarPasswordOffline(cedula,password){
 }
 // Entrada sin PHP: crea sesión local y trae roles desde Google Sheets
 async function entrarOffline(cedula){
+    showLoadingGlobal('Entrando... espera');
     sessionStorage.setItem('current_cedula',cedula);
     let n='',a='',rol='alumno';
     if(loginGasUser){const p=(loginGasUser.completo||'').trim().split(/\s+/);n=p[0]||loginGasUser.nombre||'';a=p.slice(1).join(' ')||loginGasUser.apellido||''}
@@ -951,17 +960,19 @@ async function entrarOffline(cedula){
         if(typeof gasGetRoles==='function'){
             const gr=await gasGetRoles(cedula);
             const active=((gr&&gr.roles)||[]).filter(r=>r.estado==='activo');
-            if(active.length>1){mostrarSelectorRoles(active);return}
-            if(active.length===1){seleccionarRol(active[0]);return}
+            if(active.length>1){hideLoadingGlobal();mostrarSelectorRoles(active);return}
+            if(active.length===1){hideLoadingGlobal();seleccionarRol(active[0]);return}
         }
     }catch(e){}
-    sessionStorage.setItem('rol',rol);mostrarCursos(null);
+    sessionStorage.setItem('rol',rol);hideLoadingGlobal();mostrarCursos(null);
 }
 
 function showLoading(id){const b=document.getElementById(id);if(b){b.dataset.orig=b.innerHTML;b.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Conectando...';b.disabled=true}}
 function hideLoading(id){const b=document.getElementById(id);if(b&&b.dataset.orig){b.innerHTML=b.dataset.orig;b.disabled=false}}
+function showLoadingGlobal(t){try{document.getElementById('global-loading-text').textContent=t||'Conectando con Google... espera';document.getElementById('global-loading').style.display='flex'}catch(e){}}
+function hideLoadingGlobal(){try{document.getElementById('global-loading').style.display='none'}catch(e){}}
 function togglePassword(){const i=document.getElementById('inp-password');const ic=document.getElementById('pwd-icon');if(i.type==='password'){i.type='text';ic.className='bi bi-eye-slash'}else{i.type='password';ic.className='bi bi-eye'}}
-function showLoginError(m){const d=document.getElementById('login-error');document.getElementById('login-error-text').textContent=m;d.style.display='block'}
+function showLoginError(m){hideLoadingGlobal();const d=document.getElementById('login-error');document.getElementById('login-error-text').textContent=m;d.style.display='block'}
 function hideLoginError(){document.getElementById('login-error').style.display='none'}
 function showLoginSuccess(){document.getElementById('login-success').style.display='block'}
 function hideLoginSuccess(){document.getElementById('login-success').style.display='none'}
@@ -981,7 +992,7 @@ async function verificarCedula(){
         try{const res=await fetch(CenturiaAPI.baseUrl+'auth.php?action=find_user&cedula='+encodeURIComponent(cedula));const data=await res.json();hideLoading('btn-buscar');
         if(data.found){const n=data.user.firstname||'';const a=data.user.lastname||'';loginSource='php';loginGasUser=null;mostrarPasoPassword(n,a)}
         else{showLoginError('La cédula '+cedula+' no está registrada.');setTimeout(()=>{const e=document.getElementById('login-error');if(e){e.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde-medio);text-decoration:underline;font-weight:600">Registrarse ahora</a>';e.style.display='block'}},100)}}
-        catch(e){verificarCedulaOffline(cedula)}
+        catch(e){showLoadingGlobal('Buscando en Google... espera');verificarCedulaOffline(cedula)}
         return;
     }
 
@@ -1014,7 +1025,7 @@ async function registrarYAcceder(){
     const seccion=(document.getElementById('reg-seccion').value||'').trim().toUpperCase();
     const password=nombre.charAt(0).toUpperCase()+apellido.charAt(0).toLowerCase()+cedula+'*';
     if(!cedula||!nombre||!apellido){alert('Completa CEDULA, NOMBRE y APELLIDO.');return}
-    try{const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:'alumno'};
+    try{showLoadingGlobal('Registrando... no cierres, espera');const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:'alumno'};
     let regResult=null;try{regResult=await window.CenturiaAPI.auth.register(userData)}catch(re){regResult={ok:false,message:'Error de conexión con el servidor.'}}
     if(!regResult||!regResult.ok){const rm=(regResult&&regResult.message)||'Error al registrar.';if(/conexi/i.test(rm)){await registrarOffline(userData,cedula,nombre,apellido,email,telefono,grado,carrera,seccion);return}throw new Error(rm)}
 
@@ -1039,12 +1050,13 @@ async function registrarYAcceder(){
     if (!sheetsOk) alert('Registrado correctamente.\n\nAviso: no se pudo anotar en Google ahora (revisa tu internet). Quedó guardado y se reintentará al entrar.');
 
     const loginRes=await window.CenturiaAPI.auth.login(cedula,password);if(!loginRes||!loginRes.ok)throw new Error((loginRes&&loginRes.message)||'Registrado, pero no se pudo iniciar sesion.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');location.href='perfil.html'}
-    catch(err){const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cedula ya esta registrada. Deseas recuperar tu contrasena?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre,apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('token',loginRes.token);sessionStorage.setItem('must_change','1');hideLoadingGlobal();location.href='perfil.html'}
+    catch(err){hideLoadingGlobal();const msg=(err&&err.message?err.message:'').toLowerCase();if(msg.includes('existe')||msg.includes('already')||msg.includes('registr')||msg.includes('409')||msg.includes('duplic')){if(confirm('Esta cedula ya esta registrada. Deseas recuperar tu contrasena?')){abrirRecuperarContrasena();document.getElementById('recuperar-cedula').value=cedula;return}return}alert('Error al registrar: '+err.message)}
 }
 
 // ═══ REGISTRO OFFLINE (GitHub Pages sin PHP): guarda en local + Sheets y entra directo ═══
 async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,grado,carrera,seccion){
+    showLoadingGlobal('Registrando en Google... no cierres, espera');
     try{const db=getUsersDB();db[cedula]={nombre:nombre,apellido:apellido,email:email||'',telefono:telefono||'',grado:grado||'',carrera:carrera||'',seccion:seccion||'',rol:'alumno',foto:userData.foto||''};saveUsersDB(db)}catch(e){}
     let sheetsOk=false;
     try{
@@ -1057,6 +1069,7 @@ async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,g
             }
         }
     }catch(gasErr){console.warn('[GAS] Sin conexión a Sheets:',gasErr)}
+    hideLoadingGlobal();
     if(!sheetsOk)alert('Registrado en ESTE dispositivo.\n\nAviso: no se pudo anotar en Google (revisa tu internet). Si entras desde otro celular, regístrate de nuevo allí o avisa al administrador.');
     sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';location.href='perfil.html';
 }
@@ -1230,15 +1243,17 @@ window.addEventListener('load',()=>{
 function abrirRecuperarContrasena(){document.getElementById('modal-recuperar').style.display='flex';document.getElementById('recuperar-paso1').style.display='block';document.getElementById('recuperar-paso2').style.display='none';document.getElementById('recuperar-error').style.display='none';document.getElementById('recuperar-cedula').value='';document.getElementById('recuperar-cedula').focus()}
 function cerrarRecuperar(){document.getElementById('modal-recuperar').style.display='none'}
 async function buscarContrasena(){const c=document.getElementById('recuperar-cedula').value.trim().replace(/\./g,'');if(!c){alert('Ingresa tu cédula.');return}
-const mostrarTexto=(p,nota)=>{document.getElementById('recuperar-password').textContent=p;document.getElementById('recuperar-nota').textContent=nota||'Haz clic para copiar';document.getElementById('recuperar-paso1').style.display='none';document.getElementById('recuperar-paso2').style.display='block';document.getElementById('recuperar-error').style.display='none'};
+showLoadingGlobal('Buscando tu contraseña... espera');
+const mostrarTexto=(p,nota)=>{hideLoadingGlobal();document.getElementById('recuperar-password').textContent=p;document.getElementById('recuperar-nota').textContent=nota||'Haz clic para copiar';document.getElementById('recuperar-paso1').style.display='none';document.getElementById('recuperar-paso2').style.display='block';document.getElementById('recuperar-error').style.display='none'};
 const mostrar=(n,a)=>{mostrarTexto(n.charAt(0).toUpperCase()+a.charAt(0).toLowerCase()+c+'*','Haz clic para copiar')};
-const noEncontrado=()=>{document.getElementById('recuperar-error').style.display='block';document.getElementById('recuperar-error-text').textContent='Cédula no encontrada. Regístrese primero.';document.getElementById('recuperar-paso2').style.display='none'};
+const noEncontrado=()=>{hideLoadingGlobal();document.getElementById('recuperar-error').style.display='block';document.getElementById('recuperar-error-text').textContent='Cédula no encontrada. Regístrese primero.';document.getElementById('recuperar-paso2').style.display='none'};
 try{const res=await fetch('../api/auth.php?action=recover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'cedula='+encodeURIComponent(c)});const data=await res.json();if(data&&data.found){if(data.tiene_provisoria&&data.provisional){mostrarTexto(data.provisional,'Provisoria: cámbiala al entrar (seguridad)');return}const fn=(data.nombre||'').split(' ')[0]||'';const ln=(data.apellido||'').split(' ')[0]||'';if(fn&&ln){mostrar(fn,ln);return}}}catch(e){}
 try{const res=await fetch('../api/auth.php?action=find_user&cedula='+encodeURIComponent(c));const data=await res.json();const u=data&&(data.user||(data.data&&data.data.user));if(data&&(data.found||(data.data&&data.data.found))&&u){const fn=(u.firstname||'').split(' ')[0]||'';const ln=(u.lastname||'').split(' ')[0]||'';if(fn&&ln){mostrar(fn,ln);return}}}catch(e){}
 try{const g=await gasCheckStudent(c);if(g.existe&&g.nombre){const p=g.nombre.trim().split(/\s+/);if(p[0])mostrar(p[0],p.slice(1).join(' '));return}}catch(e){}
 const u=buscarUsuarioLocal(c);if(u)mostrar(u.nombre,u.apellido);else noEncontrado()}
 async function enviarProvisoriaMail(){const c=document.getElementById('recuperar-cedula').value.trim().replace(/\./g,'');if(!c){alert('Ingresa tu cédula primero.');return}
-try{const res=await fetch('../api/auth.php?action=recover_send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'cedula='+encodeURIComponent(c)});const d=await res.json();alert(d.mensaje||d.error||'Listo')}catch(e){alert('Error de conexión. En GitHub pide tu provisoria al administrador.')}}
+showLoadingGlobal('Enviando provisoria... espera');
+try{const res=await fetch('../api/auth.php?action=recover_send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'cedula='+encodeURIComponent(c)});const d=await res.json();hideLoadingGlobal();alert(d.mensaje||d.error||'Listo')}catch(e){hideLoadingGlobal();alert('Error de conexión. En GitHub pide tu provisoria al administrador.')}}
 function copiarContrasena(){const p=document.getElementById('recuperar-password').textContent;navigator.clipboard.writeText(p).then(()=>{document.getElementById('recuperar-copiado').style.display='block';setTimeout(()=>document.getElementById('recuperar-copiado').style.display='none',2000)})}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrarRecuperar();cerrarInfo()}});
 function abrirInfo(){document.getElementById('modal-info').style.display='flex'}

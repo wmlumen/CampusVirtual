@@ -273,6 +273,7 @@
                     <div><b>${x.Nombre || x.nombre || '(sin nombre)'}</b> <small class="text-muted">${x.Codigo || x.codigo || ''}</small><br>${badge(x.Estado || x.estado || 'borrador')} <small class="text-muted">v${x.Version || x.version || 1}</small></div>
                     <div class="d-flex gap-1 flex-wrap">
                         <button class="btn btn-p" onclick="abrirDraft('${x.ID || x.id}')">Abrir</button>
+                        ${String(x.Estado || x.estado).toLowerCase() === 'publicado' ? `<a class="btn btn-g" href="../cursos/ver.html?codigo=${encodeURIComponent(x.Codigo || x.codigo || '')}" target="_blank">Ver</a>` : ''}
                         <button class="btn btn-s" onclick="duplicarDraft('${x.ID || x.id}')">Duplicar</button>
                         <button class="btn btn-r" onclick="archivarDraft('${x.ID || x.id}')">Archivar</button>
                     </div>
@@ -407,18 +408,80 @@
 
         async function verBloques(unitID) {
             const box = document.getElementById('bl-' + unitID);
-            const u = (cur.units || []).find(x => x.ID === unitID);
-            const tipo = prompt('Tipo de bloque (texto,titulo,lista,tabla,cita,definicion,ejemplo,imagen,video,actividad,pregunta,rubrica,bibliografia,aviso):', 'texto');
+            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
+            const blocks = [...(u.blocks || [])].sort((a, b) => (parseFloat(a.Orden ?? a.orden) || 0) - (parseFloat(b.Orden ?? b.orden) || 0));
+            box.innerHTML = (blocks.map((b, i) => {
+                const bid = b.ID || b.id;
+                const bt = b.Tipo || b.tipo, btit = b.Titulo || b.titulo || '';
+                return `<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1" style="font-size:.7rem">
+                    <span><b>${i + 1}.</b> [${bt}] ${btit} <small class="text-muted">${String(b.Contenido ?? b.contenido ?? '').slice(0, 60)}</small></span>
+                    <span class="d-flex gap-1">
+                        <button class="btn btn-s btn-sm" onclick="moverBloque('${unitID}','${bid}',-1)">▲</button>
+                        <button class="btn btn-s btn-sm" onclick="moverBloque('${unitID}','${bid}',1)">▼</button>
+                        <button class="btn btn-s btn-sm" onclick="editarBloque('${unitID}','${bid}')">Editar</button>
+                        <button class="btn btn-r btn-sm" onclick="borrarBloque('${bid}')">X</button>
+                    </span></div>`;
+            }).join('') || '<p class="text-muted" style="font-size:.7rem">Sin bloques.</p>') +
+                `<button class="btn btn-g btn-sm mt-1" onclick="nuevoBloque('${unitID}')">+ Bloque</button>`;
+        }
+
+        async function nuevoBloque(unitID) {
+            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
+            const tipo = prompt('Tipo de bloque (texto,titulo,lista,tabla,cita,definicion,ejemplo,imagen,video,archivo,enlace,actividad,pregunta,rubrica,bibliografia,aviso,resumen):', 'texto');
             if (!tipo) return;
+            const titulo = prompt('Título (opcional):') || '';
             const contenido = prompt('Contenido del bloque:') || '';
-            if (!contenido && !confirm('Bloque vacío, ¿guardar igual?')) return;
+            if (!contenido && !titulo && !confirm('Bloque vacío, ¿guardar igual?')) return;
             const r = await api('save_block', {}, {
-                unitID, tipo, titulo: '', contenido,
+                unitID, tipo, titulo, contenido,
                 orden: ((u.blocks || []).length) + 1, visible: true
             });
             if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Bloque agregado');
             await abrirDraft(cur.draft.ID);
-            toast('Bloque agregado (edición completa en fase 2)');
+        }
+
+        async function editarBloque(unitID, bid) {
+            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
+            const b = (u.blocks || []).find(x => (x.ID || x.id) === bid);
+            if (!b) return;
+            const titulo = prompt('Título:', b.Titulo || b.titulo || '');
+            if (titulo === null) return;
+            const contenido = prompt('Contenido:', b.Contenido || b.contenido || '');
+            if (contenido === null) return;
+            const r = await api('save_block', {}, {
+                id: bid, unitID, tipo: b.Tipo || b.tipo, titulo, contenido,
+                orden: b.Orden ?? b.orden ?? 0, visible: !(b.Visible === false || b.Visible === 'false')
+            });
+            if (!r.d.ok) { toast('Error', true); return; }
+            toast('Bloque actualizado');
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function borrarBloque(bid) {
+            if (!confirm('¿Quitar bloque?')) return;
+            const r = await api('delete_block', {}, { id: bid });
+            if (!r.d.ok) { toast('Error', true); return; }
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function moverBloque(unitID, bid, dir) {
+            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
+            const blocks = [...(u.blocks || [])].sort((a, b) => (parseFloat(a.Orden ?? a.orden) || 0) - (parseFloat(b.Orden ?? b.orden) || 0));
+            const i = blocks.findIndex(x => (x.ID || x.id) === bid);
+            const j = i + dir;
+            if (i < 0 || j < 0 || j >= blocks.length) return;
+            const oi = parseFloat(blocks[i].Orden ?? blocks[i].orden) || 0;
+            const oj = parseFloat(blocks[j].Orden ?? blocks[j].orden) || 0;
+            const idI = blocks[i].ID || blocks[i].id, idJ = blocks[j].ID || blocks[j].id;
+            const put = (id, orden, blk) => api('save_block', {}, {
+                id, unitID, tipo: blk.Tipo || blk.tipo, titulo: blk.Titulo || blk.titulo || '',
+                contenido: blk.Contenido || blk.contenido || '', orden,
+                visible: !(blk.Visible === false || blk.Visible === 'false')
+            });
+            await put(idI, oj === oi ? oi + dir : oj, blocks[i]);
+            await put(idJ, oi, blocks[j]);
+            await abrirDraft(cur.draft.ID);
         }
 
         async function guardarEvaluacion() {

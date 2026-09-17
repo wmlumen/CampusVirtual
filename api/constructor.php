@@ -238,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             api_response(array_merge(['ok' => true, 'id' => $id], $extra));
         }
-        $dels = ['delete_unit' => 'ct_units', 'delete_block' => 'ct_blocks', 'delete_question' => 'ct_questions'];
+        $dels = ['delete_unit' => 'ct_units', 'delete_block' => 'ct_blocks', 'delete_question' => 'ct_questions', 'delete_activity' => 'ct_activities', 'delete_evaluation' => 'ct_evaluations'];
         if (isset($dels[$action])) {
             if (!$g('id')) api_error('Falta id', 400);
             $pdo->prepare("UPDATE {$dels[$action]} SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?")->execute([$g('id')]);

@@ -2860,6 +2860,16 @@ function ctWrite(ss, data) {
     return { ok: ctBorradoLogico(ss, 'QuestionBank', data.id) };
   }
 
+  if (a === 'constructor_delete_activity') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    return { ok: ctBorradoLogico(ss, 'Activities', data.id) };
+  }
+
+  if (a === 'constructor_delete_evaluation') {
+    if (!data.id) return { ok: false, error: 'Falta id' };
+    return { ok: ctBorradoLogico(ss, 'Evaluations', data.id) };
+  }
+
   if (a === 'constructor_submit_review') {
     var sub = ctGet(ss, 'SubjectDrafts', data.id || '');
     if (!sub) return { ok: false, error: 'Asignatura no encontrada' };

@@ -84,6 +84,7 @@
                 <div class="tabs" id="ed-tabs">
                     <div class="tab active" data-t="prog" onclick="tabEditor('prog',this)">Programa</div>
                     <div class="tab" data-t="units" onclick="tabEditor('units',this)">Unidades</div>
+                    <div class="tab" data-t="acts" onclick="tabEditor('acts',this)">Actividades</div>
                     <div class="tab" data-t="evals" onclick="tabEditor('evals',this)">Evaluaciones</div>
                     <div class="tab" data-t="bank" onclick="tabEditor('bank',this)">Banco</div>
                     <div class="tab" data-t="flow" onclick="tabEditor('flow',this)">Flujo</div>
@@ -134,6 +135,28 @@
                     <button class="btn btn-p" onclick="guardarUnidad()"><i class="bi bi-plus-lg"></i> Agregar unidad</button>
                     <hr>
                     <div id="lista-units"></div>
+                </div>
+
+                <div id="tab-acts" class="cardx" style="display:none">
+                    <h2>Actividades / Trabajos</h2>
+                    <div class="fld"><label>Título *</label><input id="a-tit"></div>
+                    <div class="fld"><label>Instrucciones</label><textarea id="a-ins"></textarea></div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><div class="fld"><label>Unidad (ID)</label><input id="a-unit" placeholder="opcional"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Puntaje</label><input id="a-pts" type="number" min="0"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Entrega</label><input id="a-ent" type="date"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Modalidad</label><select id="a-mod"><option value="individual">Individual</option><option value="grupal">Grupal</option></select></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Rúbrica</label><textarea id="a-rub"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Retroalimentación base</label><textarea id="a-ret"></textarea></div></div>
+                    </div>
+                    <div class="d-flex gap-3 pb-2 align-items-center">
+                        <label style="font-size:.72rem"><input type="checkbox" id="a-tar"> Permite entrega tardía</label>
+                        <button class="btn btn-p" onclick="guardarActividad()"><i class="bi bi-plus-lg"></i> Agregar actividad</button>
+                    </div>
+                    <hr>
+                    <div id="lista-acts"></div>
                 </div>
 
                 <div id="tab-evals" class="cardx" style="display:none">
@@ -324,7 +347,7 @@
         function tabEditor(t, el) {
             document.querySelectorAll('#ed-tabs .tab').forEach(x => x.classList.remove('active'));
             if (el) el.classList.add('active');
-            ['prog', 'units', 'evals', 'bank', 'flow', 'prev'].forEach(k => {
+            ['prog', 'units', 'acts', 'evals', 'bank', 'flow', 'prev'].forEach(k => {
                 document.getElementById('tab-' + k).style.display = k === t ? 'block' : 'none';
             });
             if (t === 'prev') pintarPreview();
@@ -346,8 +369,19 @@
                     <button class="btn btn-s" onclick="verBloques('${u.ID}')">Bloques</button>
                     <button class="btn btn-r" onclick="borrarUnidad('${u.ID}')">Quitar</button>
                 </div><div id="bl-${u.ID}" class="mt-2"></div></div>`).join('') || '<p class="text-muted">Sin unidades.</p>';
-            document.getElementById('lista-evals').innerHTML = evs.map(e => `
-                <div class="block"><b>${e.Nombre}</b> <small class="text-muted">${e.Tipo} · ${e.Ponderacion}% · máx ${e.PuntajeMax}</small></div>`).join('') || '<p class="text-muted">Sin evaluaciones.</p>';
+            document.getElementById('lista-evals').innerHTML = evs.map(e => {
+                const eid = e.ID || e.id;
+                return `<div class="block"><b>${e.Nombre}</b> <small class="text-muted">${e.Tipo} · ${e.Ponderacion}% · máx ${e.PuntajeMax}</small>
+                    <div class="mt-1 d-flex gap-1">
+                        <button class="btn btn-s btn-sm" onclick="editarEvaluacion('${eid}')">Editar</button>
+                        <button class="btn btn-r btn-sm" onclick="borrarEvaluacion('${eid}')">X</button>
+                    </div></div>`;
+            }).join('') || '<p class="text-muted">Sin evaluaciones.</p>';
+            document.getElementById('lista-acts').innerHTML = (cur.activities || []).map(a => {
+                const aid = a.ID || a.id;
+                return `<div class="block"><b>${a.Titulo || a.titulo}</b> <small class="text-muted">${a.Puntaje || a.puntaje || 0}pts · entrega ${a.FechaEntrega || a.fecha_entrega || '—'}</small><br><small>${a.Instrucciones || a.instrucciones || ''}</small>
+                    <div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarActividad('${aid}')">Quitar</button></div></div>`;
+            }).join('') || '<p class="text-muted">Sin actividades.</p>';
             document.getElementById('pond-fill').style.width = Math.min(100, suma) + '%';
             document.getElementById('pond-txt').textContent = suma + '% asignado' + (suma > 100 ? ' (EXCEDE)' : '');
         }
@@ -484,6 +518,74 @@
             await abrirDraft(cur.draft.ID);
         }
 
+        async function guardarActividad() {
+            if (!cur) return;
+            const tit = document.getElementById('a-tit').value.trim();
+            if (!tit) { toast('Falta el título', true); return; }
+            const r = await api('save_activity', {}, {
+                subjectID: cur.draft.ID, unitID: document.getElementById('a-unit').value.trim(),
+                titulo: tit, instrucciones: document.getElementById('a-ins').value,
+                puntaje: document.getElementById('a-pts').value || 0,
+                rubrica: document.getElementById('a-rub').value,
+                fecha_entrega: document.getElementById('a-ent').value,
+                permite_tardia: document.getElementById('a-tar').checked,
+                modalidad: document.getElementById('a-mod').value,
+                retroalimentacion: document.getElementById('a-ret').value
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Actividad guardada');
+            document.getElementById('a-tit').value = '';
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function borrarActividad(aid) {
+            if (!confirm('¿Quitar actividad?')) return;
+            const r = await api('delete_activity', {}, { id: aid });
+            if (!r.d.ok) { toast('Error', true); return; }
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function editarEvaluacion(eid) {
+            const e = (cur.evaluations || []).find(x => (x.ID || x.id) === eid);
+            if (!e) return;
+            const nom = prompt('Nombre:', e.Nombre || '');
+            if (nom === null) return;
+            const pond = prompt('Ponderación %:', e.Ponderacion ?? e.ponderacion ?? 0);
+            if (pond === null) return;
+            const r = await api('save_evaluation', {}, {
+                id: eid, subjectID: cur.draft.ID, nombre: nom,
+                tipo: e.Tipo || e.tipo || 'parcial', puntaje_max: e.PuntajeMax ?? e.puntaje_max ?? 0,
+                ponderacion: pond, fecha_apertura: e.FechaApertura || e.fecha_apertura || '',
+                fecha_cierre: e.FechaCierre || e.fecha_cierre || '',
+                duracion_min: e.DuracionMin ?? e.duracion_min ?? 0,
+                intentos_max: e.IntentosMax ?? e.intentos_max ?? 1,
+                modalidad: e.Modalidad || e.modalidad || 'virtual',
+                aleatorizar: !!(e.Aleatorizar ?? e.aleatorizar),
+                publicar_resultados: !!(e.PublicarResultados ?? e.publicar_resultados)
+            });
+            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
+            toast('Evaluación actualizada');
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function borrarEvaluacion(eid) {
+            if (!confirm('¿Quitar evaluación? Revisa que la suma siga en 100%.')) return;
+            const r = await api('delete_evaluation', {}, { id: eid });
+            if (!r.d.ok) { toast('Error', true); return; }
+            await abrirDraft(cur.draft.ID);
+        }
+
+        async function borrarPregunta(qid) {
+            if (!confirm('¿Quitar pregunta?')) return;
+            const r = await api('delete_question', {}, { id: qid });
+            if (!r.d.ok) { toast('Error', true); return; }
+            toast('Pregunta quitada');
+            const { d } = await api('list_bank', { subjectID: cur.draft.ID });
+            document.getElementById('lista-bank').innerHTML = (d.questions || []).map(q =>
+                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small><div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarPregunta('${q.ID}')">Quitar</button></div></div>`
+            ).join('') || '<p class="text-muted">Sin preguntas.</p>';
+        }
+
         async function guardarEvaluacion() {
             if (!cur) return;
             const r = await api('save_evaluation', {}, {
@@ -517,7 +619,7 @@
             document.getElementById('q-ok').value = '';
             const { d } = await api('list_bank', { subjectID: cur.draft.ID });
             document.getElementById('lista-bank').innerHTML = (d.questions || []).map(q =>
-                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small></div>`
+                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small><div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarPregunta('${q.ID}')">Quitar</button></div></div>`
             ).join('') || '<p class="text-muted">Sin preguntas.</p>';
         }
 
@@ -526,11 +628,14 @@
             const est = cur.draft.Estado || 'borrador';
             document.getElementById('flujo-estado').innerHTML = 'Estado: ' + badge(est);
             const B = (t, fn, cls) => `<button class="btn ${cls}" onclick="${fn}()">${t}</button>`;
+            const esDoc = ['docente', 'teacher', 'admin', 'administrador_plataforma'].includes(MI_ROL);
+            const esRev = ['academico', 'academic', 'admin', 'administrador_plataforma'].includes(MI_ROL);
+            const esPub = ['admin', 'administrador_plataforma'].includes(MI_ROL);
             let h = '';
-            if (['borrador', 'observado', 'corregido'].includes(est)) h += B('Enviar a revisión', 'flujoEnviar', 'btn-a');
-            if (est === 'en_revision') h += B('Aprobar', 'flujoAprobar', 'btn-p') + B('Observar', 'flujoObservar', 'btn-r');
-            if (est === 'aprobado') h += B('Publicar', 'flujoPublicar', 'btn-p');
-            document.getElementById('flujo-btns').innerHTML = h || '<small class="text-muted">Sin acciones disponibles.</small>';
+            if (['borrador', 'observado', 'corregido'].includes(est) && esDoc) h += B('Enviar a revisión', 'flujoEnviar', 'btn-a');
+            if (est === 'en_revision' && esRev) h += B('Aprobar', 'flujoAprobar', 'btn-p') + B('Observar', 'flujoObservar', 'btn-r');
+            if (est === 'aprobado' && esPub) h += B('Publicar', 'flujoPublicar', 'btn-p');
+            document.getElementById('flujo-btns').innerHTML = h || '<small class="text-muted">Sin acciones para tu rol en este estado.</small>';
             document.getElementById('lista-reviews').innerHTML = (cur.reviews || []).map(r =>
                 `<div class="block"><b>${r.DeEstado} → ${r.AEstado}</b> <small class="text-muted">${r.PorRol || ''} ${r.PorCedula || ''} · ${r.CreatedAt || ''}</small><br>${r.Comentario || ''}</div>`
             ).join('') || '<p class="text-muted">Sin movimientos.</p>';

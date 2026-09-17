@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN 07.0
+ * SCRIPT BACKEND CENTURIA - VERSIÓN 07.1
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  * 
  * Hojas esperadas:
@@ -34,7 +34,7 @@
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
- * v07.0 (2026-09-16): CONSTRUCTOR ACADÉMICO (hojas propias SubjectDrafts/Programs/Units/
+ * v07.1 (2026-09-16): CONSTRUCTOR ACADÉMICO (hojas propias SubjectDrafts/Programs/Units/
  *         Blocks/Activities/Evaluations/QuestionBank/Reviews + CRUD + flujo editorial +
  *         ponderación ≤100% + duplicar; sin tocar producción ni TIC)
  * v04: Multi-rol, progreso automático, pagos por módulo
@@ -82,7 +82,7 @@ function doGet(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
-  // ── CONSTRUCTOR ACADÉMICO v07.0: lectura ──
+  // ── CONSTRUCTOR ACADÉMICO v07.1: lectura ──
   if (action === 'constructor_list_drafts' || action === 'constructor_get_subject' ||
       action === 'constructor_list_bank' || action === 'constructor_list_reviews') {
     try { return responderJSON(ctRead(ss, action, e.parameter)); }
@@ -92,6 +92,8 @@ function doGet(e) {
   // ── VERIFICAR ALUMNO ──
   if (action === 'verificar_alumno') {
     var cedula = e.parameter.cedula;
+    var solicitudDocente = cvDocenteFind(ss, cedula);
+    if (solicitudDocente) return responderJSON({ existe: true, managed_docente: true });
     var sheetAlumnos = ss.getSheetByName('RegistroAlumnos');
     if (!sheetAlumnos) return responderJSON({ existe: false });
 
@@ -363,6 +365,16 @@ function doPost(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var data = JSON.parse(e.postData.contents);
 
+  // Solicitudes docentes v1: respuestas confirmadas y aprobación autorizada en servidor.
+  if (data.action && data.action.indexOf('docente_') === 0) {
+    try { return responderJSON(cvDocenteDispatch(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, contract: 'docentes-v1', code: error.code || 'REQUEST_FAILED', error: error.message }); }
+  }
+  // Los endpoints antiguos no pueden activar ni sobrescribir una solicitud docente.
+  if (['registrar_alumno', 'asignar_rol', 'desactivar_rol'].indexOf(data.action) >= 0 && cvDocenteFind(ss, data.cedula)) {
+    return responderJSON({ ok: false, error: 'Gestiona esta cuenta desde Solicitudes docentes.' });
+  }
+
   // ── ASISTENCIA TIC ──
   if (data.action === 'guardar_clase_tic' || data.action === 'justificar_ausencia_tic') {
     try { return responderJSON(ticGuardar(ss, data)); }
@@ -387,7 +399,7 @@ function doPost(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
-  // ── CONSTRUCTOR ACADÉMICO v07.0: escritura ──
+  // ── CONSTRUCTOR ACADÉMICO v07.1: escritura ──
   if (data.action && data.action.indexOf('constructor_') === 0) {
     try { return responderJSON(ctWrite(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
@@ -771,6 +783,171 @@ function doPost(e) {
   }
 
   return responderJSON({ status: "Error", mensaje: "Acción no reconocida: " + data.action });
+}
+
+// ═══ REGISTRO DOCENTE v07.1 ═══
+// La clave REGISTRO_DOCENTE_ADMIN_KEY se configura SOLO en Script Properties.
+// No se confía en cédula, rol ni token PHP enviados por el navegador.
+var CV_DOCENTE_HEADERS = ['id', 'cedula', 'nombre', 'apellido', 'email', 'telefono', 'grado', 'carrera', 'seccion', 'credential_hash', 'estado', 'created_at', 'reviewed_at'];
+
+function cvDocenteError(code, message) {
+  var error = new Error(message); error.code = code; throw error;
+}
+function cvDocenteHash(value) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8)
+    .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+function cvDocenteEqual(a, b) {
+  a = String(a || ''); b = String(b || '');
+  var diff = a.length ^ b.length;
+  for (var i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+function cvDocenteAdmin(data) {
+  var key = PropertiesService.getScriptProperties().getProperty('REGISTRO_DOCENTE_ADMIN_KEY');
+  if (!key || key.length < 32) cvDocenteError('NOT_CONFIGURED', 'Administración debe habilitar la aprobación docente en el servidor.');
+  if (!cvDocenteEqual(cvDocenteHash(key), cvDocenteHash(data.admin_key || ''))) cvDocenteError('FORBIDDEN', 'Autorización administrativa incorrecta.');
+}
+function cvDocenteRows(ss) {
+  var sheet = ss.getSheetByName('SolicitudesDocentes');
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  return values.slice(1).map(function (row, i) {
+    var obj = { _row: i + 2 };
+    values[0].forEach(function (h, j) { obj[h] = row[j]; });
+    return obj;
+  });
+}
+function cvDocenteFind(ss, cedula) {
+  return cvDocenteRows(ss).filter(function (r) { return String(r.cedula) === String(cedula || ''); })[0] || null;
+}
+function cvDocenteText(value, max, required) {
+  var text = String(value || '').trim();
+  if ((required && !text) || text.length > max || /^[=+@\-]/.test(text) || /[\x00-\x1f<>]/.test(text)) cvDocenteError('VALIDATION', 'Revisa los datos: hay un campo vacío, demasiado largo o con caracteres no permitidos.');
+  return text;
+}
+function cvDocenteCedula(value) {
+  var cedula = String(value || '').replace(/\./g, '').trim();
+  if (!/^\d{4,15}$/.test(cedula)) cvDocenteError('VALIDATION', 'La cédula debe contener entre 4 y 15 dígitos.');
+  return cedula;
+}
+function cvDocentePublic(row) {
+  var result = {};
+  CV_DOCENTE_HEADERS.forEach(function (h) { if (h !== 'credential_hash') result[h] = row[h]; });
+  result.rol_solicitado = 'docente';
+  result.origen = 'google';
+  return result;
+}
+function cvDocenteUpdate(ss, row, fields) {
+  var sheet = ss.getSheetByName('SolicitudesDocentes');
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  Object.keys(fields).forEach(function (h) {
+    var col = headers.indexOf(h);
+    if (col < 0) throw Error('Esquema de solicitudes incompatible.');
+    sheet.getRange(row._row, col + 1).setValue(fields[h]);
+  });
+}
+function cvDocenteActive(ss, cedula) {
+  return obtenerRoles(ss, cedula).some(function (r) { return r.rol === 'docente' && r.estado === 'activo'; });
+}
+function cvDocenteDispatch(ss, data) {
+  var result = { ok: true, contract: 'docentes-v1' };
+  if (data.action === 'docente_estado') {
+    var row = cvDocenteFind(ss, cvDocenteCedula(data.cedula));
+    result.managed = !!row;
+    // No exponer datos personales ni el estado de revisión en esta consulta pública.
+    return result;
+  }
+  if (data.action === 'docente_pendientes') {
+    cvDocenteAdmin(data);
+    result.pendientes = cvDocenteRows(ss).filter(function (r) { return r.estado === 'pendiente' || r.estado === 'aprobando'; }).map(cvDocentePublic);
+    return result;
+  }
+  if (data.action === 'docente_ingresar') {
+    var cedula = cvDocenteCedula(data.cedula);
+    var cache = CacheService.getScriptCache();
+    var attemptsKey = 'docente-attempts-' + cvDocenteHash(cedula);
+    var attempts = Number(cache.get(attemptsKey) || 0);
+    if (attempts >= 8) cvDocenteError('RATE_LIMIT', 'Demasiados intentos. Intenta nuevamente en 15 minutos.');
+    var account = cvDocenteFind(ss, cedula);
+    if (!account || !/^[a-f0-9]{48}$/.test(String(data.password || '')) || !cvDocenteEqual(account.credential_hash, cvDocenteHash(data.password))) {
+      cache.put(attemptsKey, String(attempts + 1), 900);
+      cvDocenteError('INVALID_CREDENTIALS', 'Cédula o contraseña incorrecta.');
+    }
+    if (account.estado !== 'aprobado') cvDocenteError('PENDING', account.estado === 'rechazado' ? 'Tu solicitud no fue aprobada. Contacta a administración.' : 'Tu solicitud está pendiente de aprobación administrativa.');
+    if (!cvDocenteActive(ss, cedula)) cvDocenteError('INACTIVE', 'Tu acceso docente está inactivo. Contacta a administración.');
+    cache.remove(attemptsKey);
+    var token = Utilities.getUuid() + Utilities.getUuid();
+    cache.put('docente-session-' + cvDocenteHash(token), cedula, 3600);
+    result.token = token;
+    result.user = { cedula: cedula, nombre: account.nombre, apellido: account.apellido, rol: 'docente' };
+    return result;
+  }
+  if (data.action === 'docente_sesion' || data.action === 'docente_salir') {
+    var sessionKey = 'docente-session-' + cvDocenteHash(data.token || '');
+    var sessionCache = CacheService.getScriptCache();
+    var sessionCedula = sessionCache.get(sessionKey);
+    if (data.action === 'docente_salir') { sessionCache.remove(sessionKey); return result; }
+    var sessionAccount = sessionCedula && cvDocenteFind(ss, sessionCedula);
+    if (!sessionAccount || sessionAccount.estado !== 'aprobado' || !cvDocenteActive(ss, sessionCedula)) cvDocenteError('UNAUTHORIZED', 'Tu sesión venció. Ingresa nuevamente.');
+    result.cedula = sessionCedula;
+    return result;
+  }
+  if (data.action !== 'docente_solicitar' && data.action !== 'docente_revisar') cvDocenteError('UNKNOWN_ACTION', 'Operación docente no reconocida.');
+  if (data.action === 'docente_revisar') cvDocenteAdmin(data);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) cvDocenteError('BUSY', 'Servidor ocupado. Reintenta en unos segundos.');
+  try {
+    if (data.action === 'docente_solicitar') {
+      var ci = cvDocenteCedula(data.cedula);
+      var hash = String(data.credential_hash || '');
+      if (!/^[a-f0-9]{64}$/.test(hash)) cvDocenteError('VALIDATION', 'Falta la contraseña de acceso generada.');
+      var existing = cvDocenteFind(ss, ci);
+      if (existing) {
+        if (existing.estado === 'pendiente' && cvDocenteEqual(existing.credential_hash, hash)) {
+          result.id = existing.id; result.estado = 'pendiente'; return result;
+        }
+        cvDocenteError('DUPLICATE', 'Ya existe una cuenta o solicitud para esta cédula. Contacta a administración.');
+      }
+      var alumnos = ss.getSheetByName('RegistroAlumnos');
+      if ((alumnos && alumnos.getDataRange().getValues().slice(1).some(function (r) { return String(r[0]) === ci; })) || obtenerRoles(ss, ci).length) cvDocenteError('DUPLICATE', 'Ya existe una cuenta para esta cédula. Solicita a administración agregar el rol docente.');
+      var email = cvDocenteText(data.email, 254, true);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) cvDocenteError('VALIDATION', 'Ingresa un correo electrónico válido.');
+      var request = { id: 'DOC-' + Utilities.getUuid(), cedula: ci,
+        nombre: cvDocenteText(data.nombre, 100, true).toUpperCase(), apellido: cvDocenteText(data.apellido, 100, true).toUpperCase(),
+        email: email, telefono: cvDocenteText(data.telefono, 40, false), grado: cvDocenteText(data.grado, 150, false),
+        carrera: cvDocenteText(data.carrera, 200, false), seccion: cvDocenteText(data.seccion, 60, false),
+        credential_hash: hash, estado: 'pendiente', created_at: new Date().toISOString(), reviewed_at: '' };
+      var sheet = ss.getSheetByName('SolicitudesDocentes');
+      if (!sheet) { sheet = ss.insertSheet('SolicitudesDocentes'); sheet.appendRow(CV_DOCENTE_HEADERS); }
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      if (CV_DOCENTE_HEADERS.some(function (h) { return headers.indexOf(h) < 0; })) throw Error('Esquema de solicitudes incompatible.');
+      sheet.appendRow(headers.map(function (h) { return request[h] || ''; }));
+      SpreadsheetApp.flush();
+      result.id = request.id; result.estado = 'pendiente'; return result;
+    }
+    if (['aprobar', 'rechazar'].indexOf(data.decision) < 0) cvDocenteError('VALIDATION', 'Decisión no válida.');
+    var pending = cvDocenteRows(ss).filter(function (r) { return r.id === data.id; })[0];
+    if (!pending) cvDocenteError('NOT_FOUND', 'Solicitud no encontrada.');
+    var target = data.decision === 'aprobar' ? 'aprobado' : 'rechazado';
+    if (pending.estado === target) { result.estado = target; return result; }
+    if (pending.estado !== 'pendiente' && !(pending.estado === 'aprobando' && target === 'aprobado')) cvDocenteError('CONFLICT', 'La solicitud ya fue procesada. Actualiza la lista.');
+    if (target === 'aprobado') {
+      cvDocenteUpdate(ss, pending, { estado: 'aprobando' });
+      var roles = ss.getSheetByName('Roles');
+      if (!roles) {
+        roles = ss.insertSheet('Roles');
+        roles.appendRow(['Cédula', 'Nombre', 'Rol', 'Carrera', 'Sección', 'Asignatura', 'Estado', 'FechaAsignación', 'AsignadoPor']);
+      }
+      // Reintentar una aprobación parcial no duplica el rol.
+      var marker = 'solicitud:' + pending.id;
+      var exists = roles.getDataRange().getValues().slice(1).some(function (r) { return String(r[0]) === String(pending.cedula) && r[8] === marker; });
+      if (!exists) roles.appendRow([pending.cedula, pending.nombre + ' ' + pending.apellido, 'docente', pending.carrera, pending.seccion, '', 'activo', new Date().toISOString(), marker]);
+    }
+    cvDocenteUpdate(ss, pending, { estado: target, reviewed_at: new Date().toISOString() });
+    SpreadsheetApp.flush();
+    result.estado = target; return result;
+  } finally { lock.releaseLock(); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2565,7 +2742,7 @@ function ticGuardar(ss, data) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// v07.0 CONSTRUCTOR ACADÉMICO DE ASIGNATURAS (hojas propias, no toca producción)
+// v07.1 CONSTRUCTOR ACADÉMICO DE ASIGNATURAS (hojas propias, no toca producción)
 // ══════════════════════════════════════════════════════════════
 var CT_SHEETS = {
   SubjectDrafts: ['ID', 'Codigo', 'Nombre', 'Carrera', 'Grado', 'Semestre', 'Modalidad', 'CargaHoraria', 'DocenteCedula', 'Estado', 'Version', 'CreatedAt', 'UpdatedAt', 'DeletedAt'],

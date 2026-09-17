@@ -1,0 +1,816 @@
+{
+ "codigo": "TIC",
+ "tipo": "plantilla_maestra",
+ "version": "TIC_BASE_V1",
+ "origen": "contenido_existente",
+ "estado": "inmutable",
+ "publicada": true,
+ "editable": false,
+ "generada_en": "2026-09-17T13:01:30.281Z",
+ "programa": {
+  "titulo": "Programa Académico Oficial",
+  "unidades_acordeon": [
+   "INTRODUCCIÓN A LOS SISTEMAS DE INFORMACIÓN",
+   "ESTRATEGIA DE NEGOCIOS A TRAVÉS DE TIC",
+   "FUNDAMENTOS DE ADMINISTRACIÓN DE BASE DE DATOS",
+   "SISTEMAS INTEGRADOS DE GESTIÓN (ERP)",
+   "HARDWARE Y SOFTWARE",
+   "INFRAESTRUCTURA DE REDES",
+   "TECNOLOGÍAS DE APOYO A LA TOMA DE DECISIONES",
+   "SISTEMAS DE APOYO A EJECUTIVOS (EIS)",
+   "PARADIGMAS CONTEMPORÁNEOS EN INTERNET",
+   "FUTURO DE LAS TIC"
+  ],
+  "bibliografia_items": [
+   "Cohen Kare, Daniel y Asín Lares, Enrique. Tecnología de información en los Negocios. McGraw-Hill. 2009.",
+   "Amor, D. La Revolución e-business. Prentice Hall. 2000."
+  ]
+ },
+ "menu": {
+  "titulo": "Tecnología de la Información y la Comunicación (ADE18)",
+  "menu": [
+   {
+    "href": "Unidad_01.html",
+    "texto": "Unidad 1"
+   },
+   {
+    "href": "Unidad_02.html",
+    "texto": "Unidad 2"
+   },
+   {
+    "href": "Unidad_03.html",
+    "texto": "Unidad 3"
+   },
+   {
+    "href": "Unidad_04.html",
+    "texto": "Unidad 4"
+   },
+   {
+    "href": "Unidad_05.html",
+    "texto": "Unidad 5"
+   },
+   {
+    "href": "Unidad_06.html",
+    "texto": "Unidad 6"
+   },
+   {
+    "href": "Unidad_07.html",
+    "texto": "Unidad 7"
+   },
+   {
+    "href": "Unidad_08.html",
+    "texto": "Unidad 8"
+   },
+   {
+    "href": "Unidad_09.html",
+    "texto": "Unidad 9"
+   },
+   {
+    "href": "Unidad_10.html",
+    "texto": "Unidad 10"
+   }
+  ]
+ },
+ "units": [
+  {
+   "numero": 1,
+   "archivo": "Unidad_01.html",
+   "titulo": "Unidad I: Introducción a los Sistemas de Información Computarizados",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Definiciones y conceptos. Clasificación. Tipos y usos de los sistemas de información. Las tecnologías de la información y la sociedad. Desarrollo de los sistemas de Información. Ciclo de vida de los sistemas de información. Variables determinantes en el proceso de desarrollo de sistemas. Métodos alternos para la adquisición de sistemas. Método tradicional. Aseguramiento de la calidad total. Técnicas de diseño y documentación. Diagramas de flujos de datos. Pruebas del sistema. Mantenimiento. Ingeniería de software asistida por computadora. Compra de paquetes. Desarrollo por parte del usuario final. Outsourcing.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-conceptos",
+     "header": "Conceptos fundamentales",
+     "body_html": "<h3 class=\"h3-tema\">1. Definiciones y conceptos</h3>\r\n<p id=\"def-si\"><strong>Sistema de Información:</strong><span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Sistema de Información\">SI</span>  conjunto de componentes interrelacionados que recolectan, procesan, almacenan y distribuyen información para apoyar la toma de decisiones, la coordinación, el control y el análisis en una organización.</p>\r\n<p id=\"def-sic\"><strong>Sistema de Información Computarizado:</strong> SI que utiliza hardware, software, redes y bases de datos para procesar y almacenar información de manera eficiente.</p>\r\n<p id=\"def-ti\"><strong>Tecnología de la Información:</strong><span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Tecnología de la Información\">TI</span>  herramientas y recursos tecnológicos (computadoras, servidores, redes, software) que permiten el tratamiento automatizado de la información.</p>\r\n<p id=\"def-dato\"><strong>Dato vs. información:</strong> el dato es el registro bruto (ej.: \"G. 4.500.000\"); la información es el dato procesado y contextualizado (ej.: \"las ventas de agosto crecieron 8 % respecto de julio\").</p>\r\n<blockquote class=\"blockquote-clase\"><p>«Definiciones y conceptos. Clasificación. Tipos y usos de los sistemas de información.»</p><footer>— Plan de Estudio TIC, Unidad I (fuente institucional local).</footer></blockquote>",
+     "section": "conceptos"
+    },
+    {
+     "id": "card-clasificacion",
+     "header": "Clasificación de sistemas",
+     "body_html": "<h3 class=\"h3-tema\">2. Clasificación de los sistemas de información</h3>\r\n<h4 class=\"h4-subtema\"><strong>A. Sistemas de apoyo a las operaciones</strong></h4>\r\n<ul class=\"lista-viñetas\">\r\n<li id=\"def-tps\">Sistemas de procesamiento de transacciones (<span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Transaction Processing System (Sistema de Procesamiento de Transacciones)\">TPS</span>), que registran las operaciones diarias.</li>\r\n<li>Sistemas de control de procesos, que monitorean procesos físicos o industriales.</li>\r\n<li>Sistemas de colaboración empresarial, que facilitan la comunicación y el trabajo en equipo.</li>\r\n</ul>\r\n<h4 class=\"h4-subtema\"><strong>B. Sistemas de apoyo administrativo y gerencial</strong></h4>\r\n<ul class=\"lista-viñetas\">\r\n<li id=\"def-mis\">Sistemas de información gerencial (<span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Management Information System (Sistema de Información Gerencial)\">MIS</span>), que generan informes para la gestión.</li>\r\n<li id=\"def-dss\">Sistemas de apoyo a la toma de decisiones (<span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Decision Support System (Sistema de Apoyo a Decisiones)\">DSS</span>), para decisiones semiestructuradas.</li>\r\n<li id=\"def-eis\">Sistemas de información ejecutiva (<span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Executive Information System (Sistema de Información Ejecutiva)\">EIS</span>), con información estratégica para la alta dirección.</li>\r\n</ul>",
+     "section": "clasificacion"
+    },
+    {
+     "id": "card-2",
+     "header": "3. Tipos y usos",
+     "body_html": "<div class=\"table-responsive\">\r\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\r\n<thead class=\"table-primary\">\r\n<tr>\r\n<th scope=\"col\">Nivel</th>\r\n<th scope=\"col\">Tipo de Sistema</th>\r\n<th scope=\"col\">Descripción</th>\r\n</tr>\r\n</thead>\r\n<tbody>\r\n<tr>\r\n<td>Operativo</td>\r\n<td><a class=\"enlace-ancla\" href=\"#def-si\">SI</a> / <a class=\"enlace-ancla\" href=\"#def-tps\">TPS</a></td>\r\n<td>Registro de operaciones y transacciones diarias.</td>\r\n</tr>\r\n<tr>\r\n<td>Táctico</td>\r\n<td><a class=\"enlace-ancla\" href=\"#def-mis\">MIS</a> / <a class=\"enlace-ancla\" href=\"#def-dss\">DSS</a></td>\r\n<td>Informes de gestión y apoyo a decisiones.</td>\r\n</tr>\r\n<tr>\r\n<td>Estratégico</td>\r\n<td><a class=\"enlace-ancla\" href=\"#def-eis\">EIS</a></td>\r\n<td>Información para la alta dirección.</td>\r\n</tr>\r\n</tbody>\r\n</table>",
+     "section": "2"
+    },
+    {
+     "id": "card-sociedad",
+     "header": "Tecnología y sociedad",
+     "body_html": "<h3 class=\"h3-tema\">3. Las tecnologías de la información y la sociedad</h3>\r\n<p id=\"def-impactos\"><strong>Impactos positivos:</strong> acceso a la información, automatización, eficiencia y conectividad global.</p>\r\n<p id=\"def-desafios\"><strong>Desafíos:</strong> brecha digital, privacidad, seguridad y dependencia tecnológica.</p>",
+     "section": "sociedad"
+    },
+    {
+     "id": "card-3",
+     "header": "5. Desarrollo y ciclo de vida de los sistemas",
+     "body_html": "<p>El desarrollo comprende: identificación de necesidades, análisis de requerimientos, diseño, implementación y pruebas, puesta en producción y mantenimiento.</p>\r\n<p id=\"def-ciclo\"><strong>Ciclo de vida recorre:</strong> planificación, análisis, diseño, implementación, pruebas, instalación y uso/mantenimiento.</p>\r\n<p id=\"def-variables\"><strong>Variables determinantes:</strong> calidad (cumplimiento de especificaciones), recursos (personal, presupuesto, tiempo), complejidad técnica y riesgos (tecnológicos, organizacionales o de mercado).</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "6. Métodos de adquisición",
+     "body_html": "<ul class=\"lista-viñetas\">\r\n<li id=\"def-metodot\"><strong>Método tradicional:</strong> desarrollo interno, control total pero mayor tiempo y costo.</li>\r\n<li id=\"def-comprap\"><strong>Compra de paquetes:</strong> software comercial (ej.: <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Enterprise Resource Planning (Planificación de Recursos Empresariales)\">ERP</span>), rápida implementación con posible necesidad de adaptación.</li>\r\n<li id=\"def-outsourcing\"><strong>Outsourcing:</strong> contratación de terceros, acceso a expertise con riesgo de dependencia.</li>\r\n<li id=\"def-desarrollou\"><strong>Desarrollo por el usuario final:</strong> macros y planillas, rápido pero con riesgo de falta de estándares.</li>\r\n<li id=\"def-case\"><strong>CASE:</strong> <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Computer-Aided Software Engineering (Ingeniería de Software Asistida por Computadora)\">CASE</span> herramientas de software que apoyan el modelado, la generación de código, las pruebas y la documentación.</li>\r\n</ul>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "7. Calidad, diseño, pruebas y mantenimiento",
+     "body_html": "<ul class=\"lista-viñetas\">\r\n<li id=\"def-calidad\"><strong>Aseguramiento de la calidad total:</strong> revisiones, pruebas, auditorías y mejora continua (normas ISO 9001 e ISO/IEC 25000).</li>\r\n<li id=\"def-dfd\"><strong>DFD:</strong> <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Data Flow Diagram (Diagrama de Flujo de Datos)\">DFD</span> entidades externas, procesos, flujos y almacenes de datos.</li>\r\n<li id=\"def-er\"><strong>ER:</strong> <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Entity Relationship (Entidad-Relación)\">ER</span> modelado de bases de datos; más manuales y diccionarios de datos.</li>\r\n<li id=\"def-pruebas\"><strong>Pruebas:</strong> unitarias, de integración, de sistema y de aceptación.</li>\r\n<li id=\"def-mantenimiento\"><strong>Mantenimiento:</strong> correctivo, preventivo, adaptativo y perfectivo.</li>\r\n</ul>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "Revisión General A",
+     "body_html": "<p>Revisa la <a class=\"enlace-ancla\" href=\"#def-ti\">TI</a>, el <a class=\"enlace-ancla\" href=\"#def-si\">SI</a>, y las variables en el <a class=\"enlace-ancla\" href=\"#def-ciclo\">ciclo de vida</a> de los sistemas.</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "Revisión General B",
+     "body_html": "<p>Refuerza los conceptos de <a class=\"enlace-ancla\" href=\"#def-metodot\">Método tradicional</a> y <a class=\"enlace-ancla\" href=\"#def-outsourcing\">Outsourcing</a>.</p>",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Revisión General C",
+     "body_html": "<p>Asegura la comprensión de <a class=\"enlace-ancla\" href=\"#def-calidad\">Aseguramiento de la calidad total</a> y <a class=\"enlace-ancla\" href=\"#def-pruebas\">Pruebas</a>.</p>",
+     "section": "8"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\r\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\r\n    </h4>\r\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 1.</p>\r\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\r\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\r\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Laudon, K. C., &amp; Laudon, J. P. (2020). <em>Management Information Systems...</em> Pearson.</li><li>Turban, E. et al. (2018). <em>Information Technology for Management...</em> Wiley.</li></ul>\r\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>O'Brien, J. A. &amp; Marakas, G. M. (2011). <em>...</em> McGraw-Hill.</li><li>Cohen, L. et al. (2000). <em>...</em></li></ul>",
+   "nav_prev": "INICIO",
+   "nav_next": "Unidad_02.html",
+   "flashcards": false
+  },
+  {
+   "numero": 2,
+   "archivo": "Unidad_02.html",
+   "titulo": "Unidad II: La Estrategia de Negocios a través de Tecnologías de Información",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>La estrategia en los negocios. Ventajas competitivas y los sistemas de información. Impulsos estratégicos. Fuerzas de la industria. Los sistemas de información estratégicos en la organización. Implantación de sistemas estratégicos. Reingeniería de procesos. Tecnologías de vanguardia en los negocios.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-estrategia",
+     "header": "1. La estrategia en los negocios y la ventaja competitiva",
+     "body_html": "<p id=\"def-estrategia\"><strong>Estrategia empresarial:</strong> conjunto de decisiones y acciones planificadas para alcanzar objetivos de largo plazo en un entorno competitivo. La <strong>ventaja competitiva</strong> es una diferenciación positiva, percibida por el cliente y perdurable: reducción de costos, diferenciación, enfoque e innovación.</p>\n<p id=\"def-objetivos-si\"><strong>Objetivos estratégicos de los SI:</strong> excelencia operativa; nuevos productos, servicios y modelos de negocio; relaciones estrechas con clientes y proveedores; mejor toma de decisiones; ventaja competitiva; y supervivencia en el mercado.</p>\n<blockquote class=\"blockquote-clase\"><p>«La estrategia en los negocios. Ventajas competitivas y los sistemas de información.»</p><footer>— Plan de Estudio TIC, Unidad II (fuente institucional local).</footer></blockquote>",
+     "section": "estrategia"
+    },
+    {
+     "id": "card-impulsos",
+     "header": "2. Impulsos estratégicos",
+     "body_html": "<p>Iniciativas con las que las TI transforman la posición competitiva: automatización de procesos críticos, integración de la cadena de suministro, canales digitales de venta, inteligencia de negocios y adopción de tecnologías emergentes (nube, IA, IoT).</p>",
+     "section": "impulsos"
+    },
+    {
+     "id": "card-porter",
+     "header": "3. Fuerzas de la industria (Porter)",
+     "body_html": "<div class=\"table-responsive\">\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n<thead class=\"table-primary\">\n<tr>\n<th scope=\"col\">Fuerza</th>\n<th scope=\"col\">Uso de las TI</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Rivalidad entre competidores</td>\n<td>Análisis competitivo y CRM avanzado</td>\n</tr>\n<tr>\n<td>Amenaza de nuevos entrantes</td>\n<td>Plataformas con altos costos de migración</td>\n</tr>\n<tr>\n<td>Productos sustitutos</td>\n<td>Recomendación y personalización</td>\n</tr>\n<tr>\n<td>Poder de proveedores</td>\n<td>Gestión de cadena de suministro (SCM)</td>\n</tr>\n<tr>\n<td>Poder de clientes</td>\n<td>Autoservicio y fidelización digital</td>\n</tr>\n</tbody>\n</table>",
+     "section": "porter"
+    },
+    {
+     "id": "card-sie",
+     "header": "4. Sistemas de información estratégicos (SIE)",
+     "body_html": "<p id=\"def-sie\">Modifican la manera de dirigir el negocio: están alineados con la estrategia, cambian procesos o relaciones y son difíciles de imitar. Ejemplos: <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Customer Relationship Management\">CRM</span>, <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Enterprise Resource Planning\">ERP</span>, comercio electrónico, inteligencia de negocios y plataformas de ecosistema.</p>",
+     "section": "sie"
+    },
+    {
+     "id": "card-implantacion",
+     "header": "5. Implantación de sistemas estratégicos",
+     "body_html": "<p id=\"def-implantacion\"><strong>Fases:</strong> análisis estratégico, diseño, desarrollo o adquisición, implementación y evaluación.</p>\n<p id=\"def-factores\"><strong>Factores críticos:</strong> compromiso de la alta dirección, alineación TI-negocio, gestión del cambio e inversión sostenida en tecnología y talento.</p>",
+     "section": "implantacion"
+    },
+    {
+     "id": "card-reingenieria",
+     "header": "6. Reingeniería de procesos",
+     "body_html": "<p id=\"def-reingenieria\">Replanteo fundamental y rediseño radical para mejoras sustanciales en costo, calidad, servicio y rapidez: enfoque en procesos, eliminación de lo que no agrega valor, uso intensivo de tecnología y rediseño desde cero.</p>\n<p>Las TI aportan automatización, integración, nuevos canales y decisiones en tiempo real.</p>",
+     "section": "reingenieria"
+    },
+    {
+     "id": "card-vanguardia",
+     "header": "7. Tecnologías de vanguardia",
+     "body_html": "<ul class=\"lista-viñetas\">\n<li><strong>Nube:</strong> servicios bajo demanda sin infraestructura propia.</li>\n<li><strong>Inteligencia artificial y machine learning:</strong> modelos predictivos y automatización inteligente.</li>\n<li><strong>IoT:</strong> dispositivos conectados para datos en tiempo real.</li>\n<li><strong>Blockchain:</strong> registro distribuido e inmutable.</li>\n<li><strong>Big data y analítica:</strong> procesamiento de grandes volúmenes para decisiones.</li>\n<li><strong>RPA:</strong> automatización robótica de procesos.</li>\n<li><strong>Realidad aumentada/virtual:</strong> experiencias inmersivas.</li>\n</ul>\n<p><strong>Impacto:</strong> nuevos modelos de negocio, mejor experiencia del cliente, operaciones optimizadas e innovación continua.</p>",
+     "section": "vanguardia"
+    },
+    {
+     "id": "card-autoevaluacion",
+     "header": "Autoevaluación: Tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\" type=\"button\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "autoevaluacion"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 2.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Laudon, K. C., &amp; Laudon, J. P. (2020). <em>Management Information Systems...</em> Pearson.</li><li>Porter, M. (1980). <em>Competitive Strategy</em>. New York: Free Press.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. McGraw-Hill.</li><li>O'Brien, J. A. &amp; Marakas, G. M. (2011). <em>...</em> McGraw-Hill.</li></ul>",
+   "nav_prev": "Unidad_01.html",
+   "nav_next": "Unidad_03.html",
+   "flashcards": true
+  },
+  {
+   "numero": 3,
+   "archivo": "Unidad_03.html",
+   "titulo": "Unidad III: Fundamentos de Administración de Bases de Datos",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Archivos convencionales. Definición de base de datos. Ventajas en el uso de base de datos. El manejo del sistema de base de datos (DBMS). El administrador de la base de datos (DBA). Tipos de modelos de base de datos. Bases de datos distribuidas. Data warehouse.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-2",
+     "header": "1. Archivos convencionales",
+     "body_html": "<p>Conjuntos de registros gestionados por cada aplicación, sin integración centralizada y con acceso secuencial o indexado.</p>\n                        <p><strong>Limitaciones:</strong> redundancia, inconsistencia, dificultad de acceso, seguridad limitada y falta de integridad automática.</p>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "2. Definición de base de datos",
+     "body_html": "<p>Conjunto de datos relacionados y organizados para facilitar acceso, gestión y actualización.</p>\n                        <p><strong>Elementos:</strong> datos, metadatos, tablas/registros/campos y relaciones.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "3. Ventajas del uso de bases de datos",
+     "body_html": "<div class=\"table-responsive\">\n                            <table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n                                <thead class=\"table-primary\">\n                                    <tr><th>Ventaja</th><th>Descripción</th></tr>\n                                </thead>\n                                <tbody>\n                                    <tr><td>Menor redundancia</td><td>Datos almacenados una sola vez</td></tr>\n                                    <tr><td>Consistencia</td><td>Actualizaciones centralizadas</td></tr>\n                                    <tr><td>Compartición</td><td>Múltiples usuarios y aplicaciones</td></tr>\n                                    <tr><td>Integridad y seguridad</td><td>Validación y control de acceso</td></tr>\n                                    <tr><td>Concurrencia e independencia</td><td>Trabajo simultáneo y separación lógica/física</td></tr>\n                                    <tr><td>Recuperación</td><td>Respaldo y restauración ante fallos</td></tr>\n                                </tbody>\n                            </table>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "4. DBMS: manejo del sistema de base de datos",
+     "body_html": "<p><strong>Funciones:</strong> definición (DDL), manipulación (DML), control de acceso, transacciones ACID, optimización de consultas, y respaldo/recuperación.</p>\n                        <p><strong>Componentes:</strong> DDL, DML, motor de almacenamiento, gestor de transacciones y catálogo de metadatos.</p>\n                        <p><strong>Ejemplos:</strong> MySQL, PostgreSQL, Oracle, SQL Server, MongoDB y servicios en la nube.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "5. El administrador de la base de datos (DBA)",
+     "body_html": "<p><strong>Funciones:</strong> diseño e implementación, seguridad, respaldo y recuperación, optimización, monitoreo, mantenimiento, gestión de usuarios, documentación y planes de contingencia.</p>\n                        <p><strong>Tipos:</strong> de sistemas, de desarrollo, de aplicaciones y arquitecto de datos.</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "6. Modelos, distribución y data warehouse",
+     "body_html": "<p><strong>Modelos:</strong> jerárquico, de red, relacional (tablas + SQL), orientado a objetos, documental, multidimensional, deductivo y transaccional.</p>\n                        <p><strong>Distribuidas:</strong> datos en múltiples nodos con transparencia, autonomía y replicación; ganan disponibilidad y escalabilidad, con desafíos de consistencia, complejidad y costo.</p>\n                        <p><strong>Data warehouse:</strong> repositorio integrado, histórico y no volátil para análisis (ETL + BI); a diferencia de la BD transaccional (OLTP), se optimiza para lectura (OLAP).</p>",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n                        <div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n                            <div class=\"flashQ\" id=\"fcQ\"></div>\n                            <div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n                            <div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "8"
+    },
+    {
+     "id": "card-9",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n                            <svg viewBox=\"0 0 460 220\" width=\"100%\" style=\"max-width:460px\" role=\"img\" aria-label=\"Capas de un sistema de base de datos\">\n                                <defs><marker id=\"fl3\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"4\" orient=\"auto\"><polygon points=\"0,0 8,4 0,8\" fill=\"#C5A55A\"/></marker></defs>\n                                <g font-size=\"11\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n                                    <rect x=\"110\" y=\"8\" width=\"240\" height=\"48\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"230\" y=\"28\">Usuarios y aplicaciones</text><text x=\"230\" y=\"44\" font-size=\"9\" fill=\"#007A33\">consultas y programas</text>\n                                    <rect x=\"110\" y=\"86\" width=\"240\" height=\"48\" rx=\"8\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"230\" y=\"106\" fill=\"#fff\" font-weight=\"bold\">DBMS</text><text x=\"230\" y=\"122\" fill=\"#fff\" font-size=\"9\">DDL · DML · transacciones</text>\n                                    <rect x=\"110\" y=\"164\" width=\"240\" height=\"48\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"230\" y=\"184\">Base de datos</text><text x=\"230\" y=\"200\" font-size=\"9\" fill=\"#8a6d2b\">tablas y relaciones</text>\n                                    <g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"230\" y1=\"56\" x2=\"230\" y2=\"83\" marker-end=\"url(#fl3)\"/><line x1=\"230\" y1=\"134\" x2=\"230\" y2=\"161\" marker-end=\"url(#fl3)\"/></g>\n                                </g>\n                                <text x=\"230\" y=\"250\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 3. Capas de un sistema de base de datos</text>\n                            </svg>\n                        </figure>\n                        <p class=\"small\"><strong>Secuencia sugerida:</strong> Archivos → Base de datos → DBMS → DBA → Modelos → Data warehouse.</p>",
+     "section": "9"
+    },
+    {
+     "id": "card-10",
+     "header": "Fuentes consultadas",
+     "body_html": "<ol class=\"small\">\n                            <li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li>\n                            <li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li>\n                            <li>Documentación oficial de MySQL y PostgreSQL (lenguaje SQL y administración).</li>\n                        </ol>",
+     "section": "10"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\"><i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial</h4>\n                        <p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 3.</p>\n                        <button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\"><i class=\"bi bi-hand-index-thumb\"></i> Poner Presente</button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4>\n                    <ul>\n                        <li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. McGraw-Hill.</li>\n                        <li>Laudon, K. C. & Laudon, J. P. (2020). <em>Management Information Systems</em>. Pearson.</li>\n                    </ul>\n                    <h4 class=\"h4-subtema\">Bibliografía Complementaria</h4>\n                    <ul>\n                        <li>Documentación oficial de MySQL (https://dev.mysql.com/doc/).</li>\n                        <li>Documentación oficial de PostgreSQL (https://www.postgresql.org/docs/).</li>\n                    </ul>",
+   "nav_prev": "Unidad_02.html",
+   "nav_next": "Unidad_04.html",
+   "flashcards": true
+  },
+  {
+   "numero": 4,
+   "archivo": "Unidad_04.html",
+   "titulo": "Unidad IV: Sistemas Integrados de Gestión",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Sistemas integradores de la administración de empresas o Enterprise Resource Planning (ERP). Actualización, costos de las tecnologías de la información. Determinación de requerimientos. Evaluación técnica de propuestas. Evaluación financiera de las propuestas. Actividades posteriores a la firma del contrato.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-2",
+     "header": "1. Sistemas ERP",
+     "body_html": "<p id=\"def-erp\"><strong>ERP (Enterprise Resource Planning):</strong> gestión integrada de los procesos empresariales en tiempo real sobre una base de datos centralizada.</p>\n<h4 class=\"h4-subtema\"><strong>Características</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Integración total</li>\n<li>Dato único</li>\n<li>Tiempo real</li>\n<li>Automatización</li>\n<li>Modularidad</li>\n<li>Personalización</li>\n<li>Seguridad y escalabilidad</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Módulos típicos</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Finanzas y contabilidad</li>\n<li>Recursos humanos</li>\n<li>Logística y cadena de suministro</li>\n<li>Ventas y marketing</li>\n<li>Producción</li>\n<li>Proyectos e inteligencia de negocios</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Beneficios</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Información integrada</li>\n<li>Menores costos</li>\n<li>Mejores decisiones</li>\n<li>Automatización</li>\n<li>Visibilidad en tiempo real y trazabilidad</li>\n</ul>\n<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 540 230\" width=\"100%\" style=\"max-width:540px\" role=\"img\" aria-label=\"Módulos de un ERP alrededor de la base central\">\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"200\" y=\"88\" width=\"140\" height=\"54\" rx=\"10\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"270\" y=\"110\" fill=\"#fff\" font-weight=\"bold\">BASE CENTRAL</text><text x=\"270\" y=\"126\" fill=\"#fff\" font-size=\"9\">dato único</text>\n<rect x=\"30\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"46\">Finanzas</text>\n<rect x=\"380\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"445\" y=\"46\">RR. HH.</text>\n<rect x=\"30\" y=\"166\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"192\">Logística</text>\n<rect x=\"380\" y=\"166\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"445\" y=\"192\">Ventas</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"130\" y1=\"64\" x2=\"215\" y2=\"92\"/><line x1=\"410\" y1=\"64\" x2=\"325\" y2=\"92\"/><line x1=\"130\" y1=\"166\" x2=\"215\" y2=\"138\"/><line x1=\"410\" y1=\"166\" x2=\"325\" y2=\"138\"/></g>\n</g>\n<text x=\"270\" y=\"224\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 4. ERP: módulos integrados sobre una base central</text>\n</svg>\n</figure>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "2. Actualización y costos de TI",
+     "body_html": "<h4 class=\"h4-subtema\"><strong>Categorías de costo</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Licencias</li>\n<li>Hardware</li>\n<li>Implementación y consultoría</li>\n<li>Migración de datos</li>\n<li>Integraciones</li>\n<li>Capacitación</li>\n<li>Mantenimiento y desarrollos a medida</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Modelos</strong></h4>\n<ul class=\"lista-viñetas\">\n<li id=\"def-onpremise\"><strong>On-premise:</strong> mayor CAPEX, control total.</li>\n<li id=\"def-saas\"><strong>SaaS en la nube:</strong> OPEX recurrente, escalable.</li>\n<li><strong>Híbrido:</strong> combinación de ambos.</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>TCO (Total Cost of Ownership)</strong></h4>\n<p>Suma de adquisición, implementación, operación, mantenimiento, actualización y costos de oportunidad durante el ciclo de vida.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "3. Determinación de requerimientos",
+     "body_html": "<ul class=\"lista-viñetas\">\n<li>Análisis de procesos actuales y cuellos de botella</li>\n<li>Requisitos funcionales (módulos y funcionalidades por área)</li>\n<li>Requisitos técnicos (infraestructura, integraciones, seguridad, escalabilidad)</li>\n<li>Priorización crítico vs. deseable</li>\n<li>Documento <span class=\"sigla\" data-bs-toggle=\"tooltip\" title=\"Request for Proposal (Solicitud de Propuestas)\">RFP</span> considerando tamaño, sector, usuarios concurrentes, movilidad, idiomas y presupuesto</li>\n</ul>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "4. Evaluación técnica de propuestas",
+     "body_html": "<h4 class=\"h4-subtema\"><strong>Criterios de evaluación</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Funcionalidad</li>\n<li>Arquitectura</li>\n<li>Escalabilidad</li>\n<li>Integración</li>\n<li>Usabilidad</li>\n<li>Seguridad</li>\n<li>Soporte</li>\n<li>Referencias y proveedor</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Metodología</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Demos con escenarios reales</li>\n<li>Pruebas piloto</li>\n<li>Visitas a referencias</li>\n<li>Matriz de decisión ponderada</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Proveedores</strong></h4>\n<p>SAP, Oracle, Microsoft Dynamics, Infor, Epicor, Odoo y Zoho.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "5. Evaluación financiera",
+     "body_html": "<h4 class=\"h4-subtema\"><strong>Indicadores</strong></h4>\n<ul class=\"lista-viñetas\">\n<li id=\"def-van\"><strong>VAN (Valor Actual Neto):</strong> mayor a 0 → viable.</li>\n<li id=\"def-tir\"><strong>TIR (Tasa Interna de Retorno):</strong> mayor a la tasa de oportunidad.</li>\n<li id=\"def-payback\"><strong>Payback:</strong> menor es mejor.</li>\n<li><strong>ROI</strong> y <strong>TCO</strong></li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Estimación</strong></h4>\n<p><strong>Costos:</strong> inversión, operación, oportunidad.</p>\n<p><strong>Beneficios:</strong> menores costos, productividad, menos errores, mejor servicio.</p>\n<p><strong>Análisis de sensibilidad:</strong> optimista / base / pesimista.</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "6. Actividades posteriores al contrato",
+     "body_html": "<ul class=\"lista-viñetas\">\n<li>Capacitación por roles</li>\n<li>Migración y limpieza de datos, carga histórica</li>\n<li>Configuración y personalización</li>\n<li>Pruebas (unitarias, integración, rendimiento, aceptación)</li>\n<li>Puesta en marcha (por fases o big bang)</li>\n<li>Soporte post-implementación</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Factores críticos</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Compromiso directivo</li>\n<li>Gestión del cambio</li>\n<li>Comunicación</li>\n<li>Plan con hitos</li>\n<li>Equipo dedicado</li>\n<li>Capacitación oportuna</li>\n</ul>\n<p class=\"small mt-3\"><strong>Secuencia sugerida:</strong> ERP → Costos y TCO → Requerimientos → Evaluación → Post-contrato.</p>",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Autoevaluación: Tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "8"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n</h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 4.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n</button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria.</li><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Documentación de SAP S/4HANA y Oracle ERP Cloud (módulos e implantación).</li></ul>",
+   "nav_prev": "Unidad_03.html",
+   "nav_next": "Unidad_05.html",
+   "flashcards": true
+  },
+  {
+   "numero": 5,
+   "archivo": "Unidad_05.html",
+   "titulo": "Unidad V: Tecnologías de la Información. Hardware y Software",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>La computadora: definición, componentes básicos y clasificación. Concepto de software.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-2",
+     "header": "1. La computadora: definición y características",
+     "body_html": "<p>Máquina electrónica capaz de recibir, procesar y almacenar datos y ejecutar instrucciones programadas de forma automática y rápida. Es <strong>electrónica, programable, automática, versátil y rápida</strong>.</p>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "2. Hardware básico y complementario",
+     "body_html": "<div class=\"table-responsive\">\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n<thead class=\"table-primary\">\n<tr>\n<th scope=\"col\">Componente</th>\n<th scope=\"col\">Función</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>CPU</td>\n<td>Procesa instrucciones; «cerebro» del sistema (registros, ALU, unidad de control)</td>\n</tr>\n<tr>\n<td>RAM</td>\n<td>Almacenamiento temporal; se borra al apagar</td>\n</tr>\n<tr>\n<td>ROM</td>\n<td>Instrucciones básicas de arranque</td>\n</tr>\n<tr>\n<td>Placa madre</td>\n<td>Conecta todos los componentes</td>\n</tr>\n<tr>\n<td>Entrada / Salida</td>\n<td>Teclado, ratón, escáner / monitor, impresora, altavoces</td>\n</tr>\n<tr>\n<td>Almacenamiento</td>\n<td>HDD, SSD, unidades ópticas</td>\n</tr>\n<tr>\n<td>Fuente</td>\n<td>Suministro de energía</td>\n</tr>\n</tbody>\n</table>\n</div>\n<p><strong>Complementario:</strong> tarjetas de red, sonido y video, backup, escáneres, cámaras y gamepads.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "3. Clasificación de las computadoras",
+     "body_html": "<p><strong>Por tamaño:</strong> supercomputadoras, mainframes, minicomputadoras y microcomputadoras. <strong>Por uso:</strong> PC, servidores, móviles y embebidas. <strong>Por arquitectura:</strong> analógicas, digitales (binarias) e híbridas.</p>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "4. Concepto de software",
+     "body_html": "<p>Conjunto de programas, instrucciones, reglas, documentación y datos. Es <strong>intangible, instruccional, funcional, dependiente del hardware, modificable</strong> y requerido: sin software el hardware es inútil.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "5. Tipos de software",
+     "body_html": "<h5 class=\"mt-2 mb-2\" style=\"color:#007A33;\">A. Por función: ¿para qué sirve?</h5>\n<div class=\"table-responsive\">\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n<thead class=\"table-primary\">\n<tr>\n<th scope=\"col\">Tipo</th>\n<th scope=\"col\">Qué hace</th>\n<th scope=\"col\">Ejemplos</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><strong>De sistema</strong></td>\n<td>Gestiona el hardware y da soporte a otros programas</td>\n<td>Sistemas operativos (Windows, Linux, Android), drivers, utilitarios</td>\n</tr>\n<tr>\n<td><strong>De programación</strong></td>\n<td>Herramientas para crear programas</td>\n<td>Editores, compiladores, intérpretes, depuradores, IDE</td>\n</tr>\n<tr>\n<td><strong>De aplicación</strong></td>\n<td>Tareas del usuario final</td>\n<td>Ofimática, navegadores, multimedia, comunicación, educación, negocios, diseño, videojuegos, seguridad</td>\n</tr>\n</tbody>\n</table>\n</div>\n<h5 class=\"mt-3 mb-2\" style=\"color:#007A33;\">B. Por licencia: ¿cómo se distribuye?</h5>\n<div class=\"table-responsive\">\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n<thead class=\"table-primary\">\n<tr>\n<th scope=\"col\">Licencia</th>\n<th scope=\"col\">Característica</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Propietario</td>\n<td>Código cerrado, pago</td>\n</tr>\n<tr>\n<td>Libre</td>\n<td>Código abierto, modificable</td>\n</tr>\n<tr>\n<td>Freeware / Shareware</td>\n<td>Gratuito o de prueba</td>\n</tr>\n<tr>\n<td>SaaS</td>\n<td>En la nube, por suscripción</td>\n</tr>\n</tbody>\n</table>\n</div>\n<h5 class=\"mt-3 mb-2\" style=\"color:#007A33;\">C. Por plataforma: ¿dónde se ejecuta?</h5>\n<p>Escritorio (instalado en la PC) → Web (en el navegador) → Móvil (smartphones y tablets) → Embebido (integrado en dispositivos).</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 540 210\" width=\"100%\" style=\"max-width:540px\" role=\"img\" aria-label=\"Bloques de una computadora\">\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"205\" y=\"78\" width=\"130\" height=\"54\" rx=\"10\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"270\" y=\"100\" fill=\"#fff\" font-weight=\"bold\">CPU</text><text x=\"270\" y=\"116\" fill=\"#fff\" font-size=\"9\">registros → ALU → CU</text>\n<rect x=\"30\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"46\">RAM / ROM</text>\n<rect x=\"380\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"445\" y=\"46\">Entrada</text>\n<rect x=\"30\" y=\"146\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"172\">Salida</text>\n<rect x=\"380\" y=\"146\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"445\" y=\"172\">Disco</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"130\" y1=\"64\" x2=\"215\" y2=\"92\"/><line x1=\"410\" y1=\"64\" x2=\"325\" y2=\"92\"/><line x1=\"130\" y1=\"146\" x2=\"215\" y2=\"132\"/><line x1=\"410\" y1=\"146\" x2=\"325\" y2=\"132\"/></g>\n</g>\n<text x=\"270\" y=\"204\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 5. Bloques de una computadora alrededor del CPU</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> Definición → Hardware → Clasificación → Software.</p>",
+     "section": "8"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 5.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Documentación oficial de Microsoft Windows y del kernel Linux (sistemas operativos).</li></ul>",
+   "nav_prev": "Unidad_04.html",
+   "nav_next": "Unidad_06.html",
+   "flashcards": true
+  },
+  {
+   "numero": 6,
+   "archivo": "Unidad_06.html",
+   "titulo": "Unidad VI: Infraestructura de Redes y Sistemas Empresariales",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Comunicación de datos. Hardware de apoyo a la comunicación. Conectividad. Redes computacionales. Internet. Dominios de internet. Servicios en internet. Intranet. Extranet. Protocolos inalámbricos para internet.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-comunicacion",
+     "header": "Comunicación de datos",
+     "body_html": "<h3 class=\"h3-tema\">1. Comunicación de datos</h3>\n<p>Intercambio entre dispositivos mediante un medio y reglas comunes: <strong>emisor → medio → receptor</strong>, con mensaje (texto, imagen, audio, video, registros) y protocolo. Los datos viajan en <strong>bits</strong> (8 bits = 1 byte); la velocidad se mide en Kbps/Mbps/Gbps (no confundir MB con Mb). El <strong>ancho de banda</strong> es la capacidad y la <strong>latencia</strong> el retardo: son variables distintas.</p>",
+     "section": "comunicacion"
+    },
+    {
+     "id": "card-hardware",
+     "header": "Hardware de apoyo y conectividad",
+     "body_html": "<h3 class=\"h3-tema\">2. Hardware de apoyo y conectividad</h3>\n<p><strong>NIC</strong> (Ethernet/Wi-Fi), <strong>switch</strong> (conecta dispositivos dentro de la red), <strong>router</strong> (comunica redes distintas), punto de acceso, módem y <strong>servidores</strong> (archivos, web, correo, aplicaciones, BD). La <strong>conectividad</strong> permite que sucursales, sistemas y la base central intercambien información consolidada.</p>",
+     "section": "hardware"
+    },
+    {
+     "id": "card-redes",
+     "header": "3. Redes: clasificación y topologías",
+     "body_html": "<h3 class=\"h3-tema\">3. Redes: clasificación y topologías</h3>\n<p><strong>PAN</strong> (personal, ej.: Bluetooth), <strong>LAN</strong> (oficina), <strong>MAN</strong> (ciudad) y <strong>WAN</strong> (países). <strong>Topologías:</strong> estrella, bus, anillo y malla. Modelo <strong>cliente-servidor:</strong> el cliente solicita y el servidor responde.</p>",
+     "section": "2"
+    },
+    {
+     "id": "card-internet",
+     "header": "Internet, dominios y servicios",
+     "body_html": "<h3 class=\"h3-tema\">4. Internet, dominios y servicios</h3>\n<p><strong>Internet</strong> es la infraestructura global; la <strong>Web</strong> es un servicio sobre ella. Direccionamiento <strong>IPv4/IPv6</strong>; <strong>dominios</strong> (ej.: ventas.empresa.com, .py en Paraguay) resueltos por <strong>DNS</strong>. <strong>Servicios:</strong> web, correo, transferencia de archivos, videoconferencia, mensajería, nube y comercio electrónico. En la empresa: comunicación, marketing, ventas, administración, atención y trabajo remoto.</p>",
+     "section": "internet"
+    },
+    {
+     "id": "card-intranet",
+     "header": "Intranet, Extranet y protocolos",
+     "body_html": "<h3 class=\"h3-tema\">5. Intranet, Extranet y protocolos</h3>\n<p><strong>Intranet:</strong> entorno privado interno. <strong>Extranet:</strong> acceso controlado para proveedores/clientes autorizados. <strong>TCP/IP:</strong> direccionamiento y transporte confiable. <strong>HTTP/HTTPS:</strong> web, con TLS para proteger contraseñas, pagos y documentos. <strong>Inalámbricos:</strong> Wi-Fi, Bluetooth y redes móviles (4G/5G). <strong>Cableada</strong> (estable, predecible) vs. <strong>inalámbrica</strong> (móvil, flexible): suelen combinarse. <strong>Seguridad mínima:</strong> autenticación, permisos, actualizaciones, cifrado, segmentación, copias y monitoreo.</p>",
+     "section": "intranet"
+    },
+    {
+     "id": "card-autoevaluacion",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "autoevaluacion"
+    },
+    {
+     "id": "card-mapa",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 660 150\" width=\"100%\" role=\"img\" aria-label=\"De la red local a Internet\">\n<defs><marker id=\"fl6\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"4\" orient=\"auto\"><polygon points=\"0,0 8,4 0,8\" fill=\"#C5A55A\"/></marker></defs>\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"6\" y=\"48\" width=\"120\" height=\"54\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"66\" y=\"70\">Red LAN</text><text x=\"66\" y=\"86\" font-size=\"9\" fill=\"#007A33\">switch · Wi-Fi</text>\n<rect x=\"186\" y=\"48\" width=\"120\" height=\"54\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"246\" y=\"70\">Router</text><text x=\"246\" y=\"86\" font-size=\"9\" fill=\"#007A33\">entre redes</text>\n<ellipse cx=\"426\" cy=\"75\" rx=\"90\" ry=\"42\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"426\" y=\"72\" fill=\"#fff\" font-weight=\"bold\">INTERNET</text><text x=\"426\" y=\"88\" fill=\"#fff\" font-size=\"9\">TCP/IP · DNS</text>\n<rect x=\"536\" y=\"28\" width=\"118\" height=\"40\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"595\" y=\"52\" font-size=\"9\">Intranet</text>\n<rect x=\"536\" y=\"82\" width=\"118\" height=\"40\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"595\" y=\"106\" font-size=\"9\">Extranet</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"126\" y1=\"75\" x2=\"183\" y2=\"75\" marker-end=\"url(#fl6)\"/><line x1=\"306\" y1=\"75\" x2=\"333\" y2=\"75\" marker-end=\"url(#fl6)\"/></g>\n</g>\n<text x=\"330\" y=\"142\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 6. De la red local a Internet, Intranet y Extranet</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> Datos → Red → Internet → Intranet/Extranet → Seguridad.</p>",
+     "section": "mapa"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n</h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 6.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n</button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Caso Comercial Centuria S.A.: integración multisucursal (material de la unidad).</li></ul>",
+   "nav_prev": "Unidad_05.html",
+   "nav_next": "Unidad_07.html",
+   "flashcards": true
+  },
+  {
+   "numero": 7,
+   "archivo": "Unidad_07.html",
+   "titulo": "Unidad VII: Tecnologías de Apoyo a la Toma de Decisiones",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Plataforma de sistemas transaccionales. El proceso de toma de decisiones. Definición y tipos de sistemas de apoyo a las decisiones. Características de los sistemas de apoyo para la toma de decisiones (DSS). Caso de aplicación de un DSS. Sistemas de apoyo para la toma de decisiones en grupo (GDSS). Características de los GDSS. Ventajas y desventajas del uso de GDSS. Diseño de salas. Usos prácticos de un GDSS. Casos de aplicación. Inteligencia artificial. Sistemas expertos. Beneficios que genera el uso de sistemas expertos y costos que involucra. El generador de sistemas expertos o Shell. Selección de aplicaciones para sistemas expertos.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-registro",
+     "header": "1. De registrar datos a decidir",
+     "body_html": "<p>Los TPS registran operaciones (ventas, facturas, pagos, inventarios). Miles de operaciones acumuladas permiten analizar productos, clientes, horarios y tendencias.</p>\n<p><strong>Cadena de valor:</strong> transacciones → datos → BD → análisis → información → alternativas → decisión → acción.</p>\n<p>La tecnología mejora la información de quien decide; no siempre decide por sí misma.</p>",
+     "section": "registro"
+    },
+    {
+     "id": "card-proceso",
+     "header": "2. Proceso y tipos de decisión",
+     "body_html": "<p><strong>Etapas:</strong> identificación del problema, recolección de información, análisis, generación y evaluación de alternativas, selección, implementación y evaluación de resultados.</p>\n<p><strong>Tipos de decisión:</strong></p>\n<ul class=\"lista-viñetas\">\n<li><strong>Estructuradas:</strong> automatizables (ej.: reposición por mínimo).</li>\n<li><strong>Semiestructuradas:</strong> datos + juicio (ej.: cuánto comprar).</li>\n<li><strong>No estructuradas:</strong> ej.: ingresar a un nuevo mercado.</li>\n</ul>",
+     "section": "proceso"
+    },
+    {
+     "id": "card-dss",
+     "header": "3. DSS: apoyo a la decisión",
+     "body_html": "<p><strong>DSS (Decision Support System):</strong> integra datos, modelos, software e interfaz para el decisor.</p>\n<p><strong>Herramientas:</strong> análisis <strong>what-if</strong> (¿qué pasaría si...?), sensibilidad y escenarios (optimista/probable/pesimista).</p>\n<p><strong>Caso:</strong> elegir sucursal comparando población, alquiler, competencia y ventas, simulando variaciones antes de invertir.</p>\n<p>Un DSS <strong>apoya</strong>, no sustituye automáticamente al gerente.</p>",
+     "section": "dss"
+    },
+    {
+     "id": "card-gdss",
+     "header": "4. GDSS: decisiones en grupo",
+     "body_html": "<p><strong>GDSS:</strong> facilita decisiones colectivas (documentos, propuestas, votación, comparación, colaboración a distancia).</p>\n<p><strong>Ventajas:</strong> más alternativas, registro y estructuración.</p>\n<p><strong>Desventajas:</strong> resistencia, conflictos, dependencia y costos.</p>\n<p><strong>Salas:</strong> computadoras, pantalla, conectividad y software colaborativo (hoy también virtuales).</p>\n<p><strong>Usos:</strong> planificación, presupuestos, proveedores, proyectos y riesgos.</p>",
+     "section": "gdss"
+    },
+    {
+     "id": "card-ia",
+     "header": "5. Inteligencia artificial y sistemas expertos",
+     "body_html": "<p><strong>IA:</strong> reconocimiento, clasificación, predicción y recomendaciones (demanda, fraude, clientes).</p>\n<p><strong>Sistema experto:</strong> base de conocimiento + motor de inferencia + interfaz; ej.: SI liquidez baja Y endeudamiento alto ENTONCES riesgo elevado.</p>\n<p><strong>Beneficios:</strong> conserva conocimiento, consistencia y apoyo a no expertos.</p>\n<p><strong>Costos:</strong> adquisición, validación, actualización y mantenimiento.</p>\n<p><strong>Shell:</strong> entorno para construirlos sin partir de cero.</p>\n<p><strong>Selección:</strong> conocimiento identificable, reglas claras, problema repetitivo y valor económico.</p>\n<p><strong>Evolución:</strong> TPS → MIS → DSS → GDSS → IA.</p>",
+     "section": "ia"
+    },
+    {
+     "id": "card-autoevaluacion",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "autoevaluacion"
+    },
+    {
+     "id": "card-mapa",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 660 140\" width=\"100%\" role=\"img\" aria-label=\"Del registro a la decisión\">\n<defs><marker id=\"fl7\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"4\" orient=\"auto\"><polygon points=\"0,0 8,4 0,8\" fill=\"#C5A55A\"/></marker></defs>\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"6\" y=\"28\" width=\"110\" height=\"48\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"61\" y=\"48\">TPS</text><text x=\"61\" y=\"63\" font-size=\"8\" fill=\"#007A33\">¿qué ocurrió?</text>\n<rect x=\"176\" y=\"28\" width=\"110\" height=\"48\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"231\" y=\"48\">Datos/BD</text><text x=\"231\" y=\"63\" font-size=\"8\" fill=\"#007A33\">historia</text>\n<rect x=\"346\" y=\"28\" width=\"110\" height=\"48\" rx=\"8\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"401\" y=\"48\" fill=\"#fff\" font-weight=\"bold\">DSS</text><text x=\"401\" y=\"63\" fill=\"#fff\" font-size=\"8\">¿qué pasaría si...?</text>\n<rect x=\"516\" y=\"28\" width=\"110\" height=\"48\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"571\" y=\"48\">Decisión</text><text x=\"571\" y=\"63\" font-size=\"8\" fill=\"#8a6d2b\">+ acción</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"116\" y1=\"52\" x2=\"173\" y2=\"52\" marker-end=\"url(#fl7)\"/><line x1=\"286\" y1=\"52\" x2=\"343\" y2=\"52\" marker-end=\"url(#fl7)\"/><line x1=\"456\" y1=\"52\" x2=\"513\" y2=\"52\" marker-end=\"url(#fl7)\"/></g>\n<path d=\"M 571 76 L 571 104 L 61 104 L 61 79\" fill=\"none\" stroke=\"#81C784\" stroke-width=\"2\" stroke-dasharray=\"5,4\" marker-end=\"url(#fl7)\"/>\n<text x=\"316\" y=\"120\" font-size=\"9\" fill=\"#007A33\">evaluación → nuevos datos</text>\n</g>\n<text x=\"330\" y=\"136\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 7. Del registro a la decisión, con retorno de evaluación</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> TPS → Proceso de decisión → DSS → GDSS → Inteligencia artificial.</p>",
+     "section": "mapa"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 7.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Casos Supermercados Centuria y Distribuidora Paraguaya (material de la unidad).</li></ul>",
+   "nav_prev": "Unidad_06.html",
+   "nav_next": "Unidad_08.html",
+   "flashcards": true
+  },
+  {
+   "numero": 8,
+   "archivo": "Unidad_08.html",
+   "titulo": "Unidad VIII: Sistemas de Apoyo a Ejecutivos (EIS)",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Concepto. Características. Factores de éxito. Proceso de desarrollo. Implantación. Efecto del EIS en el proceso de planeación y control de la organización.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-2",
+     "header": "1. Concepto de EIS",
+     "body_html": "<p><strong>EIS (Executive Information System):</strong> acceso rápido a información relevante, resumida y estratégica para planificación, seguimiento y control. Responde: ¿cómo está la organización?, ¿cumplimos objetivos?, ¿dónde hay problemas?, ¿qué tendencias aparecen? Transforma miles de operaciones en visión ejecutiva (ej.: ventas del día, variación, sucursal que más crece/cae, margen y cumplimiento de meta).</p>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "2. Pirámide de información",
+     "body_html": "<p><strong>Operativo (TPS):</strong> ¿qué operación ocurrió? <strong>Gerencial (MIS/DSS):</strong> ¿cómo va el área? / ¿qué pasaría si...? <strong>Estratégico (EIS):</strong> ¿cómo va globalmente la organización y dónde enfocar la atención? A medida que se asciende, la información es más resumida, comparativa y orientada al futuro.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "3. Características, tableros y KPI",
+     "body_html": "<p><strong>Características:</strong> resumida, relevante, interpretable (indicadores, gráficos, alertas), oportuna, integrada y estratégica. <strong>Dashboard:</strong> organiza ventas, meta, cumplimiento, margen, clientes, morosidad y satisfacción con umbrales. <strong>KPI:</strong> indicador vinculado a objetivos (no cualquier dato); incluye datos internos y externos. <strong>Drill-down:</strong> de lo general al detalle (nacional → región → sucursal → producto). <strong>Alertas:</strong> destacan desviaciones (administración por excepción). Un valor aislado no basta: necesita <strong>meta, comparación, tendencia y contexto</strong>.</p>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "4. Factores de éxito, desarrollo e implantación",
+     "body_html": "<p><strong>Éxito:</strong> apoyo directivo, requerimientos correctos, calidad de datos, integración, facilidad de uso, relevancia y actualización. <strong>Desarrollo:</strong> objetivos → necesidades → indicadores → fuentes → integración → presentación → pruebas → implantación → mejora. <strong>Implantación:</strong> personas, procesos, datos, tecnología, capacitación y gestión del cambio.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "5. Efecto en planeación y control",
+     "body_html": "<p><strong>Planeación:</strong> monitorear meta vs. avance (ej.: +15 % anual vs. +8 % actual). <strong>Control:</strong> objetivo → meta → indicador → resultado → comparación → desviación → acción correctiva. El EIS aporta visibilidad, seguimiento, integración y detección de tendencias; pero la calidad de la decisión sigue dependiendo de datos, interpretación y criterio.</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 560 210\" width=\"100%\" style=\"max-width:560px\" role=\"img\" aria-label=\"Pirámide de información y tablero\">\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<polygon points=\"230,8 330,8 310,58 250,58\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"280\" y=\"30\" fill=\"#fff\" font-weight=\"bold\">EIS</text><text x=\"280\" y=\"45\" fill=\"#fff\" font-size=\"8\">estratégico</text>\n<polygon points=\"200,62 360,62 340,112 220,112\" fill=\"#81C784\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"280\" y=\"82\" fill=\"#fff\" font-weight=\"bold\">MIS / DSS</text><text x=\"280\" y=\"97\" fill=\"#fff\" font-size=\"8\">táctico</text>\n<polygon points=\"170,116 390,116 370,166 190,166\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"280\" y=\"138\" font-weight=\"bold\">TPS</text><text x=\"280\" y=\"153\" font-size=\"8\" fill=\"#007A33\">operativo</text>\n<rect x=\"420\" y=\"60\" width=\"120\" height=\"22\" rx=\"4\" fill=\"#00B140\"/><text x=\"480\" y=\"75\" fill=\"#fff\" font-size=\"9\">Ventas 95%</text>\n<rect x=\"420\" y=\"90\" width=\"96\" height=\"22\" rx=\"4\" fill=\"#C5A55A\"/><text x=\"468\" y=\"105\" fill=\"#fff\" font-size=\"9\">Margen 24%</text>\n<rect x=\"420\" y=\"120\" width=\"72\" height=\"22\" rx=\"4\" fill=\"#c0392b\"/><text x=\"456\" y=\"135\" fill=\"#fff\" font-size=\"9\">Mora 8,5%</text>\n<text x=\"480\" y=\"160\" font-size=\"9\" fill=\"#007A33\">tablero + alertas</text>\n</g>\n<text x=\"280\" y=\"190\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 8. Pirámide de información y tablero ejecutivo</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> Dato operativo → Pirámide → KPI y tablero → Planeación y control.</p>",
+     "section": "8"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 8.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Caso Grupo Centuria: tablero ejecutivo (material de la unidad).</li></ul>",
+   "nav_prev": "Unidad_07.html",
+   "nav_next": "Unidad_09.html",
+   "flashcards": true
+  },
+  {
+   "numero": 9,
+   "archivo": "Unidad_09.html",
+   "titulo": "Unidad IX: Paradigmas Contemporáneos de Negocios en Internet",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Introducción a los negocios por internet. Cómo preparar los «Negocios on line». Elección de tecnologías. Comercio electrónico: concepto, categorías, ventajas y problemáticas, sistemas de pago, aspectos legales. E-government. Firma digital.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-2",
+     "header": "1. Negocios por Internet",
+     "body_html": "<p>Internet sostiene marketing, captación, venta, pago, entrega, posventa y fidelización. Negocio tradicional: local, consulta, pago y retiro presenciales. Negocio digital: plataforma, búsqueda, comparación, pedido, pago electrónico, entrega, seguimiento y calificación. <strong>E-business</strong> abarca todos los procesos digitales; el <strong>e-commerce</strong> es su parte comercial.</p>\n<h4 class=\"h4-subtema\"><strong>Categorías</strong></h4>\n<ul class=\"lista-viñetas\">\n<li><strong>B2C</strong> (empresa → consumidor)</li>\n<li><strong>B2B</strong> (empresa → empresa)</li>\n<li><strong>C2C</strong> (consumidor → consumidor)</li>\n<li><strong>C2B</strong> (consumidor → empresa)</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Modelos de negocio</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Venta directa</li>\n<li>Marketplace</li>\n<li>Suscripción</li>\n<li>Freemium</li>\n<li>Publicidad y comisión</li>\n</ul>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "2. Preparar el negocio online y la plataforma",
+     "body_html": "<h4 class=\"h4-subtema\"><strong>Pasos para preparar el negocio</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Propuesta de valor</li>\n<li>Cliente objetivo</li>\n<li>Productos o servicios</li>\n<li>Modelo de ingresos</li>\n<li>Proceso (carrito → pedido → pago → entrega → posventa)</li>\n<li>Tecnología según requerimientos</li>\n<li>Logística</li>\n<li>Atención al cliente</li>\n<li>Seguridad</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Plataforma</strong></h4>\n<p>Catálogo, buscador, carrito, pedidos, inventario, clientes, pagos, logística y analítica.</p>\n<h4 class=\"h4-subtema\"><strong>UX y conversión</strong></h4>\n<p>Proceso simple y medible; tasa = compras / visitantes × 100 (ej.: 400 / 10.000 = 4 %); analizar puntos de abandono.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "3. Ventajas, problemáticas y pagos",
+     "body_html": "<h4 class=\"h4-subtema\"><strong>Ventajas</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Alcance global</li>\n<li>Disponibilidad 24/7</li>\n<li>Automatización de procesos</li>\n<li>Medición y analítica</li>\n<li>Personalización</li>\n<li>Escalabilidad</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Problemas</strong></h4>\n<ul class=\"lista-viñetas\">\n<li>Seguridad</li>\n<li>Privacidad</li>\n<li>Confianza del consumidor</li>\n<li>Logística (última milla)</li>\n<li>Dependencia tecnológica</li>\n<li>Competencia y fraude</li>\n</ul>\n<h4 class=\"h4-subtema\"><strong>Pagos</strong></h4>\n<p>Tarjetas, transferencias, billeteras y pasarelas (cliente → comercio → pasarela → autorización). Riesgos: fraude, suplantación e ingeniería social.</p>\n<h4 class=\"h4-subtema\"><strong>Confianza</strong></h4>\n<p>Identidad clara, políticas transparentes, seguridad y reputación.</p>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "4. Aspectos legales, gobierno electrónico y firma digital",
+     "body_html": "<p>Toda operación online está en el marco jurídico: identificación, contratación, consumidor, datos, comprobantes, pagos y tributos.</p>\n<h4 class=\"h4-subtema\"><strong>E-government</strong></h4>\n<p>TIC en servicios e interacciones del sector público (consultas, registros, pagos, expedientes).</p>\n<h4 class=\"h4-subtema\"><strong>Firma digital</strong></h4>\n<p>Mecanismos criptográficos de autenticidad e integridad (no es una imagen escaneada). Principios: autenticidad, integridad y vinculación, con certificados digitales y valor según la legislación.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\"><span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 5</span><button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button></div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 700 100\" width=\"100%\" role=\"img\" aria-label=\"Circuito del comercio electrónico\">\n<defs><marker id=\"fl9\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"4\" orient=\"auto\"><polygon points=\"0,0 8,4 0,8\" fill=\"#C5A55A\"/></marker></defs>\n<g font-size=\"9\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"6\" y=\"20\" width=\"100\" height=\"46\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"56\" y=\"48\">Cliente</text>\n<rect x=\"148\" y=\"20\" width=\"100\" height=\"46\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"198\" y=\"48\">Tienda</text>\n<rect x=\"290\" y=\"20\" width=\"100\" height=\"46\" rx=\"8\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"340\" y=\"48\" fill=\"#fff\" font-weight=\"bold\">Pago</text>\n<rect x=\"432\" y=\"20\" width=\"100\" height=\"46\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"482\" y=\"48\">Logística</text>\n<rect x=\"574\" y=\"20\" width=\"100\" height=\"46\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"624\" y=\"48\">Entrega</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"106\" y1=\"43\" x2=\"145\" y2=\"43\" marker-end=\"url(#fl9)\"/><line x1=\"248\" y1=\"43\" x2=\"287\" y2=\"43\" marker-end=\"url(#fl9)\"/><line x1=\"390\" y1=\"43\" x2=\"429\" y2=\"43\" marker-end=\"url(#fl9)\"/><line x1=\"532\" y1=\"43\" x2=\"571\" y2=\"43\" marker-end=\"url(#fl9)\"/></g>\n</g>\n<text x=\"350\" y=\"90\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 9. Circuito del comercio electrónico (+ posventa y datos)</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> Negocio → Comercio electrónico → Pagos → Aspectos legales → Firma digital.</p>",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "Nota",
+     "body_html": "<div class=\"alert alert-success d-flex align-items-center\">\n<i class=\"bi bi-info-circle-fill me-3 fs-4\"></i>\n<div>\n<strong>Nota:</strong> Este es el material de lectura de la Unidad 9. El docente ampliará estos temas durante la clase presencial/virtual.",
+     "section": "8"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 9.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Amor, D. (2000). <em>La Revolución e-business</em>. Argentina: Prentice Hall.</li><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Caso «Ánde Market»: negocio digital (material de la unidad).</li></ul>",
+   "nav_prev": "Unidad_08.html",
+   "nav_next": "Unidad_10.html",
+   "flashcards": true
+  },
+  {
+   "numero": 10,
+   "archivo": "Unidad_10.html",
+   "titulo": "Unidad X: Futuro de las TIC",
+   "cards": [
+    {
+     "id": "card-1",
+     "header": "Resumen Temático",
+     "body_html": "<p>Nuevas tendencias tecnológicas aplicadas a los negocios. Cubos de datos. Bases de datos post-relacionales. Redes de alta velocidad.</p>",
+     "section": "1"
+    },
+    {
+     "id": "card-introduccion",
+     "header": "Introducción: la aceleración del cambio",
+     "body_html": "<h3 class=\"h3-tema\">1. Introducción: la aceleración del cambio</h3>\n<p>Las tecnologías ya no cambian por décadas sino por años. Una empresa que planifica solo con lo que existe hoy puede quedar desfasada mañana. Por eso el programa cierra con las <strong>nuevas tendencias aplicadas a los negocios</strong>: no para formar especialistas en cada una, sino para que el futuro administrador sepa <strong>qué son, para qué sirven y cuándo convienen</strong>.</p>",
+     "section": "introduccion"
+    },
+    {
+     "id": "card-2",
+     "header": "2. Big Data",
+     "body_html": "<p>Conjuntos de datos tan voluminosos y variados que superan las herramientas tradicionales. Se resume en las <strong>5 V</strong>: volumen, velocidad, variedad, veracidad y valor. <strong>Usos:</strong> predecir demanda, segmentar clientes, detectar fraude, optimizar inventarios y personalizar ofertas. El valor no está en acumular datos, sino en convertirlos en decisiones (enlace con las Unidades VII y VIII).</p>",
+     "section": "2"
+    },
+    {
+     "id": "card-3",
+     "header": "3. Computación en la nube (Cloud)",
+     "body_html": "<p>Infraestructura y software accesibles por red, por suscripción y escalables. <strong>Modelos:</strong> IaaS (servidores virtuales), PaaS (plataforma de desarrollo) y SaaS (aplicaciones listas, ej.: correo, ERP en la nube). <strong>Beneficios:</strong> menor inversión inicial, crecimiento por demanda, acceso remoto y actualizaciones del proveedor. <strong>Cuidados:</strong> dependencia del proveedor, conectividad, seguridad y costos acumulados.</p>",
+     "section": "3"
+    },
+    {
+     "id": "card-4",
+     "header": "4. Blockchain",
+     "body_html": "<p>Registro distribuido donde cada bloque enlaza al anterior, lo que da <strong>trazabilidad y transparencia</strong>. <strong>Usos empresariales:</strong> seguimiento de cadena de suministro, certificaciones, contratos y pagos. No es sinónimo de criptomonedas: la criptomoneda es solo una aplicación de esta tecnología.</p>",
+     "section": "4"
+    },
+    {
+     "id": "card-5",
+     "header": "5. IA e IoT como tendencias transversales",
+     "body_html": "<p>La <strong>inteligencia artificial</strong> (Unidad VII) aporta predicción y automatización inteligente; el <strong>IoT</strong> (Unidad VI) conecta sensores y activos para monitoreo en tiempo real. Combinadas con Big Data y Cloud forman la base de la empresa digital actual.</p>",
+     "section": "5"
+    },
+    {
+     "id": "card-6",
+     "header": "6. Cubos de datos (OLAP)",
+     "body_html": "<p>Un <strong>cubo</strong> organiza la información por <strong>dimensiones</strong> (tiempo, producto, región, sucursal) para consultas analíticas rápidas. Ejemplo: ventas totales del año → por trimestre → por sucursal → por producto. Permite el <strong>drill-down</strong> ejecutivo (Unidad VIII) sin afectar los sistemas transaccionales: se consulta el cubo, no la caja registradora.</p>",
+     "section": "6"
+    },
+    {
+     "id": "card-7",
+     "header": "7. Bases de datos post-relacionales",
+     "body_html": "<div class=\"table-responsive\">\n<table class=\"table table-bordered table-striped table-hover shadow-sm align-middle\">\n<thead class=\"table-primary\">\n<tr>\n<th scope=\"col\">Tipo</th>\n<th scope=\"col\">Idea</th>\n<th scope=\"col\">Cuándo conviene</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Documental (JSON)</td>\n<td>Documentos flexibles sin esquema fijo</td>\n<td>Catálogos, contenidos, apps web</td>\n</tr>\n<tr>\n<td>Clave-valor</td>\n<td>Acceso ultrarrápido por clave</td>\n<td>Sesiones, carritos, caché</td>\n</tr>\n<tr>\n<td>Grafos</td>\n<td>Nodos y relaciones</td>\n<td>Redes sociales, fraude, rutas</td>\n</tr>\n<tr>\n<td>Series temporales</td>\n<td>Datos con marca de tiempo</td>\n<td>Sensores, monitoreo, finanzas</td>\n</tr>\n</tbody>\n</table>\n</div>\n<p>No reemplazan al modelo relacional: lo <strong>complementan</strong> cuando el volumen, la variedad o la velocidad lo exigen.</p>",
+     "section": "7"
+    },
+    {
+     "id": "card-8",
+     "header": "8. Redes de alta velocidad",
+     "body_html": "<p><strong>Fibra óptica:</strong> gran capacidad y estabilidad para enlaces troncales. <strong>5G:</strong> alta velocidad y baja latencia móvil para operaciones en campo, logística y sucursales. <strong>Wi-Fi de nuevas generaciones:</strong> más dispositivos simultáneos en oficinas y locales. <strong>Efecto:</strong> videocolaboración, nube, IoT, comercio en tiempo real y trabajo remoto. Recuerde: capacidad (ancho de banda) no es lo mismo que retardo (latencia).</p>",
+     "section": "8"
+    },
+    {
+     "id": "card-9",
+     "header": "9. Criterio administrativo de inversión",
+     "body_html": "<p>Ante cada tendencia, el administrador debe evaluar: <strong>disponibilidad</strong> (¿estará operativa cuando se necesite?), <strong>rendimiento</strong> (¿soporta usuarios y operaciones?), <strong>escalabilidad</strong> (¿crece con la empresa?), <strong>seguridad</strong> (¿protege la información?), <strong>costos</strong> (¿adquisición + operación + mantenimiento?) y <strong>continuidad</strong> (¿qué pasa si falla?). La tecnología es <strong>inversión</strong> cuando responde al negocio, no moda.</p>",
+     "section": "9"
+    },
+    {
+     "id": "card-10",
+     "header": "10. Caso de estudio: Distribuidora Guaraní",
+     "body_html": "<p>Una distribuidora con 3 depósitos quiere modernizarse. Diagnóstico: inventarios desactualizados, pedidos por teléfono, sin historial analizable. <strong>Propuesta por etapas:</strong> 1) base de datos central + red entre locales; 2) cubo de ventas por producto/región/mes para decisiones; 3) catálogo documental para 2.000 productos; 4) nube para no comprar servidores; 5) sensores IoT en cámaras de frío. Cada etapa responde a un problema real, no a la moda.</p>",
+     "section": "10"
+    },
+    {
+     "id": "card-actividad",
+     "header": "11. Actividad práctica",
+     "body_html": "<p>En grupos, elijan una empresa local y propongan <strong>dos tendencias</strong> aplicables: qué problema resuelven, qué datos necesitan, qué red exigen y cuánto costaría aproximadamente la primera etapa. Presentar en 5 minutos defendiendo por qué esas dos y no otras.</p>",
+     "section": "actividad"
+    },
+    {
+     "id": "card-preguntas",
+     "header": "12. Preguntas de discusión",
+     "body_html": "<ol>\n<li>¿Toda empresa necesita Big Data, o basta una buena planilla bien usada?</li>\n<li>¿Qué riesgos aparecen al subir toda la información a la nube?</li>\n<li>¿En qué casos una BD documental supera a la relacional?</li>\n<li>¿Mayor velocidad de Internet significa automáticamente mejor infraestructura?</li>\n<li>¿Cómo se conecta esta unidad con DSS, EIS y comercio electrónico?</li>\n</ol>",
+     "section": "preguntas"
+    },
+    {
+     "id": "card-sintesis",
+     "header": "Síntesis de la unidad",
+     "body_html": "<p><strong>DATOS → NUBE/CUBOS → ANÁLISIS → RED DE ALTA VELOCIDAD → DECISIONES.</strong> Las tendencias valen cuando resuelven problemas del negocio con criterio de disponibilidad, seguridad y costo.</p>",
+     "section": "sintesis"
+    },
+    {
+     "id": "card-sintesis-curso",
+     "header": "Síntesis del curso",
+     "body_html": "<p>Del dato a la decisión: <strong>TPS → BD → MIS/DSS → EIS → estrategia</strong>, sobre hardware, software y redes, con ERP integrando la gestión y el comercio digital abriendo nuevos canales. La ventaja no está en la tecnología por sí misma, sino en cómo la organización la usa para crear valor.</p>",
+     "section": "sintesis-curso"
+    },
+    {
+     "id": "card-autoevaluacion",
+     "header": "Autoevaluación: tarjetas",
+     "body_html": "<div class=\"d-flex justify-content-between align-items-center mb-2\">\n<span class=\"badge\" id=\"fcCount\" style=\"background:#007A33;\">Tarjeta 1 de 10</span>\n<button class=\"btn btn-sm btn-outline-secondary noprint\" onclick=\"fcRestart()\">Reiniciar</button>\n</div>\n<div class=\"flashCard\" id=\"fcCard\" onclick=\"fcTap()\" onkeydown=\"if(event.key==='Enter')fcTap()\" role=\"button\" tabindex=\"0\" title=\"Toca para ver la respuesta\">\n<div class=\"flashQ\" id=\"fcQ\"></div>\n<div class=\"flashA\" id=\"fcA\" style=\"display:none\"></div>\n<div class=\"flashHint\" id=\"fcHint\">Toca la tarjeta para ver la respuesta",
+     "section": "autoevaluacion"
+    },
+    {
+     "id": "card-mapa",
+     "header": "Mapa visual",
+     "body_html": "<figure class=\"text-center my-3\">\n<svg viewBox=\"0 0 540 230\" width=\"100%\" style=\"max-width:540px\" role=\"img\" aria-label=\"Tendencias alrededor de la empresa\">\n<g font-size=\"10\" text-anchor=\"middle\" fill=\"#2D2D2D\" font-family=\"Montserrat,Segoe UI,sans-serif\">\n<rect x=\"200\" y=\"88\" width=\"140\" height=\"54\" rx=\"10\" fill=\"#007A33\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"270\" y=\"110\" fill=\"#fff\" font-weight=\"bold\">EMPRESA</text><text x=\"270\" y=\"126\" fill=\"#fff\" font-size=\"9\">valor del negocio</text>\n<rect x=\"30\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"46\">Big Data</text>\n<rect x=\"380\" y=\"20\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"445\" y=\"46\">Cloud</text>\n<rect x=\"30\" y=\"166\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#E6F4EA\" stroke=\"#007A33\" stroke-width=\"2\"/><text x=\"95\" y=\"192\">Blockchain</text>\n<rect x=\"380\" y=\"166\" width=\"130\" height=\"44\" rx=\"8\" fill=\"#FFF8E1\" stroke=\"#C5A55A\" stroke-width=\"2\"/><text x=\"445\" y=\"192\">IA + IoT</text>\n<g stroke=\"#C5A55A\" stroke-width=\"2\"><line x1=\"130\" y1=\"64\" x2=\"215\" y2=\"92\"/><line x1=\"410\" y1=\"64\" x2=\"325\" y2=\"92\"/><line x1=\"130\" y1=\"166\" x2=\"215\" y2=\"138\"/><line x1=\"410\" y1=\"166\" x2=\"325\" y2=\"138\"/></g>\n</g>\n<text x=\"270\" y=\"224\" font-size=\"10\" text-anchor=\"middle\" fill=\"#007A33\" font-family=\"Montserrat,Segoe UI,sans-serif\">Figura 10. Tendencias al servicio del valor del negocio</text>\n</svg>\n</figure>\n<p class=\"small\"><strong>Secuencia sugerida:</strong> Tendencias → Cubos de datos → Post-relacional → Redes → Inversión.</p>",
+     "section": "mapa"
+    },
+    {
+     "id": "card-asistencia-clase",
+     "header": "Asistencia presencial",
+     "body_html": "<h4 class=\"h4-subtema\">\n<i class=\"bi bi-person-check-fill me-2\"></i> Asistencia en Clase Presencial\n    </h4>\n<p>Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la Unidad 10.</p>\n<button class=\"btn btn-primary\" id=\"btn-asis-clase\" onclick=\"marcarAsistenciaClase()\">\n<i class=\"bi bi-hand-index-thumb\"></i> Poner Presente\n    </button>",
+     "section": "asistencia-clase"
+    }
+   ],
+   "bibliografia_html": "<h4 class=\"h4-subtema\">Bibliografía Básica</h4><ul><li>Programa oficial de la asignatura TIC (ADE18), Instituto Superior Centuria. (Fuente primaria del curso.)</li><li>Amor, D. (2000). <em>La Revolución e-business</em>. Argentina: Prentice Hall.</li></ul>\n<h4 class=\"h4-subtema\">Bibliografía Complementaria</h4><ul><li>Cohen Kare, D. y Asín Lares, E. (2009). <em>Tecnología de información en los Negocios</em>. México: McGraw-Hill.</li><li>Caso Distribuidora Guaraní: modernización por etapas (material de la unidad).</li></ul>",
+   "nav_prev": "Unidad_09.html",
+   "nav_next": "FIN",
+   "flashcards": true
+  }
+ ]
+}

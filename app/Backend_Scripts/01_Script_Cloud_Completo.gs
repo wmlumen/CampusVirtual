@@ -1725,10 +1725,16 @@ function cvAuthRecoverAccess(ss, data) {
   }
 
   var targetEmail = email || user.email;
-  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  // Código de 3 letras + 3 números (más fácil de leer y de escribir a mano que 8 caracteres mixtos).
+  // Se excluyen letras/números ambiguos (I, O, L, 0, 1).
+  var letras = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  var numeros = '23456789';
   var provisoria = '';
-  for (var i = 0; i < 8; i++) {
-    provisoria += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (var i = 0; i < 3; i++) {
+    provisoria += letras.charAt(Math.floor(Math.random() * letras.length));
+  }
+  for (var i = 0; i < 3; i++) {
+    provisoria += numeros.charAt(Math.floor(Math.random() * numeros.length));
   }
 
   var salt = Utilities.getUuid().replace(/-/g, '');
@@ -1769,14 +1775,14 @@ function cvAuthRecoverAccess(ss, data) {
       ok: true,
       status: 'Éxito',
       enviado: true,
-      mensaje: 'Se ha enviado una contraseña provisoria a tu correo electrónico registrado (' + targetEmail.slice(0, 3) + '***). Cámbiala al ingresar.'
+      mensaje: 'Te enviamos un código de acceso a tu correo registrado (' + targetEmail.slice(0, 3) + '***). Ingresá con ese código y el sistema te va a pedir que lo cambies.'
     };
   } else {
     return {
       ok: true,
       status: 'Éxito',
       enviado: false,
-      mensaje: 'Se ha restablecido tu acceso. Comunícate con Secretaría Académica para obtener tu clave provisoria institucional.'
+      mensaje: 'Se ha restablecido tu acceso, pero no pudimos enviarte el código por correo. Comunícate con Secretaría Académica para obtenerlo.'
     };
   }
 }
@@ -3351,11 +3357,30 @@ function enviarProvisoria(ss, data) {
   var remitente = (data.remitente || '').toString().trim();
   var rnombre = (data.remitente_nombre || 'Instituto Superior Centuria').toString();
   try {
+    var textoPlano = 'Hola ' + nombre + ',\n\n' +
+      'Recibimos una solicitud para restablecer tu acceso al Campus Virtual.\n\n' +
+      'Tu código de acceso es: ' + pass + '\n\n' +
+      'Ingresá con tu cédula y este código como contraseña. Por seguridad, el sistema te va a pedir que lo cambies apenas entres.\n\n' +
+      'Si no solicitaste este cambio, comunicate con Secretaría Académica.\n\n' +
+      rnombre;
+
+    var htmlBody = '' +
+      '<div style="font-family:Arial,Helvetica,sans-serif;max-width:440px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:14px;border:1px solid #e2e8f0">' +
+      '<h2 style="color:#0f172a;margin:0 0 12px;font-size:18px">Hola ' + nombre + ',</h2>' +
+      '<p style="color:#334155;font-size:14px;line-height:1.5;margin:0 0 18px">Recibimos una solicitud para restablecer tu acceso al <strong>Campus Virtual</strong> del Instituto Superior Centuria. Usá este código para ingresar:</p>' +
+      '<div style="background:#007A33;color:#ffffff;text-align:center;padding:20px 10px;border-radius:12px;margin:0 0 18px">' +
+      '<span style="font-family:\'Courier New\',Courier,monospace;font-size:30px;font-weight:bold;letter-spacing:8px;user-select:all">' + pass + '</span>' +
+      '</div>' +
+      '<p style="color:#334155;font-size:13px;line-height:1.5;margin:0 0 6px">Tocá el código para seleccionarlo y copiarlo. Ingresá con tu cédula y ese código como contraseña — el sistema te va a pedir que lo cambies apenas entres.</p>' +
+      '<p style="color:#64748b;font-size:12px;line-height:1.5;margin:18px 0 0">Si no solicitaste este cambio, comunicate con Secretaría Académica.</p>' +
+      '<p style="color:#94a3b8;font-size:11px;margin:20px 0 0;padding-top:12px;border-top:1px solid #e2e8f0">' + rnombre + '</p>' +
+      '</div>';
+
     var opts = {
       to: email,
-      subject: 'Tu contraseña provisoria - ' + rnombre,
-      body: 'Hola ' + nombre + ',\n\nTu contraseña provisoria es: ' + pass +
-        '\n\nPor seguridad, cambiala en tu primer ingreso (Mi Perfil > Contraseña).\n\n' + rnombre
+      subject: 'Tu código de acceso - ' + rnombre,
+      body: textoPlano,
+      htmlBody: htmlBody
     };
     if (remitente) { opts.replyTo = remitente; opts.name = rnombre; }
     MailApp.sendEmail(opts);

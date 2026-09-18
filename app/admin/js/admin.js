@@ -497,27 +497,19 @@ document.addEventListener('alpine:init', () => {
         // --- RESET PASSWORD: provisoria aleatoria + aviso por mail + cambio obligatorio ---
         async resetPasswordUsuario(usuario) {
             if (!usuario) return;
+            if (!usuario.cedula) { alert('No se encontró la cédula de este usuario.'); return; }
             if (!confirm('¿Generar provisoria a ' + usuario.nombre_completo + '? Se envía a su mail y deberá cambiarla.')) return;
             this.loading = true;
             this.loadingText = 'Generando provisoria...';
             try {
-                const data = await CenturiaAPI.usuarios.resetPassword(usuario.id || usuario.cedula);
+                const data = await CenturiaAPI.usuarios.resetPassword(usuario.cedula);
                 if (!(data.ok || data.success || data.status === 'Éxito' || data.status === 'Exito')) {
                     alert('Error: ' + (data.error || data.mensaje || 'No se pudo resetear'));
                     return;
                 }
-                let mailedMsg = data.email_enviado || '';
-                if (!data.mailed && typeof gasEnviarProvisoria === 'function' && usuario.email) {
-                    try {
-                        const g = await gasEnviarProvisoria(
-                            usuario.email, usuario.nombre_completo,
-                            data.new_password || data.password, this.cfgMail.remitente, this.cfgMail.nombre
-                        );
-                        if (g && g.ok) mailedMsg = 'Enviada por servidor de correo a ' + usuario.email;
-                    } catch (e) {}
-                }
-                alert('Provisoria generada: ' + (data.new_password || data.password || 'Consultar admin') +
-                    '\n' + mailedMsg +
+                // El backend nunca revela la contraseña en texto plano: solo confirma si
+                // pudo enviarla al correo registrado, o si hay que asistir al usuario manualmente.
+                alert((data.mensaje || 'Acceso restablecido.') +
                     '\nEl usuario deberá cambiarla al entrar (seguridad).');
                 await this.cargarUsuarios();
             } catch (e) { console.error(e); alert('Error de conexión.'); }

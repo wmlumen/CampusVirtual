@@ -14,6 +14,20 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt
 window.CENTURIA_CONFIG = {
     environment: 'production',
     appBasePath: (function () {
+        // En GitHub Pages el despliegue copia el contenido de app/ a la raíz del sitio,
+        // así que '/app/' nunca aparece en la URL real. En vez de buscarlo, se calcula
+        // la ruta de vuelta a la raíz leyendo el propio <script src="...js/api.js">
+        // de la página (cada página ya lo referencia correctamente, con tantos '../'
+        // como niveles de profundidad tenga).
+        try {
+            var scripts = document.getElementsByTagName('script');
+            for (var s = 0; s < scripts.length; s++) {
+                var src = scripts[s].getAttribute('src') || '';
+                var m = src.match(/^((?:\.\.\/)*)js\/api\.js/);
+                if (m) return m[1] || './';
+            }
+        } catch (e) {}
+        // Respaldo (entorno local con carpeta /app/ en la URL)
         try {
             var i = location.pathname.indexOf('/app/');
             return i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
@@ -29,8 +43,10 @@ window.CENTURIA_CONFIG = {
 function appUrl(relativePath) {
     try {
         var base = (window.CENTURIA_CONFIG && CENTURIA_CONFIG.appBasePath) || './';
-        if (base === './') return new URL(relativePath, document.baseURI).href;
-        return new URL(relativePath.replace(/^\.\//, ''), location.origin + base).href;
+        // 'base' ya es la ruta relativa correcta hacia la raíz de la app desde la página
+        // actual (p. ej. '../' desde academic/, '' desde la raíz) — se concatena y se
+        // resuelve contra la URL de la página, nunca contra un origen absoluto fijo.
+        return new URL(base + relativePath.replace(/^\.\//, ''), document.baseURI).href;
     } catch (e) { return relativePath; }
 }
 
@@ -603,7 +619,7 @@ API.usuarios = {
     approve: (data) => callGas('asignar_rol', data, 'POST'),
     reject: (data) => callGas('desactivar_rol', data, 'POST'),
     registerDirect: (data) => callGas('registrar_alumno', data, 'POST'),
-    resetPassword: (userId) => callGas('recuperar_acceso', { user_id: userId }, 'POST')
+    resetPassword: (cedula) => callGas('recuperar_acceso', { cedula: cedula }, 'POST')
 };
 
 API.roles = {

@@ -271,7 +271,7 @@ Son programas diseñados para realizar una o más tareas específicas, aprovecha
 <p>Pueden ser automáticos o asistidos</p>
 <p>Ejemplos por categoría:</p>
 <p>Categoría   Función Ejemplos
-Ofimática   Tareas de oficina y productividad   Microsoft Office, Google Workspace, LibreOffice
+Ofimática   Tareas de oficina y productividad   Microsoft Office, Infraestructura Cloud, LibreOffice
 Navegación web  Acceder a internet  Chrome, Firefox, Safari, Edge
 Multimedia  Reproducir y editar audio/video VLC, Windows Media Player, Adobe Premiere
 Comunicación    Mensajería y videoconferencia   WhatsApp, Zoom, Skype, Slack
@@ -287,7 +287,7 @@ Software propietario    Licencia restringida, código cerrado    Windows, Micros
 Software libre (Open Source)    Código abierto, modificable Linux, LibreOffice, GIMP
 Freeware    Gratuito pero no necesariamente abierto Skype, Adobe Reader
 Shareware   Versión de prueba gratuita  Antivirus, utilitarios
-SaaS (Software as a Service)    Software en la nube, por suscripción    Google Workspace, Salesforce, Office 365
+SaaS (Software as a Service)    Software en la nube, por suscripción    Infraestructura Cloud, Salesforce, Office 365
 Por plataforma:
 Software de escritorio: Se instala en computadoras personales</p>
 <p>Software web: Se ejecuta en navegadores</p>
@@ -511,7 +511,7 @@ Lenguaje de definición de datos (DDL)</p>
 <p>Ejemplos de DBMS:
 Relacionales: MySQL, PostgreSQL, Oracle, SQL Server</p>
 <p>No relacionales: MongoDB, Cassandra, Redis</p>
-<p>En la nube: Amazon RDS, Google Cloud SQL, Azure SQL Database</p>
+<p>En la nube: Amazon RDS, Cloud SQL, Azure SQL Database</p>
 <ol>
 <li>El administrador de la base de datos (DBA)
 El Administrador de Base de Datos (DBA - Database Administrator) es el profesional responsable de administrar, mantener y asegurar el correcto funcionamiento de las bases de datos de una organización.</li>

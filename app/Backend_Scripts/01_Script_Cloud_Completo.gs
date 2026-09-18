@@ -22,7 +22,7 @@
  * 
  * Changelog:
  * v05 (2026-09-15): Matrícula, asistencia con código, calendario, formularios, filiales
- * v06 (2026-09-15): Fotos de perfil en Google Drive (subir_foto, obtener_foto, eliminar_foto)
+ * v06 (2026-09-15): Fotos de perfil en Almacenamiento Cloud (subir_foto, obtener_foto, eliminar_foto)
  * v06.1 (2026-09-16): Diagnóstico (action=diagnostico: nombre/ID de planilla + conteo de filas)
  * v06.2 (2026-09-16): Misma base en ambos lados: guardar_asignatura (upsert por Codigo)
  * v06.3 (2026-09-16): inicializarBaseDatos + poblarCatalogosBase (28 hojas)
@@ -77,7 +77,7 @@ function doGet(e) {
   if (action === 'health') {
     try {
       var d = diagnosticoSheets(ss);
-      return responderJSON({ ok: true, data: { api: { ok: true }, googleSheets: { ok: true, planilla: d.planilla_nombre }, auth: { ok: true } }, requestId: 'health-' + Date.now() });
+      return responderJSON({ ok: true, data: { api: { ok: true }, cloudSheets: { ok: true, planilla: d.planilla_nombre }, auth: { ok: true } }, requestId: 'health-' + Date.now() });
     }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
@@ -89,9 +89,33 @@ function doGet(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
+  // ── AUTENTICACIÓN Y SESIÓN v08 ──
+  if (action === 'validar_sesion') {
+    try { return responderJSON(cvAuthValidateSession(ss, e.parameter)); }
+    catch (error) { return responderJSON({ ok: false, valid: false, error: error.message }); }
+  }
+  if (action === 'obtener_perfil') {
+    try { return responderJSON(cvAuthGetProfile(ss, e.parameter)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
   // ── VERIFICAR ALUMNO ──
   if (action === 'verificar_alumno') {
     var cedula = e.parameter.cedula;
+    var userAuth = cvAuthFindUser(ss, cedula);
+    if (userAuth) {
+      return responderJSON({
+        existe: true,
+        nombre: (userAuth.nombre + ' ' + userAuth.apellido).trim() || userAuth.nombre,
+        nombre_separado: { nombre: userAuth.nombre || '', apellido: userAuth.apellido || '' },
+        email: userAuth.email || '',
+        grado: userAuth.grado || '',
+        carrera: userAuth.carrera || '',
+        seccion: userAuth.seccion || '',
+        rol: userAuth.rol || 'alumno',
+        estado: userAuth.estado || 'activo'
+      });
+    }
     var solicitudDocente = cvDocenteFind(ss, cedula);
     if (solicitudDocente) return responderJSON({ existe: true, managed_docente: true });
     var sheetAlumnos = ss.getSheetByName('RegistroAlumnos');
@@ -342,6 +366,24 @@ function doGet(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
+  // ── MIS ALUMNOS (docente por carrera y sección) ──
+  if (action === 'mis_alumnos') {
+    try { return responderJSON(cvAlumnosPorCarreraSeccion(ss, e.parameter.carrera, e.parameter.seccion)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message, alumnos: [] }); }
+  }
+
+  // ── LISTAR USUARIOS (admin y docente) ──
+  if (action === 'listar_usuarios' || action === 'usuarios') {
+    try { return responderJSON(cvListarUsuarios(ss)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message, usuarios: [], data: [] }); }
+  }
+
+  // ── LISTAR NOTAS (alumnos y docentes) ──
+  if (action === 'listar_notas' || action === 'grades_list') {
+    try { return responderJSON(cvListarNotas(ss, e.parameter.cedula, e.parameter.asignatura)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message, data: [] }); }
+  }
+
   // ── DEFAULT: Notas (fallback) ──
   var sheetNotas = ss.getSheetByName('Notas') || ss.getActiveSheet();
   var dataNotas = sheetNotas.getDataRange().getValues();
@@ -364,6 +406,36 @@ function doGet(e) {
 function doPost(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var data = JSON.parse(e.postData.contents);
+
+  // ── AUTENTICACIÓN, REGISTRO Y PERFIL v08 ──
+  if (data.action === 'login') {
+    try { return responderJSON(cvAuthLogin(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'register' || data.action === 'registrar_usuario') {
+    try { return responderJSON(cvAuthRegister(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'validar_sesion') {
+    try { return responderJSON(cvAuthValidateSession(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, valid: false, error: error.message }); }
+  }
+  if (data.action === 'logout') {
+    try { return responderJSON(cvAuthLogout(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'actualizar_perfil') {
+    try { return responderJSON(cvAuthUpdateProfile(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'cambiar_password') {
+    try { return responderJSON(cvAuthChangePassword(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+  if (data.action === 'recuperar_acceso') {
+    try { return responderJSON(cvAuthRecoverAccess(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
 
   // Solicitudes docentes v1: respuestas confirmadas y aprobación autorizada en servidor.
   if (data.action && data.action.indexOf('docente_') === 0) {
@@ -538,6 +610,18 @@ function doPost(e) {
       }
     }
     return responderJSON({ status: "Error: Alumno no encontrado en pestaña Notas" });
+  }
+
+  // ── GUARDAR NOTAS ASIGNATURA (múltiples alumnos) ──
+  if (data.action === 'guardar_notas_asignatura' || data.action === 'record_subject') {
+    try { return responderJSON(cvGuardarNotasAsignatura(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── GUARDAR RESPUESTAS DE EXAMEN (detalle pregunta por pregunta) ──
+  if (data.action === 'guardar_respuestas_examen') {
+    try { return responderJSON(cvGuardarRespuestasExamen(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
   // ── 7. REGISTRAR ACCESO A CURSO ──
@@ -835,7 +919,7 @@ function cvDocentePublic(row) {
   var result = {};
   CV_DOCENTE_HEADERS.forEach(function (h) { if (h !== 'credential_hash') result[h] = row[h]; });
   result.rol_solicitado = 'docente';
-  result.origen = 'google';
+  result.origen = 'cloud';
   return result;
 }
 function cvDocenteUpdate(ss, row, fields) {
@@ -948,6 +1032,977 @@ function cvDocenteDispatch(ss, data) {
     SpreadsheetApp.flush();
     result.estado = target; return result;
   } finally { lock.releaseLock(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ═══ AUTENTICACIÓN, REGISTRO Y GESTIÓN DE SESIONES CENTURIA v08 ═══
+// ══════════════════════════════════════════════════════════════
+
+var CV_USUARIOS_HEADERS = [
+  'id', 'uuid', 'cedula', 'nombre', 'apellido', 'email', 'telefono',
+  'rol', 'estado', 'password_hash', 'salt', 'grado', 'carrera', 'seccion',
+  'foto_url', 'created_at', 'updated_at', 'last_login', 'token_actual', 'token_expires'
+];
+
+var CV_SESIONES_HEADERS = [
+  'token', 'cedula', 'rol', 'created_at', 'expires_at', 'estado', 'ip', 'user_agent'
+];
+
+function cvAuthEnsureSheets(ss) {
+  var userSheet = ss.getSheetByName('Usuarios');
+  if (!userSheet) {
+    userSheet = ss.insertSheet('Usuarios');
+    userSheet.appendRow(CV_USUARIOS_HEADERS);
+    var r1 = userSheet.getRange(1, 1, 1, CV_USUARIOS_HEADERS.length);
+    r1.setFontWeight('bold');
+    r1.setBackground('#007A33');
+    r1.setFontColor('#FFFFFF');
+    userSheet.setFrozenRows(1);
+  } else {
+    var h = userSheet.getRange(1, 1, 1, Math.max(1, userSheet.getLastColumn())).getValues()[0];
+    var hMap = h.map(function(x) { return String(x).toLowerCase().trim(); });
+    CV_USUARIOS_HEADERS.forEach(function(reqH) {
+      if (hMap.indexOf(reqH.toLowerCase()) < 0) {
+        userSheet.getRange(1, userSheet.getLastColumn() + 1).setValue(reqH);
+      }
+    });
+  }
+
+  var sesSheet = ss.getSheetByName('Sesiones');
+  if (!sesSheet) {
+    sesSheet = ss.insertSheet('Sesiones');
+    sesSheet.appendRow(CV_SESIONES_HEADERS);
+    var r2 = sesSheet.getRange(1, 1, 1, CV_SESIONES_HEADERS.length);
+    r2.setFontWeight('bold');
+    r2.setBackground('#007A33');
+    r2.setFontColor('#FFFFFF');
+    sesSheet.setFrozenRows(1);
+  } else {
+    var hs = sesSheet.getRange(1, 1, 1, Math.max(1, sesSheet.getLastColumn())).getValues()[0];
+    var hsMap = hs.map(function(x) { return String(x).toLowerCase().trim(); });
+    CV_SESIONES_HEADERS.forEach(function(reqH) {
+      if (hsMap.indexOf(reqH.toLowerCase()) < 0) {
+        sesSheet.getRange(1, sesSheet.getLastColumn() + 1).setValue(reqH);
+      }
+    });
+  }
+}
+
+function cvAuthHash(password, salt) {
+  return cvDocenteHash(String(salt || '') + ':' + String(password || ''));
+}
+
+function cvAuthNormalizeCedula(val) {
+  return String(val || '').replace(/[\.\s\-]/g, '').trim();
+}
+
+function cvAuthNormalizeEmail(val) {
+  return String(val || '').toLowerCase().trim();
+}
+
+function cvAuthSanitizeText(val, maxLen) {
+  var s = String(val || '').trim();
+  if (s.length > (maxLen || 100)) s = s.substring(0, maxLen || 100);
+  return s.replace(/<[^>]*>/g, '');
+}
+
+function cvAuthGetAllUsers(ss) {
+  cvAuthEnsureSheets(ss);
+  var sheet = ss.getSheetByName('Usuarios');
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  var headers = data[0].map(function(h) { return String(h).toLowerCase().trim().replace(/[^a-z0-9]/g, '_'); });
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    var obj = { _row: i + 1 };
+    for (var j = 0; j < headers.length; j++) {
+      obj[headers[j]] = data[i][j];
+    }
+    out.push(obj);
+  }
+  return out;
+}
+
+function cvAuthFindUser(ss, cedula) {
+  var c = cvAuthNormalizeCedula(cedula);
+  if (!c) return null;
+  var users = cvAuthGetAllUsers(ss);
+  for (var i = 0; i < users.length; i++) {
+    if (cvAuthNormalizeCedula(users[i].cedula) === c) return users[i];
+  }
+  // Búsqueda de respaldo en RegistroAlumnos
+  var sheetAl = ss.getSheetByName('RegistroAlumnos');
+  if (sheetAl) {
+    var alData = sheetAl.getDataRange().getValues();
+    for (var a = 1; a < alData.length; a++) {
+      if (cvAuthNormalizeCedula(alData[a][0]) === c) {
+        return {
+          id: 'LEG-' + c,
+          uuid: 'LEG-' + c,
+          cedula: c,
+          nombre: String(alData[a][1] || '').trim(),
+          apellido: String(alData[a][2] || '').trim(),
+          email: cvAuthNormalizeEmail(alData[a][3]),
+          grado: String(alData[a][4] || '').trim(),
+          carrera: String(alData[a][5] || '').trim(),
+          seccion: String(alData[a][6] || '').trim(),
+          rol: 'alumno',
+          estado: 'activo',
+          is_legacy: true
+        };
+      }
+    }
+  }
+  // Búsqueda de respaldo en Roles (para cuentas admin/docentes sembradas)
+  var sheetR = ss.getSheetByName('Roles');
+  if (sheetR) {
+    var rData = sheetR.getDataRange().getValues();
+    for (var k = 1; k < rData.length; k++) {
+      if (cvAuthNormalizeCedula(rData[k][0]) === c) {
+        var full = String(rData[k][1] || '').trim();
+        var p = full.split(/\s+/);
+        return {
+          id: 'ROL-' + c,
+          uuid: 'ROL-' + c,
+          cedula: c,
+          nombre: p[0] || full,
+          apellido: p.slice(1).join(' ') || '',
+          email: '',
+          rol: String(rData[k][2] || 'alumno').toLowerCase(),
+          carrera: String(rData[k][3] || ''),
+          seccion: String(rData[k][4] || ''),
+          estado: String(rData[k][6] || 'activo').toLowerCase(),
+          is_legacy: true
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function cvAuthSanitizeUser(u) {
+  if (!u) return null;
+  return {
+    id: u.id || u.uuid || ('USR-' + u.cedula),
+    uuid: u.uuid || u.id || ('USR-' + u.cedula),
+    cedula: cvAuthNormalizeCedula(u.cedula),
+    nombre: u.nombre || '',
+    apellido: u.apellido || '',
+    email: u.email || '',
+    telefono: u.telefono || '',
+    rol: u.rol || 'alumno',
+    estado: u.estado || 'activo',
+    grado: u.grado || '',
+    carrera: u.carrera || '',
+    seccion: u.seccion || '',
+    foto_url: u.foto_url || '',
+    created_at: u.created_at || '',
+    updated_at: u.updated_at || '',
+    last_login: u.last_login || '',
+    must_change_password: u.must_change_password ? 1 : 0
+  };
+}
+
+function cvAuthRegister(ss, data) {
+  data = data || {};
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error('El servidor está ocupado. Intenta nuevamente en unos segundos.');
+
+  try {
+    cvAuthEnsureSheets(ss);
+    var cedula = cvAuthNormalizeCedula(data.cedula);
+    if (!cedula || !/^\d{4,15}$/.test(cedula)) {
+      throw new Error('La cédula es obligatoria y debe contener entre 4 y 15 dígitos sin puntos ni espacios.');
+    }
+    var nombre = cvAuthSanitizeText(data.nombre, 100).toUpperCase();
+    var apellido = cvAuthSanitizeText(data.apellido, 100).toUpperCase();
+    if (!nombre || !apellido) {
+      throw new Error('Nombre y apellido son campos obligatorios.');
+    }
+    var email = cvAuthNormalizeEmail(data.email);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('El correo electrónico no tiene un formato válido.');
+    }
+    var password = String(data.password || '');
+    if (!password || password.length < 6) {
+      throw new Error('La contraseña debe tener al menos 6 caracteres.');
+    }
+
+    // Comprobar duplicado por cédula
+    var existing = cvAuthFindUser(ss, cedula);
+    if (existing && !existing.is_legacy) {
+      throw new Error('La cédula ' + cedula + ' ya está registrada. Si olvidaste tu contraseña, recupérala.');
+    }
+
+    // Comprobar duplicado por correo electrónico
+    if (email) {
+      var allUsers = cvAuthGetAllUsers(ss);
+      var emailDup = allUsers.some(function(u) {
+        return cvAuthNormalizeCedula(u.cedula) !== cedula && cvAuthNormalizeEmail(u.email) === email;
+      });
+      if (emailDup) {
+        throw new Error('El correo ' + email + ' ya está registrado para otra cuenta.');
+      }
+    }
+
+    var rol = String(data.rol || 'alumno').toLowerCase().trim();
+    if (['alumno', 'docente', 'admin', 'academico'].indexOf(rol) < 0) rol = 'alumno';
+    var estado = (rol === 'docente' && data.requiere_aprobacion) ? 'pendiente' : 'activo';
+
+    var uuid = 'USR-' + Utilities.getUuid();
+    var salt = Utilities.getUuid().replace(/-/g, '');
+    var hash = cvAuthHash(password, salt);
+    var nowIso = new Date().toISOString();
+    var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+    var expiresIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString();
+
+    var userSheet = ss.getSheetByName('Usuarios');
+    var rowData = [
+      uuid, uuid, cedula, nombre, apellido, email, cvAuthSanitizeText(data.telefono, 40),
+      rol, estado, hash, salt, cvAuthSanitizeText(data.grado, 100), cvAuthSanitizeText(data.carrera, 150),
+      cvAuthSanitizeText(data.seccion, 50), cvAuthSanitizeText(data.foto || data.foto_url, 500),
+      nowIso, nowIso, nowIso, token, expiresIso
+    ];
+    userSheet.appendRow(rowData);
+
+    // Sincronizar con RegistroAlumnos y Roles para compatibilidad total con reportes y catálogos
+    var alSheet = ss.getSheetByName('RegistroAlumnos');
+    if (alSheet) {
+      var alData = alSheet.getDataRange().getValues();
+      var foundAl = false;
+      for (var a = 1; a < alData.length; a++) {
+        if (cvAuthNormalizeCedula(alData[a][0]) === cedula) { foundAl = true; break; }
+      }
+      if (!foundAl) {
+        alSheet.appendRow([cedula, nombre, apellido, email, data.grado || '', data.carrera || '', data.seccion || '', nowIso]);
+      }
+    }
+
+    var rolSheet = ss.getSheetByName('Roles');
+    if (rolSheet) {
+      var rData = rolSheet.getDataRange().getValues();
+      var foundR = false;
+      for (var r = 1; r < rData.length; r++) {
+        if (cvAuthNormalizeCedula(rData[r][0]) === cedula && String(rData[r][2]).toLowerCase() === rol) {
+          foundR = true; break;
+        }
+      }
+      if (!foundR) {
+        rolSheet.appendRow([cedula, nombre + ' ' + apellido, rol, data.carrera || '', data.seccion || '', data.asignatura || '', 'activo', nowIso, 'auto-registro']);
+      }
+    }
+
+    // Registrar sesión activa
+    var sesSheet = ss.getSheetByName('Sesiones');
+    if (sesSheet) {
+      sesSheet.appendRow([token, cedula, rol, nowIso, expiresIso, 'activo', data.ip || '', data.dispositivo || '']);
+    }
+
+    try {
+      var cache = CacheService.getScriptCache();
+      cache.put('cv-session-' + cvDocenteHash(token), JSON.stringify({ cedula: cedula, rol: rol, expires_at: expiresIso }), 21600);
+    } catch(cx) {}
+
+    SpreadsheetApp.flush();
+
+    var safeUser = {
+      id: uuid, uuid: uuid, cedula: cedula, nombre: nombre, apellido: apellido,
+      email: email, telefono: data.telefono || '', rol: rol, estado: estado,
+      grado: data.grado || '', carrera: data.carrera || '', seccion: data.seccion || '',
+      foto_url: data.foto || data.foto_url || '', created_at: nowIso, updated_at: nowIso,
+      roles: [{ rol: rol, carrera: data.carrera || '', seccion: data.seccion || '', estado: 'activo' }]
+    };
+
+    return {
+      ok: true,
+      status: 'Éxito',
+      mensaje: 'Usuario registrado correctamente.',
+      token: token,
+      token_expires: expiresIso,
+      user: safeUser
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cvAuthLogin(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var cedula = cvAuthNormalizeCedula(data.cedula || data.username);
+  var password = String(data.password || '').trim();
+
+  if (!cedula || !password) {
+    return { ok: false, error: 'Debes ingresar tu cédula y contraseña.' };
+  }
+
+  var user = cvAuthFindUser(ss, cedula);
+  if (!user) {
+    return { ok: false, error: 'Cédula o contraseña incorrecta.' };
+  }
+
+  // Estado de cuenta
+  var estado = String(user.estado || 'activo').toLowerCase();
+  if (estado === 'inactivo') {
+    return { ok: false, error: 'Tu cuenta está inactiva. Contacta al administrador.' };
+  }
+  if (estado === 'bloqueado') {
+    return { ok: false, error: 'Tu cuenta ha sido bloqueada por seguridad. Contacta al administrador.' };
+  }
+  if (estado === 'pendiente') {
+    return { ok: false, error: 'Tu solicitud de cuenta está pendiente de aprobación institucional.' };
+  }
+
+  // Verificación de credenciales
+  var passValid = false;
+  var mustChange = false;
+
+  if (user.password_hash && user.salt) {
+    var expectedHash = cvAuthHash(password, user.salt);
+    passValid = cvDocenteEqual(user.password_hash, expectedHash);
+  } else {
+    // Cuenta heredada / migración transparente: verificar fórmula institucional
+    var n = (user.nombre || '').trim().split(/\s+/)[0] || '';
+    var a = (user.apellido || '').trim().split(/\s+/)[0] || '';
+    var formula = (n.charAt(0).toUpperCase() + a.charAt(0).toLowerCase() + cedula + '*');
+    if (password === formula || password === (cedula + '*')) {
+      passValid = true;
+      mustChange = true;
+    }
+  }
+
+  if (!passValid) {
+    return { ok: false, error: 'Cédula o contraseña incorrecta.' };
+  }
+
+  // Si fue migración heredada exitosa, persistir el hash de inmediato en Usuarios
+  var salt = user.salt;
+  var hash = user.password_hash;
+  if (!salt || !hash) {
+    salt = Utilities.getUuid().replace(/-/g, '');
+    hash = cvAuthHash(password, salt);
+    mustChange = true;
+    try {
+      var uSheet = ss.getSheetByName('Usuarios');
+      var nowIso = new Date().toISOString();
+      if (user._row) {
+        var hCols = uSheet.getRange(1, 1, 1, uSheet.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
+        var colPass = hCols.indexOf('password_hash');
+        var colSalt = hCols.indexOf('salt');
+        if (colPass >= 0) uSheet.getRange(user._row, colPass + 1).setValue(hash);
+        if (colSalt >= 0) uSheet.getRange(user._row, colSalt + 1).setValue(salt);
+      } else {
+        var rowMig = [
+          user.uuid || ('USR-' + cedula), user.uuid || ('USR-' + cedula), cedula,
+          user.nombre, user.apellido, user.email || '', user.telefono || '',
+          user.rol || 'alumno', 'activo', hash, salt, user.grado || '', user.carrera || '',
+          user.seccion || '', '', nowIso, nowIso, nowIso, '', ''
+        ];
+        uSheet.appendRow(rowMig);
+      }
+    } catch(mx) {}
+  }
+
+  // Generar token seguro
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  var expiresIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString();
+  var nowIso = new Date().toISOString();
+
+  // Guardar sesión en Sesiones y Cache
+  var sesSheet = ss.getSheetByName('Sesiones');
+  if (sesSheet) {
+    sesSheet.appendRow([token, cedula, user.rol || 'alumno', nowIso, expiresIso, 'activo', data.ip || '', data.dispositivo || '']);
+  }
+
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.put('cv-session-' + cvDocenteHash(token), JSON.stringify({ cedula: cedula, rol: user.rol || 'alumno', expires_at: expiresIso }), 21600);
+  } catch(cx) {}
+
+  // Actualizar LastLogin y Token en Usuarios si está presente
+  try {
+    if (user._row) {
+      var uSheet2 = ss.getSheetByName('Usuarios');
+      var hCols2 = uSheet2.getRange(1, 1, 1, uSheet2.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
+      var colLog = hCols2.indexOf('last_login');
+      var colTok = hCols2.indexOf('token_actual');
+      var colExp = hCols2.indexOf('token_expires');
+      if (colLog >= 0) uSheet2.getRange(user._row, colLog + 1).setValue(nowIso);
+      if (colTok >= 0) uSheet2.getRange(user._row, colTok + 1).setValue(token);
+      if (colExp >= 0) uSheet2.getRange(user._row, colExp + 1).setValue(expiresIso);
+    }
+  } catch(ux) {}
+
+  // Roles activos de la persona
+  var rolesActivos = obtenerRoles(ss, cedula);
+  if (!rolesActivos || !rolesActivos.length) {
+    rolesActivos = [{ cedula: cedula, rol: user.rol || 'alumno', estado: 'activo', carrera: user.carrera || '', seccion: user.seccion || '' }];
+  }
+
+  var safeUser = cvAuthSanitizeUser(user);
+  safeUser.must_change_password = mustChange ? 1 : 0;
+  safeUser.roles = rolesActivos;
+
+  return {
+    ok: true,
+    status: 'Éxito',
+    token: token,
+    token_expires: expiresIso,
+    user: safeUser
+  };
+}
+
+function cvAuthValidateSession(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var token = String(data.token || '').trim();
+  if (!token) return { ok: false, valid: false, error: 'Token de sesión no proporcionado.' };
+
+  var cedula = '';
+  var rol = '';
+  var expiresAt = '';
+
+  // 1. Intentar Caché
+  try {
+    var cache = CacheService.getScriptCache();
+    var cachedStr = cache.get('cv-session-' + cvDocenteHash(token));
+    if (cachedStr) {
+      var cObj = JSON.parse(cachedStr);
+      if (new Date(cObj.expires_at) > new Date()) {
+        cedula = cObj.cedula;
+        rol = cObj.rol;
+        expiresAt = cObj.expires_at;
+      }
+    }
+  } catch(cx) {}
+
+  // 2. Si no está en caché, revisar hoja Sesiones
+  if (!cedula) {
+    var sesSheet = ss.getSheetByName('Sesiones');
+    if (sesSheet) {
+      var sData = sesSheet.getDataRange().getValues();
+      for (var i = sData.length - 1; i >= 1; i--) {
+        if (String(sData[i][0]) === token) {
+          var st = String(sData[i][5] || 'activo').toLowerCase();
+          var exp = new Date(sData[i][4]);
+          if (st === 'activo' && exp > new Date()) {
+            cedula = cvAuthNormalizeCedula(sData[i][1]);
+            rol = String(sData[i][2] || 'alumno');
+            expiresAt = exp.toISOString();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!cedula) {
+    return { ok: false, valid: false, error: 'Sesión inválida o expirada. Ingresa nuevamente.' };
+  }
+
+  var user = cvAuthFindUser(ss, cedula);
+  if (!user || user.estado === 'inactivo' || user.estado === 'bloqueado') {
+    return { ok: false, valid: false, error: 'Usuario no disponible o desactivado.' };
+  }
+
+  var safe = cvAuthSanitizeUser(user);
+  safe.roles = obtenerRoles(ss, cedula);
+
+  return {
+    ok: true,
+    valid: true,
+    cedula: cedula,
+    rol: user.rol || rol,
+    user: safe
+  };
+}
+
+function cvAuthLogout(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var token = String(data.token || '').trim();
+  if (token) {
+    try {
+      var cache = CacheService.getScriptCache();
+      cache.remove('cv-session-' + cvDocenteHash(token));
+    } catch(cx) {}
+
+    var sesSheet = ss.getSheetByName('Sesiones');
+    if (sesSheet) {
+      var sData = sesSheet.getDataRange().getValues();
+      for (var i = 1; i < sData.length; i++) {
+        if (String(sData[i][0]) === token) {
+          sesSheet.getRange(i + 1, 6).setValue('revocado');
+        }
+      }
+    }
+  }
+  return { ok: true, status: 'Éxito', mensaje: 'Sesión cerrada exitosamente.' };
+}
+
+function cvAuthGetProfile(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var cedula = cvAuthNormalizeCedula(data.cedula);
+  if (!cedula && data.token) {
+    var ses = cvAuthValidateSession(ss, data);
+    if (ses && ses.valid && ses.user) return { ok: true, user: ses.user };
+  }
+  if (!cedula) return { ok: false, error: 'Cédula no proporcionada.' };
+  var user = cvAuthFindUser(ss, cedula);
+  if (!user) return { ok: false, error: 'Usuario no encontrado.' };
+  var safe = cvAuthSanitizeUser(user);
+  safe.roles = obtenerRoles(ss, cedula);
+  return { ok: true, user: safe };
+}
+
+function cvAuthUpdateProfile(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Servidor ocupado. Reintenta en unos momentos.');
+
+  try {
+    var cedula = cvAuthNormalizeCedula(data.cedula);
+    if (!cedula) throw new Error('Cédula no proporcionada.');
+    var user = cvAuthFindUser(ss, cedula);
+    if (!user) throw new Error('Usuario no encontrado.');
+
+    // Solo se permite editar datos personales: nombre, apellido, email, telefono, foto_url
+    var nombre = data.nombre !== undefined ? cvAuthSanitizeText(data.nombre, 100).toUpperCase() : user.nombre;
+    var apellido = data.apellido !== undefined ? cvAuthSanitizeText(data.apellido, 100).toUpperCase() : user.apellido;
+    var email = data.email !== undefined ? cvAuthNormalizeEmail(data.email) : user.email;
+    var telefono = data.telefono !== undefined ? cvAuthSanitizeText(data.telefono, 40) : user.telefono;
+    var foto = data.foto || data.foto_url || user.foto_url || '';
+    var nowIso = new Date().toISOString();
+
+    if (email && email !== user.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('El correo electrónico no es válido.');
+      var allUsers = cvAuthGetAllUsers(ss);
+      var emailDup = allUsers.some(function(u) {
+        return cvAuthNormalizeCedula(u.cedula) !== cedula && cvAuthNormalizeEmail(u.email) === email;
+      });
+      if (emailDup) throw new Error('El correo ' + email + ' ya está registrado en otra cuenta.');
+    }
+
+    var uSheet = ss.getSheetByName('Usuarios');
+    if (user._row) {
+      var hCols = uSheet.getRange(1, 1, 1, uSheet.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
+      var mapSet = {
+        'nombre': nombre, 'apellido': apellido, 'email': email,
+        'telefono': telefono, 'foto_url': foto, 'updated_at': nowIso
+      };
+      Object.keys(mapSet).forEach(function(k) {
+        var idx = hCols.indexOf(k);
+        if (idx >= 0) uSheet.getRange(user._row, idx + 1).setValue(mapSet[k]);
+      });
+    } else {
+      var rowNew = [
+        user.uuid || ('USR-' + cedula), user.uuid || ('USR-' + cedula), cedula,
+        nombre, apellido, email, telefono, user.rol || 'alumno', 'activo',
+        user.password_hash || '', user.salt || '', user.grado || '', user.carrera || '',
+        user.seccion || '', foto, nowIso, nowIso, nowIso, '', ''
+      ];
+      uSheet.appendRow(rowNew);
+    }
+
+    // Actualizar también en RegistroAlumnos para consistencia
+    var alSheet = ss.getSheetByName('RegistroAlumnos');
+    if (alSheet) {
+      var alData = alSheet.getDataRange().getValues();
+      for (var a = 1; a < alData.length; a++) {
+        if (cvAuthNormalizeCedula(alData[a][0]) === cedula) {
+          alSheet.getRange(a + 1, 2).setValue(nombre);
+          alSheet.getRange(a + 1, 3).setValue(apellido);
+          alSheet.getRange(a + 1, 4).setValue(email);
+          break;
+        }
+      }
+    }
+
+    SpreadsheetApp.flush();
+
+    return {
+      ok: true,
+      status: 'Éxito',
+      mensaje: 'Perfil actualizado correctamente.',
+      user: {
+        cedula: cedula,
+        nombre: nombre,
+        apellido: apellido,
+        email: email,
+        telefono: telefono,
+        foto_url: foto
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cvAuthChangePassword(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Servidor ocupado. Reintenta en unos momentos.');
+
+  try {
+    var cedula = cvAuthNormalizeCedula(data.cedula);
+    var oldPass = String(data.old_password || data.password_actual || '');
+    var newPass = String(data.new_password || data.password_nueva || '');
+
+    if (!cedula) throw new Error('Cédula no proporcionada.');
+    if (!oldPass || !newPass) throw new Error('Debes ingresar la contraseña actual y la nueva contraseña.');
+    if (newPass.length < 6) throw new Error('La nueva contraseña debe tener al menos 6 caracteres.');
+
+    var user = cvAuthFindUser(ss, cedula);
+    if (!user) throw new Error('Usuario no encontrado.');
+
+    // Verificar contraseña actual
+    var oldValid = false;
+    if (user.password_hash && user.salt) {
+      oldValid = cvDocenteEqual(user.password_hash, cvAuthHash(oldPass, user.salt));
+    } else {
+      var n = (user.nombre || '').trim().split(/\s+/)[0] || '';
+      var a = (user.apellido || '').trim().split(/\s+/)[0] || '';
+      var formula = (n.charAt(0).toUpperCase() + a.charAt(0).toLowerCase() + cedula + '*');
+      oldValid = (oldPass === formula || oldPass === (cedula + '*'));
+    }
+
+    if (!oldValid) throw new Error('La contraseña actual es incorrecta.');
+
+    // Generar nuevo salt y hash
+    var newSalt = Utilities.getUuid().replace(/-/g, '');
+    var newHash = cvAuthHash(newPass, newSalt);
+    var nowIso = new Date().toISOString();
+
+    var uSheet = ss.getSheetByName('Usuarios');
+    if (user._row) {
+      var hCols = uSheet.getRange(1, 1, 1, uSheet.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
+      var colPass = hCols.indexOf('password_hash');
+      var colSalt = hCols.indexOf('salt');
+      var colUpd = hCols.indexOf('updated_at');
+      if (colPass >= 0) uSheet.getRange(user._row, colPass + 1).setValue(newHash);
+      if (colSalt >= 0) uSheet.getRange(user._row, colSalt + 1).setValue(newSalt);
+      if (colUpd >= 0) uSheet.getRange(user._row, colUpd + 1).setValue(nowIso);
+    } else {
+      var rowNew = [
+        user.uuid || ('USR-' + cedula), user.uuid || ('USR-' + cedula), cedula,
+        user.nombre, user.apellido, user.email || '', user.telefono || '',
+        user.rol || 'alumno', 'activo', newHash, newSalt, user.grado || '', user.carrera || '',
+        user.seccion || '', user.foto_url || '', nowIso, nowIso, nowIso, '', ''
+      ];
+      uSheet.appendRow(rowNew);
+    }
+
+    SpreadsheetApp.flush();
+
+    return {
+      ok: true,
+      status: 'Éxito',
+      mensaje: 'Contraseña actualizada correctamente.'
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cvAuthRecoverAccess(ss, data) {
+  data = data || {};
+  cvAuthEnsureSheets(ss);
+  var cedula = cvAuthNormalizeCedula(data.cedula);
+  var email = cvAuthNormalizeEmail(data.email);
+
+  if (!cedula) return { ok: false, error: 'Ingresa tu número de cédula.' };
+
+  var user = cvAuthFindUser(ss, cedula);
+  if (!user) {
+    return { ok: false, error: 'La cédula ingresada no se encuentra registrada.' };
+  }
+
+  if (email && user.email && cvAuthNormalizeEmail(user.email) !== email) {
+    return { ok: false, error: 'El correo electrónico no coincide con el registrado para esta cédula.' };
+  }
+
+  var targetEmail = email || user.email;
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  var provisoria = '';
+  for (var i = 0; i < 8; i++) {
+    provisoria += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  var salt = Utilities.getUuid().replace(/-/g, '');
+  var hash = cvAuthHash(provisoria, salt);
+  var nowIso = new Date().toISOString();
+
+  var uSheet = ss.getSheetByName('Usuarios');
+  if (user._row) {
+    var hCols = uSheet.getRange(1, 1, 1, uSheet.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
+    var colPass = hCols.indexOf('password_hash');
+    var colSalt = hCols.indexOf('salt');
+    var colUpd = hCols.indexOf('updated_at');
+    if (colPass >= 0) uSheet.getRange(user._row, colPass + 1).setValue(hash);
+    if (colSalt >= 0) uSheet.getRange(user._row, colSalt + 1).setValue(salt);
+    if (colUpd >= 0) uSheet.getRange(user._row, colUpd + 1).setValue(nowIso);
+  } else {
+    var rowNew = [
+      user.uuid || ('USR-' + cedula), user.uuid || ('USR-' + cedula), cedula,
+      user.nombre, user.apellido, user.email || targetEmail || '', user.telefono || '',
+      user.rol || 'alumno', 'activo', hash, salt, user.grado || '', user.carrera || '',
+      user.seccion || '', user.foto_url || '', nowIso, nowIso, nowIso, '', ''
+    ];
+    uSheet.appendRow(rowNew);
+  }
+
+  SpreadsheetApp.flush();
+
+  var enviado = false;
+  if (targetEmail) {
+    try {
+      var r = enviarProvisoria(ss, { email: targetEmail, nombre: user.nombre, password: provisoria });
+      enviado = !!(r && r.ok);
+    } catch(ex) { enviado = false; }
+  }
+
+  if (enviado) {
+    return {
+      ok: true,
+      status: 'Éxito',
+      enviado: true,
+      mensaje: 'Se ha enviado una contraseña provisoria a tu correo electrónico registrado (' + targetEmail.slice(0, 3) + '***). Cámbiala al ingresar.'
+    };
+  } else {
+    return {
+      ok: true,
+      status: 'Éxito',
+      enviado: false,
+      mensaje: 'Se ha restablecido tu acceso. Comunícate con Secretaría Académica para obtener tu clave provisoria institucional.'
+    };
+  }
+}
+
+function cvAlumnosPorCarreraSeccion(ss, carrera, seccion) {
+  var list = [];
+  var seen = {};
+  carrera = String(carrera || '').toLowerCase().trim();
+  seccion = String(seccion || '').toLowerCase().trim();
+
+  var uSheet = ss.getSheetByName('Usuarios');
+  if (uSheet && uSheet.getLastRow() > 1) {
+    var uData = uSheet.getDataRange().getValues();
+    var h = uData[0].map(function(x) { return String(x).toLowerCase().trim(); });
+    var colCed = h.indexOf('cedula');
+    var colNom = h.indexOf('nombre');
+    var colApe = h.indexOf('apellido');
+    var colCar = h.indexOf('carrera');
+    var colSec = h.indexOf('seccion');
+    var colRol = h.indexOf('rol');
+    var colEst = h.indexOf('estado');
+
+    for (var i = 1; i < uData.length; i++) {
+      var r = uData[i];
+      var ced = cvAuthNormalizeCedula(r[colCed]);
+      if (!ced || seen[ced]) continue;
+      var rol = colRol >= 0 ? String(r[colRol]).toLowerCase().trim() : 'alumno';
+      if (rol !== 'alumno') continue;
+      var est = colEst >= 0 ? String(r[colEst]).toLowerCase().trim() : 'activo';
+      if (est === 'inactivo' || est === 'bloqueado') continue;
+      var uCar = colCar >= 0 ? String(r[colCar]).toLowerCase().trim() : '';
+      var uSec = colSec >= 0 ? String(r[colSec]).toLowerCase().trim() : '';
+      if (carrera && uCar && uCar !== carrera) continue;
+      if (seccion && uSec && uSec !== seccion) continue;
+
+      seen[ced] = true;
+      var nom = colNom >= 0 ? String(r[colNom] || '') : '';
+      var ape = colApe >= 0 ? String(r[colApe] || '') : '';
+      list.push({
+        id: ced,
+        cedula: ced,
+        nombre: (nom + ' ' + ape).trim() || nom,
+        nombre_completo: (nom + ' ' + ape).trim() || nom,
+        carrera: colCar >= 0 ? r[colCar] : '',
+        seccion: colSec >= 0 ? r[colSec] : '',
+        rol: 'alumno'
+      });
+    }
+  }
+
+  var alSheet = ss.getSheetByName('RegistroAlumnos');
+  if (alSheet && alSheet.getLastRow() > 1) {
+    var alData = alSheet.getDataRange().getValues();
+    for (var j = 1; j < alData.length; j++) {
+      var rAl = alData[j];
+      var cedAl = cvAuthNormalizeCedula(rAl[0]);
+      if (!cedAl || seen[cedAl]) continue;
+      var carAl = String(rAl[5] || '').toLowerCase().trim();
+      var secAl = String(rAl[6] || '').toLowerCase().trim();
+      if (carrera && carAl && carAl !== carrera) continue;
+      if (seccion && secAl && secAl !== seccion) continue;
+
+      seen[cedAl] = true;
+      var nAl = String(rAl[1] || '').trim();
+      var aAl = String(rAl[2] || '').trim();
+      list.push({
+        id: cedAl,
+        cedula: cedAl,
+        nombre: (nAl + ' ' + aAl).trim() || nAl,
+        nombre_completo: (nAl + ' ' + aAl).trim() || nAl,
+        carrera: rAl[5] || '',
+        seccion: rAl[6] || '',
+        rol: 'alumno'
+      });
+    }
+  }
+
+  return { ok: true, status: 'Éxito', alumnos: list, data: list };
+}
+
+function cvListarUsuarios(ss) {
+  var raw = cvAuthGetAllUsers(ss);
+  var list = raw.map(function(u) {
+    var s = cvAuthSanitizeUser(u);
+    s.roles = [{ rol: s.rol || 'alumno', carrera: s.carrera || '', seccion: s.seccion || '' }];
+    return s;
+  });
+  return { ok: true, status: 'Éxito', usuarios: list, data: list };
+}
+
+function cvListarNotas(ss, cedula, asignatura) {
+  var sheetNotas = ss.getSheetByName('Notas');
+  if (!sheetNotas) return { ok: true, data: [] };
+  var dataNotas = sheetNotas.getDataRange().getValues();
+  var list = [];
+  var cFiltro = cvAuthNormalizeCedula(cedula);
+  var aFiltro = String(asignatura || '').toLowerCase().trim();
+
+  for (var j = 1; j < dataNotas.length; j++) {
+    var row = dataNotas[j];
+    var c = cvAuthNormalizeCedula(row[0]);
+    if (!c) continue;
+    if (cFiltro && c !== cFiltro) continue;
+    var asig = String(row[6] || '').toLowerCase().trim();
+    if (aFiltro && asig && asig !== aFiltro) continue;
+
+    list.push({
+      cedula: c,
+      nombre: row[1] || '',
+      asistencia: row[2] || 0,
+      parcial1: row[3] || 0,
+      parcial2: row[4] || 0,
+      final: row[5] || 0,
+      asignatura: row[6] || '',
+      carrera: row[7] || '',
+      seccion: row[8] || ''
+    });
+  }
+  return { ok: true, data: list };
+}
+
+function cvGuardarNotasAsignatura(ss, data) {
+  data = data || {};
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Servidor ocupado. Intenta de nuevo.');
+
+  try {
+    var sheetNotas = ss.getSheetByName('Notas');
+    if (!sheetNotas) {
+      sheetNotas = ss.insertSheet('Notas');
+      sheetNotas.appendRow(['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final', 'Asignatura', 'Carrera', 'Sección']);
+    }
+
+    var notas = data.notas || data.grades || data.alumnos || [];
+    var asig = data.asignatura || data.subject || '';
+    var car = data.carrera || '';
+    var sec = data.seccion || '';
+
+    if (!Array.isArray(notas) && typeof notas === 'object') {
+      var arr = [];
+      Object.keys(notas).forEach(function(c) {
+        var item = notas[c];
+        item.cedula = c;
+        arr.push(item);
+      });
+      notas = arr;
+    }
+
+    var existingData = sheetNotas.getDataRange().getValues();
+    var rowMap = {};
+    for (var i = 1; i < existingData.length; i++) {
+      var k = cvAuthNormalizeCedula(existingData[i][0]) + '_' + String(existingData[i][6] || '').toLowerCase().trim();
+      rowMap[k] = i + 1;
+    }
+
+    notas.forEach(function(n) {
+      var ced = cvAuthNormalizeCedula(n.cedula);
+      if (!ced) return;
+      var a = String(n.asignatura || asig || '').toLowerCase().trim();
+      var key = ced + '_' + a;
+      var p1 = n.parcial1 !== undefined ? n.parcial1 : '';
+      var p2 = n.parcial2 !== undefined ? n.parcial2 : '';
+      var fin = n.final !== undefined ? n.final : '';
+      var asist = n.asistencia !== undefined ? n.asistencia : '';
+
+      if (rowMap[key]) {
+        var rIdx = rowMap[key];
+        if (asist !== '') sheetNotas.getRange(rIdx, 3).setValue(asist);
+        if (p1 !== '') sheetNotas.getRange(rIdx, 4).setValue(p1);
+        if (p2 !== '') sheetNotas.getRange(rIdx, 5).setValue(p2);
+        if (fin !== '') sheetNotas.getRange(rIdx, 6).setValue(fin);
+      } else {
+        sheetNotas.appendRow([
+          ced, n.nombre || '', asist || 0, p1 || 0, p2 || 0, fin || 0,
+          n.asignatura || asig, n.carrera || car, n.seccion || sec
+        ]);
+        rowMap[key] = sheetNotas.getLastRow();
+      }
+    });
+
+    SpreadsheetApp.flush();
+    return { ok: true, status: 'Éxito', mensaje: 'Calificaciones guardadas correctamente.' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cvGuardarRespuestasExamen(ss, data) {
+  data = data || {};
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Servidor ocupado. Intenta de nuevo.');
+
+  try {
+    var sheetResp = ss.getSheetByName('RespuestasExamen');
+    if (!sheetResp) {
+      sheetResp = ss.insertSheet('RespuestasExamen');
+      sheetResp.appendRow(['Fecha', 'Cedula', 'Nombre', 'Asignatura', 'Evaluacion', 'Indicador', 'Pregunta', 'RespuestaTexto', 'Correcta', 'Puntaje']);
+      sheetResp.setFrozenRows(1);
+    }
+
+    var cedula = String(data.cedula || '').trim();
+    if (!cedula) throw new Error('Falta la cedula del alumno.');
+    var nombre = data.nombre || '';
+    var asignatura = data.asignatura || '';
+    var evaluacion = data.evaluacion || '';
+    var respuestas = data.respuestas || [];
+    if (!Array.isArray(respuestas)) throw new Error('El formato de respuestas es invalido.');
+
+    var nowIso = new Date().toISOString();
+    var filas = respuestas.map(function(r) {
+      return [
+        nowIso, cedula, nombre, asignatura, evaluacion,
+        r.indicador || '', r.pregunta || '', r.respuesta || '',
+        r.correcta ? 'Si' : 'No', r.puntaje || 0
+      ];
+    });
+
+    if (filas.length > 0) {
+      sheetResp.getRange(sheetResp.getLastRow() + 1, 1, filas.length, filas[0].length).setValues(filas);
+    }
+
+    SpreadsheetApp.flush();
+    return { ok: true, status: 'Exito', mensaje: 'Respuestas registradas correctamente.', total: filas.length };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2163,7 +3218,7 @@ function responderJSON(objeto) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// v06: FOTOS DE PERFIL EN GOOGLE DRIVE
+// v06: FOTOS DE PERFIL EN ALMACENAMIENTO CLOUD
 // Carpeta institucional: https://drive.google.com/drive/folders/1zWbMUeXNRzO6Jzd7UIh1opRtOtgLgQzI
 // - El archivo vive en Drive; en la hoja 'Fotos' solo se guarda la URL corta.
 //   (Un base64 NO cabe en una celda de Sheets: límite 50.000 caracteres.)
@@ -2309,7 +3364,7 @@ function enviarProvisoria(ss, data) {
 }
 
 function diagnosticoSheets(ss) {
-  var nombres = ['RegistroAlumnos', 'Roles', 'Matriculaciones', 'FormulariosCarrera',
+  var nombres = ['Usuarios', 'Sesiones', 'RegistroAlumnos', 'Roles', 'Matriculaciones', 'FormulariosCarrera',
     'FormulariosAlumno', 'AttendanceEvents', 'AttendanceRecords', 'CalendarEvents',
     'Filiales', 'Asignaturas', 'Fotos', 'Secciones', 'Carreras', 'Grados', 'Modalidades'];
   var conteos = {};
@@ -2349,7 +3404,7 @@ function eliminarFotoDrive(ss, data) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// v06.3: INICIALIZACIÓN DE BASE DE DATOS GOOGLE SHEETS
+// v06.3: INICIALIZACIÓN DE BASE DE DATOS CLOUD
 // Crea todas las hojas requeridas con cabeceras correctas.
 // Ejecutar UNA VEZ desde el editor (▶ inicializarBaseDatos) tras publicar.
 // ═══════════════════════════════════════════════════════════════
@@ -2357,6 +3412,10 @@ function eliminarFotoDrive(ss, data) {
 function inicializarBaseDatos() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var creadas = [];
+
+  // 0. Usuarios y Sesiones (v08: gestión central de usuarios, credenciales protegidas y sesiones)
+  asegurarHoja(ss, 'Usuarios', CV_USUARIOS_HEADERS, creadas);
+  asegurarHoja(ss, 'Sesiones', CV_SESIONES_HEADERS, creadas);
 
   // 1. RegistroAlumnos (v06.10: + FechaHora de registro)
   asegurarHoja(ss, 'RegistroAlumnos', ['Cédula', 'Nombre', 'Apellido', 'Email', 'Grado', 'Carrera', 'Sección', 'FechaHora'], creadas);

@@ -101,17 +101,14 @@ document.addEventListener('alpine:init', () => {
         // INICIALIZACIÓN
         // ═══════════════════════════════════════
         async initPanel() {
-            this.userRole = sessionStorage.getItem('rol') || '';
-            // Roles que pueden acceder al panel admin (verificado en servidor en cada API)
-            const rolesPermitidos = ['admin', 'academico', 'admin_filial', 'administrador_plataforma'];
-            if (!rolesPermitidos.includes(this.userRole)) {
-                alert('Acceso denegado. Tu rol (' + (this.userRole || 'sin rol') + ') no entra al panel de administración. Te llevo a tu panel.');
-                window.location.href = this.userRole === 'docente' ? '../docente.html' : '../dashboard.html';
+            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['admin', 'academico', 'admin_filial', 'administrador_plataforma'], currentRolePage: 'admin' })) {
                 return;
             }
-            this.userName = sessionStorage.getItem('current_nombre') || 'Usuario';
+
+            const user = (typeof CenturiaSession !== 'undefined' && CenturiaSession.getUser()) || {};
+            this.userRole = (user.rol || user.role || sessionStorage.getItem('rol') || '').toLowerCase();
+            this.userName = (user.nombre ? (user.nombre + ' ' + (user.apellido || '')).trim() : '') || sessionStorage.getItem('current_nombre') || 'Usuario';
             
-            // Determinar nombre del rol para mostrar
             const rolLabels = {
                 'admin': 'Administrador General',
                 'academico': 'Acceso Académico',
@@ -124,11 +121,15 @@ document.addEventListener('alpine:init', () => {
         },
 
         cerrarSesion() {
-            if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return;
-            sessionStorage.clear();
-            localStorage.removeItem('centuria_remember');
-            localStorage.removeItem('centuria_token');
-            window.location.replace('../dashboard.html');
+            if (typeof centuriaLogout === 'function') {
+                centuriaLogout(true);
+            } else {
+                if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return;
+                sessionStorage.clear();
+                localStorage.removeItem('centuria_auth_token');
+                localStorage.removeItem('centuria_user');
+                window.location.replace('../index.html');
+            }
         },
 
         // ═══════════════════════════════════════
@@ -195,10 +196,7 @@ document.addEventListener('alpine:init', () => {
         // --- Correo remitente de comunicaciones ---
         async cargarRemitente() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=get', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const d = await r.json();
+                const d = await CenturiaAPI.configuracion.get();
                 const c = d.config || {};
                 this.cfgMail = { remitente: c.mail_remitente || '', nombre: c.mail_nombre || '' };
             } catch (e) { console.error('Error cargando remitente:', e); }
@@ -211,14 +209,7 @@ document.addEventListener('alpine:init', () => {
             try {
                 const pares = [['mail_remitente', this.cfgMail.remitente || ''], ['mail_nombre', this.cfgMail.nombre || 'Instituto Superior Centuria']];
                 for (const [clave, valor] of pares) {
-                    const fd = new FormData();
-                    fd.append('clave', clave);
-                    fd.append('valor', valor);
-                    await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=set', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                        body: fd
-                    });
+                    await CenturiaAPI.configuracion.set({ clave, valor });
                 }
                 alert('Remitente guardado. Las provisorias saldrán desde: ' + (this.cfgMail.remitente || '(Gmail del sistema)'));
             } catch (e) { alert('Error de conexión'); }
@@ -228,11 +219,7 @@ document.addEventListener('alpine:init', () => {
             if (!this.cfgMail.remitente) { alert('Primero guarda un mail remitente'); return; }
             if (!confirm('Enviar correo de prueba a ' + this.cfgMail.remitente + '?')) return;
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'configuracion.php?action=test_mail', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const d = await r.json();
+                const d = await CenturiaAPI.configuracion.testMail({ email: this.cfgMail.remitente });
                 alert(d.mensaje || d.error || 'Listo');
             } catch (e) { alert('Error de conexión'); }
         },
@@ -241,15 +228,9 @@ document.addEventListener('alpine:init', () => {
         async cargarCatalogosAdmin() {
             try {
                 const [rc, rs, rg] = await Promise.all([
-                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=carreras', {
-                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                    }).then(r => r.json()).catch(() => ({})),
-                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=secciones', {
-                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                    }).then(r => r.json()).catch(() => ({})),
-                    fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list&tipo=grados', {
-                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                    }).then(r => r.json()).catch(() => ({}))
+                    CenturiaAPI.catalogos.getCarreras().catch(() => ({})),
+                    CenturiaAPI.catalogos.getSecciones().catch(() => ({})),
+                    CenturiaAPI.catalogos.getGrados().catch(() => ({}))
                 ]);
                 this.catalogosCarreras = rc.carreras || rc.items || [];
                 this.catalogosSecciones = rs.secciones || rs.items || [];
@@ -270,10 +251,7 @@ document.addEventListener('alpine:init', () => {
 
         async cargarSolicitudes() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=pending_requests', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
+                const data = await CenturiaAPI.docente.getPendingRequests();
                 this.solicitudes = (data.solicitudes || []).map(s => ({
                     ...s,
                     carrera_aprob: s.carrera_sugerida || s.carrera || '',
@@ -286,17 +264,8 @@ document.addEventListener('alpine:init', () => {
             if (!s.carrera_aprob) { alert('Indica la carrera para aprobar'); return; }
             if (!confirm('Aprobar "' + (s.asignatura_nombre || s.asignatura) + '" a ' + s.docente + ' (' + s.cedula + ') en ' + s.carrera_aprob + (s.seccion_aprob ? ' • ' + s.seccion_aprob : '') + '?')) return;
             try {
-                const fd = new FormData();
-                fd.append('id', s.id);
-                fd.append('carrera', s.carrera_aprob || '');
-                fd.append('seccion', s.seccion_aprob || '');
-                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=approve_request', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                const data = await CenturiaAPI.docente.approveRequest(s.cedula, CenturiaAPI.getToken());
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     alert(data.mensaje || 'Aprobada');
                     await this.cargarSolicitudes();
                 } else {
@@ -308,15 +277,8 @@ document.addEventListener('alpine:init', () => {
         async rechazarSolicitud(s) {
             if (!confirm('¿Rechazar la solicitud de ' + s.docente + ' (' + (s.asignatura_nombre || s.asignatura) + ')?')) return;
             try {
-                const fd = new FormData();
-                fd.append('id', s.id);
-                const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=reject_request', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                const data = await CenturiaAPI.docente.rejectRequest(s.cedula, 'Rechazada por administración', CenturiaAPI.getToken());
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     await this.cargarSolicitudes();
                 } else {
                     alert('Error: ' + (data.error || data.mensaje));
@@ -326,13 +288,7 @@ document.addEventListener('alpine:init', () => {
 
         async cargarAdminsPorFilial() {
             try {
-                const response = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=admins-by-filial', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await response.json();
-                if (!response.ok || data.success === false) {
-                    throw new Error(data.error || 'No se pudieron cargar los administradores por filial');
-                }
+                const data = await CenturiaAPI.filiales.adminsByFilial();
                 this.adminsPorFilial = data.admins || [];
             } catch (error) {
                 this.adminsPorFilial = [];
@@ -343,11 +299,8 @@ document.addEventListener('alpine:init', () => {
         // --- PENDIENTES ---
         async cargarPendientes() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=pendientes', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
-                this.pendientes = (data.pendientes || []).map(p => ({ ...p, _rolAsignar: 'alumno' }));
+                const data = await CenturiaAPI.usuarios.getPending();
+                this.pendientes = (data.pendientes || data.solicitudes || []).map(p => ({ ...p, _rolAsignar: 'alumno' }));
             } catch (e) { console.error('Error cargando pendientes:', e); }
         },
 
@@ -359,21 +312,18 @@ document.addEventListener('alpine:init', () => {
             try {
                 const fd = new FormData();
                 fd.append('cedula', f.cedula);
-                fd.append('nombre', f.nombre.toUpperCase());
-                fd.append('apellido', f.apellido.toUpperCase());
-                fd.append('email', f.email);
-                fd.append('telefono', f.telefono);
-                fd.append('grado', f.grado);
-                fd.append('carrera', f.carrera.toUpperCase());
-                fd.append('seccion', f.seccion);
-                fd.append('rol', f.rol);
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=registrar_directo', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.usuarios.registerDirect({
+                    cedula: f.cedula,
+                    nombre: f.nombre.toUpperCase(),
+                    apellido: f.apellido.toUpperCase(),
+                    email: f.email,
+                    telefono: f.telefono,
+                    grado: f.grado,
+                    carrera: f.carrera.toUpperCase(),
+                    seccion: f.seccion,
+                    rol: f.rol
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     this.formPendiente = { cedula: '', nombre: '', apellido: '', email: '', telefono: '', grado: '', carrera: '', seccion: '', rol: 'alumno' };
                     this.showRegistroRapido = false;
                     await this.cargarPendientes();
@@ -389,16 +339,16 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = 'Aprobando usuario...';
             try {
-                const fd = new FormData();
-                fd.append('id', p.id);
-                fd.append('rol', p._rolAsignar || 'alumno');
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=aprobar', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.usuarios.approve({
+                    id: p.id,
+                    cedula: p.cedula,
+                    nombre: p.nombre,
+                    rol: p._rolAsignar || 'alumno',
+                    carrera: p.carrera || '',
+                    seccion: p.seccion || '',
+                    admin_key: CenturiaAPI.getToken()
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     alert('Aprobado. Pass: ' + (data.password_generado || 'ver consola'));
                     await Promise.all([this.cargarPendientes(), this.cargarUsuarios()]);
                 } else {
@@ -412,12 +362,11 @@ document.addEventListener('alpine:init', () => {
             if (!confirm('¿Rechazar registro de ' + p.nombre + '?')) return;
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('id', p.id);
-                await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=rechazar', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                await CenturiaAPI.usuarios.reject({
+                    id: p.id,
+                    cedula: p.cedula,
+                    motivo: 'Rechazado por administración',
+                    admin_key: CenturiaAPI.getToken()
                 });
                 await this.cargarPendientes();
             } catch (e) { console.error(e); }
@@ -427,11 +376,8 @@ document.addEventListener('alpine:init', () => {
         // --- USUARIOS ---
         async cargarUsuarios() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
-                this.usuarios = data.usuarios || [];
+                const data = await CenturiaAPI.usuarios.list();
+                this.usuarios = data.usuarios || data.data || [];
                 // Recalcular stats para reportes
                 const unicas = new Set(this.usuarios.map(u => u.cedula));
                 const rolesFlat = [];
@@ -525,25 +471,20 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = 'Guardando...';
             try {
-                const fd = new FormData();
-                fd.append('id', this.selectedUser.id);
-                fd.append('firstname', this.formUsuario.firstname.toUpperCase());
-                fd.append('lastname', this.formUsuario.lastname.toUpperCase());
-                fd.append('email', this.formUsuario.email);
-                fd.append('telefono', this.formUsuario.telefono);
-                fd.append('grado', this.formUsuario.grado);
-                fd.append('carrera', this.formUsuario.carrera.toUpperCase());
-                fd.append('seccion', this.formUsuario.seccion);
-                fd.append('estado', this.formUsuario.estado);
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=update', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.usuarios.update({
+                    id: this.selectedUser.id,
+                    cedula: this.selectedUser.cedula,
+                    firstname: this.formUsuario.firstname.toUpperCase(),
+                    lastname: this.formUsuario.lastname.toUpperCase(),
+                    email: this.formUsuario.email,
+                    telefono: this.formUsuario.telefono,
+                    grado: this.formUsuario.grado,
+                    carrera: this.formUsuario.carrera.toUpperCase(),
+                    seccion: this.formUsuario.seccion,
+                    estado: this.formUsuario.estado
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     await this.cargarUsuarios();
-                    // Re-seleccionar usuario actualizado
                     const updated = this.usuarios.find(u => u.id === this.selectedUser.id);
                     if (updated) this.seleccionarUsuario(updated);
                 } else {
@@ -560,34 +501,26 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = 'Generando provisoria...';
             try {
-                const fd = new FormData();
-                fd.append('user_id', usuario.id);
-                const r = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=reset_password', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                const data = await r.json();
-                if (!(data.ok || data.success)) {
-                    alert('Error: ' + (data.error || 'No se pudo resetear'));
+                const data = await CenturiaAPI.usuarios.resetPassword(usuario.id || usuario.cedula);
+                if (!(data.ok || data.success || data.status === 'Éxito' || data.status === 'Exito')) {
+                    alert('Error: ' + (data.error || data.mensaje || 'No se pudo resetear'));
                     return;
                 }
-                // Intentar envío por Gmail del sistema si PHP no pudo
                 let mailedMsg = data.email_enviado || '';
                 if (!data.mailed && typeof gasEnviarProvisoria === 'function' && usuario.email) {
                     try {
                         const g = await gasEnviarProvisoria(
                             usuario.email, usuario.nombre_completo,
-                            data.new_password, this.cfgMail.remitente, this.cfgMail.nombre
+                            data.new_password || data.password, this.cfgMail.remitente, this.cfgMail.nombre
                         );
-                        if (g && g.ok) mailedMsg = 'Enviada por Google a ' + usuario.email;
+                        if (g && g.ok) mailedMsg = 'Enviada por servidor de correo a ' + usuario.email;
                     } catch (e) {}
                 }
-                alert('Provisoria generada: ' + (data.new_password || '?') +
+                alert('Provisoria generada: ' + (data.new_password || data.password || 'Consultar admin') +
                     '\n' + mailedMsg +
                     '\nEl usuario deberá cambiarla al entrar (seguridad).');
                 await this.cargarUsuarios();
-            } catch (e) { console.error(e); alert('Error de conexion.'); }
+            } catch (e) { console.error(e); alert('Error de conexión.'); }
             finally { this.loading = false; }
         },
 
@@ -597,19 +530,16 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = 'Asignando rol...';
             try {
-                const fd = new FormData();
-                fd.append('user_id', this.selectedUser.id);
-                fd.append('rol', this.nuevoRol.rol);
-                fd.append('carrera', this.nuevoRol.carrera.toUpperCase());
-                fd.append('seccion', this.nuevoRol.seccion);
-                fd.append('asignatura', this.nuevoRol.asignatura);
-                const r = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=add_role', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.usuarios.addRole({
+                    user_id: this.selectedUser.id,
+                    cedula: this.selectedUser.cedula,
+                    nombre: this.selectedUser.nombre_completo,
+                    rol: this.nuevoRol.rol,
+                    carrera: this.nuevoRol.carrera.toUpperCase(),
+                    seccion: this.nuevoRol.seccion,
+                    asignatura: this.nuevoRol.asignatura
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     this.nuevoRol = { rol: 'alumno', carrera: '', seccion: '', asignatura: '' };
                     await this.cargarUsuarios();
                     const updated = this.usuarios.find(u => u.id === this.selectedUser.id);
@@ -632,12 +562,11 @@ document.addEventListener('alpine:init', () => {
             }
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('role_id', r.id);
-                await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=remove_role', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                await CenturiaAPI.usuarios.removeRole({
+                    role_id: r.id,
+                    cedula: this.selectedUser ? this.selectedUser.cedula : '',
+                    rol: r.rol,
+                    carrera: r.carrera
                 });
                 await this.cargarUsuarios();
                 const updated = this.usuarios.find(u => u.id === this.selectedUser?.id);
@@ -649,10 +578,7 @@ document.addEventListener('alpine:init', () => {
         // --- ROLES CONFIG ---
         async cargarRolesConfig() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'roles.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
+                const data = await CenturiaAPI.roles.list();
                 this.rolesConfig = data.roles || [];
             } catch (e) { console.error('Error cargando roles config:', e); }
         },
@@ -662,22 +588,16 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = isEdit ? 'Actualizando rol...' : 'Creando rol...';
             try {
-                const fd = new FormData();
-                fd.append('nombre', this.formRol.nombre);
-                fd.append('descripcion', this.formRol.descripcion);
-                fd.append('permisos', JSON.stringify(this.formRol.permisos));
-                fd.append('color', this.formRol.color);
-                fd.append('icono', this.formRol.icono);
-                fd.append('base_rol', this.formRol.base_rol || '');
-                const action = isEdit ? 'update' : 'create';
-                if (isEdit) fd.append('id', this.editRol.id);
-                const r = await fetch(CenturiaAPI.baseUrl + 'roles.php?action=' + action, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.roles.save({
+                    id: isEdit ? this.editRol.id : '',
+                    nombre: this.formRol.nombre,
+                    descripcion: this.formRol.descripcion,
+                    permisos: JSON.stringify(this.formRol.permisos),
+                    color: this.formRol.color,
+                    icono: this.formRol.icono,
+                    base_rol: this.formRol.base_rol || ''
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     this.cancelarEditRol();
                     await this.cargarRolesConfig();
                 } else {
@@ -710,13 +630,7 @@ document.addEventListener('alpine:init', () => {
             if (!confirm('¿Desactivar el rol "' + r.nombre + '"?')) return;
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('id', r.id);
-                await fetch(CenturiaAPI.baseUrl + 'roles.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
+                await CenturiaAPI.roles.delete(r.id);
                 await this.cargarRolesConfig();
             } catch (e) { console.error(e); }
             finally { this.loading = false; }
@@ -737,11 +651,8 @@ document.addEventListener('alpine:init', () => {
         async cargarAsignaturas() {
             try {
                 const f = this.filtroEstadoAsig || 'todas';
-                const q = f === 'todas' ? '' : ('&con_docente=' + (f === 'activo' ? 'si' : 'no'));
-                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list&estado=todas' + q, {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
+                const q = f === 'todas' ? '' : (f === 'activo' ? 'si' : 'no');
+                const data = await CenturiaAPI.asignaturas.list({ estado: 'todas', con_docente: q });
                 this.asignaturas = data.asignaturas || data.items || [];
             } catch (e) { console.error('Error cargando asignaturas:', e); }
         },
@@ -788,25 +699,19 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = this.selectedAsignatura ? 'Actualizando...' : 'Creando...';
             try {
-                const fd = new FormData();
-                fd.append('nombre', f.nombre);
-                fd.append('codigo', f.codigo.toUpperCase());
-                fd.append('carrera', f.carrera);
-                fd.append('grado', f.grado || '');
-                fd.append('semestre', f.semestre);
-                fd.append('modulo', f.modulo || '');
-                fd.append('carga_horaria', f.carga_horaria);
-                fd.append('color', f.color);
-                fd.append('icono', f.icono);
-                const action = this.selectedAsignatura ? 'update' : 'create';
-                if (this.selectedAsignatura) fd.append('id', this.selectedAsignatura.id);
-                const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=' + action, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.asignaturas.save({
+                    id: this.selectedAsignatura ? this.selectedAsignatura.id : '',
+                    nombre: f.nombre,
+                    codigo: f.codigo.toUpperCase(),
+                    carrera: f.carrera,
+                    grado: f.grado || '',
+                    semestre: f.semestre,
+                    modulo: f.modulo || '',
+                    carga_horaria: f.carga_horaria,
+                    color: f.color,
+                    icono: f.icono
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     this.cancelarEditAsignatura();
                     await this.cargarAsignaturas();
                 } else {
@@ -822,10 +727,10 @@ document.addEventListener('alpine:init', () => {
             this.formAsignatura = { nombre: '', codigo: '', carrera: '', grado: '', semestre: 1, modulo: '', carga_horaria: 0, color: '#10b981', icono: 'bi-book' };
         },
 
-        // --- Espejo a Google: misma base en SQLite y Sheets ---
-        async subirAsignaturasGoogle() {
+        // --- Espejo a la Nube: sincronización con Base de Datos Cloud ---
+        async subirAsignaturasNube() {
             if (!this.asignaturas.length) { alert('No hay asignaturas para subir'); return; }
-            if (!confirm('Subir ' + this.asignaturas.length + ' asignaturas a Google (misma base)?')) return;
+            if (!confirm('Subir ' + this.asignaturas.length + ' asignaturas al Servidor Cloud (misma base)?')) return;
             this.loading = true;
             let ok = 0, fail = 0;
             for (const a of this.asignaturas) {
@@ -836,20 +741,14 @@ document.addEventListener('alpine:init', () => {
                 this.loadingText = 'Subiendo ' + (ok + fail) + '/' + this.asignaturas.length + '...';
             }
             this.loading = false;
-            alert('Espejo listo: ' + ok + ' subidas' + (fail ? ', ' + fail + ' con error' : '') + '.');
+            alert('Sincronización lista: ' + ok + ' subidas' + (fail ? ', ' + fail + ' con error' : '') + '.');
         },
 
         async eliminarAsignatura(a) {
             if (!confirm('¿Eliminar asignatura "' + a.nombre + '"?')) return;
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('id', a.id);
-                await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
+                await CenturiaAPI.asignaturas.delete(a.id || a.codigo);
                 await this.cargarAsignaturas();
             } catch (e) { console.error(e); }
             finally { this.loading = false; }
@@ -885,11 +784,8 @@ document.addEventListener('alpine:init', () => {
             this.assignFound = null;
             try {
                 if (!this.docentesCache.length) {
-                    const r = await fetch(CenturiaAPI.baseUrl + 'teachers.php?action=list', {
-                        headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                    });
-                    const d = await r.json();
-                    this.docentesCache = d.docentes || [];
+                    const d = await CenturiaAPI.teachers.list();
+                    this.docentesCache = d.docentes || d.items || [];
                 }
                 let f = this.docentesCache.find(x => String(x.cedula) === ced);
                 if (!f) {
@@ -909,18 +805,15 @@ document.addEventListener('alpine:init', () => {
             if (!this.assignTarget || !this.assignFound) return;
             if (!confirm('Asignar "' + this.assignTarget.codigo + '" a ' + this.assignFound.nombre_completo + ' (' + this.assignFound.cedula + ')?')) return;
             try {
-                const fd = new FormData();
-                fd.append('user_id', this.assignFound.id);
-                fd.append('asignatura', this.assignTarget.codigo);
-                fd.append('carrera', this.assignCarrera || this.assignTarget.carrera || '');
-                fd.append('seccion', this.assignSeccion || '');
-                const r = await fetch(CenturiaAPI.baseUrl + 'teachers.php?action=assign', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
+                const data = await CenturiaAPI.teachers.assign({
+                    user_id: this.assignFound.id,
+                    cedula: this.assignFound.cedula,
+                    nombre: this.assignFound.nombre_completo,
+                    asignatura: this.assignTarget.codigo,
+                    carrera: this.assignCarrera || this.assignTarget.carrera || '',
+                    seccion: this.assignSeccion || ''
                 });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     alert(data.mensaje || 'Asignatura asignada. El docente ya la ve en su panel.');
                     this.cerrarAsignar();
                 } else {
@@ -939,10 +832,7 @@ document.addEventListener('alpine:init', () => {
 
         async cargarFiliales() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const data = await r.json();
+                const data = await CenturiaAPI.filiales.list();
                 this.filiales = data.filiales || [];
             } catch (e) { console.error('Error cargando filiales:', e); }
         },
@@ -953,19 +843,15 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = this.selectedFilial ? 'Actualizando...' : 'Creando...';
             try {
-                const fd = new FormData();
-                fd.append('nombre', f.nombre);
-                fd.append('codigo', f.codigo.toUpperCase());
-                fd.append('direccion', f.direccion);
                 const action = this.selectedFilial ? 'update' : 'create';
-                if (this.selectedFilial) fd.append('id', this.selectedFilial.id);
-                const r = await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=' + action, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                const data = await r.json();
-                if (data.status === 'Exito' || data.status === 'Éxito') {
+                const payload = {
+                    nombre: f.nombre,
+                    codigo: f.codigo.toUpperCase(),
+                    direccion: f.direccion
+                };
+                if (this.selectedFilial) payload.id = this.selectedFilial.id;
+                const data = await (action === 'update' ? CenturiaAPI.filiales.update(payload) : CenturiaAPI.filiales.create(payload));
+                if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                     this.selectedFilial = null;
                     this.formFilial = { nombre: '', codigo: '', direccion: '' };
                     this.showForm = false;
@@ -981,36 +867,10 @@ document.addEventListener('alpine:init', () => {
             if (!confirm('¿Eliminar esta filial?')) return;
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('id', id);
-                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
+                await CenturiaAPI.filiales.delete(id);
                 await this.cargarFiliales();
             } catch (e) { console.error(e); }
             finally { this.loading = false; }
-        },
-
-        async crearFilial() {
-            if (!this.nuevaFilial.nombre || !this.nuevaFilial.codigo) {
-                alert('Nombre y código requeridos');
-                return;
-            }
-            try {
-                const fd = new FormData();
-                fd.append('nombre', this.nuevaFilial.nombre);
-                fd.append('codigo', this.nuevaFilial.codigo.toUpperCase());
-                fd.append('direccion', this.nuevaFilial.direccion);
-                await fetch(CenturiaAPI.baseUrl + 'filiales.php?action=create', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                    body: fd
-                });
-                this.nuevaFilial = { nombre: '', codigo: '', direccion: '' };
-                await this.cargarFiliales();
-            } catch (e) { console.error('Error creando filial:', e); }
         },
 
         // ═══════════════════════════════════════
@@ -1064,14 +924,17 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.loadingText = 'Cargando catalogos...';
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=list');
-                const data = await r.json();
+                const [secRes, carRes, grdRes] = await Promise.all([
+                    CenturiaAPI.catalogos.getSecciones().catch(() => ({ secciones: [] })),
+                    CenturiaAPI.catalogos.getCarreras().catch(() => ({ carreras: [] })),
+                    CenturiaAPI.catalogos.getGrados().catch(() => ({ grados: [] }))
+                ]);
                 this.catalogData = {
-                    secciones:   data.secciones   || [],
-                    carreras:    data.carreras    || [],
-                    grados:      data.grados      || [],
-                    programas:   data.programas   || [],
-                    modalidades: data.modalidades || []
+                    secciones:   secRes.secciones || secRes.data || [],
+                    carreras:    carRes.carreras  || carRes.data || [],
+                    grados:      grdRes.grados    || grdRes.data || [],
+                    programas:   [],
+                    modalidades: []
                 };
                 this.catalogStats.totalSecciones   = this.catalogData.secciones.length;
                 this.catalogStats.totalCarreras    = this.catalogData.carreras.length;
@@ -1110,41 +973,35 @@ document.addEventListener('alpine:init', () => {
             const isEdit = this.editItem && this.editItem._tipo === tipo;
             this.loading = true;
             this.loadingText = isEdit ? 'Actualizando...' : 'Creando...';
-            const fd = new FormData();
-            fd.append('tipo', tipo);
+            const payload = { tipo: tipo };
             if (tipo === 'secciones') {
-                fd.append('codigo', this.form.codigo.toUpperCase());
-                fd.append('nombre', this.form.nombre);
+                payload.codigo = this.form.codigo.toUpperCase();
+                payload.nombre = this.form.nombre;
                 // Las secciones no llevan carrera: en edición se conserva la existente sin mostrarla
-                fd.append('carrera', isEdit ? (this.editItem.carrera || '') : '');
-                fd.append('grado', this.form.grado);
-                fd.append('capacidad', this.form.capacidad || 40);
+                payload.carrera = isEdit ? (this.editItem.carrera || '') : '';
+                payload.grado = this.form.grado;
+                payload.capacidad = this.form.capacidad || 40;
                 if (!this.form.codigo) { alert('Codigo requerido'); this.loading = false; return; }
             } else if (tipo === 'carreras') {
-                fd.append('nombre', this.form.nombre);
-                fd.append('codigo', this.form.codigo.toUpperCase());
-                fd.append('grado', this.form.grado);
+                payload.nombre = this.form.nombre;
+                payload.codigo = this.form.codigo.toUpperCase();
+                payload.grado = this.form.grado;
                 if (!this.form.nombre) { alert('Nombre requerido'); this.loading = false; return; }
             } else if (tipo === 'grados') {
-                fd.append('nombre', this.form.nombre);
+                payload.nombre = this.form.nombre;
                 if (!this.form.nombre) { alert('Nombre requerido'); this.loading = false; return; }
             } else if (tipo === 'programas') {
-                fd.append('nombre', this.form.nombre);
-                fd.append('tipo_prog', this.form.tipo_prog);
+                payload.nombre = this.form.nombre;
+                payload.tipo_prog = this.form.tipo_prog;
                 if (!this.form.nombre) { alert('Nombre requerido'); this.loading = false; return; }
             } else if (tipo === 'modalidades') {
-                fd.append('nombre', this.form.nombre);
+                payload.nombre = this.form.nombre;
                 if (!this.form.nombre) { alert('Nombre requerido'); this.loading = false; return; }
             }
-            const action = isEdit ? 'update' : 'create';
-            if (isEdit) fd.append('id', this.editItem.id);
+            if (isEdit) payload.id = this.editItem.id;
             try {
-                const token = CenturiaAPI.getToken();
-                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=' + action, {
-                    method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
-                });
-                const data = await r.json();
-                if (data.status === 'Éxito') {
+                const data = await CenturiaAPI.catalogos.save(payload);
+                if (data.status === 'Éxito' || data.status === 'Exito' || data.ok) {
                     this.cancelarEdicion();
                     await this.loadCatalogData();
                 } else { alert('Error: ' + (data.error || data.mensaje)); }
@@ -1157,15 +1014,8 @@ document.addEventListener('alpine:init', () => {
             if (!confirm('¿Eliminar "' + item.nombre + '" de ' + tipo + '?')) return;
             this.loading = true;
             try {
-                const fd = new FormData();
-                fd.append('tipo', tipo);
-                fd.append('id', item.id);
-                const token = CenturiaAPI.getToken();
-                const r = await fetch(CenturiaAPI.baseUrl + 'catalogos.php?action=delete', {
-                    method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
-                });
-                const data = await r.json();
-                if (data.status === 'Éxito') {
+                const data = await CenturiaAPI.catalogos.delete(item.id);
+                if (data.status === 'Éxito' || data.status === 'Exito' || data.ok) {
                     if (this.editItem && this.editItem.id === item.id) this.cancelarEdicion();
                     await this.loadCatalogData();
                 } else { alert('Error: ' + (data.error || data.mensaje)); }

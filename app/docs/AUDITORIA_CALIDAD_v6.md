@@ -28,7 +28,7 @@ El proyecto Campus Virtual Centuria está bien estructurado pero requiere mejora
 | Respuestas JSON no estandarizadas | Alta | ⏳ Pendiente |
 | Fallback a datos mock en PHP live | Baja | ⏳ Pendiente |
 
-### Backup Google Sheets
+### Backup Base de Datos Cloud
 | Problema | Prioridad | Estado |
 |:---|:---|:---|
 | Sin verificación de consistencia SQLite ↔ Sheets | Media | ⏳ Pendiente |

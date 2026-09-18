@@ -241,36 +241,35 @@
             setTimeout(() => t.remove(), 3200);
         }
 
-        // Capa API: PHP primero, Google después (mismas reglas)
+        // Capa API: Servidor Cloud / CenturiaAPI
         async function api(accion, params, body) {
             params = params || {};
-            const q = new URLSearchParams({ action: accion, ...params }).toString();
+            const gmap = {
+                list_drafts: 'constructor_list_drafts', get_subject: 'constructor_get_subject',
+                list_bank: 'constructor_list_bank', list_reviews: 'constructor_list_reviews',
+                save_draft: 'constructor_save_draft', save_program: 'constructor_save_program',
+                save_unit: 'constructor_save_unit', delete_unit: 'constructor_delete_unit',
+                save_block: 'constructor_save_block', delete_block: 'constructor_delete_block',
+                save_activity: 'constructor_save_activity', save_evaluation: 'constructor_save_evaluation',
+                save_question: 'constructor_save_question', delete_question: 'constructor_delete_question',
+                submit_review: 'constructor_submit_review', review_decision: 'constructor_review_decision',
+                publish: 'constructor_publish', archive: 'constructor_archive', duplicate: 'constructor_duplicate'
+            };
+            const g = gmap[accion] || accion;
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'constructor.php?' + q, {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const d = await r.json();
-                if (d && (d.ok || d.drafts || d.questions !== undefined || d.reviews)) return { fuente: 'PHP', d };
-                throw new Error('PHP no disponible');
-            } catch (e) {
-                const gmap = {
-                    list_drafts: 'constructor_list_drafts', get_subject: 'constructor_get_subject',
-                    list_bank: 'constructor_list_bank', list_reviews: 'constructor_list_reviews',
-                    save_draft: 'constructor_save_draft', save_program: 'constructor_save_program',
-                    save_unit: 'constructor_save_unit', delete_unit: 'constructor_delete_unit',
-                    save_block: 'constructor_save_block', delete_block: 'constructor_delete_block',
-                    save_activity: 'constructor_save_activity', save_evaluation: 'constructor_save_evaluation',
-                    save_question: 'constructor_save_question', delete_question: 'constructor_delete_question',
-                    submit_review: 'constructor_submit_review', review_decision: 'constructor_review_decision',
-                    publish: 'constructor_publish', archive: 'constructor_archive', duplicate: 'constructor_duplicate'
-                };
-                const g = gmap[accion] || accion;
                 if (body) {
-                    const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: g, ...body }) });
-                    return { fuente: 'Google', d: await r.json() };
+                    const r = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: g, ...body })
+                    });
+                    return { fuente: 'Cloud', d: await r.json() };
                 }
                 const r2 = await fetch(GAS_URL + '?' + new URLSearchParams({ action: g, ...params }).toString());
-                return { fuente: 'Google', d: await r2.json() };
+                return { fuente: 'Cloud', d: await r2.json() };
+            } catch (e) {
+                console.error('Error en API constructor:', e);
+                return { fuente: 'Cloud', d: { ok: false, error: e.message } };
             }
         }
 

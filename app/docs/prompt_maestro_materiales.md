@@ -84,7 +84,7 @@ NUM_UNIDADES: 10
 
 ---
 
-## Google Sheets (_SSOT__)
+## Base de Datos Cloud (_SSOT__)
 
 - URL: `https://script.google.com/macros/s/AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ/exec`
 - Hoja: `1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`

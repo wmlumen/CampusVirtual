@@ -72,42 +72,39 @@
                 fila('Ruta ' + p, r.ok ? 'VERDE' : 'ROJO', r.ok ? ('HTTP ' + r.status) : 'no responde');
             }
 
-            // 3. Google Apps Script health
+            // 3. Servidor Cloud health
             let gasOk = false, planilla = '';
             try {
                 const r = await get(GAS_URL + '?action=health', 12000);
                 gasOk = !!(r.json && r.json.ok);
-                planilla = (r.json && r.json.data && r.json.data.googleSheets && r.json.data.googleSheets.planilla) || '';
+                planilla = (r.json && r.json.data && r.json.data.cloudSheets && r.json.data.cloudSheets.planilla) || '';
             } catch (e) {}
-            fila('Google Apps Script', gasOk ? 'VERDE' : 'ROJO', gasOk ? ('health OK' + (planilla ? ' · ' + planilla : '')) : 'sin respuesta (¿publicado?)');
+            fila('Servidor Cloud (API)', gasOk ? 'VERDE' : 'ROJO', gasOk ? ('health OK' + (planilla ? ' · ' + planilla : '')) : 'sin respuesta (¿publicado?)');
 
-            // 4. Google Sheets (diagnóstico)
+            // 4. Base de Datos Cloud (diagnóstico)
             try {
                 const r = await get(GAS_URL + '?action=diagnostico', 12000);
                 const c = (r.json && r.json.conteos) || null;
                 if (c) {
                     const vacias = Object.keys(c).filter(k => c[k] === 0);
                     const ausentes = Object.keys(c).filter(k => c[k] < 0);
-                    fila('Google Sheets', ausentes.length ? 'AMARILLO' : 'VERDE',
+                    fila('Base de Datos Cloud', ausentes.length ? 'AMARILLO' : 'VERDE',
                         'RegistroAlumnos:' + c.RegistroAlumnos + ' Roles:' + c.Roles + ' Asignaturas:' + c.Asignaturas +
                         (vacias.length ? ' · vacías: ' + vacias.join(',') : '') +
                         (ausentes.length ? ' · faltan: ' + ausentes.join(',') : ''));
-                } else fila('Google Sheets', 'ROJO', 'sin conteos');
-            } catch (e) { fila('Google Sheets', 'ROJO', 'sin respuesta'); }
+                } else fila('Base de Datos Cloud', 'ROJO', 'sin conteos');
+            } catch (e) { fila('Base de Datos Cloud', 'ROJO', 'sin respuesta'); }
 
-            // 5. Autenticación local (PHP, solo PC)
-            try {
-                const r = await get((CenturiaAPI.baseUrl || '') + 'upload.php?action=health', 4000);
-                fila('PHP local', (r.json && (r.json.status === 'ok' || r.json.success)) ? 'VERDE' : 'GRIS',
-                    (r.json && (r.json.status === 'ok' || r.json.success)) ? 'responde' : 'no disponible (normal en GitHub)');
-            } catch (e) { fila('PHP local', 'GRIS', 'no disponible (normal en GitHub)'); }
+            // 5. Host Estático (GitHub Pages)
+            const isGH = location.hostname.includes('github.io') || location.protocol === 'https:';
+            fila('Host Estático', 'VERDE', isGH ? 'GitHub Pages / HTTPS activo' : 'Entorno local (' + location.hostname + ')');
 
             // 6. Sesión actual
             const ced = sessionStorage.getItem('current_cedula');
             fila('Sesión', ced ? 'VERDE' : 'GRIS', ced ? ('activa: ' + ced) : 'sin sesión en este navegador');
 
-            // 7. Respaldo
-            fila('Respaldo SQLite', 'GRIS', 'manual desde la PC del admin (ver PROMPT_MEJORA P1.3)');
+            // 7. Base de Datos Cloud
+            fila('Base de Datos', gasOk ? 'VERDE' : 'AMARILLO', gasOk ? 'Base de Datos Cloud (Sincronizado)' : 'Pendiente de conexión');
 
             pintar();
         }

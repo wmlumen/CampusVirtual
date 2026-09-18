@@ -99,9 +99,9 @@
             :class="filtroEstadoAsig==='activo' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-500'">Activas</button>
         <button @click="filtroEstadoAsig='inactivo';cargarAsignaturas()" title="Sin docente asignado" class="px-2 py-2 rounded-lg text-[10px] font-bold"
             :class="filtroEstadoAsig==='inactivo' ? 'bg-rose-500 text-white' : 'bg-white border border-slate-200 text-slate-500'">Inactivas</button>
-        <button @click="subirAsignaturasGoogle()" title="Subir todas a Google (misma base)"
+        <button @click="subirAsignaturasNube()" title="Subir todas a la Nube (misma base)"
             class="px-3 py-2 rounded-lg text-xs font-bold bg-sky-600 text-white flex items-center gap-1">
-            <i class="bi bi-cloud-upload"></i>Subir a Google
+            <i class="bi bi-cloud-upload"></i>Subir a la Nube
         </button>
     </div>
 

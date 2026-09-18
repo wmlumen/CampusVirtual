@@ -10,25 +10,25 @@
 ```mermaid
 flowchart TD
     A["Campus Virtual<br>GitHub Pages + PHP local"] --> B["PHP API<br>api/centuria.db"]
-    A --> C["Google Apps Script v05<br>API temporal en la nube"]
-    C --> D["Google Sheets<br>Base principal temporal"]
+    A --> C["Servidor Cloud v05<br>API temporal en la nube"]
+    C --> D["Base de Datos Cloud<br>Base principal temporal"]
     D <--> E["Sincronizador en PC"]
     E <--> F["SQLite local<br>Copia completa"]
 ```
 
 - **GitHub Pages** = frontend estático (HTML/JS/CSS)
 - **PHP local** = backend definitivo (`XAMPP en 127.0.0.1:8080`)
-- **Google Apps Script v05** = API temporal en la nube (mientras no haya servidor PHP público)
-- **Google Sheets** = base principal accesible por internet
+- **Servidor Cloud v05** = API temporal en la nube (mientras no haya servidor PHP público)
+- **Base de Datos Cloud** = base principal accesible por internet
 - **SQLite** = copia completa en la PC (`api/centuria.db`)
-- El frontend no debe saber si los datos provienen de PHP, Google o SQLite
+- El frontend no debe saber si los datos provienen de servicios locales o en la nube
 - La migración de GAS→PHP se hace cambiando la URL de la API en `app/js/api.js`
 
 ---
 
 ## 2. URLs Activas
 
-### Google Apps Script v05 (endpoint en la nube)
+### Servidor Cloud v05 (endpoint en la nube)
 ```
 https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec
 ```
@@ -46,9 +46,9 @@ http://127.0.0.1:8080/api/
 
 ---
 
-## 3. Google Apps Script v05 — Acciones Completas
+## 3. Servidor Cloud v05 — Acciones Completas
 
-### Hojas de Google Sheets (19 tablas)
+### Hojas de Base de Datos Cloud (19 tablas)
 
 | # | Hoja | Propósito |
 |---|------|-----------|
@@ -384,8 +384,8 @@ Centuria/
 | Estado | Descripción |
 |--------|-------------|
 | `sincronizado` | Registro idéntico en ambas fuentes |
-| `pendiente_subir` | Modificado localmente, pendiente de subir a Google |
-| `pendiente_descargar` | Modificado en Google, pendiente de descargar local |
+| `pendiente_subir` | Modificado localmente, pendiente de subir a la Nube |
+| `pendiente_descargar` | Modificado en la Nube, pendiente de descargar local |
 | `conflicto` | Modificado en ambas fuentes con valores diferentes |
 | `error` | Error durante la sincronización |
 
@@ -413,7 +413,7 @@ admin (4) > academico (3) > docente (2) > alumno (1)
 2. Se guarda en `usuarios_pendientes` (estado: pendiente)
 3. Admin aprueba o rechaza
 4. Al aprobar: se crea en `users` + `user_roles` con contraseña generada
-5. Sync silenciosa con Google Sheets
+5. Sync silenciosa con Base de Datos Cloud
 
 ### Flujo de login
 1. Cédula → verificar si existe
@@ -421,7 +421,7 @@ admin (4) > academico (3) > docente (2) > alumno (1)
 3. Si existe → mostrar campo contraseña
 4. Contraseña → login → token
 5. Obtener roles → si múltiples → selector
-6. Sync silenciosa con Google Sheets
+6. Sync silenciosa con Base de Datos Cloud
 
 ### Regla de contraseñas
 ```
@@ -555,10 +555,10 @@ Todas las escrituras requieren `Authorization: Bearer <token>`.
 
 | Decisión | Justificación |
 |----------|---------------|
-| Google Sheets como base principal temporal | Accesible por internet sin servidor PHP público |
+| Base de Datos Cloud como base principal temporal | Accesible por internet sin servidor PHP público |
 | SQLite como copia local | Funciona sin internet, respaldo recuperable |
 | PHP como backend definitivo | Solo cambiar la URL de la API |
-| UUID por registro | Consistencia entre Google y SQLite |
+| UUID por registro | Consistencia entre la Nube y almacenamiento local |
 | `sync_version` para conflictos | Detectar quién modificó último |
 | Alpine.js para interactividad | Ligero, sin build step |
 | Tailwind CSS + Bootstrap 5 | Utilidades rápidas + componentes probados |
@@ -579,7 +579,7 @@ Todas las escrituras requieren `Authorization: Bearer <token>`.
 - Perfil de usuario con edición
 
 #### Matrícula y formularios
-- Formulario de matrícula completo (35+ campos, guardado DB + Google Sheets)
+- Formulario de matrícula completo (35+ campos, guardado DB + Base de Datos Cloud)
 - Sistema de formularios genéricos por carrera
 - CRUD de plantillas de formularios
 - Completitud de formularios por alumno
@@ -628,7 +628,7 @@ Todas las escrituras requieren `Authorization: Bearer <token>`.
 
 #### Sincronización
 - Funciones GAS para双向 sync (api.js)
-- Matrícula sync con Google Sheets
+- Matrícula sync con Base de Datos Cloud
 
 ---
 
@@ -724,7 +724,7 @@ Todas las escrituras requieren `Authorization: Bearer <token>`.
 | **PHP endpoints** | 29 archivos, 80+ acciones |
 | **Páginas implementadas** | 30+ HTML, 8 JS, 2 CSS |
 | **Preguntas en banco** | 50 (semilla) |
-| **Funciones completadas** | Login, roles, admin, matrícula, asistencia con código, calendario, asignaturas, exámenes dinámicos, calificaciones, sync Google, formularios, analytics docente, seguimiento asistencia, justificaciones, examen virtual completo, accesibilidad |
+| **Funciones completadas** | Login, roles, admin, matrícula, asistencia con código, calendario, asignaturas, exámenes dinámicos, calificaciones, sync Cloud, formularios, analytics docente, seguimiento asistencia, justificaciones, examen virtual completo, accesibilidad |
 | **Funciones pendientes (Fase 1)** | Cursos independientes, editor docente, actividades, tareas, banco preguntas completo, exámenes seguros, libro calificaciones, matriculación real |
 | **Funciones pendientes (Fase 2)** | Contenido dinámico, lecciones, foros, encuestas, notificaciones, mensajería |
 | **Funciones pendientes (Fase 3)** | Grupos, competencias, reportes, copia cursos, papelera, archivos, PWA |

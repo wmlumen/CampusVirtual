@@ -67,18 +67,13 @@
         const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         async function apiGet(accion, params) {
-            const q = new URLSearchParams({ action: accion, ...params }).toString();
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'constructor.php?' + q, {
-                    headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-                });
-                const d = await r.json();
-                if (d && (d.ok || d.draft || d.drafts)) return d;
-                throw 0;
-            } catch (e) {
                 const gmap = { get_subject: 'constructor_get_subject' };
                 const r = await fetch(GAS_URL + '?' + new URLSearchParams({ action: gmap[accion] || accion, ...params }).toString());
-                return r.json();
+                return await r.json();
+            } catch (e) {
+                console.error('Error en apiGet:', e);
+                return { ok: false, error: e.message };
             }
         }
 

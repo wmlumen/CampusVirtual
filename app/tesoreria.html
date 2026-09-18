@@ -146,13 +146,10 @@
             if (['admin', 'administrador_plataforma', 'academico', 'academic'].includes(r)) return true;
             try {
                 const ced = sessionStorage.getItem('current_cedula') || '';
-                if (!ced || !token()) return false;
-                const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=permisos&cedula=' + encodeURIComponent(ced), {
-                    headers: { 'Authorization': 'Bearer ' + token() }
-                });
-                const d = await resp.json();
+                if (!ced) return false;
+                const d = await CenturiaAPI.usuarios.get(ced);
                 const p = d.permisos || [];
-                return p.includes('*') || p.includes('ver_tesoreria') || p.includes('gestionar_usuarios');
+                return p.includes('*') || p.includes('ver_tesoreria') || p.includes('gestionar_usuarios') || (d.roles && d.roles.some(rl => ['admin', 'administrador_plataforma', 'academico'].includes(rl.rol)));
             } catch (e) { return false; }
         }
 
@@ -172,51 +169,57 @@
 
         async function cargarStats() {
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=stats', {
-                    headers: { 'Authorization': 'Bearer ' + token() }
+                const d = await CenturiaAPI.pagos.stats();
+                const pagos = d.pagos || d.data || [];
+                let rec = 0, pend = 0, fact = 0;
+                pagos.forEach(p => {
+                    const m = Number(p.monto || p.Monto || 0);
+                    const est = (p.estado || p.Estado || '').toLowerCase();
+                    if (est === 'pagado') rec += m;
+                    else if (est === 'pendiente') pend += m;
+                    if (p.factura_numero || p.Factura) fact++;
                 });
-                const d = await r.json();
-                document.getElementById('k-recaudado').textContent = 'Gs. ' + Number(d.recaudado || 0).toLocaleString('es-ES');
-                document.getElementById('k-pendiente').textContent = 'Gs. ' + Number(d.pendiente || 0).toLocaleString('es-ES');
-                document.getElementById('k-facturas').textContent = d.facturas || 0;
-                document.getElementById('k-total').textContent = d.total || 0;
+                document.getElementById('k-recaudado').textContent = 'Gs. ' + rec.toLocaleString('es-ES');
+                document.getElementById('k-pendiente').textContent = 'Gs. ' + pend.toLocaleString('es-ES');
+                document.getElementById('k-facturas').textContent = fact;
+                document.getElementById('k-total').textContent = pagos.length;
             } catch (e) {}
         }
 
         async function cargarPagos() {
             const tb = document.getElementById('tbody');
-            const q = document.getElementById('q').value.trim();
+            const q = document.getElementById('q').value.trim().toLowerCase();
             const est = document.getElementById('f-estado').value;
             const tipo = document.getElementById('f-tipo').value;
-            let url = CenturiaAPI.baseUrl + 'pagos.php?action=list';
-            if (est) url += '&estado=' + est;
-            if (tipo) url += '&tipo=' + tipo;
-            if (q) url += '&q=' + encodeURIComponent(q);
             try {
-                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
-                const d = await r.json();
-                pagosCache = d.pagos || [];
+                const d = await CenturiaAPI.pagos.list();
+                let raw = d.pagos || d.data || [];
+                if (est) raw = raw.filter(p => (p.estado || p.Estado || '').toLowerCase() === est.toLowerCase());
+                if (tipo) raw = raw.filter(p => (p.tipo || p.Tipo || '').toLowerCase() === tipo.toLowerCase());
+                if (q) raw = raw.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.cedula || '').includes(q) || (p.factura_numero || '').toLowerCase().includes(q) || (p.concepto || '').toLowerCase().includes(q));
+
+                pagosCache = raw;
                 if (!pagosCache.length) {
                     tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Sin movimientos</td></tr>';
                     return;
                 }
                 tb.innerHTML = pagosCache.map(p => `
                     <tr>
-                        <td>${esc(p.fecha) || '-'}</td>
-                        <td><b>${esc(p.factura_numero) || '-'}</b></td>
-                        <td>${esc(p.nombre)}<br><small class="text-muted">${esc(p.cedula)}</small></td>
-                        <td>${esc(p.concepto)}</td>
-                        <td>${badgeTipo(p.tipo)}</td>
-                        <td><b>${fmtMonto(p.monto, p.moneda)}</b></td>
-                        <td>${badgeEstado(p.estado)}</td>
+                        <td>${esc(p.fecha || p.Fecha) || '-'}</td>
+                        <td><b>${esc(p.factura_numero || p.Factura) || '-'}</b></td>
+                        <td>${esc(p.nombre || p.Nombre)}<br><small class="text-muted">${esc(p.cedula || p.Cedula)}</small></td>
+                        <td>${esc(p.concepto || p.Concepto || p.modulo || p.Modulo)}</td>
+                        <td>${badgeTipo(p.tipo || p.Tipo)}</td>
+                        <td><b>${fmtMonto(p.monto || p.Monto, p.moneda || 'PYG')}</b></td>
+                        <td>${badgeEstado(p.estado || p.Estado)}</td>
                         <td style="white-space:nowrap">
-                            ${p.estado !== 'pagado' ? `<button class="btn btn-g btn-sm" onclick="cambiarEstado(${p.id},'pagado')" title="Marcar pagado"><i class="bi bi-check-lg"></i></button>` : ''}
-                            ${p.estado !== 'anulado' ? `<button class="btn btn-a btn-sm" onclick="cambiarEstado(${p.id},'anulado')" title="Anular"><i class="bi bi-x-lg"></i></button>` : ''}
-                            <button class="btn btn-r btn-sm" onclick="eliminarPago(${p.id})" title="Eliminar"><i class="bi bi-trash"></i></button>
+                            ${(p.estado || p.Estado) !== 'pagado' ? `<button class="btn btn-g btn-sm" onclick="cambiarEstado('${p.id || p.cedula}','pagado')" title="Marcar pagado"><i class="bi bi-check-lg"></i></button>` : ''}
+                            ${(p.estado || p.Estado) !== 'anulado' ? `<button class="btn btn-a btn-sm" onclick="cambiarEstado('${p.id || p.cedula}','anulado')" title="Anular"><i class="bi bi-x-lg"></i></button>` : ''}
+                            <button class="btn btn-r btn-sm" onclick="eliminarPago('${p.id || p.cedula}')" title="Eliminar"><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>`).join('');
             } catch (e) {
-                tb.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error de conexión</td></tr>';
+                tb.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error de conexión con el Servidor Cloud</td></tr>';
             }
         }
 
@@ -224,10 +227,9 @@
             const c = document.getElementById('f-cedula').value.trim().replace(/\./g, '');
             if (!c) { toast('Ingresa la cédula', 'error'); return; }
             try {
-                const r = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=find_user&cedula=' + encodeURIComponent(c));
-                const d = await r.json();
-                if (d.found) {
-                    document.getElementById('f-nombre').value = ((d.user.firstname || '') + ' ' + (d.user.lastname || '')).trim();
+                const d = await CenturiaAPI.auth.verify(c);
+                if (d && (d.existe || d.found)) {
+                    document.getElementById('f-nombre').value = d.nombre || ((d.user && d.user.firstname) ? `${d.user.firstname} ${d.user.lastname||''}` : '');
                     toast('Alumno encontrado');
                 } else {
                     toast('Cédula no registrada: escribe el nombre manual', 'error');
@@ -237,41 +239,31 @@
 
         async function guardarPago() {
             const datos = {
+                action: 'registrar_pago',
                 cedula: document.getElementById('f-cedula').value.trim().replace(/\./g, ''),
                 nombre: document.getElementById('f-nombre').value.trim(),
                 concepto: document.getElementById('f-concepto').value.trim(),
+                modulo: document.getElementById('f-concepto').value.trim(),
                 tipo: document.getElementById('f-tipo').value,
                 monto: parseFloat(document.getElementById('f-monto').value) || 0,
                 moneda: document.getElementById('f-moneda').value,
                 fecha: document.getElementById('f-fecha').value,
                 factura_numero: document.getElementById('f-factura').value.trim(),
                 estado: document.getElementById('f-estado').value,
-                comprobante: document.getElementById('f-comprobante').value.trim()
+                comprobante: document.getElementById('f-comprobante').value.trim(),
+                registrado_por: sessionStorage.getItem('current_cedula') || 'admin'
             };
             if (!datos.cedula || !datos.concepto) { toast('Cédula y concepto requeridos', 'error'); return; }
             try {
-                const fd = new FormData();
-                Object.keys(datos).forEach(k => fd.append(k, datos[k]));
-                const r = await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=save', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token() },
-                    body: fd
-                });
-                const d = await r.json();
-                if (d.status === 'Exito' || d.status === 'Éxito') {
-                    // Espejo en Google (no bloqueante)
-                    try {
-                        if (typeof gasRegistrarPago === 'function') {
-                            await gasRegistrarPago({ ...datos, registrado_por: sessionStorage.getItem('current_cedula') || 'admin' });
-                        }
-                    } catch (e) {}
+                const d = await CenturiaAPI.pagos.save(datos);
+                if (d.ok || d.status === 'Éxito' || d.status === 'Exito' || d.status === 'success') {
                     toast('Pago guardado' + (datos.factura_numero ? ' · Factura ' + datos.factura_numero : ''));
                     ['f-cedula', 'f-nombre', 'f-concepto', 'f-monto', 'f-factura', 'f-comprobante'].forEach(id => document.getElementById(id).value = '');
                     cargarTodo();
                 } else {
-                    toast('Error: ' + (d.error || 'No se pudo guardar'), 'error');
+                    toast('Error: ' + (d.mensaje || d.error || 'No se pudo guardar'), 'error');
                 }
-            } catch (e) { toast('Error de conexión', 'error'); }
+            } catch (e) { toast('Error de conexión con el Servidor Cloud', 'error'); }
         }
 
         async function cambiarEstado(id, estado) {
@@ -281,15 +273,7 @@
             if (estado === 'pagado' && extra === null) return;
             if (!confirm('Marcar como ' + estado.toUpperCase() + '?')) return;
             try {
-                const fd = new FormData();
-                fd.append('id', id);
-                fd.append('estado', estado);
-                if (extra) fd.append('factura_numero', extra);
-                await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=update_status', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token() },
-                    body: fd
-                });
+                await CenturiaAPI.pagos.updateStatus({ id, cedula: id, estado, factura_numero: extra });
                 toast('Actualizado');
                 cargarTodo();
             } catch (e) { toast('Error de conexión', 'error'); }
@@ -298,13 +282,7 @@
         async function eliminarPago(id) {
             if (!confirm('¿Eliminar este registro?')) return;
             try {
-                const fd = new FormData();
-                fd.append('id', id);
-                await fetch(CenturiaAPI.baseUrl + 'pagos.php?action=delete', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token() },
-                    body: fd
-                });
+                await CenturiaAPI.pagos.delete({ id, cedula: id });
                 toast('Eliminado');
                 cargarTodo();
             } catch (e) { toast('Error de conexión', 'error'); }

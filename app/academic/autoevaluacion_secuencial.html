@@ -125,7 +125,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // CONFIGURACIÓN DE GOOGLE SHEETS
+        // CONFIGURACIÓN DEL SERVIDOR CLOUD
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec';
 
         // Preguntas de la autoevaluación (5 preguntas selección múltiple)
@@ -138,7 +138,7 @@
             },
             {
                 pregunta: "¿Cuál de los siguientes es un sistema operativo?",
-                opciones: ["Microsoft Word", "Google Chrome", "Windows 10", "Adobe Photoshop"],
+                opciones: ["Microsoft Word", "Navegador Web", "Windows 10", "Adobe Photoshop"],
                 correcta: 2,
                 explicacion: "Windows 10 es un sistema operativo que gestiona el hardware y software del computador"
             },
@@ -149,10 +149,10 @@
                 explicacion: "El router interconecta diferentes redes y dirige el tráfico entre ellas"
             },
             {
-                pregunta: "¿Cuál es el navegador web más utilizado?",
-                opciones: ["Word", "Excel", "Chrome", "PowerPoint"],
+                pregunta: "¿Cuál es el tipo de software utilizado para navegar por internet?",
+                opciones: ["Procesador de texto", "Planilla de cálculo", "Navegador Web", "Diseño gráfico"],
                 correcta: 2,
-                explicacion: "Google Chrome es uno de los navegadores web más populares del mundo"
+                explicacion: "El navegador web es el software especializado para acceder y visualizar sitios en Internet"
             },
             {
                 pregunta: "¿Qué significa HTTP?",
@@ -350,8 +350,8 @@ async guardarIntento() {
             attemptCounter.textContent = `Intento ${this.intentosRealizados + 1} de ${this.intentosMaximos}`;
         }
 
-        // Enviar a Google Sheets
-        await this.enviarAGoogleSheets(intentoNum, correctas, total, porcentaje, fecha);
+        // Enviar al Servidor Cloud
+        await this.enviarAServidorCloud(intentoNum, correctas, total, porcentaje, fecha);
 
         // Mostrar modal de resultados
         this.mostrarModalResultados(intentoNum, correctas, total, porcentaje);
@@ -415,7 +415,7 @@ async guardarIntento() {
         modal.show();
     }
 
-    async enviarAGoogleSheets(intentoNum, correctas, total, porcentaje, fecha) {
+    async enviarAServidorCloud(intentoNum, correctas, total, porcentaje, fecha) {
         const datos = {
             action: 'guardar_autoevaluacion',
             timestamp: new Date().toISOString(),
@@ -433,9 +433,9 @@ async guardarIntento() {
                 mode: 'no-cors',
                 body: JSON.stringify(datos)
             });
-            console.log('Autoevaluación enviada a Google Sheets');
+            console.log('Autoevaluación enviada al Servidor Cloud');
         } catch (error) {
-            console.error('Error al enviar a Google Sheets:', error);
+            console.error('Error al enviar al Servidor Cloud:', error);
         }
     }
 

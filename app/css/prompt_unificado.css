@@ -3,8 +3,8 @@
    Aplicar con: <link rel="stylesheet" href="prompt_unificado.css">
    ============================================ */
 
-/* --- Paleta Institucional Centuria (Oficial) + Moodle Spec --- */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+/* --- Paleta Institucional Centuria (Oficial) --- */
+@import url('https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900');
 body { font-family: 'Montserrat', sans-serif; }
 a:hover { color: var(--centuria-green-hover) !important; }
 .btn-primary:hover { background-color: var(--centuria-green-hover) !important; border-color: var(--centuria-green-hover) !important; }

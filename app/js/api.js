@@ -1,37 +1,31 @@
-// api.js - Centuria Portal API Client
-// Wrapper fetch() para todos los endpoints del backend PHP/SQLite + Google Sheets (dual storage)
-// Usado por: index.html, admin_roles.html, admin/index.html, admin/upload_alumnos.html,
-//            sociologia/teacher_panel.html, Materiales_Clases/, academic/
+// api.js - Centuria Portal API Client (v12)
+// Cliente unificado para Servidor Cloud + Base de Datos / Almacenamiento Cloud
+// 100% compatible con GitHub Pages (sin dependencia de PHP ni SQLite)
+// Usado por: index.html, dashboard.html, docente.html, libreta.html, attendance.html,
+//            calendario.html, formulario-matricula.html, tesoreria.html, perfil.html, admin/
 
 const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'academico',inactive:'inactivo'};
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
-// Google Apps Script URL (planilla BasedeDatosCampus = única base en la nube).
-// IMPORTANTE: no crear más implementaciones (cada una ata otra planilla y rompe todo).
-// Solo "Nueva versión" sobre este deployment.
+// Servidor Cloud URL (planilla BasedeDatosCampus = única base en la nube).
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec';
-// Obsoletas/eliminadas (404): AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI,
-// AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7,
-// AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ
 
-// Configuración central (una sola fuente; nada de URLs dispersas)
+// Configuración central institucional
 window.CENTURIA_CONFIG = {
-    environment: (typeof location !== 'undefined' && /github\.io/.test(location.hostname)) ? 'production' : 'local',
+    environment: 'production',
     appBasePath: (function () {
         try {
             var i = location.pathname.indexOf('/app/');
             return i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
         } catch (e) { return './'; }
     })(),
-    apiProvider: 'google-apps-script',
-    googleAppsScriptUrl: (typeof GAS_URL !== 'undefined' ? GAS_URL : ''),
+    apiProvider: 'cloud-serverless',
+    cloudApiUrl: GAS_URL,
     requestTimeout: 15000,
-    // Los fallbacks offline existen y funcionan (login/registro/recuperación vía Sheets+local).
-    // Solo desactivar con migración de usuarios previa.
-    allowOfflineAuthentication: true
+    allowOfflineAuthentication: false
 };
 
-// URLs relativas a la raíz de la app (Pages /CampusVirtual/app/, local /app/, subcarpetas)
+// URLs relativas a la raíz de la app
 function appUrl(relativePath) {
     try {
         var base = (window.CENTURIA_CONFIG && CENTURIA_CONFIG.appBasePath) || './';
@@ -40,1052 +34,628 @@ function appUrl(relativePath) {
     } catch (e) { return relativePath; }
 }
 
-// Helper: verificar alumno en Google Sheets (GET). Timeout 12s + 1 reintento
-// (Google "despierta" lento en frío y con 2s fallaba el login).
-function gasCheckStudent(cedula, reintento) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
-    return fetch(GAS_URL + '?action=verificar_alumno&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .catch(() => {
-            clearTimeout(timeout);
-            if (!reintento) return gasCheckStudent(cedula, true);
-            return { existe: false };
-        });
-}
+// ══════════════════════════════════════════════════════════════
+// COMUNICADOR CENTRAL CON EL SERVIDOR CLOUD (CORS-friendly)
+// ══════════════════════════════════════════════════════════════
 
-// Helper: registrar alumno en Google Sheets (POST)
-function gasRegisterStudent(cedula, nombre, email, carrera, seccion) {
-    const payload = {
-        action: 'registrar_alumno',
-        cedula: cedula,
-        nombre: nombre,
-        email: email || '',
-        carrera: carrera || '',
-        seccion: seccion || ''
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-}
+function callGas(action, data, method) {
+    data = data || {};
+    method = (method || 'GET').toUpperCase();
+    const controller = (typeof AbortController !== 'undefined') ? new AbortController() : { signal: null, abort: () => {} };
+    const timeout = setTimeout(() => { try { controller.abort(); } catch (e) {} }, window.CENTURIA_CONFIG.requestTimeout || 15000);
 
-// Helper: marcar asistencia en Google Sheets (POST)
-function gasMarkAttendance(cedula, observacion) {
-    const payload = {
-        action: 'marcar_asistencia',
-        cedula: cedula,
-        observacion: observacion || ''
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-}
-
-// Helper: obtener notas desde Google Sheets (GET)
-function gasGetGrades() {
-    return fetch(GAS_URL)
-        .then(r => r.json())
-        .catch(() => []);
-}
-
-// Helper: matricular alumno en Google Sheets (POST)
-function gasMatricular(datos) {
-    const payload = {
-        action: 'matricular_alumno',
-        cedula: datos.cedula || '',
-        nombres: datos.nombres || '',
-        apellidos: datos.apellidos || '',
-        correo_electronico: datos.correo_electronico || '',
-        carrera: datos.carrera || '',
-        semestre: datos.semestre || '',
-        tipo_alumno: datos.tipo_alumno || 'nuevo',
-        fecha_inscripcion: datos.fecha_inscripcion || new Date().toISOString().split('T')[0],
-        telefono_movil: datos.telefono_movil || '',
-        direccion: datos.direccion || ''
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-}
-
-// Helper: subir foto de perfil a Google Drive vía GAS v06 (POST)
-// Guarda en la carpeta Drive institucional y devuelve {ok, url, fileId}.
-// La hoja 'Fotos' guarda solo la URL corta (el base64 superaría el límite de celda).
-function gasUploadPhoto(cedula, nombre, dataUrl) {
-    const payload = {
-        action: 'subir_foto',
-        cedula: cedula || '',
-        nombre: nombre || '',
-        foto: dataUrl || ''
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-}
-
-// Helper: obtener URL de foto de perfil desde Drive vía GAS v06 (GET)
-function gasGetPhoto(cedula) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    return fetch(GAS_URL + '?action=obtener_foto&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .catch(() => { clearTimeout(timeout); return { ok: false }; });
-}
-
-// Helper: eliminar foto de perfil de Drive vía GAS v06 (POST)
-function gasDeletePhoto(cedula) {
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'eliminar_foto', cedula: cedula || '' })
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-}
-
-// Helper: roles de una cédula desde Google Sheets vía GAS v05+ (GET verificar_roles)
-// Devuelve {roles:[{cedula,nombre,rol,carrera,seccion,asignatura,estado}]}. Nunca lanza.
-function gasGetRoles(cedula) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    return fetch(GAS_URL + '?action=verificar_roles&cedula=' + encodeURIComponent(cedula), { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .then(d => ({ roles: (d && d.roles) || [] }))
-        .catch(() => { clearTimeout(timeout); return { roles: [] }; });
-}
-
-// Helper: enviar provisoria por Gmail vía GAS v06.7 (remitente configurable en admin).
-// Devuelve {ok}. Nunca lanza.
-function gasEnviarProvisoria(email, nombre, password, remitente, remitenteNombre) {
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'enviar_provisoria',
-            email: email || '',
-            nombre: nombre || '',
-            password: password || '',
-            remitente: remitente || '',
-            remitente_nombre: remitenteNombre || 'Instituto Superior Centuria'
+    if (method === 'GET') {
+        const queryParams = Object.assign({ action: action }, data);
+        let search = '';
+        if (typeof URLSearchParams !== 'undefined') {
+            const sp = new URLSearchParams();
+            Object.keys(queryParams).forEach(k => {
+                if (queryParams[k] !== undefined && queryParams[k] !== null) {
+                    sp.append(k, String(queryParams[k]));
+                }
+            });
+            search = sp.toString();
+        } else {
+            search = Object.keys(queryParams)
+                .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(queryParams[k] !== undefined && queryParams[k] !== null ? queryParams[k] : ''))
+                .join('&');
+        }
+        return fetch(`${GAS_URL}?${search}`, { signal: controller.signal })
+            .then(r => r.json())
+            .catch(err => {
+                console.warn(`[GAS] Error en GET action=${action}:`, err);
+                return { ok: false, error: 'Error de comunicación con el servidor en la nube. Verifique su conexión.' };
+            })
+            .finally(() => clearTimeout(timeout));
+    } else {
+        const payload = Object.assign({ action: action }, data);
+        return fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload),
+            signal: controller.signal
         })
-    }).then(r => r.json()).catch(() => ({ ok: false }));
+        .then(r => r.json())
+        .catch(err => {
+            console.warn(`[GAS] Error en POST action=${action}:`, err);
+            return { ok: false, error: 'Error de comunicación con el servidor en la nube. Verifique su conexión.' };
+        })
+        .finally(() => clearTimeout(timeout));
+    }
 }
 
-// IP pública del cliente (para registro antifraude en Sheets) + info de dispositivo. Nunca lanza.
-let _clientIPCache = null;
-function getClientIP() {
-    if (_clientIPCache) return Promise.resolve(_clientIPCache);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    return fetch('https://api.ipify.org?format=json', { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .then(d => { _clientIPCache = (d && d.ip) || ''; return _clientIPCache; })
-        .catch(() => { clearTimeout(timeout); return ''; });
-}
-function getDeviceInfo() {
-    try {
-        const ua = navigator.userAgent || '';
-        const mob = /Android|iPhone|iPad|Mobile/i.test(ua) ? 'movil' : 'pc';
-        return (mob + ' ' + (navigator.platform || '')).trim().slice(0, 120);
-    } catch (e) { return ''; }
+// ══════════════════════════════════════════════════════════════
+// HELPERS DE AUTENTICACIÓN DIRECTOS AL SERVIDOR CLOUD
+// ══════════════════════════════════════════════════════════════
+
+function gasLogin(cedula, password) {
+    return callGas('login', {
+        cedula: String(cedula || '').replace(/[\.\s\-]/g, '').trim(),
+        password: String(password || '').trim()
+    }, 'POST');
 }
 
-// Helper genérico: catálogo simple desde Google (grados/carreras/secciones, v06.5). Nunca lanza.
-function gasGetCatalogo(tipo) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    const acts = { grados: 'listar_grados', carreras: 'listar_carreras', secciones: 'listar_secciones' };
-    const keys = { grados: 'grados', carreras: 'carreras', secciones: 'secciones' };
-    return fetch(GAS_URL + '?action=' + (acts[tipo] || 'listar_carreras'), { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .then(d => (d && d[keys[tipo]]) || [])
-        .catch(() => { clearTimeout(timeout); return []; });
+function gasRegister(userData) {
+    userData = userData || {};
+    return callGas('register', {
+        cedula: String(userData.cedula || '').replace(/[\.\s\-]/g, '').trim(),
+        nombre: userData.nombre || '',
+        apellido: userData.apellido || '',
+        email: (userData.email || '').toLowerCase().trim(),
+        telefono: userData.telefono || '',
+        password: userData.password || '',
+        rol: userData.rol || 'alumno',
+        grado: userData.grado || '',
+        carrera: userData.carrera || '',
+        seccion: userData.seccion || '',
+        foto: userData.foto || userData.foto_url || ''
+    }, 'POST');
 }
 
-// Helper: registrar pago en Google Sheets vía GAS (POST registrar_pago, v06.9 con factura+tipo)
-function gasRegistrarPago(d) {
-    d = d || {};
-    const payload = {
-        action: 'registrar_pago',
-        cedula: d.cedula || '',
-        nombre: d.nombre || '',
-        modulo: d.concepto || d.modulo || '',
-        tipo: d.tipo || 'modulo',
-        monto: d.monto || 0,
-        fecha: d.fecha || '',
-        estado: d.estado || 'pendiente',
-        factura: d.factura_numero || d.factura || '',
-        comprobante: d.comprobante || '',
-        registrado_por: d.registrado_por || ''
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
+function gasValidateSession(token) {
+    if (!token) return Promise.resolve({ ok: false, valid: false });
+    return callGas('validar_sesion', { token: token }, 'GET');
 }
 
-// Helper: consultar pagos de una cédula en Google Sheets (GET consultar_pagos)
-function gasConsultarPagos(cedula) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    return fetch(GAS_URL + '?action=consultar_pagos&cedula=' + encodeURIComponent(cedula || ''), { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .then(d => (d && d.pagos) || (Array.isArray(d) ? d : []))
-        .catch(() => { clearTimeout(timeout); return []; });
+function gasLogout(token) {
+    if (!token) return Promise.resolve({ ok: true });
+    return callGas('logout', { token: token }, 'POST');
 }
 
-// Helper: espejo de asignatura SQLite -> hoja Asignaturas vía GAS v06.2 (POST guardar_asignatura)
-// Misma base en ambos lados (upsert por codigo). Devuelve {ok, codigo}.
-function gasUploadSubject(a) {
-    a = a || {};
-    const payload = {
-        action: 'guardar_asignatura',
-        id: a.id || '',
-        nombre: a.nombre_completo || a.nombre || '',
-        codigo: a.codigo || '',
-        carrera: a.carrera || '',
-        grado: a.grado || '',
-        semestre: a.semestre || '',
-        modulo: a.modulo || '',
-        carga_horaria: a.carga_horaria || 0,
-        color: a.color || '#10b981',
-        icono: a.icono || 'bi-book',
-        estado: a.estado || 'activo'
-    };
-    return fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    }).then(r => r.json()).catch(() => ({ ok: false }));
+function gasUpdateProfile(data) {
+    return callGas('actualizar_perfil', data, 'POST');
 }
 
-// Helper: catálogo de asignaturas desde Google Sheets vía GAS (GET listar_asignaturas)
-// Devuelve {asignaturas:[{Nombre,Codigo,Carrera,Grado,...}]}. Nunca lanza.
+function gasChangePassword(cedula, oldPassword, newPassword, token) {
+    return callGas('cambiar_password', {
+        cedula: String(cedula || '').replace(/[\.\s\-]/g, '').trim(),
+        old_password: oldPassword,
+        new_password: newPassword,
+        token: token || ''
+    }, 'POST');
+}
+
+function gasRecoverAccess(cedula, email) {
+    return callGas('recuperar_acceso', {
+        cedula: String(cedula || '').replace(/[\.\s\-]/g, '').trim(),
+        email: String(email || '').toLowerCase().trim()
+    }, 'POST');
+}
+
+function gasCheckStudent(cedula) {
+    return callGas('verificar_alumno', { cedula: String(cedula || '').replace(/[\.\s\-]/g, '').trim() }, 'GET');
+}
+
+function gasGetRoles(cedula) {
+    return callGas('verificar_roles', { cedula: String(cedula || '').replace(/[\.\s\-]/g, '').trim() }, 'GET');
+}
+
 function gasGetSubjects() {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    return fetch(GAS_URL + '?action=listar_asignaturas', { signal: controller.signal })
-        .then(r => { clearTimeout(timeout); return r.json(); })
-        .then(d => ({ asignaturas: (d && d.asignaturas) || (Array.isArray(d) ? d : []) }))
-        .catch(() => { clearTimeout(timeout); return { asignaturas: [] }; });
+    return callGas('listar_asignaturas', {}, 'GET');
 }
 
-// Normaliza un usuario del API al formato que esperan las pantallas (nombre/apellido/rol en español)
 function mapUser(u) {
-    u = u || {};
-    const role = u.role || u.rol || 'student';
+    if (!u) return null;
+    const role = (u.rol || u.role || 'alumno').toLowerCase();
     return {
-        id: u.id,
-        username: u.username,
+        id: u.id || u.cedula || '',
+        cedula: u.cedula || u.username || '',
+        username: u.username || u.cedula || '',
         nombre: u.firstname || u.nombre || '',
         apellido: u.lastname || u.apellido || '',
-        rol: ROLE_ES[role] || 'alumno',
-        firstname: u.firstname,
-        lastname: u.lastname,
+        rol: ROLE_ES[role] || role || 'alumno',
+        firstname: u.firstname || u.nombre || '',
+        lastname: u.lastname || u.apellido || '',
         role: role,
-        email: u.email,
-        must_change_password: u.must_change_password ? 1 : 0
+        email: u.email || '',
+        telefono: u.telefono || '',
+        grado: u.grado || '',
+        carrera: u.carrera || '',
+        seccion: u.seccion || '',
+        foto: u.foto || u.foto_url || '',
+        foto_url: u.foto_url || u.foto || '',
+        must_change_password: u.must_change_password ? 1 : 0,
+        estado: u.estado || 'activo'
     };
 }
 
+// ══════════════════════════════════════════════════════════════
+// OBJETO API CENTRAL (CenturiaAPI)
+// ══════════════════════════════════════════════════════════════
+
 const API = {
-    // La aplicación y la API se sirven desde el mismo origen. Esto evita
-    // mezclar datos con otro servicio local que use un puerto diferente.
-    baseUrl: (typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol))
-        ? new URL('/api/', window.location.origin).href
-        : 'http://127.0.0.1:8080/api/',
+    baseUrl: GAS_URL,
+    callGas: callGas,
 
-    // --- Authentication ---
+    // --- Autenticación ---
 
-    // Login con cédula + contraseña institucional. Solo PHP API (rápido).
-    // Formato pass: PrimeraLetraNombre(Mayús) + primeraLetraApellido(minús) + cédula(sin puntos) + *
     login(cedula, password) {
-        return fetch(`${this.baseUrl}auth.php?action=login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `username=${encodeURIComponent(cedula)}&password=${encodeURIComponent(password)}`
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
+        cedula = String(cedula || '').replace(/[\.\s\-]/g, '').trim();
+        password = String(password || '').trim();
 
-            if (response.ok && data.success !== false) {
-                const p = (data.token !== undefined || data.user !== undefined) ? data : (data.data || {});
-                const user = mapUser(p.user || {});
-                if (p.token) {
-                    localStorage.setItem('centuria_auth_token', p.token);
+        if (!cedula || !password) {
+            return Promise.resolve({ ok: false, message: 'Debes ingresar tu cédula y contraseña.' });
+        }
+
+        return gasLogin(cedula, password).then(res => {
+            if (res && res.ok && res.token && res.user) {
+                const user = mapUser(res.user);
+                const token = res.token;
+                try {
+                    localStorage.setItem('centuria_auth_token', token);
                     localStorage.setItem('centuria_user', JSON.stringify(user));
-                }
-                // El inicio de sesión no crea registros ni asignaciones en otra base.
-                return { ok: true, user: user, token: p.token };
-            }
-
-            return { ok: false, message: (data && (data.error || data.message)) || 'Cédula o contraseña incorrecta.' };
-        })
-        .catch(err => {
-            console.error('Login fetch error:', err);
-            return { ok: false, message: 'Error de conexión con el servidor.' };
-        });
-    },
-
-    // Register nuevo usuario. Dual storage: PHP API + Google Sheets. Nunca lanza: {ok,user,token,message}
-    register(username, password, firstname, lastname, email, courseId = null, role = 'student') {
-        return fetch(`${this.baseUrl}auth.php?action=register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&firstname=${encodeURIComponent(firstname)}&lastname=${encodeURIComponent(lastname)}&email=${encodeURIComponent(email || '')}&course_id=${courseId || ''}&role=${encodeURIComponent(role || 'student')}`
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
-            if (!response.ok || data.success === false) {
-                let msg = (data && (data.error || data.message)) || 'No se pudo registrar.';
-                if (/already exists/i.test(msg)) msg = 'Esta cédula ya está registrada.';
-                return { ok: false, message: msg };
-            }
-            const p = (data.token !== undefined || data.user !== undefined) ? data : (data.data || {});
-            const user = mapUser(p.user || {});
-            if (p.token) {
-                localStorage.setItem('centuria_auth_token', p.token);
-                localStorage.setItem('centuria_user', JSON.stringify(user));
-            }
-            // Las réplicas requieren una sincronización confirmada del servidor.
-            // No registrar docentes como alumnos mediante un envío sin confirmación.
-            return { ok: true, user: user, token: p.token };
-        })
-        .catch(() => ({ ok: false, message: 'Error de conexión con el servidor.' }));
-    },
-
-    // Validar sesión actual (comprobar token)
-    validateSession() {
-        const token = localStorage.getItem('centuria_auth_token');
-        if (!token) return Promise.resolve({ valid: false, user: null });
-
-        return fetch(`${this.baseUrl}auth.php?action=validate`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
-            if (!response.ok || !data.valid) {
-                // Token inválido o expirado - limpiar
-                this.logout();
-                return { valid: false, user: null };
-            }
-            return { valid: true, user: data.user };
-        })
-        .catch(() => ({ valid: false, user: null }));
-    },
-
-    // Obtener datos de usuario actual
-    getCurrentUser() {
-        const userStr = localStorage.getItem('centuria_user');
-        return userStr ? JSON.parse(userStr) : null;
-    },
-
-    // Logout - destruir token
-    logout() {
-        const token = localStorage.getItem('centuria_auth_token');
-        if (token) {
-            fetch(`${this.baseUrl}auth.php?action=logout`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .catch(() => {}); // Ignorar errores en logout
-        }
-        localStorage.removeItem('centuria_auth_token');
-        localStorage.removeItem('centuria_user');
-    },
-
-    // Obtener token actual (para usar en otros endpoints)
-    getToken() {
-        return localStorage.getItem('centuria_auth_token');
-    },
-
-    // --- Courses ---
-
-    // Listar todos los cursos
-    listCourses() {
-        return fetch(`${this.baseUrl}courses.php?action=list`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to load courses');
-            return data.courses || [];
-        });
-    },
-
-    // Obtener un curso por ID
-    getCourse(courseId) {
-        return fetch(`${this.baseUrl}courses.php?action=get&id=${courseId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Course not found');
-            return data.course;
-        });
-    },
-
-    // Inscribirse en un curso
-    enrollCourse(courseId) {
-        return fetch(`${this.baseUrl}courses.php?action=enroll`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `course_id=${courseId}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Enrollment failed');
-            return data;
-        });
-    },
-
-    // Obtener cursos (formato {ok, courses} para index.html; nunca lanza)
-    getCourses() {
-        return this.listCourses()
-            .then(c => ({ ok: true, courses: c }))
-            .catch(() => ({ ok: false, courses: [] }));
-    },
-
-    // --- Grades ---
-
-    // Listar calificaciones de un curso
-    listGrades(courseId) {
-        return fetch(`${this.baseUrl}grades.php?action=list&course_id=${courseId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to load grades');
-            return data.grades || [];
-        });
-    },
-
-    // Registrar una calificación
-    recordGrade(userId, courseId, component, score, maxScore = 100) {
-        return fetch(`${this.baseUrl}grades.php?action=record`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `user_id=${userId}&course_id=${courseId}&component=${encodeURIComponent(component)}&score=${score}&max_score=${maxScore}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to record grade');
-            return data;
-        });
-    },
-
-    // Calcular nota final de un curso
-    getFinalGrades(courseId) {
-        return fetch(`${this.baseUrl}grades.php?action=final&course_id=${courseId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to get final grades');
-            return data.final_grades || {};
-        });
-    },
-
-    // --- Attendance ---
-
-    // Marcar asistencia
-    markAttendance(courseId, date, status = 'present', studentId = null) {
-        return fetch(`${this.baseUrl}attendance.php?action=mark`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `course_id=${courseId}&date=${date}&status=${status}&student_id=${studentId || ''}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to mark attendance');
-            return data;
-        });
-    },
-
-    // Listar asistencia de un curso
-    listAttendance(courseId) {
-        return fetch(`${this.baseUrl}attendance.php?action=list&course_id=${courseId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to load attendance');
-            return data.attendance || [];
-        });
-    },
-
-    // Resumen de asistencia
-    getAttendanceSummary(courseId) {
-        return fetch(`${this.baseUrl}attendance.php?action=summary&course_id=${courseId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to get attendance summary');
-            return data;
-        });
-    },
-
-    // --- Calendar ---
-
-    // Crear evento de calendario
-    createEvent(title, description, startDate, endDate = null, allDay = false) {
-        return fetch(`${this.baseUrl}calendar.php?action=create`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `title=${encodeURIComponent(title)}&description=${encodeURIComponent(description || '')}&start_date=${startDate}&end_date=${endDate || ''}&all_day=${allDay}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to create event');
-            return data.event;
-        });
-    },
-
-    // Listar eventos de un curso
-    listEvents(courseId = null, start = null, end = null) {
-        let url = `${this.baseUrl}calendar.php?action=list`;
-        const params = [];
-        if (courseId) params.push(`course_id=${courseId}`);
-        if (start) params.push(`start=${start}`);
-        if (end) params.push(`end=${end}`);
-        if (params.length > 0) url += `&${params.join('&')}`;
-
-        return fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to load events');
-            return data.events || [];
-        });
-    },
-
-    // Obtener un evento
-    getEvent(eventId) {
-        return fetch(`${this.baseUrl}calendar.php?action=get&id=${eventId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Event not found');
-            return data.event;
-        });
-    },
-
-    // Actualizar evento
-    updateEvent(id, title, description, startDate, endDate = null, allDay = false) {
-        return fetch(`${this.baseUrl}calendar.php?action=update`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `id=${id}&title=${encodeURIComponent(title)}&description=${encodeURIComponent(description || '')}&start_date=${startDate}&end_date=${endDate || ''}&all_day=${allDay}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to update event');
-            return data;
-        });
-    },
-
-    // Eliminar evento
-    deleteEvent(id) {
-        return fetch(`${this.baseUrl}calendar.php?action=delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `id=${id}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to delete event');
-            return data;
-        });
-    },
-
-    // --- Admin ---
-
-    // Listar todos los usuarios
-    listUsers() {
-        return fetch(`${this.baseUrl}admin.php?action=list`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to load users');
-            return data.users || [];
-        });
-    },
-
-    // Listar usuarios en formato {ok, users[]} con roles en español (admin_roles.html). Nunca lanza.
-    adminGetUsers() {
-        return this.listUsers()
-            .then(users => ({
-                ok: true,
-                users: (users || []).map(x => ({
-                    id: x.id,
-                    cedula: x.username,
-                    username: x.username,
-                    nombre: ((x.firstname || '') + ' ' + (x.lastname || '')).trim(),
-                    rol: ROLE_ES[x.role] || 'alumno',
-                    estado: x.role === 'inactive' ? 'inactivo' : 'activo',
-                    carrera: x.course_name || '',
-                    asignatura: x.course_name || '',
-                    seccion: '',
-                    email: x.email
-                }))
-            }))
-            .catch(() => ({ ok: false, users: [], message: 'Error de conexión.' }));
-    },
-
-    // Obtener usuario por ID
-    getUser(userId) {
-        return fetch(`${this.baseUrl}admin.php?action=get&id=${userId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'User not found');
-            return data.user;
-        });
-    },
-
-    // Asignar rol por user_id numérico
-    setUserRole(userId, role) {
-        return fetch(`${this.baseUrl}admin.php?action=set_role`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `user_id=${userId}&role=${encodeURIComponent(role)}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to set role');
-            return data;
-        });
-    },
-
-    // Eliminar usuario por user_id numérico
-    deleteUser(userId) {
-        return fetch(`${this.baseUrl}admin.php?action=delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: `user_id=${userId}`
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to delete user');
-            return data;
-        });
-    },
-
-    // Asignar rol por cédula (admin_roles.html). Nunca lanza: {ok, message}.
-    adminUpdateRole(cedula, nombre, rol, carrera, seccion, estado) {
-        return this.listUsers()
-            .then(async users => {
-                const f = (users || []).find(x => String(x.username) === String(cedula));
-                if (!f) return { ok: false, message: 'Cédula no encontrada.' };
-                await this.setUserRole(f.id, ROLE_EN[String(rol || '').toLowerCase()] || 'student');
-                return { ok: true };
-            })
-            .catch(() => ({ ok: false, message: 'Error de conexión.' }));
-    },
-
-    // Eliminar/desactivar por cédula (admin_roles.html). Nunca lanza: {ok, message}.
-    adminDeleteRole(cedula, rol, carrera) {
-        return this.listUsers()
-            .then(async users => {
-                const f = (users || []).find(x => String(x.username) === String(cedula));
-                if (!f) return { ok: false, message: 'Cédula no encontrada.' };
-                await this.deleteUser(f.id);
-                return { ok: true };
-            })
-            .catch(() => ({ ok: false, message: 'Error de conexión.' }));
-    },
-
-    // Obtener roles de una cédula. Nunca lanza: {ok, roles[]}.
-    // Si hay token y es el usuario logueado, usa la sesión; si no, busca en la BD.
-    getRoles(cedula) {
-        const shape = (roleEn) => ({ ok: true, roles: [{ rol: ROLE_ES[roleEn] || 'alumno', estado: 'activo', carrera: '', seccion: '', asignatura: '' }] });
-        const empty = { ok: true, roles: [] };
-        try {
-            const token = this.getToken();
-            if (token) {
-                return this.validateSession().then(v => {
-                    const u = ((v && v.user) || this.getCurrentUser() || {});
-                    if (u.username && String(u.username) === String(cedula)) {
-                        return shape(u.role || u.rol || 'student');
+                    sessionStorage.setItem('centuria_auth_token', token);
+                    sessionStorage.setItem('centuria_user', JSON.stringify(user));
+                    if (res.token_expires) {
+                        sessionStorage.setItem('centuria_token_expires', res.token_expires);
+                        localStorage.setItem('centuria_token_expires', res.token_expires);
                     }
-                    return this._findRoleByCedula(cedula).then(r => r ? shape(r) : empty).catch(() => empty);
-                }).catch(() => empty);
+                } catch (e) {}
+                return { ok: true, user: user, token: token, must_change_password: res.must_change_password || 0 };
             }
-            return this._findRoleByCedula(cedula).then(r => r ? shape(r) : empty).catch(() => empty);
-        } catch (e) {
-            return Promise.resolve(empty);
-        }
+            return { ok: false, message: (res && res.error) || 'Cédula o contraseña incorrecta.' };
+        }).catch(() => ({ ok: false, message: 'Error de comunicación con el servidor en la nube.' }));
     },
 
-    // Buscar rol (inglés) de una cédula en la BD. Nunca lanza.
-    _findRoleByCedula(cedula) {
-        return this.listUsers()
-            .then(users => {
-                const f = (users || []).find(x => String(x.username) === String(cedula));
-                return f ? (f.role || 'student') : null;
-            })
-            .catch(() => null);
+    authLogin(cedula, password) {
+        return this.login(cedula, password);
     },
 
-    // Importar usuarios desde CSV
-    importUsersFromCSV(csvFile, maxRows = 100) {
-        const formData = new FormData();
-        formData.append('csv', csvFile);
-        formData.append('max_rows', maxRows);
-
-        return fetch(`${this.baseUrl}upload.php?action=import`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: formData
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to import CSV');
-            return data;
-        });
-    },
-
-    // Health check
-    healthCheck() {
-        return fetch(`${this.baseUrl}upload.php?action=health`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.getToken()}`
-            }
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Health check failed');
-            return data;
-        });
-    },
-
-    // --- Auth estilo objeto (index.html: window.CenturiaAPI.auth.register/login) ---
-
-    // Register con objeto {cedula,nombre,apellido,email,telefono,password,rol,grado,carrera,seccion}. Dual storage. Nunca lanza.
     authRegister(userData) {
         userData = userData || {};
-        const body = `username=${encodeURIComponent(userData.cedula || '')}`
-            + `&password=${encodeURIComponent(userData.password || '')}`
-            + `&firstname=${encodeURIComponent(userData.nombre || '')}`
-            + `&lastname=${encodeURIComponent(userData.apellido || '')}`
-            + `&email=${encodeURIComponent(userData.email || '')}`
-            + `&role=${encodeURIComponent(userData.rol || userData.role || 'alumno')}`
-            + `&grado=${encodeURIComponent(userData.grado || '')}`
-            + `&carrera=${encodeURIComponent(userData.carrera || '')}`
-            + `&seccion=${encodeURIComponent(userData.seccion || '')}`
-            + `&foto=${encodeURIComponent(userData.foto || '')}`;
-        return fetch(`${this.baseUrl}auth.php?action=register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
-            if (!response.ok || data.success === false) {
-                let msg = (data && (data.error || data.message)) || 'No se pudo registrar.';
-                if (/already exists/i.test(msg)) msg = 'Esta cédula ya está registrada.';
-                return { ok: false, message: msg };
-            }
-            const p = (data.token !== undefined || data.user !== undefined) ? data : (data.data || {});
-            const user = mapUser(p.user || {});
-            if (p.token) {
-                localStorage.setItem('centuria_auth_token', p.token);
-                localStorage.setItem('centuria_user', JSON.stringify(user));
-            }
-            // No generar un rol alumno en otra base sin sincronizar el rol real.
-            return { ok: true, user: user, token: p.token };
-        })
-        .catch(() => ({ ok: false, message: 'Error de conexión con el servidor.' }));
-    },
+        const c = String(userData.cedula || userData.username || '').replace(/[\.\s\-]/g, '').trim();
+        const p = String(userData.password || '').trim();
+        const n = String(userData.nombre || userData.firstname || '').trim();
+        const a = String(userData.apellido || userData.lastname || '').trim();
+        const e = String(userData.email || '').toLowerCase().trim();
 
-    // Login estilo objeto. Nunca lanza: {ok, token, user, message}.
-    authLogin(cedula, password) {
-        return API.login(cedula, password);
-    },
+        if (!c) return Promise.resolve({ ok: false, error: 'Cédula requerida.', message: 'Cédula requerida.' });
+        if (!n || !a) return Promise.resolve({ ok: false, error: 'Nombre y apellido requeridos.', message: 'Nombre y apellido requeridos.' });
+        if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+            return Promise.resolve({ ok: false, error: 'Correo electrónico inválido.', message: 'Correo electrónico inválido.' });
+        }
+        if (!p || p.length < 6) {
+            return Promise.resolve({ ok: false, error: 'La contraseña debe tener al menos 6 caracteres.', message: 'La contraseña debe tener al menos 6 caracteres.' });
+        }
 
-    // --- Adaptadores de espacios de nombres (teacher_panel, admin/index, upload) ---
+        const payload = Object.assign({}, userData, {
+            cedula: c,
+            nombre: n,
+            apellido: a,
+            email: e,
+            password: p,
+            rol: userData.rol || 'alumno'
+        });
 
-    // Todos los roles en formato {roles[]} con cédula/nombre/rol/estado/carrera
-    _adminRolesAll() {
-        return this.listUsers()
-            .then(users => ({
-                roles: (users || []).map(x => ({
-                    cedula: x.username,
-                    nombre: ((x.firstname || '') + ' ' + (x.lastname || '')).trim(),
-                    rol: ROLE_ES[x.role] || 'alumno',
-                    estado: x.role === 'inactive' ? 'inactivo' : 'activo',
-                    carrera: x.course_name || '',
-                    seccion: '',
-                    asignatura: x.course_name || ''
-                }))
-            }))
-            .catch(() => ({ roles: [] }));
-    },
-
-    // Asignar rol desde objeto {cedula,nombre,rol,carrera,estado}. Crea el usuario si no existe.
-    _adminAssign(o) {
-        o = o || {};
-        const ced = String(o.cedula || '').trim().replace(/\./g, '');
-        if (!ced) return Promise.resolve({ status: 'Error', mensaje: 'Cédula requerida.' });
-        const enRole = ROLE_EN[String(o.rol || 'alumno').toLowerCase()] || 'student';
-        return this.listUsers()
-            .then(async users => {
-                const f = (users || []).find(x => String(x.username) === ced);
-                if (f) {
-                    await this.setUserRole(f.id, enRole);
-                    return { status: 'Éxito', mensaje: 'Rol actualizado.' };
+        return gasRegister(payload).then(res => {
+            if (res && res.ok) {
+                if (res.token && res.user) {
+                    const user = mapUser(res.user);
+                    try {
+                        localStorage.setItem('centuria_auth_token', res.token);
+                        localStorage.setItem('centuria_user', JSON.stringify(user));
+                        sessionStorage.setItem('centuria_auth_token', res.token);
+                        sessionStorage.setItem('centuria_user', JSON.stringify(user));
+                        if (res.token_expires) {
+                            sessionStorage.setItem('centuria_token_expires', res.token_expires);
+                            localStorage.setItem('centuria_token_expires', res.token_expires);
+                        }
+                    } catch (ex) {}
                 }
-                const parts = String(o.nombre || '').trim().split(/\s+/).filter(Boolean);
-                const first = parts[0] || 'Usuario';
-                const last = parts.slice(1).join(' ') || 'Sin apellido';
-                const pass = first.charAt(0).toUpperCase() + ((last.charAt(0) || 'x').toLowerCase()) + ced + '*';
-                const body = `username=${encodeURIComponent(ced)}&password=${encodeURIComponent(pass)}`
-                    + `&firstname=${encodeURIComponent(first)}&lastname=${encodeURIComponent(last)}&email=&role=${enRole}`;
-                const res = await fetch(`${this.baseUrl}auth.php?action=register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Authorization': `Bearer ${this.getToken()}`
-                    },
-                    body: body
-                });
-                const d = await res.json().catch(() => ({}));
-                if (!res.ok) return { status: 'Error', mensaje: d.error || 'No se pudo crear.' };
-                return { status: 'Éxito', mensaje: 'Usuario creado. Contraseña: ' + pass };
-            })
-            .catch(() => ({ status: 'Error', mensaje: 'Error de conexión.' }));
+                return { ok: true, message: res.mensaje || 'Registro exitoso.', user: res.user ? mapUser(res.user) : null, token: res.token };
+            }
+            return { ok: false, error: (res && res.error) || 'Error al registrar.', message: (res && res.error) || 'Error al registrar.' };
+        }).catch(() => ({ ok: false, error: 'Error de comunicación con el servidor.', message: 'Error de comunicación con el servidor.' }));
     },
 
-    // Revocar acceso: marca el rol como inactivo (no borra el historial)
-    _adminRevoke(cedula) {
-        return this.listUsers()
-            .then(async users => {
-                const f = (users || []).find(x => String(x.username) === String(cedula));
-                if (!f) return { status: 'Error', mensaje: 'Cédula no encontrada.' };
-                await this.setUserRole(f.id, 'inactive');
-                return { status: 'Éxito', mensaje: 'Acceso revocado.' };
-            })
-            .catch(() => ({ status: 'Error', mensaje: 'Error de conexión.' }));
+    register(username, password, firstname, lastname, email, courseId = null, role = 'student') {
+        return this.authRegister({
+            cedula: username,
+            password: password,
+            nombre: firstname,
+            apellido: lastname,
+            email: email,
+            carrera: courseId,
+            rol: role
+        });
     },
 
-    // Asistencia por curso y fecha. Si el curso no es numérico (nombre), devuelve vacío sin romper.
-    _attByDate(courseId, fecha) {
-        if (!/^\d+$/.test(String(courseId || ''))) return Promise.resolve({ attendance: [] });
-        return this.listAttendance(courseId)
-            .then(a => ({ attendance: (a || []).filter(x => !fecha || x.date === fecha) }))
-            .catch(() => ({ attendance: [] }));
+    validateSession() {
+        const token = this.getToken();
+        if (!token) return Promise.resolve({ valid: false, user: null });
+
+        return gasValidateSession(token).then(res => {
+            if (res && res.valid && res.user) {
+                const user = mapUser(res.user);
+                try {
+                    localStorage.setItem('centuria_user', JSON.stringify(user));
+                    sessionStorage.setItem('centuria_user', JSON.stringify(user));
+                } catch (e) {}
+                return { valid: true, user: user };
+            }
+            this.logout();
+            return { valid: false, user: null };
+        }).catch(() => {
+            const cachedUser = this.getCurrentUser();
+            if (cachedUser) return { valid: true, user: cachedUser, offline: true };
+            return { valid: false, user: null };
+        });
     },
 
-    // Marcar asistencia: acepta objeto {user_id,course_id,date,status} o posicional.
-    // Con curso no numérico guarda en localStorage como respaldo.
-    _attMark(a, b, c, d) {
-        let p = {};
-        if (a && typeof a === 'object') {
-            p = { user_id: a.user_id, course_id: a.course_id, date: a.date, status: a.status || 'presente' };
-        } else {
-            p = { course_id: a, date: b, status: c || 'presente', user_id: d };
-        }
-        const st = { presente: 'present', ausente: 'absent', tardanza: 'late', present: 'present', absent: 'absent', late: 'late', excused: 'excused' }[String(p.status)] || 'present';
-        if (!/^\d+$/.test(String(p.course_id || ''))) {
-            try {
-                const k = 'att_local_' + (p.date || 'sin_fecha');
-                const arr = JSON.parse(localStorage.getItem(k) || '[]');
-                arr.push(p);
-                localStorage.setItem(k, JSON.stringify(arr));
-            } catch (e) {}
-            return Promise.resolve({ ok: true, local: true });
-        }
-        return this.markAttendance(p.course_id, p.date, st, p.user_id)
-            .then(x => ({ ok: true, data: x }))
-            .catch(() => ({ ok: false, message: 'Error al guardar asistencia.' }));
+    getCurrentUser() {
+        try {
+            const userStr = sessionStorage.getItem('centuria_user') || localStorage.getItem('centuria_user');
+            return userStr ? JSON.parse(userStr) : null;
+        } catch (e) { return null; }
     },
 
-    // Subida CSV: acepta FormData ya armado o (archivo, maxRows)
-    _uploadCSV(a, b) {
-        let fd = null;
-        if (typeof FormData !== 'undefined' && a instanceof FormData) {
-            fd = a;
-            let has = false;
-            try { for (const k of fd.keys()) { if (k === 'action') { has = true; break; } } } catch (e) {}
-            if (!has) { try { fd.append('action', 'import'); } catch (e) {} }
-        } else {
-            fd = new FormData();
-            fd.append('action', 'import');
-            fd.append('csv', a);
-            fd.append('max_rows', b || 100);
-        }
-        return fetch(`${this.baseUrl}upload.php?action=import`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${this.getToken()}` },
-            body: fd
-        })
-        .then(async r => {
-            const d = await r.json().catch(() => ({}));
-            return { success: r.ok && d.success !== false, message: d.message || d.error || '', data: d.data || d };
-        })
-        .catch(() => ({ success: false, message: 'Error de conexión.' }));
+    getToken() {
+        try {
+            return sessionStorage.getItem('centuria_auth_token') ||
+                   localStorage.getItem('centuria_auth_token') ||
+                   sessionStorage.getItem('token') || null;
+        } catch (e) { return null; }
     },
 
-    // --- Documentos del sistema (actas, planillas, registros, planes) ---
-
-    // Obtener un documento guardado por tipo/curso/periodo. Nunca lanza.
-    documentosGet(tipo, curso = '', periodo = '') {
-        const q = `tipo=${encodeURIComponent(tipo)}&curso=${encodeURIComponent(curso)}&periodo=${encodeURIComponent(periodo)}`;
-        return fetch(`${this.baseUrl}documentos.php?action=get&${q}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${this.getToken()}` }
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
-            if (!response.ok) return { found: false };
-            if (!data.found) return { found: false };
-            const doc = data.documento || {};
-            try { doc.datosObj = JSON.parse(doc.datos || '{}'); } catch (e) { doc.datosObj = {}; }
-            return { found: true, documento: doc };
-        })
-        .catch(() => ({ found: false }));
+    logout() {
+        const token = this.getToken();
+        if (token) gasLogout(token);
+        try {
+            localStorage.removeItem('centuria_auth_token');
+            localStorage.removeItem('centuria_token');
+            localStorage.removeItem('centuria_user');
+            localStorage.removeItem('centuria_token_expires');
+            sessionStorage.removeItem('centuria_auth_token');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('centuria_user');
+            sessionStorage.removeItem('centuria_token_expires');
+            sessionStorage.clear();
+        } catch (e) {}
+        return Promise.resolve({ ok: true });
     },
 
-    // Guardar un documento (solo docente/admin/académico). Nunca lanza: {ok, message}.
-    documentosSave(obj) {
-        obj = obj || {};
-        const datos = (typeof obj.datos === 'string') ? obj.datos : JSON.stringify(obj.datos || {});
-        const body = `tipo=${encodeURIComponent(obj.tipo || '')}&curso=${encodeURIComponent(obj.curso || '')}`
-            + `&periodo=${encodeURIComponent(obj.periodo || '')}&docente=${encodeURIComponent(obj.docente || '')}`
-            + `&datos=${encodeURIComponent(datos)}`;
-        return fetch(`${this.baseUrl}documentos.php?action=save`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Bearer ${this.getToken()}`
-            },
-            body: body
-        })
-        .then(async response => {
-            let data = {};
-            try { data = await response.json(); } catch (e) { data = {}; }
-            if (!response.ok) return { ok: false, message: (data && data.error) || 'No se pudo guardar.' };
-            return { ok: true, message: (data && data.message) || 'Guardado.' };
-        })
-        .catch(() => ({ ok: false, message: 'Error de conexión.' }));
+    updateProfile(data) {
+        data = data || {};
+        const user = this.getCurrentUser() || {};
+        const cedula = data.cedula || user.cedula || user.username;
+        const payload = Object.assign({}, data, { cedula: cedula });
+
+        return gasUpdateProfile(payload).then(res => {
+            if (res && res.ok && res.user) {
+                const updated = mapUser(res.user);
+                try {
+                    localStorage.setItem('centuria_user', JSON.stringify(updated));
+                    sessionStorage.setItem('centuria_user', JSON.stringify(updated));
+                } catch (e) {}
+                return { ok: true, user: updated };
+            }
+            return { ok: false, error: (res && res.error) || 'No se pudo actualizar el perfil.' };
+        }).catch(() => ({ ok: false, error: 'Error al conectar con el servidor.' }));
     },
 
-    // Nómina de un curso desde la BD (acepta nombre 'TIC' o id numérico). Nunca lanza.
+    changePassword(oldPassword, newPassword) {
+        const user = this.getCurrentUser() || {};
+        const cedula = user.cedula || user.username;
+        const token = this.getToken();
+        if (!cedula) return Promise.resolve({ ok: false, error: 'Sesión no válida.' });
+        return gasChangePassword(cedula, oldPassword, newPassword, token);
+    },
+
+    recoverAccess(cedula, email) {
+        return gasRecoverAccess(cedula, email);
+    },
+
+    // --- Cursos y Asignaturas ---
+
+    listCourses(cedula, rol, carrera) {
+        const u = this.getCurrentUser() || {};
+        cedula = cedula || u.cedula || '';
+        rol = rol || u.rol || 'alumno';
+        carrera = carrera || u.carrera || '';
+        return callGas('listar_cursos', { cedula: cedula, rol: rol, carrera: carrera }, 'GET').then(r => r.cursos || []);
+    },
+
+    getCourse(courseId) {
+        return this.listCourses().then(list => list.find(c => String(c.id || c.codigo) === String(courseId)) || null);
+    },
+
+    enrollCourse(courseId) {
+        const u = this.getCurrentUser() || {};
+        return callGas('matricular_alumno', { cedula: u.cedula, curso_id: courseId }, 'POST');
+    },
+
+    getMyGrades(courseId) {
+        const u = this.getCurrentUser() || {};
+        return callGas('listar_notas', { cedula: u.cedula, asignatura: courseId || '' }, 'GET').then(r => r.data || []);
+    },
+
+    getGrades(courseId) {
+        return callGas('listar_notas', { asignatura: courseId || '' }, 'GET').then(r => r.data || []);
+    },
+
+    recordSubjectGrades(courseId, grades) {
+        return callGas('guardar_notas_asignatura', { asignatura: courseId, notas: grades }, 'POST');
+    },
+
+    listSubjects(career) {
+        return callGas('listar_asignaturas', { carrera: career || '' }, 'GET').then(r => r.asignaturas || []);
+    },
+
+    getSubject(code) {
+        return this.listSubjects().then(list => list.find(s => s.codigo === code) || null);
+    },
+
+    saveDocument(docData) {
+        return callGas('guardar_documento', docData, 'POST');
+    },
+
+    getRoles(cedula) {
+        return gasGetRoles(cedula);
+    },
+
+    _adminRolesAll() {
+        return callGas('verificar_roles', {}, 'GET');
+    },
+
+    _adminAssign(data) {
+        return callGas('asignar_rol', data, 'POST');
+    },
+
+    _adminRevoke(cedula, rol, carrera) {
+        return callGas('desactivar_rol', { cedula, rol, carrera }, 'POST');
+    },
+
+    _attByDate(course, date) {
+        return callGas('listar_eventos_asistencia', { asignatura: course, fecha: date }, 'GET');
+    },
+
+    _attMark(code, cedula, estado, obs) {
+        return callGas('registrar_asistencia_codigo', { codigo: code, cedula: cedula, estado: estado, observaciones: obs }, 'POST');
+    },
+
+    _uploadCSV(data, type) {
+        return callGas('subir_csv', { data: data, tipo: type }, 'POST');
+    },
+
     roster(curso) {
-        return this.listUsers()
-            .then(users => {
-                const esNum = /^\d+$/.test(String(curso || ''));
-                const list = (users || []).filter(u => {
-                    if ((u.role || 'student') === 'inactive') return false;
-                    if (esNum) return String(u.course_id) === String(curso);
-                    if (!curso) return true;
-                    return (u.course_name || '') === curso;
-                });
-                return list.map(u => ({
-                    id: u.id,
-                    cedula: u.username,
-                    nombre: ((u.firstname || '') + ' ' + (u.lastname || '')).trim(),
-                    apellido: '',
-                    email: u.email || ''
-                }));
-            })
+        const u = this.getCurrentUser() || {};
+        return callGas('mis_alumnos', { carrera: u.carrera || '', seccion: u.seccion || '' }, 'GET')
+            .then(r => (r.alumnos || []).map(a => ({
+                id: a.id || a.cedula,
+                cedula: a.cedula,
+                nombre: a.nombre || a.nombre_completo || '',
+                apellido: '',
+                email: a.email || ''
+            })))
             .catch(() => []);
     },
 
-    // Notas finales de un curso (requiere id numérico). Nunca lanza: {}.
     notasFinales(courseId) {
-        if (!/^\d+$/.test(String(courseId || ''))) return Promise.resolve({});
-        return this.getFinalGrades(courseId).catch(() => ({}));
+        return this.getGrades(courseId).catch(() => ({}));
     }
 };
 
-// Espacios de nombres usados por los paneles (teacher_panel, admin/index, upload)
+// ══════════════════════════════════════════════════════════════
+// ESPACIOS DE NOMBRES MODULARES (Zero-PHP)
+// ══════════════════════════════════════════════════════════════
+
 API.auth = {
     register: (d) => API.authRegister(d),
-    login: (c, p) => API.authLogin(c, p)
+    login: (c, p) => API.authLogin(c, p),
+    validateSession: () => API.validateSession(),
+    logout: () => API.logout(),
+    getCurrentUser: () => API.getCurrentUser(),
+    getToken: () => API.getToken(),
+    updateProfile: (d) => API.updateProfile(d),
+    changePassword: (oldP, newP) => API.changePassword(oldP, newP),
+    recoverAccess: (c, e) => API.recoverAccess(c, e)
 };
+
+API.catalogos = {
+    getGrados: () => callGas('listar_grados', {}, 'GET'),
+    getCarreras: (grado) => callGas('listar_carreras', { grado: grado || '' }, 'GET'),
+    getSecciones: () => callGas('listar_secciones', {}, 'GET'),
+    getFiliales: () => callGas('listar_filiales', {}, 'GET'),
+    getAsignaturas: () => callGas('listar_asignaturas', {}, 'GET'),
+    list: (tipo) => {
+        if (tipo === 'grados') return callGas('listar_grados', {}, 'GET');
+        if (tipo === 'carreras') return callGas('listar_carreras', {}, 'GET');
+        if (tipo === 'secciones') return callGas('listar_secciones', {}, 'GET');
+        if (tipo === 'filiales') return callGas('listar_filiales', {}, 'GET');
+        return callGas('listar_asignaturas', {}, 'GET');
+    },
+    save: (data) => callGas('guardar_asignatura', data, 'POST'),
+    delete: (id) => callGas('eliminar_asignatura', { id }, 'POST')
+};
+
+API.docente = {
+    getMySubjects: (cedula) => callGas('listar_cursos', { cedula: cedula, rol: 'docente' }, 'GET').then(r => ({
+        ok: true,
+        subjects: r.cursos || [],
+        assignments: (r.cursos || []).map(c => ({
+            asignatura: c.codigo || c.id,
+            rol: 'docente',
+            estado: 'activo',
+            carrera: c.carrera || '',
+            seccion: c.seccion || ''
+        }))
+    })),
+    getStudents: (carrera, seccion) => callGas('mis_alumnos', { carrera: carrera || '', seccion: seccion || '' }, 'GET'),
+    getPendingRequests: () => callGas('docente_pendientes', {}, 'POST'),
+    approveRequest: (cedula, adminKey) => callGas('docente_aprobar', { cedula, admin_key: adminKey }, 'POST'),
+    rejectRequest: (cedula, motivo, adminKey) => callGas('docente_rechazar', { cedula, motivo, admin_key: adminKey }, 'POST'),
+    getMyRequests: (cedula) => callGas('docente_estado', { cedula }, 'POST').then(r => ({ ok: true, solicitudes: r.solicitudes || [] })),
+    requestSubject: (cedula, asignatura) => callGas('docente_solicitud', { cedula, asignatura }, 'POST')
+};
+
+API.grades = {
+    list: (params) => callGas('listar_notas', params || {}, 'GET'),
+    save: (data) => callGas('guardar_nota', data, 'POST'),
+    recordSubject: (data) => callGas('guardar_notas_asignatura', data, 'POST')
+};
+
+API.exams = {
+    saveAnswers: (data) => callGas('guardar_respuestas_examen', data, 'POST')
+};
+
+API.attendance = {
+    list: (params) => callGas('listar_eventos_asistencia', params || {}, 'GET'),
+    myEvents: (cedula) => callGas('mis_eventos_asistencia', { cedula }, 'GET'),
+    validateCode: (code) => callGas('validar_codigo_asistencia', { codigo: code }, 'GET'),
+    createEvent: (data) => callGas('crear_evento_asistencia', data, 'POST'),
+    mark: (data) => callGas('registrar_asistencia_codigo', data, 'POST'),
+    getEvent: (id) => callGas('detalle_evento_asistencia', { evento_id: id }, 'GET'),
+    closeEvent: (id) => callGas('cerrar_evento_asistencia', { evento_id: id }, 'POST'),
+    getByCourseAndDate: (c, f) => API._attByDate(c, f),
+    markAttendance: (a, b, c, d) => API._attMark(a, b, c, d)
+};
+
+API.calendar = {
+    list: (inicio, fin) => callGas('listar_eventos_calendario', { fecha_inicio: inicio || '', fecha_fin: fin || '' }, 'GET'),
+    get: (id) => callGas('detalle_evento_calendario', { evento_id: id }, 'GET'),
+    checkConflicts: (fecha, inicio, fin, excludeId) => callGas('verificar_conflictos_calendario', {
+        fecha: fecha, hora_inicio: inicio, hora_fin: fin, exclude_id: excludeId || ''
+    }, 'GET'),
+    create: (data) => callGas('crear_evento_calendario', data, 'POST'),
+    update: (data) => callGas('actualizar_evento_calendario', data, 'POST'),
+    delete: (id) => callGas('eliminar_evento_calendario', { id: id }, 'POST'),
+    carreras: () => callGas('listar_carreras', {}, 'GET').then(r => ({
+        ok: true,
+        carreras: (r.carreras || []).map(c => c.nombre || c)
+    }))
+};
+
+API.matricula = {
+    my: (cedula) => callGas('obtener_matricula', { cedula }, 'GET'),
+    save: (data) => callGas('guardar_matricula', data, 'POST'),
+    list: () => callGas('listar_matriculas', {}, 'GET'),
+    detail: (id, cedula) => callGas('detalle_matricula', { id, cedula }, 'GET'),
+    stats: () => callGas('estadisticas_matricula', {}, 'GET'),
+    updateStatus: (id, estado) => callGas('actualizar_estado_matricula', { id, estado }, 'POST'),
+    delete: (id) => callGas('eliminar_matricula', { id }, 'POST')
+};
+
+API.formularios = {
+    list: (carrera) => callGas('listar_formularios', { carrera: carrera || '' }, 'GET'),
+    get: (codigo) => callGas('obtener_formulario', { codigo }, 'GET'),
+    my: (cedula) => callGas('mis_formularios', { cedula }, 'GET'),
+    save: (data) => callGas('registrar_formulario', data, 'POST'),
+    completions: (formId) => callGas('completitud_formularios', { formulario_id: formId }, 'GET')
+};
+
+API.pagos = {
+    list: (cedula) => callGas('consultar_pagos', { cedula: cedula || '' }, 'GET'),
+    stats: (cedula) => callGas('consultar_pagos', { cedula: cedula || '' }, 'GET'),
+    save: (data) => callGas('registrar_pago', data, 'POST'),
+    updateStatus: (data) => callGas('actualizar_pago', data, 'POST'),
+    delete: (data) => callGas('actualizar_pago', Object.assign({}, data, { estado: 'anulado' }), 'POST')
+};
+
+API.filiales = {
+    list: () => callGas('listar_filiales', {}, 'GET'),
+    create: (data) => callGas('crear_filial', data, 'POST'),
+    toggle: (id) => callGas('toggle_filial', { id }, 'POST'),
+    adminsByFilial: (filial) => callGas('admins_por_filial', { filial }, 'GET'),
+    assignAdmin: (data) => callGas('asignar_admin_filial', data, 'POST'),
+    create: (data) => callGas('crear_filial', data, 'POST'),
+    update: (data) => callGas('actualizar_filial', data, 'POST'),
+    delete: (id) => callGas('eliminar_filial', { id }, 'POST')
+};
+
+API.asignaturas = {
+    list: (params) => {
+        if (typeof params === 'string') params = { q: params };
+        return callGas('listar_asignaturas', params || {}, 'GET');
+    },
+    create: (data) => callGas('guardar_asignatura', data, 'POST'),
+    update: (data) => callGas('guardar_asignatura', data, 'POST'),
+    save: (data) => callGas('guardar_asignatura', data, 'POST'),
+    delete: (id) => callGas('eliminar_asignatura', { id }, 'POST')
+};
+
+API.usuarios = {
+    list: () => callGas('listar_usuarios', {}, 'GET'),
+    get: (cedula) => callGas('verificar_alumno', { cedula }, 'GET'),
+    update: (data) => callGas('actualizar_perfil', data, 'POST'),
+    addRole: (data) => callGas('asignar_rol', data, 'POST'),
+    removeRole: (data) => callGas('desactivar_rol', data, 'POST'),
+    getPending: () => callGas('docente_pendientes', {}, 'POST'),
+    approve: (data) => callGas('asignar_rol', data, 'POST'),
+    reject: (data) => callGas('desactivar_rol', data, 'POST'),
+    registerDirect: (data) => callGas('registrar_alumno', data, 'POST'),
+    resetPassword: (userId) => callGas('recuperar_acceso', { user_id: userId }, 'POST')
+};
+
+API.roles = {
+    list: () => callGas('verificar_roles', {}, 'GET').then(r => ({ roles: r.roles || [] })),
+    create: (data) => callGas('asignar_rol', data, 'POST'),
+    update: (data) => callGas('asignar_rol', data, 'POST'),
+    save: (data) => callGas('asignar_rol', data, 'POST'),
+    delete: (id) => callGas('desactivar_rol', { id }, 'POST')
+};
+
+API.teachers = {
+    list: () => callGas('listar_usuarios', {}, 'GET').then(r => {
+        const users = r.usuarios || r.data || [];
+        const docentes = users.filter(u => (u.roles || []).some(ro => ['docente', 'teacher'].includes(ro.rol)));
+        return { docentes, items: docentes };
+    }),
+    assign: (data) => callGas('asignar_rol', Object.assign({ rol: 'docente' }, data), 'POST')
+};
+
+API.kit = {
+    status: (asig) => callGas('listar_asignaturas', { asignatura: asig || '' }, 'GET'),
+    getHabilitadas: () => callGas('listar_asignaturas', {}, 'GET'),
+    upload: (data) => callGas('guardar_asignatura', data, 'POST')
+};
+
+API.constructor = {
+    listDrafts: () => callGas('constructor_list_drafts', {}, 'GET'),
+    getSubject: (codigo) => callGas('constructor_get_subject', { codigo }, 'GET'),
+    saveSubject: (data) => callGas('guardar_asignatura', data, 'POST'),
+    listBank: () => callGas('constructor_list_bank', {}, 'GET'),
+    listReviews: () => callGas('constructor_list_reviews', {}, 'GET')
+};
+
+API.configuracion = {
+    get: () => callGas('diagnostico', {}, 'GET'),
+    set: (data) => callGas('guardar_configuracion', data, 'POST'),
+    testMail: (data) => callGas('enviar_provisoria', data, 'POST')
+};
+
 API.admin = {
     getRoles: () => API._adminRolesAll(),
     assignRole: (o) => API._adminAssign(o),
     revokeRole: (c, r, ca) => API._adminRevoke(c, r, ca)
 };
-API.attendance = {
-    getByCourseAndDate: (c, f) => API._attByDate(c, f),
-    markAttendance: (a, b, c, d) => API._attMark(a, b, c, d)
-};
+
 API.upload = {
     importUsersFromCSV: (a, b) => API._uploadCSV(a, b)
+};
+
+// Adaptador universal para peticiones hacia endpoints
+API.request = function (action, data, method) {
+    return callGas(action, data, method);
 };
 
 // Exportar para uso en módulos o navegador
@@ -1093,13 +663,12 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = API;
 }
 
-// Helper: Verificar si el usuario está autenticado (token presente y no vacío)
+// Helpers globales
 function isAuthenticated() {
-    const token = localStorage.getItem('centuria_auth_token');
+    const token = localStorage.getItem('centuria_auth_token') || sessionStorage.getItem('centuria_auth_token');
     return !!token;
 }
 
-// Helper: Obtener iniciales del nombre para mostrar
 function getInitials(name) {
     if (!name) return 'US';
     const parts = name.split(' ');
@@ -1109,11 +678,10 @@ function getInitials(name) {
     return parts[0] ? parts[0][0].toUpperCase() : 'US';
 }
 
-// Helper: usuario actual guardado en sesión
 function getCurrentUser() {
     return API.getCurrentUser();
 }
 
-// Objeto global usado por todas las pantallas (index, admin, teacher_panel, upload)
+// Objeto global usado por todas las pantallas
 window.CenturiaAPI = API;
 var CenturiaAPI = window.CenturiaAPI;

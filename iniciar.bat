@@ -1,25 +1,16 @@
 @echo off
-title Campus Virtual Centuria - Servidor
+title Campus Virtual Centuria - Servidor Local
 echo ============================================
 echo   CAMPUS VIRTUAL CENTURIA
 echo   Instituto Superior Centuria
 echo ============================================
 echo.
 
-:: Verificar PHP
-php -v >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] PHP no encontrado en PATH
-    echo Instala PHP o agrega al PATH
-    pause
-    exit /b 1
-)
-
-:: Matar PHP anterior si existe
+:: Liberar puerto 8080 si habia un proceso php anterior
 taskkill /F /IM php.exe >nul 2>&1
 
-echo [OK] PHP encontrado
-echo [OK] Iniciando servidor en http://127.0.0.1:8080
+echo [OK] Modo 100%% Estatico (Servidor Cloud + GitHub Pages)
+echo [OK] Iniciando servidor web local en http://127.0.0.1:8080
 echo.
 echo ============================================
 echo   Abre en tu navegador:
@@ -29,6 +20,13 @@ echo   Para detener: cierra esta ventana
 echo ============================================
 echo.
 
-php -S 0.0.0.0:8080 -t . index.php
+:: Abrir navegador automaticamente
+start http://127.0.0.1:8080
+
+:: Servir archivos estaticos con Python o npx si estan disponibles
+python -m http.server 8080 --bind 127.0.0.1 2>nul
+if errorlevel 1 (
+    npx -y serve -l 8080 . 2>nul
+)
 
 pause

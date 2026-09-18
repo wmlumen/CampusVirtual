@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | Bootstrap | 5.3.0 (CDN) | Twitter / Bootstrap team | MIT | https://getbootstrap.com | Estilos y componentes UI |
 | Bootstrap Icons | 1.10.0–1.11.1 (CDN) | Bootstrap team | MIT | https://icons.getbootstrap.com | Iconografía |
-| Montserrat (Google Fonts) | variable (CDN) | Julieta Ulanovsky y otros (OFL) | SIL Open Font License 1.1 | https://fonts.google.com/specimen/Montserrat | Tipografía |
+| Montserrat | variable (CDN) | Julieta Ulanovsky y otros (OFL) | SIL Open Font License 1.1 | https://fontlibrary.org/en/font/montserrat | Tipografía |
 | Alpine.js | 3.x (CDN) | Alpine.js team | MIT | https://alpinejs.dev | Reactividad del panel admin |
 | Tailwind CSS | CDN (play) | Tailwind Labs | MIT | https://tailwindcss.com | Utilidades (admin) |
 | Chart.js | CDN | Chart.js contributors | MIT | https://www.chartjs.org | Gráficos del panel docente |

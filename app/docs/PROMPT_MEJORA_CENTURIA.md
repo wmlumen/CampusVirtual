@@ -3,7 +3,7 @@
 > Úsalo como instrucción para el agente ejecutor. No avances de fase sin cumplir los criterios de aceptación.
 
 ## 0. Reglas del juego
-- Stack: PHP 7.4 + SQLite (`api/centuria.db`), frontend estático en GitHub Pages (`app/` → raíz), Google Apps Script (`app/Backend_Scripts/01_Script_Google_Completo.gs`) + planilla **TIC DATOS** (`1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`).
+- Stack: PHP 7.4 + SQLite (`api/centuria.db`), frontend estático en GitHub Pages (`app/` → raíz), Servidor Cloud (`app/Backend_Scripts/01_Script_Cloud_Completo.gs`) + planilla **TIC DATOS** (`1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`).
 - URL GAS oficial: `https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec` (planilla BasedeDatosCampus; anteriores obsoletas).
 - Prohibido romper lo que funciona: cada cambio se prueba con los comandos de §5 antes de commitear.
 - Commits atómicos en español + push a `main` (Pages redespliega solo).
@@ -27,7 +27,7 @@
 - [ ] **P0.1 Publicar GAS v06.4**: pegar el `.gs` del repo → Ejecutar ▶ (autorizar Drive) → Nueva versión, misma URL. Verificar: `?action=diagnostico` debe listar 15 hojas.
 - [ ] **P0.2 Sembrar TIC DATOS**: abrir `?action=sembrar_todo` una vez → debe responder `ok:true` con conteos (Carreras 3, Grados 4, Secciones 2, Asignaturas 10, Filiales 6, Roles 9). Re-verificar con `diagnostico` (todo >0 salvo hojas de movimiento).
 - [ ] **P0.3 Cambiar `GAS_URL` en `app/js/api.js`** a la implementación nueva + subir `?v=8`→`?v=9` en TODOS los `<script src="*api.js?v=*">` de `app/**`. Verificar: en GitHub, recuperar contraseña de `1340130` muestra `Ck1340130*`.
-- [ ] **P0.4 Espejar materias**: admin local → Asignaturas → Subir a Google → `?action=listar_asignaturas` debe traer las 10.
+- [ ] **P0.4 Espejar materias**: admin local → Asignaturas → Subir a la Nube → `?action=listar_asignaturas` debe traer las 10.
 - [ ] **P0.5 Sincronizar usuarios**: `admin/sync_sheets.html` → Cargar comparación → Sincronizar faltantes → `?action=verificar_alumno&cedula=1801234` debe dar `existe:true`.
 - [ ] **P0.6 Backfill alumnos**: poner carrera+sección reales a los 7 alumnos de prueba (o borrarlos si son descartables) + eliminar fila `TIC -2` + corregir `1886139`. Verificar: `docente.php?action=mis_alumnos&carrera=…&seccion=…` trae >0.
 
@@ -52,7 +52,7 @@ C:\xampp\php\php.exe -l api\*.php
 node --check app\js\api.js; node --check app\admin\js\admin.js
 ```
 ```text
-# Google (navegador)
+# Navegador Web
 .../exec?action=diagnostico        → 15 hojas con conteos
 .../exec?action=sembrar_todo       → ok:true (solo 1ª vez siembra)
 .../exec?action=listar_asignaturas → 10 materias

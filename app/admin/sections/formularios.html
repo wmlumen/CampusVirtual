@@ -12,22 +12,20 @@
 
     async loadFormularios() {
         try {
-            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=list_forms', {
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-            });
-            const data = await r.json();
-            this.formularios = data.formularios || [];
+            const data = await CenturiaAPI.formularios.list();
+            this.formularios = data.formularios || data.data || [];
         } catch(e) { console.error(e); }
     },
 
     async seedFormulario() {
         try {
-            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=seed', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
+            const data = await CenturiaAPI.formularios.save({
+                action: 'seed',
+                codigo: 'CEN-AS-SM-AGP005',
+                nombre: 'Formulario de Matrícula — Instituto Superior Centuria',
+                tipo: 'matricula'
             });
-            const data = await r.json();
-            alert(data.message || data.status);
+            alert(data.message || data.status || 'Formulario sembrado correctamente');
             await this.loadFormularios();
         } catch(e) { alert('Error al sembrar formulario'); }
     },
@@ -36,19 +34,14 @@
         const f = this.formCreate;
         if (!f.codigo || !f.nombre) { alert('Código y nombre requeridos'); return; }
         try {
-            const fd = new FormData();
-            fd.append('action', 'create');
-            fd.append('codigo', f.codigo);
-            fd.append('nombre', f.nombre);
-            fd.append('carrera', f.carrera);
-            fd.append('tipo', f.tipo);
-            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: fd
+            const data = await CenturiaAPI.formularios.save({
+                action: 'create',
+                codigo: f.codigo,
+                nombre: f.nombre,
+                carrera: f.carrera,
+                tipo: f.tipo
             });
-            const data = await r.json();
-            if (data.status === 'Exito') {
+            if (data.status === 'Exito' || data.status === 'Éxito' || data.ok) {
                 this.showCreateForm = false;
                 await this.loadFormularios();
             } else {
@@ -60,13 +53,10 @@
     async eliminarFormulario(f) {
         if (!confirm('¿Eliminar formulario "' + f.nombre + '"?')) return;
         try {
-            const fd = new FormData();
-            fd.append('action', 'delete');
-            fd.append('id', f.id);
-            await fetch(CenturiaAPI.baseUrl + 'formularios.php', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: fd
+            await CenturiaAPI.formularios.save({
+                action: 'delete',
+                id: f.id,
+                codigo: f.codigo
             });
             await this.loadFormularios();
         } catch(e) {}
@@ -76,11 +66,8 @@
         this.selectedForm = f;
         this.tabForm = 'completions';
         try {
-            const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=completions&formulario_id=' + f.id, {
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-            });
-            const data = await r.json();
-            this.completions = data.completions || [];
+            const data = await CenturiaAPI.formularios.completions(f.id || f.codigo);
+            this.completions = data.completions || data.data || [];
         } catch(e) { this.completions = []; }
     },
 

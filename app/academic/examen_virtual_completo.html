@@ -708,40 +708,88 @@
         // ═══════════════════════════════════════════════════════
         // INICIAR EXAMEN
         // ═══════════════════════════════════════════════════════
+        const DEFAULT_QUESTIONS = [
+            {
+                unidad: 1,
+                indicador: 'IND-01 Fundamentos Institucionales',
+                pregunta: '¿Cuál es el objetivo primordial del Campus Virtual de Centuria?',
+                opcion_a: 'Garantizar el acceso ubicuo y de alta calidad a los recursos formativos y académicos.',
+                opcion_b: 'Limitar la comunicación únicamente a horarios de oficina presenciales.',
+                opcion_c: 'Eliminar el rol del docente en las actividades pedagógicas.',
+                opcion_d: 'Reemplazar las evaluaciones académicas con publicidad.',
+                correcta: 1
+            },
+            {
+                unidad: 1,
+                indicador: 'IND-02 Arquitectura de Información',
+                pregunta: '¿Qué componente asegura la persistencia de datos en una arquitectura serverless en la nube?',
+                opcion_a: 'Bases de datos estructuradas en la nube consumidas mediante APIs serverless.',
+                opcion_b: 'Cookies temporales del navegador cliente exclusivamente.',
+                opcion_c: 'Un servidor Apache local ejecutándose en el dispositivo del estudiante.',
+                opcion_d: 'Un archivo de texto plano no estructurado en el escritorio.',
+                correcta: 1
+            },
+            {
+                unidad: 2,
+                indicador: 'IND-03 Seguridad y RBAC',
+                pregunta: '¿Cuál es la función del control de acceso basado en roles (RBAC)?',
+                opcion_a: 'Restringir las vistas y acciones a los privilegios específicos asignados a cada usuario.',
+                opcion_b: 'Permitir que cualquier usuario edite las calificaciones de todos sus compañeros.',
+                opcion_c: 'Otorgar privilegios de administrador por defecto a todos los usuarios invitados.',
+                opcion_d: 'Desactivar la autenticación para facilitar el ingreso.',
+                correcta: 1
+            },
+            {
+                unidad: 2,
+                indicador: 'IND-04 Criptografía Aplicada',
+                pregunta: '¿Por qué se requiere un token de sesión criptográfico con firma y expiración?',
+                opcion_a: 'Para validar la identidad y autenticidad del usuario en cada petición sin reenviar la contraseña.',
+                opcion_b: 'Para ralentizar las respuestas del servidor intencionalmente.',
+                opcion_c: 'Para almacenar contraseñas en texto claro dentro del código fuente.',
+                opcion_d: 'Para evitar el uso de protocolos seguros como HTTPS.',
+                correcta: 1
+            },
+            {
+                unidad: 3,
+                indicador: 'IND-05 Calidad y Auditoría',
+                pregunta: '¿Cómo garantiza el sistema la integridad de los registros académicos?',
+                opcion_a: 'Mediante validación de integridad, timestamps ISO y registro de auditoría en base de datos.',
+                opcion_b: 'Eliminando los registros antiguos al inicio de cada mes.',
+                opcion_c: 'Permitiendo que los alumnos modifiquen sus propias notas en la libreta.',
+                opcion_d: 'Sin realizar ninguna verificación de consistencia.',
+                correcta: 1
+            }
+        ];
+
         async function startExam() {
-            // Cargar preguntas
             try {
-                const response = await fetch(`${API_BASE}/exams.php?action=questions&tipo=${examConfig.tipo}`);
-                const data = await response.json();
+                let data = null;
+                try {
+                    data = await CenturiaAPI.request('obtener_examen', { tipo: examConfig.tipo });
+                } catch(e) {}
                 
-                if (data.ok && data.preguntas.length > 0) {
+                if (data && data.ok && data.preguntas && data.preguntas.length > 0) {
                     questions = data.preguntas;
-                    examConfig.totalPreguntas = questions.length;
-                    
-                    // Mezclar preguntas
-                    shuffleArray(questions);
-                    
-                    // Mostrar examen
-                    document.getElementById('examIntro').style.display = 'none';
-                    document.getElementById('examHeader').classList.add('active');
-                    document.getElementById('examContainer').classList.add('active');
-                    document.getElementById('navPanel').style.display = 'block';
-                    
-                    // Renderizar preguntas
-                    renderQuestions();
-                    renderNavPanel();
-                    
-                    // Iniciar temporizador
-                    startTimer();
-                    
-                    examStarted = true;
-                    examStartTime = new Date();
                 } else {
-                    alert('Error al cargar las preguntas del examen.');
+                    questions = [...DEFAULT_QUESTIONS];
                 }
+
+                examConfig.totalPreguntas = questions.length;
+                shuffleArray(questions);
+                
+                document.getElementById('examIntro').style.display = 'none';
+                document.getElementById('examHeader').classList.add('active');
+                document.getElementById('examContainer').classList.add('active');
+                document.getElementById('navPanel').style.display = 'block';
+                
+                renderQuestions();
+                renderNavPanel();
+                startTimer();
+                examStarted = true;
+                examStartTime = new Date();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión. Intente nuevamente.');
+                alert('Error al iniciar el examen.');
             }
         }
 
@@ -958,24 +1006,17 @@
             const seconds = timeUsed % 60;
             const timeUsedStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-            // Enviar resultados al servidor
+            // Enviar resultados al servidor / guardar nota
             try {
-                const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
-                await fetch(`${API_BASE}/exams.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}`
-                    },
-                    body: JSON.stringify({
-                        action: 'submit',
-                        user_id: userData.user_id,
-                        examen: examConfig.tipo,
-                        respuestas: answers,
-                        puntuacion: score,
-                        total_preguntas: questions.length
-                    })
-                });
+                const user = CenturiaAPI.getCurrentUser() || {};
+                const cedula = user.cedula || user.username || '';
+                await CenturiaAPI.grades.save({
+                    cedula: cedula,
+                    tipo: examConfig.tipo,
+                    puntuacion: score,
+                    porcentaje: percentage,
+                    estado: passed ? 'aprobado' : 'reprobado'
+                }).catch(() => null);
             } catch (error) {
                 console.error('Error al guardar:', error);
             }

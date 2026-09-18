@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
@@ -334,6 +334,7 @@
     </div>
 
     <script src="js/api.js?v=12"></script>
+    <script src="js/session-guard.js"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
         // ═══ ROLE CONFIG ═══
@@ -345,6 +346,7 @@
                     { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
                     { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                     { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
+                    { href: 'academic/index.html', icon: 'bi-pencil-square', label: 'Exámenes' },
                     { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
                     { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
                     { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
@@ -407,11 +409,13 @@
 
         // ═══ CARGAR DASHBOARD ═══
         async function cargarDashboard() {
+            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno', 'academico'], currentRolePage: 'dashboard' })) {
+                return;
+            }
+
             const token = CenturiaAPI.getToken();
             const user = CenturiaAPI.getCurrentUser();
-            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
-
-            if (!user && !cedula) { location.href = 'index.html'; return; }
+            const cedula = (user && (user.cedula || user.username)) || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
 
             // Datos del usuario
             const nombre = user ? (user.firstname || 'Estudiante') : (localStorage.getItem('centuria_nombre') || 'Estudiante');
@@ -460,15 +464,7 @@
         // ═══ ASIGNATURAS DOCENTE — Solo las asignadas ═══
         async function cargarAsignaturasDocente(user, token, cedula) {
             try {
-                const userId = user ? (user.id || '') : '';
-                let url = CenturiaAPI.baseUrl + 'docente.php?action=my_subjects';
-                if (userId) url += '&user_id=' + userId;
-                else if (cedula) url += '&cedula=' + cedula;
-
-                const resp = await fetch(url, {
-                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-                });
-                const data = await resp.json();
+                const data = await CenturiaAPI.docente.getMySubjects(cedula);
 
                 // Solo mostrar las asignaturas que realmente tiene asignadas
                 const subjects = (data.subjects || []).filter(s => {
@@ -488,8 +484,7 @@
         async function cargarAsignaturasGenerales() {
             try {
                 // Primero obtener asignaturas con kit completo
-                const rKit = await fetch(CenturiaAPI.baseUrl + 'kit.php?action=habilitadas');
-                const dKit = await rKit.json();
+                const dKit = await CenturiaAPI.kit.getHabilitadas();
                 const habilitadas = dKit.asignaturas || [];
 
                 document.getElementById('stat-courses').textContent = habilitadas.length;
@@ -516,10 +511,7 @@
         async function cargarEventos(token) {
             const container = document.getElementById('dash-calendar');
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=list', {
-                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-                });
-                const data = await resp.json();
+                const data = await CenturiaAPI.calendar.list();
                 const events = data.data || data.events || [];
                 const now = new Date();
                 const upcoming = events.filter(e => new Date(e.fecha || e.date) >= now)
@@ -548,10 +540,7 @@
         // ═══ NOTAS ═══
         async function cargarNotas(token) {
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
-                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-                });
-                const data = await resp.json();
+                const data = await CenturiaAPI.grades.list();
                 const grades = data.data || [];
                 if (grades.length === 0) return;
                 const avg = (grades.reduce((s, g) => s + (g.score || 0), 0) / grades.length).toFixed(1);

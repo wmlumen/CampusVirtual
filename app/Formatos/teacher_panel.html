@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Docente | Campus Virtual Centuria</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -652,19 +652,20 @@ async function buscarContrasena() {
         document.getElementById('recuperar-error').style.display = 'none';
     };
 
-    // 1) Buscar en PHP API
+    // 1) Buscar en la Base de Datos Cloud vía CenturiaAPI
     try {
-        const res = await fetch('../api/auth.php?action=find_user&cedula=' + encodeURIComponent(cedulaLimpia));
-        const data = await res.json();
-        const u = data && (data.user || (data.data && data.data.user));
-        if (data && (data.found || (data.data && data.data.found)) && u) {
-            const fn = (u.firstname || '').split(' ')[0] || '';
-            const ln = (u.lastname || '').split(' ')[0] || '';
-            if (fn && ln) { mostrar(fn, ln); return; }
+        const data = typeof CenturiaAPI !== 'undefined' && CenturiaAPI.auth ? await CenturiaAPI.auth.verify(cedulaLimpia) : null;
+        if (data && (data.existe || data.found)) {
+            const nom = data.nombre || ((data.user && data.user.firstname) ? `${data.user.firstname} ${data.user.lastname||''}` : '');
+            if (nom) {
+                const partes = nom.trim().split(/\s+/);
+                mostrar(partes[0] || '', partes.slice(1).join(' ') || '');
+                return;
+            }
         }
     } catch (e) {}
 
-    // 2) Buscar en Google Sheets
+    // 2) Fallback directo al Servidor Cloud
     try {
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec';
         const gasResult = await fetch(GAS_URL + '?action=verificar_alumno&cedula=' + encodeURIComponent(cedulaLimpia)).then(r => r.json()).catch(() => ({existe:false}));

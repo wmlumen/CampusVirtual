@@ -467,24 +467,17 @@
         async function loadData() {
             try {
                 // Cargar estudiantes
-                const studentsResponse = await fetch(`${API_BASE}/usuarios.php?action=list`, {
-                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}` }
+                const studentsData = await CenturiaAPI.usuarios.list().catch(() => ({ usuarios: [] }));
+                const rawUsers = studentsData.usuarios || studentsData.data || [];
+                allStudents = rawUsers.filter(u => {
+                    const rol = (u.rol || u.role || '').toLowerCase();
+                    const roles = (u.roles || []).map(r => (r.rol || r).toLowerCase());
+                    return rol === 'alumno' || rol === 'student' || roles.includes('alumno') || roles.includes('student');
                 });
-                const studentsData = await studentsResponse.json();
-                
-                if (studentsData.ok) {
-                    allStudents = studentsData.usuarios.filter(u => u.role === 'student');
-                }
 
                 // Cargar asistencia
-                const attendanceResponse = await fetch(`${API_BASE}/attendance.php?action=list`, {
-                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('centuria_token')}` }
-                });
-                const attendanceResult = await attendanceResponse.json();
-                
-                if (attendanceResult.ok) {
-                    allAttendance = attendanceResult.records;
-                }
+                const attendanceResult = await CenturiaAPI.attendance.list().catch(() => ({ data: [] }));
+                allAttendance = attendanceResult.records || attendanceResult.data || attendanceResult.eventos || [];
 
                 // Calcular estadísticas y renderizar
                 filteredStudents = [...allStudents];

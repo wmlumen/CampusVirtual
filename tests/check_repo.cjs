@@ -9,14 +9,14 @@ const APP = path.join(ROOT, 'app');
 let errors = [];
 let warnings = [];
 
-const SKIP_DIRS = new Set(['moodle', 'node_modules', 'vendor', 'images', 'favicon_io', '.git']);
+const SKIP_DIRS = new Set(['node_modules', 'vendor', 'images', 'favicon_io', '.git']);
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) walk(path.join(dir, e.name), out);
       continue;
     }
-    if (!/\.(html|js|php|gs|md)$/.test(e.name)) continue;
+    if (!/\.(html|js|gs|md)$/.test(e.name)) continue;
     const p = path.join(dir, e.name);
     try {
       if (fs.statSync(p).size > 400000) continue; // salta binarios/minificados grandes
@@ -54,15 +54,62 @@ for (const f of files) {
   if (!isDoc && /\bAPI_GAS_URL\b/.test(src)) errors.push(`${rel}: usa API_GAS_URL (no existe; es GAS_URL)`);
   if (!isDoc && /\basignaturaForm\b/.test(src)) errors.push(`${rel}: usa asignaturaForm (no existe; es formAsignatura)`);
   if (/data\.asignatura\s*\|\|\s*['"]TIC['"]/.test(src)) warnings.push(`${rel}: asignatura TIC forzada`);
+  
+  // Regla GitHub Pages: frontend 100% estático sin backend PHP local
+  const isClientCode = /\.(html|js)$/.test(f) && !f.includes('Materiales_Clases') && !f.includes('Backend_Scripts');
+  if (isClientCode) {
+    if (/\bfetch\s*\([^)]*\.php/i.test(src) || /['"`][^'"`]*\.php(\?[^'"`]*)?['"`]/i.test(src)) {
+      errors.push(`${rel}: llamada o referencia a PHP detectada en frontend estático`);
+    }
+    if (/\bfetch\s*\([^)]*\/api\//i.test(src)) {
+      errors.push(`${rel}: llamada a /api/ detectada en frontend estático`);
+    }
+  }
+
   const m = src.match(/api\.js\?v=(\d+)/g);
   if (m) m.forEach(x => apiVersions.add(x));
   if (/-----BEGIN (RSA )?PRIVATE KEY-----/.test(src)) errors.push(`${rel}: clave privada en el repo`);
-  if (/AIza[0-9A-Za-z\-_]{35}/.test(src)) errors.push(`${rel}: posible API key de Google`);
+  if (/AIza[0-9A-Za-z\-_]{35}/.test(src)) errors.push(`${rel}: posible API key externa no permitida`);
 }
 
 // api.js debe tener una sola versión en todo el frontend
 if (apiVersions.size > 1) {
   errors.push('versiones api.js desparejas: ' + [...apiVersions].join(', '));
+}
+
+// Cero archivos .php en el proyecto
+function findPhpFiles(dir) {
+  let list = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) {
+      if (!SKIP_DIRS.has(e.name)) list.push(...findPhpFiles(path.join(dir, e.name)));
+    } else if (/\.php$/i.test(e.name)) {
+      list.push(path.join(dir, e.name));
+    }
+  }
+  return list;
+}
+const phpFiles = findPhpFiles(ROOT);
+if (phpFiles.length > 0) {
+  errors.push(`Archivos PHP remanentes detectados: ${phpFiles.map(p => path.relative(ROOT, p)).join(', ')}`);
+}
+
+// Cero archivos o carpetas con nombre moodle en el proyecto
+function findMoodleFiles(dir) {
+  let list = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) {
+      if (e.name.toLowerCase().includes('moodle')) list.push(path.join(dir, e.name));
+      if (!SKIP_DIRS.has(e.name)) list.push(...findMoodleFiles(path.join(dir, e.name)));
+    } else if (e.name.toLowerCase().includes('moodle')) {
+      list.push(path.join(dir, e.name));
+    }
+  }
+  return list;
+}
+const moodleItems = findMoodleFiles(ROOT);
+if (moodleItems.length > 0) {
+  errors.push(`Archivos/carpetas moodle detectados: ${moodleItems.map(p => path.relative(ROOT, p)).join(', ')}`);
 }
 
 // GAS_URL viva presente en api.js

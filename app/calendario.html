@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario Académico — Centuria</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         :root {
@@ -308,7 +308,7 @@
                 </div>
                 <div class="form-group" id="f-link-group" style="display:none">
                     <label>Enlace Virtual</label>
-                    <input type="url" id="f-link" placeholder="https://meet.google.com/... o Zoom...">
+                    <input type="url" id="f-link" placeholder="https://reunion-en-linea.com/... o Zoom...">
                 </div>
                 <div class="form-group">
                     <label>Descripcion</label>
@@ -397,8 +397,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 async function loadCareers() {
     try {
-        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php?action=carreras');
-        const d = await r.json();
+        const d = await CenturiaAPI.calendar.carreras();
         const sel = document.getElementById('filter-career');
         const formSel = document.getElementById('f-career');
         (d.carreras || []).forEach(c => {
@@ -412,17 +411,21 @@ async function loadCareers() {
 // CARGAR EVENTOS
 // ═══════════════════════════════════════════════════════
 async function loadEvents() {
-    const career = document.getElementById('filter-career').value;
-    const type = document.getElementById('filter-type').value;
-    let url = CenturiaAPI.baseUrl + `calendar.php?action=list&year=${currentYear}&month=${currentMonth}`;
-    if (career) url += `&career=${encodeURIComponent(career)}`;
-    if (type) url += `&event_type=${type}`;
-    if (myEventsOnly && userId) url += `&teacher_id=${userId}`;
+    const mStr = String(currentMonth + 1).padStart(2, '0');
+    const inicio = `${currentYear}-${mStr}-01`;
+    const fin = `${currentYear}-${mStr}-31`;
 
     try {
-        const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() } });
-        const d = await r.json();
-        events = d.events || [];
+        const d = await CenturiaAPI.calendar.list(inicio, fin);
+        let rawEvents = d.events || d.data || [];
+        const career = document.getElementById('filter-career').value;
+        const type = document.getElementById('filter-type').value;
+
+        if (career) rawEvents = rawEvents.filter(e => (e.career || e.carrera) === career);
+        if (type) rawEvents = rawEvents.filter(e => (e.event_type || e.tipo) === type);
+        if (myEventsOnly && userId) rawEvents = rawEvents.filter(e => (e.teacher_id || e.creado_por) === userId);
+
+        events = rawEvents;
         renderCalendar();
         updateStats();
         if (selectedDate) renderDayPanel(selectedDate);
@@ -664,19 +667,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = dateInput.value;
             if (!date) return;
             try {
-                const career = document.getElementById('f-career').value;
-                let url = CenturiaAPI.baseUrl + `calendar.php?action=conflicts&date=${date}`;
-                if (career) url += `&career=${encodeURIComponent(career)}`;
-                if (editingId) url += `&exclude_id=${editingId}`;
-
-                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() } });
-                const d = await r.json();
+                const d = await CenturiaAPI.calendar.checkConflicts(date, '', '', editingId);
 
                 const warn = document.getElementById('conflict-warning');
                 const txt = document.getElementById('conflict-text');
-                if (d.has_conflicts) {
-                    const names = d.conflicts.map(c => `"${c.title}" (${c.start_time || 'sin hora'})`).join(', ');
-                    txt.textContent = `Conflicto: ya existen eventos este dia: ${names}`;
+                const conflicts = d.conflicts || [];
+                if (conflicts.length > 0) {
+                    const names = conflicts.map(c => `"${c.title || c.titulo}" (${c.start_time || c.hora_inicio || 'sin hora'})`).join(', ');
+                    txt.textContent = `Conflicto: ya existen eventos este día: ${names}`;
                     warn.classList.add('show');
                 } else {
                     warn.classList.remove('show');
@@ -689,35 +687,32 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══ EDITAR EVENTO ═══
 async function editEvent(id) {
     try {
-        const r = await fetch(CenturiaAPI.baseUrl + `calendar.php?action=get&id=${id}`, {
-            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-        });
-        const d = await r.json();
-        if (!d.ok) { showToast('Error: ' + d.error, 'error'); return; }
+        const d = await CenturiaAPI.calendar.get(id);
+        const e = d.event || d.evento;
+        if (!e) { showToast('Error: ' + (d.error || 'No encontrado'), 'error'); return; }
 
-        const e = d.event;
         editingId = e.id;
         document.getElementById('form-title').textContent = 'Editar Evento';
         document.getElementById('f-id').value = e.id;
-        document.getElementById('f-title').value = e.title;
-        document.getElementById('f-type').value = e.event_type;
-        document.getElementById('f-date').value = e.date;
-        document.getElementById('f-start').value = e.start_time || '';
-        document.getElementById('f-end').value = e.end_time || '';
-        document.getElementById('f-career').value = e.career || '';
-        document.getElementById('f-group').value = e.group_name || '';
-        document.getElementById('f-modality').value = e.modality || '';
-        document.getElementById('f-desc').value = e.description || '';
+        document.getElementById('f-title').value = e.title || e.titulo || '';
+        document.getElementById('f-type').value = e.event_type || e.tipo || '';
+        document.getElementById('f-date').value = e.date || e.fecha_inicio || '';
+        document.getElementById('f-start').value = e.start_time || e.hora_inicio || '';
+        document.getElementById('f-end').value = e.end_time || e.hora_fin || '';
+        document.getElementById('f-career').value = e.career || e.carrera || '';
+        document.getElementById('f-group').value = e.group_name || e.seccion || '';
+        document.getElementById('f-modality').value = e.modality || e.modalidad || '';
+        document.getElementById('f-desc').value = e.description || e.descripcion || '';
 
-        isVirtual = !!e.is_virtual;
+        isVirtual = !!(e.is_virtual || e.es_virtual);
         document.getElementById('f-virtual-toggle').classList.toggle('on', isVirtual);
         document.getElementById('f-virtual-label').textContent = isVirtual ? 'Si' : 'No';
         document.getElementById('f-link-group').style.display = isVirtual ? 'block' : 'none';
-        document.getElementById('f-link').value = e.virtual_link || '';
+        document.getElementById('f-link').value = e.virtual_link || e.enlace || '';
 
         document.getElementById('form-panel').classList.add('open');
         document.getElementById('f-title').focus();
-    } catch(e) { showToast('Error de conexion', 'error'); }
+    } catch(e) { showToast('Error de conexión', 'error'); }
 }
 
 // ═══ GUARDAR EVENTO ═══
@@ -734,29 +729,41 @@ async function saveEvent() {
     const desc = document.getElementById('f-desc').value.trim();
 
     if (!title || !date) {
-        showToast('Titulo y fecha son requeridos', 'error');
+        showToast('Título y fecha son requeridos', 'error');
         return;
     }
 
     const body = {
-        action: editingId ? 'update' : 'create',
-        title, event_type: type, date,
-        start_time: start, end_time: end,
-        career, group_name: group, modality,
+        action: editingId ? 'actualizar_evento_calendario' : 'crear_evento_calendario',
+        id: editingId || '',
+        titulo: title,
+        title: title,
+        tipo: type,
+        event_type: type,
+        fecha_inicio: date,
+        fecha_fin: date,
+        date: date,
+        hora_inicio: start,
+        start_time: start,
+        hora_fin: end,
+        end_time: end,
+        carrera: career,
+        career: career,
+        seccion: group,
+        group_name: group,
+        modalidad: modality,
+        modality: modality,
         is_virtual: isVirtual ? 1 : 0,
-        virtual_link: link, description: desc
+        enlace: link,
+        virtual_link: link,
+        descripcion: desc,
+        description: desc
     };
-    if (editingId) body.id = editingId;
 
     try {
-        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-            body: JSON.stringify(body)
-        });
-        const d = await r.json();
+        const d = editingId ? await CenturiaAPI.calendar.update(body) : await CenturiaAPI.calendar.create(body);
 
-        if (d.ok) {
+        if (d.ok || d.status === 'Éxito' || d.status === 'success') {
             showToast(editingId ? 'Evento actualizado' : 'Evento creado', 'success');
             closeForm();
             await loadEvents();
@@ -766,29 +773,24 @@ async function saveEvent() {
             document.getElementById('conflict-warning').classList.add('show');
             document.getElementById('conflict-text').textContent = d.error;
         } else {
-            showToast('Error: ' + (d.error || 'Desconocido'), 'error');
+            showToast('Error: ' + (d.error || d.mensaje || 'Desconocido'), 'error');
         }
-    } catch(e) { showToast('Error de conexion', 'error'); }
+    } catch(e) { showToast('Error de conexión', 'error'); }
 }
 
 // ═══ ELIMINAR EVENTO ═══
 async function deleteEvent(id) {
-    if (!confirm('Eliminar este evento?')) return;
+    if (!confirm('¿Eliminar este evento?')) return;
     try {
-        const r = await fetch(CenturiaAPI.baseUrl + 'calendar.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-            body: JSON.stringify({ action: 'delete', id })
-        });
-        const d = await r.json();
-        if (d.ok) {
+        const d = await CenturiaAPI.calendar.delete(id);
+        if (d.ok || d.status === 'Éxito' || d.status === 'success') {
             showToast('Evento eliminado', 'success');
             await loadEvents();
             if (selectedDate) selectDay(selectedDate);
         } else {
-            showToast('Error: ' + (d.error || ''), 'error');
+            showToast('Error: ' + (d.error || d.mensaje || ''), 'error');
         }
-    } catch(e) { showToast('Error de conexion', 'error'); }
+    } catch(e) { showToast('Error de conexión', 'error'); }
 }
 
 // ═══ TOAST ═══

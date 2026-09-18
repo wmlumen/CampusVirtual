@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         :root {
             --verde-oscuro: #0d2c16;
@@ -431,31 +431,22 @@
             // Load grades
             let grades = [];
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await resp.json();
-                if (data.success && data.data) grades = data.data;
+                const data = await CenturiaAPI.grades.list({ cedula: user.cedula });
+                grades = data.data || data.notas || [];
             } catch(e) {}
 
             // Load courses
             let courses = [];
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'courses.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await resp.json();
-                if (data.success && data.data) courses = data.data;
+                const data = await CenturiaAPI.courses.list({ cedula: user.cedula });
+                courses = data.data || data.cursos || [];
             } catch(e) {}
 
             // Load attendance
             let attendance = [];
             try {
-                const resp = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await resp.json();
-                if (data.success && data.data) attendance = data.data;
+                const data = await CenturiaAPI.attendance.list({ cedula: user.cedula });
+                attendance = data.data || data.asistencias || [];
             } catch(e) {}
 
             renderLibreta(carrera, grades, courses, attendance);
@@ -538,9 +529,13 @@
                     const asistencia = attendance.filter(a => (a.curso_id || a.asignatura || '').includes(asig.codigo));
                     
                     const asistenciaPct = asistencia.length > 0 ? Math.round(asistencia.filter(a => a.estado === 'presente').length / asistencia.length * 100) : '-';
-                    const parcial1 = asigGrades.find(g => g.component === 'parcial1' || g.component === 'Parcial 1')?.score || '-';
-                    const parcial2 = asigGrades.find(g => g.component === 'parcial2' || g.component === 'Parcial 2')?.score || '-';
-                    const final = asigGrades.find(g => g.component === 'final' || g.component === 'Final')?.score || '-';
+                    // El backend (cvListarNotas) devuelve una fila por alumno+asignatura con
+                    // los campos parcial1/parcial2/final directos (no 'component'/'score').
+                    const gradeRow = asigGrades[0];
+                    const gv = v => (v === undefined || v === null || v === '') ? '-' : v;
+                    const parcial1 = gradeRow ? gv(gradeRow.parcial1) : '-';
+                    const parcial2 = gradeRow ? gv(gradeRow.parcial2) : '-';
+                    const final = gradeRow ? gv(gradeRow.final) : '-';
                     
                     const avg = (parcial1 !== '-' && parcial2 !== '-' && final !== '-') 
                         ? ((parcial1 + parcial2 + final) / 3).toFixed(1) 
@@ -650,21 +645,18 @@
             const token = CenturiaAPI.getToken();
             const user = CenturiaAPI.getCurrentUser();
             
-            if (user && token) {
+            if (user) {
                 // Reload with filter
-                fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } })
-                    .then(r => r.json()).then(data => {
-                        const gradesData = data.success && data.data ? data.data : [];
-                        fetch(CenturiaAPI.baseUrl + 'courses.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } })
-                            .then(r => r.json()).then(data2 => {
-                                const coursesData = data2.success && data2.data ? data2.data : [];
-                                fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', { headers: { 'Authorization': 'Bearer ' + token } })
-                                    .then(r => r.json()).then(data3 => {
-                                        const attendanceData = data3.success && data3.data ? data3.data : [];
-                                        renderAllSubjects(container, carrera, gradesData, coursesData, attendanceData);
-                                    });
-                            });
-                    });
+                Promise.all([
+                    CenturiaAPI.grades.list({ cedula: user.cedula }).catch(() => ({ data: [] })),
+                    CenturiaAPI.courses.list({ cedula: user.cedula }).catch(() => ({ data: [] })),
+                    CenturiaAPI.attendance.list({ cedula: user.cedula }).catch(() => ({ data: [] }))
+                ]).then(([gRes, cRes, aRes]) => {
+                    const gradesData = gRes.data || gRes.notas || [];
+                    const coursesData = cRes.data || cRes.cursos || [];
+                    const attendanceData = aRes.data || aRes.asistencias || [];
+                    renderAllSubjects(container, carrera, gradesData, coursesData, attendanceData);
+                });
             }
         }
 

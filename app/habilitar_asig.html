@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         :root{--verde:#16813D;--verde-d:#0d2c16;--dorado:#d4a843;--azul:#2563EB;--rosa:#D94172;--naranja:#D97706;--txt:#ffffff;--txt2:#c8e6d0;--bg:#0d2c16;--card:#fff;--bdr:#e2e8f0}
         *{box-sizing:border-box;margin:0;padding:0}
@@ -99,7 +99,7 @@
     <a href="dashboard.html" class="back"><i class="bi bi-arrow-left"></i> Volver al Dashboard</a>
 
     <section class="sec connection" id="connectionPanel" aria-labelledby="connectionTitle">
-        <div><strong id="connectionTitle">Google Sheets · Asignaciones docentes</strong>
+        <div><strong id="connectionTitle">Base de Datos Cloud · Asignaciones docentes</strong>
             <p id="connectionStatus" role="status" aria-live="polite">Iniciá sesión para comprobar tus asignaciones locales y en la nube.</p>
         </div>
         <button type="button" class="btn btn-p" id="checkConnection" disabled>Comprobar conexión</button>
@@ -156,27 +156,27 @@ async function comprobarConexion() {
     const cedula = user?.username || sessionStorage.getItem('current_cedula');
     if (!cedula) return;
     button.disabled = true;
-    status.textContent = 'Consultando Google Sheets…';
+    status.textContent = 'Consultando Servidor Cloud…';
     panel.dataset.state = '';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
         const response = await fetch(GAS_URL + '?action=verificar_roles&cedula=' + encodeURIComponent(cedula), {signal:controller.signal});
-        if (!response.ok) throw new Error('Google Sheets no respondió correctamente.');
+        if (!response.ok) throw new Error('El Servidor Cloud no respondió correctamente.');
         const data = await response.json();
         if (!data || !Array.isArray(data.roles)) {
-            throw new Error('La conexión de estudiantes responde, pero su Apps Script necesita actualizarse para consultar asignaciones docentes. Sincronización pendiente.');
+            throw new Error('La conexión de estudiantes responde, pero el servidor cloud necesita actualizarse para consultar asignaciones docentes. Sincronización pendiente.');
         }
         const codes = roles => [...new Set(roles.filter(a => ['teacher','docente'].includes(a.rol) && a.estado === 'activo' && a.asignatura).map(a => a.asignatura))].sort();
-        if (asignacionesDocente === null) throw new Error('Google Sheets conectado. Falta consultar las asignaciones locales del docente para compararlas.');
+        if (asignacionesDocente === null) throw new Error('Servidor Cloud conectado. Falta consultar las asignaciones locales del docente para compararlas.');
         const same = JSON.stringify(codes(data.roles)) === JSON.stringify(codes(asignacionesDocente));
         panel.dataset.state = same ? 'ok' : 'error';
         status.textContent = same
-            ? 'Consulta confirmada: las asignaturas activas coinciden en la base local y Google Sheets. La sincronización automática aún no está configurada.'
-            : 'Hay diferencias entre las asignaciones locales y Google Sheets. Sincronización pendiente; no se modificaron los datos.';
+            ? 'Consulta confirmada: las asignaturas activas coinciden en la base local y la Nube. La sincronización automática aún no está configurada.'
+            : 'Hay diferencias entre las asignaciones locales y la Nube. Sincronización pendiente; no se modificaron los datos.';
     } catch (error) {
         panel.dataset.state = 'error';
-        status.textContent = error.name === 'AbortError' ? 'Google Sheets no respondió a tiempo. Podés volver a comprobar la conexión.' : error.message;
+        status.textContent = error.name === 'AbortError' ? 'El Servidor Cloud no respondió a tiempo. Podés volver a comprobar la conexión.' : error.message;
     } finally {
         clearTimeout(timeout);
         button.disabled = false;
@@ -204,18 +204,14 @@ async function cargarResumen() {
     asigActual = null;
     document.getElementById('detalleKit').style.display = 'none';
     try {
-        const resp = await fetch(CenturiaAPI.baseUrl + 'kit.php?action=status');
-        const data = await resp.json();
-        if (!resp.ok || data.success === false || !Array.isArray(data.asignaturas)) throw new Error('No se pudo consultar la base local');
-        let asigs = data.asignaturas || [];
+        const data = await CenturiaAPI.kit.status();
+        let asigs = data.asignaturas || data.items || [];
         const user = CenturiaAPI.getCurrentUser();
         const role = user?.role || user?.rol || localStorage.getItem('centuria_rol') || 'docente';
         if (['docente', 'teacher'].includes(role)) {
             const cedula = user?.username || sessionStorage.getItem('current_cedula');
             if (!cedula) throw new Error('No se pudo identificar al docente');
-            const assignedResponse = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=my_subjects&cedula=' + encodeURIComponent(cedula));
-            const assignedData = await assignedResponse.json();
-            if (!assignedResponse.ok || assignedData.success === false) throw new Error('No se pudieron consultar las asignaciones');
+            const assignedData = await CenturiaAPI.docente.getMySubjects(cedula);
             asignacionesDocente = assignedData.assignments || [];
             const codes = new Set((assignedData.assignments || [])
                 .filter(a => ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo')
@@ -281,8 +277,7 @@ async function verKit(codigo) {
     document.getElementById('det-title').textContent = 'Kit: ' + codigo;
 
     try {
-        const resp = await fetch(CenturiaAPI.baseUrl + 'kit.php?action=status&asignatura=' + codigo);
-        const data = await resp.json();
+        const data = await CenturiaAPI.kit.status(codigo);
         kitData = data.kit || {};
 
         const pct = data.porcentaje || 0;
@@ -324,15 +319,13 @@ async function toggleComponente(componente, valor) {
     const por = sessionStorage.getItem('current_nombre') || 'Docente';
 
     try {
-        const fd = new FormData();
-        fd.append('action', 'toggle');
-        fd.append('asignatura', asigActual);
-        fd.append('componente', componente);
-        fd.append('completado', valor);
-        fd.append('completado_por', por);
-
-        const resp = await fetch(CenturiaAPI.baseUrl + 'kit.php', { method: 'POST', body: fd });
-        const data = await resp.json();
+        const data = await CenturiaAPI.kit.upload({
+            action: 'toggle',
+            asignatura: asigActual,
+            componente: componente,
+            completado: valor,
+            completado_por: por
+        });
 
         if (data.habilitado) {
             showToast('Asignatura habilitada correctamente', 'success');
@@ -353,13 +346,12 @@ async function marcarTodo(valor) {
     if (!confirm(confirmar)) return;
 
     try {
-        const fd = new FormData();
-        fd.append('action', 'toggle_all');
-        fd.append('asignatura', asigActual);
-        fd.append('completado', valor);
-        fd.append('completado_por', por);
-
-        await fetch(CenturiaAPI.baseUrl + 'kit.php', { method: 'POST', body: fd });
+        await CenturiaAPI.kit.upload({
+            action: 'toggle_all',
+            asignatura: asigActual,
+            completado: valor,
+            completado_por: por
+        });
         const codigo = asigActual;
         await cargarResumen();
         await verKit(codigo);

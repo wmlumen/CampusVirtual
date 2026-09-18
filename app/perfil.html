@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         :root{
             --verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;
@@ -260,25 +260,30 @@
 <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
 
 <script src="js/api.js?v=12"></script>
+<script src="js/session-guard.js"></script>
 <script src="js/logout.js?v=2"></script>
 <script>
 let userId = null;
 let editando = null;
 
 async function cargarPerfil() {
+    if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno', 'docente', 'admin', 'academico', 'administrador_plataforma', 'admin_filial'], currentRolePage: 'perfil' })) {
+        return;
+    }
+
     try {
         const token = CenturiaAPI.getToken();
         const user = CenturiaAPI.getCurrentUser();
 
         if (!user) {
-            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+            const cedula = (typeof CenturiaSession !== 'undefined' && CenturiaSession.getCedula()) || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
             if (!cedula) { location.href = 'index.html'; return; }
             await cargarPorCedula(cedula);
             return;
         }
 
         mostrar(user);
-        userId = user.id;
+        userId = user.id || user.cedula;
         await Promise.all([cargarStats(user, token), cargarFormularios(token)]);
         sincronizarFotoDrive();
     } catch(e) {
@@ -290,13 +295,11 @@ async function cargarPerfil() {
 
 async function cargarPorCedula(cedula) {
     try {
-        const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=get&id=' + cedula, {
-            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() }
-        });
-        const data = await resp.json();
-        if (data.success && data.data) {
-            userId = data.data.id;
-            mostrar(data.data);
+        const data = await CenturiaAPI.usuarios.get(cedula);
+        if ((data.success || data.ok) && (data.data || data.alumno || data.usuario)) {
+            const u = data.data || data.alumno || data.usuario;
+            userId = u.id || u.cedula;
+            mostrar(u);
         } else {
             mostrarLocal();
         }
@@ -396,25 +399,14 @@ async function guardarCampo(input, field) {
     el.textContent = valor || '-';
     editando = null;
 
-    if (!userId || !valor) return;
+    if (!valor) return;
 
     try {
-        const fd = new FormData();
-        fd.append('action', 'update_profile');
-        fd.append('user_id', userId);
-        fd.append(field, valor);
-
-        const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=update_profile', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-            body: fd
-        });
-        const data = await resp.json();
-
-        if (data.success) {
+        const res = await CenturiaAPI.auth.updateProfile({ [field]: valor });
+        if (res && res.ok) {
             showToast('Campo actualizado correctamente', 'success');
         } else {
-            showToast('Error al guardar', 'error');
+            showToast((res && res.error) || 'Error al guardar', 'error');
         }
     } catch(e) {
         showToast('Error de conexión', 'error');
@@ -437,22 +429,15 @@ async function cargarStats(user, token) {
 
         // Asignaturas
         if (rol === 'docente') {
-            const r = await fetch(CenturiaAPI.baseUrl + 'docente.php?action=my_subjects&cedula=' + cedula, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
+            const d = await CenturiaAPI.docente.getMySubjects(cedula);
             document.getElementById('st-asig').textContent = (d.subjects || []).length;
         } else {
-            const r = await fetch(CenturiaAPI.baseUrl + 'asignaturas.php?action=list');
-            const d = await r.json();
+            const d = await CenturiaAPI.asignaturas.list();
             document.getElementById('st-asig').textContent = (d.items || d.asignaturas || []).length;
         }
 
         // Notas
-        const rN = await fetch(CenturiaAPI.baseUrl + 'grades.php?action=list', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const dN = await rN.json();
+        const dN = await CenturiaAPI.grades.list();
         const grades = dN.data || [];
         if (grades.length > 0) {
             const avg = (grades.reduce((s, g) => s + (g.score || 0), 0) / grades.length).toFixed(1);
@@ -460,10 +445,7 @@ async function cargarStats(user, token) {
         }
 
         // Asistencia
-        const rA = await fetch(CenturiaAPI.baseUrl + 'attendance.php?action=list', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const dA = await rA.json();
+        const dA = await CenturiaAPI.attendance.list();
         const asist = dA.data || [];
         if (asist.length > 0) {
             const pct = Math.round((asist.filter(a => a.status === 'present' || a.estado === 'presente').length / asist.length) * 100);
@@ -511,15 +493,8 @@ async function cambiarPassword() {
     }
 
     try {
-        const token = CenturiaAPI.getToken();
-        const resp = await fetch(CenturiaAPI.baseUrl + 'auth.php?action=change_password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ current_password: actual, new_password: nueva })
-        });
-        const data = await resp.json();
-
-        if (data.ok || data.success) {
+        const res = await CenturiaAPI.auth.changePassword(actual, nueva);
+        if (res && res.ok) {
             showToast('Contraseña actualizada correctamente', 'success');
             cerrarModalPassword();
             try { sessionStorage.setItem('must_change', '0'); } catch (e) {}
@@ -528,8 +503,9 @@ async function cambiarPassword() {
                 if (raw) { const u = JSON.parse(raw); u.must_change_password = 0; localStorage.setItem('centuria_user', JSON.stringify(u)); }
             } catch (e) {}
             pintarAvisoProvisoria();
+            return;
         } else {
-            errEl.textContent = data.error || 'Error al cambiar contraseña';
+            errEl.textContent = (res && res.error) || 'Error al cambiar contraseña';
             errEl.style.display = 'block';
         }
     } catch(e) {
@@ -541,10 +517,9 @@ async function cambiarPassword() {
 // ═══ FORMULARIOS ═══
 async function cargarFormularios(token) {
     try {
-        const r = await fetch(CenturiaAPI.baseUrl + 'formularios.php?action=my_forms', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await r.json();
+        const user = CenturiaAPI.getCurrentUser() || {};
+        const cedula = user.cedula || user.username || '';
+        const data = await CenturiaAPI.formularios.my(cedula);
         const forms = data.formularios || [];
         if (forms.length === 0) return;
 
@@ -672,21 +647,9 @@ async function guardarFoto(dataUrl) {
         const raw = localStorage.getItem('centuria_user');
         if (raw) { const u = JSON.parse(raw); u.foto = finalFoto; localStorage.setItem('centuria_user', JSON.stringify(u)); }
     } catch(e) {}
-    // 3) Guardar en SQLite (users.foto) vía PHP cuando hay backend
     if (userId) {
         try {
-            const fd = new FormData();
-            fd.append('action', 'update_profile');
-            fd.append('user_id', userId);
-            fd.append('foto', finalFoto);
-            const resp = await fetch(CenturiaAPI.baseUrl + 'usuarios.php?action=update_profile', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + CenturiaAPI.getToken() },
-                body: fd
-            });
-            const data = await resp.json();
-            showToast(data.success ? 'Foto guardada correctamente' : 'Foto guardada en Drive y este dispositivo', data.success ? 'success' : 'error');
-            return;
+            await CenturiaAPI.auth.updateProfile({ foto: finalFoto });
         } catch(e) {}
     }
     showToast('Foto guardada en Drive y este dispositivo', 'success');

@@ -1054,11 +1054,9 @@ async function verificarCedula(){
     const pwdInput=document.getElementById('inp-password');
 
     if(pwdSection.style.display==='none'){
-        pwdSection.style.display='block';
-        pwdInput.focus();
-        document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';
-        document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';
-        loginFase='pass';
+        document.getElementById('btn-buscar').disabled=true;
+        await verificarCedulaOffline(cedula);
+        document.getElementById('btn-buscar').disabled=false;
         return;
     }
 

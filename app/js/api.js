@@ -559,7 +559,49 @@ API.exams = {
     toggleAccessCode: (examenId, activo) => callGas('examen_codigo_toggle', {
         examen_id: examenId,
         activo: activo
-    }, 'POST')
+    }, 'POST'),
+    
+    // ═══ MÚLTIPLES INTENTOS Y ANÁLISIS ═══
+    saveAttempt: (data) => callGas('examen_guardar_intento', {
+        examen_id: data.examen_id,
+        alumno_cedula: data.alumno_cedula,
+        respuestas: data.respuestas,
+        puntaje: data.puntaje,
+        timestamp: new Date().toISOString()
+    }, 'POST'),
+    
+    getAttempts: (examenId, alumnoCedula) => callGas('examen_obtener_intentos', {
+        examen_id: examenId,
+        alumno_cedula: alumnoCedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        intentos: r.intentos || [],
+        mejor_intento: r.mejor_intento || null
+    })),
+    
+    getIndicatorAnalysis: (examenId) => callGas('examen_analisis_indicadores', {
+        examen_id: examenId
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        indicadores: r.indicadores || [],
+        promedio_general: r.promedio_general || 0
+    })),
+    
+    getResultsList: (examenId) => callGas('examen_listado_resultados', {
+        examen_id: examenId
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        alumnos: r.alumnos || [],
+        estadisticas: r.estadisticas || {}
+    })),
+    
+    exportPDF: (examenId, docente_cedula) => callGas('examen_exportar_pdf', {
+        examen_id: examenId,
+        docente_cedula: docente_cedula
+    }, 'POST').then(r => ({
+        ok: r.ok !== false,
+        pdf_url: r.pdf_url || null
+    }))
 };
 
 API.attendance = {

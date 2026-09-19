@@ -34,6 +34,9 @@
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
+ * v08.1 (2026-09-19): Habilitación de exámenes por alumno según los últimos 4 pagos de factura
+ *         (pagos_ultimos, examen_habilitaciones, examen_habilitacion_estado, examen_habilitar;
+ *          hoja HabilitacionExamen)
  * v07.1 (2026-09-16): CONSTRUCTOR ACADÉMICO (hojas propias SubjectDrafts/Programs/Units/
  *         Blocks/Activities/Evaluations/QuestionBank/Reviews + CRUD + flujo editorial +
  *         ponderación ≤100% + duplicar; sin tocar producción ni TIC)
@@ -181,6 +184,20 @@ function doGet(e) {
     var carrera = e.parameter.carrera || '';
     var cursos = obtenerCursosPorRol(ss, cedula, rol, carrera);
     return responderJSON({ cursos: cursos });
+  }
+
+  // ── HABILITACIÓN DE EXÁMENES POR PAGOS (últimos 4 pagos de factura) ──
+  if (action === 'pagos_ultimos') {
+    try { return responderJSON(cvPagosUltimos(ss, e.parameter)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message, resultados: {} }); }
+  }
+  if (action === 'examen_habilitaciones') {
+    try { return responderJSON(cvExamenHabilitaciones(ss, e.parameter)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message, habilitaciones: [] }); }
+  }
+  if (action === 'examen_habilitacion_estado') {
+    try { return responderJSON(cvExamenHabilitacionEstado(ss, e.parameter)); }
+    catch (error) { return responderJSON({ ok: false, habilitado: false, error: error.message }); }
   }
 
   // ── CONSULTAR PAGOS ──
@@ -615,6 +632,12 @@ function doPost(e) {
   // ── GUARDAR NOTAS ASIGNATURA (múltiples alumnos) ──
   if (data.action === 'guardar_notas_asignatura' || data.action === 'record_subject') {
     try { return responderJSON(cvGuardarNotasAsignatura(ss, data)); }
+    catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
+  // ── HABILITAR / DESHABILITAR ALUMNO PARA RENDIR UN EXAMEN (según pagos) ──
+  if (data.action === 'examen_habilitar') {
+    try { return responderJSON(cvExamenHabilitar(ss, data)); }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -3654,7 +3677,8 @@ function sembrarTodo(ss) {
     ['Fotos', ['Cedula', 'Nombre', 'FileId', 'Url', 'Fecha']],
     ['Notas', ['Cédula', 'Nombre', 'Asistencia', 'Parcial1', 'Parcial2', 'Final']],
     ['Pagos', ['Cédula', 'Nombre', 'Módulo', 'Monto', 'Fecha', 'Estado', 'Comprobante', 'RegistradoPor', 'Factura', 'Tipo']],
-    ['Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo']]
+    ['Accesos', ['Fecha/Hora', 'Cédula', 'Página', 'Dispositivo', 'Tipo']],
+    ['HabilitacionExamen', CV_HABILITACION_HEADERS]
   ];
   var antes = [];
   for (var d = 0; d < defs.length; d++) asegurarHoja(ss, defs[d][0], defs[d][1], antes);
@@ -4212,4 +4236,175 @@ function ctWrite(ss, data) {
   }
 
   return { ok: false, error: 'Acción no válida' };
+}
+
+// ══════════════════════════════════════════════════════════════
+// v08.1: HABILITACIÓN DE EXÁMENES SEGÚN PAGOS DE FACTURA
+// El docente ve los 4 últimos pagos del alumno y decide habilitarlo
+// (o no) para rendir cada examen. Clave: Cédula + ExamenId.
+// ══════════════════════════════════════════════════════════════
+
+var CV_HABILITACION_HEADERS = ['Cédula', 'Nombre', 'Asignatura', 'ExamenId', 'Habilitado', 'HabilitadoPor', 'Fecha', 'PagosSnapshot', 'Observación'];
+var CV_PAGOS_A_MOSTRAR = 4;
+var CV_ROLES_HABILITADORES = ['docente', 'teacher', 'admin', 'administrador', 'academico', 'académico', 'academic', 'admin_plataforma', 'admin_filial'];
+
+// Fecha del pago → timestamp (Date de Sheets, ISO yyyy-mm-dd o d/m/yyyy de es-ES). 0 si no se puede leer.
+function cvPagoFechaMs(v) {
+  if (v instanceof Date) return v.getTime();
+  var t = String(v || '').trim();
+  if (!t) return 0;
+  var m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)).getTime();
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)).getTime();
+  var d = new Date(t);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function cvPagoFechaTexto(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, 'America/Asuncion', 'dd/MM/yyyy');
+  return String(v || '');
+}
+
+// Últimos N pagos por cédula (excluye anulados). Acepta cedula=... o cedulas=a,b,c
+function cvPagosUltimos(ss, params) {
+  params = params || {};
+  var lista = String(params.cedulas || params.cedula || '').split(',')
+    .map(function (c) { return cvAuthNormalizeCedula(c); })
+    .filter(function (c) { return c; });
+  if (!lista.length) throw new Error('Falta la cédula del alumno.');
+  var limite = Math.max(1, Math.min(12, parseInt(params.limite, 10) || CV_PAGOS_A_MOSTRAR));
+
+  var pedidas = {};
+  lista.forEach(function (c) { pedidas[c] = []; });
+
+  var sheet = ss.getSheetByName('Pagos');
+  if (sheet && sheet.getLastRow() > 1) {
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      var ced = cvAuthNormalizeCedula(data[i][0]);
+      if (!pedidas.hasOwnProperty(ced)) continue;
+      var estado = String(data[i][5] || 'pendiente').toLowerCase().trim();
+      if (estado === 'anulado') continue;
+      pedidas[ced].push({
+        _ms: cvPagoFechaMs(data[i][4]), _fila: i,
+        concepto: String(data[i][2] || ''),
+        monto: Number(data[i][3]) || 0,
+        fecha: cvPagoFechaTexto(data[i][4]),
+        estado: estado,
+        comprobante: String(data[i][6] || ''),
+        factura: String(data[i][8] || ''),
+        tipo: String(data[i][9] || 'modulo')
+      });
+    }
+  }
+
+  var resultados = {};
+  lista.forEach(function (c) {
+    var pagos = pedidas[c].sort(function (a, b) { return (b._ms - a._ms) || (b._fila - a._fila); }).slice(0, limite);
+    var pendientes = pagos.filter(function (p) { return p.estado !== 'pagado'; }).length;
+    pagos.forEach(function (p) { delete p._ms; delete p._fila; });
+    resultados[c] = { pagos: pagos, total: pagos.length, pendientes: pendientes, al_dia: pagos.length > 0 && pendientes === 0 };
+  });
+  return { ok: true, limite: limite, resultados: resultados };
+}
+
+function cvExamenAsegurarHoja(ss) {
+  var sheet = ss.getSheetByName('HabilitacionExamen');
+  if (!sheet) {
+    sheet = ss.insertSheet('HabilitacionExamen');
+    sheet.appendRow(CV_HABILITACION_HEADERS);
+    var r = sheet.getRange(1, 1, 1, CV_HABILITACION_HEADERS.length);
+    r.setFontWeight('bold'); r.setBackground('#007A33'); r.setFontColor('#FFFFFF');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function cvExamenHabilitaciones(ss, params) {
+  params = params || {};
+  var sheet = ss.getSheetByName('HabilitacionExamen');
+  if (!sheet || sheet.getLastRow() < 2) return { ok: true, habilitaciones: [] };
+  var cedulas = String(params.cedulas || params.cedula || '').split(',')
+    .map(function (c) { return cvAuthNormalizeCedula(c); }).filter(function (c) { return c; });
+  var examenId = String(params.examen_id || '').trim();
+  var data = sheet.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    var ced = cvAuthNormalizeCedula(data[i][0]);
+    if (cedulas.length && cedulas.indexOf(ced) < 0) continue;
+    if (examenId && String(data[i][3]) !== examenId) continue;
+    out.push({
+      cedula: ced, nombre: data[i][1], asignatura: data[i][2], examen_id: String(data[i][3]),
+      habilitado: String(data[i][4]).toLowerCase() === 'si',
+      habilitado_por: data[i][5], fecha: cvPagoFechaTexto(data[i][6]), observacion: data[i][8] || ''
+    });
+  }
+  return { ok: true, habilitaciones: out };
+}
+
+function cvExamenHabilitacionEstado(ss, params) {
+  params = params || {};
+  var ced = cvAuthNormalizeCedula(params.cedula);
+  var examenId = String(params.examen_id || '').trim();
+  if (!ced || !examenId) throw new Error('Faltan cédula o examen.');
+  var r = cvExamenHabilitaciones(ss, { cedula: ced, examen_id: examenId });
+  var h = r.habilitaciones.length ? r.habilitaciones[0] : null;
+  return { ok: true, habilitado: !!(h && h.habilitado), registrado: !!h, fecha: h ? h.fecha : '', observacion: h ? h.observacion : '' };
+}
+
+// ¿La cédula pertenece a alguien autorizado a habilitar exámenes?
+function cvExamenPuedeHabilitar(ss, cedula) {
+  var ced = cvAuthNormalizeCedula(cedula);
+  if (!ced) return false;
+  var u = cvAuthFindUser(ss, ced);
+  if (u && u.estado !== 'inactivo' && u.estado !== 'bloqueado' &&
+      CV_ROLES_HABILITADORES.indexOf(String(u.rol || '').toLowerCase().trim()) >= 0) return true;
+  var sheetRoles = ss.getSheetByName('Roles');
+  if (sheetRoles && sheetRoles.getLastRow() > 1) {
+    var rd = sheetRoles.getDataRange().getValues();
+    for (var i = 1; i < rd.length; i++) {
+      if (cvAuthNormalizeCedula(rd[i][0]) === ced &&
+          CV_ROLES_HABILITADORES.indexOf(String(rd[i][2] || '').toLowerCase().trim()) >= 0 &&
+          String(rd[i][6] || 'activo').toLowerCase() !== 'inactivo') return true;
+    }
+  }
+  return false;
+}
+
+function cvExamenHabilitar(ss, data) {
+  data = data || {};
+  var docente = cvAuthNormalizeCedula(data.docente_cedula);
+  var ced = cvAuthNormalizeCedula(data.cedula);
+  var examenId = String(data.examen_id || '').trim();
+  if (!ced || !examenId) throw new Error('Faltan cédula del alumno o examen.');
+  if (!cvExamenPuedeHabilitar(ss, docente)) throw new Error('No tenés permiso para habilitar exámenes.');
+  var habilitado = (data.habilitado === true || String(data.habilitado).toLowerCase() === 'true' || String(data.habilitado).toLowerCase() === 'si');
+
+  // Foto de los últimos 4 pagos al momento de decidir (auditoría)
+  var pg = cvPagosUltimos(ss, { cedula: ced }).resultados[ced] || { pagos: [] };
+  var snapshot = pg.pagos.map(function (p) {
+    return (p.factura || 's/f') + ' · ' + p.fecha + ' · ' + p.monto + ' · ' + p.estado;
+  }).join(' | ');
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Servidor ocupado. Intentá de nuevo.');
+  try {
+    var sheet = cvExamenAsegurarHoja(ss);
+    var ahora = new Date().toLocaleString('es-ES', { timeZone: 'America/Asuncion' });
+    var fila = [ced, cvAuthSanitizeText(data.nombre, 120), cvAuthSanitizeText(data.asignatura, 60), examenId,
+      habilitado ? 'Sí' : 'No', docente, ahora, snapshot, cvAuthSanitizeText(data.observacion, 300)];
+    var rows = sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues() : [];
+    var destino = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (cvAuthNormalizeCedula(rows[i][0]) === ced && String(rows[i][3]) === examenId) { destino = i + 2; break; }
+    }
+    if (destino) sheet.getRange(destino, 1, 1, fila.length).setValues([fila]);
+    else sheet.appendRow(fila);
+    SpreadsheetApp.flush();
+    return { ok: true, habilitado: habilitado, pendientes: pg.pendientes || 0,
+      mensaje: habilitado ? 'Alumno habilitado para rendir el examen.' : 'Habilitación retirada.' };
+  } finally {
+    lock.releaseLock();
+  }
 }

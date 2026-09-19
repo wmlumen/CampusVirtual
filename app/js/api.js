@@ -531,7 +531,35 @@ API.grades = {
 };
 
 API.exams = {
-    saveAnswers: (data) => callGas('guardar_respuestas_examen', data, 'POST')
+    saveAnswers: (data) => callGas('guardar_respuestas_examen', data, 'POST'),
+    
+    // Códigos de acceso a exámenes — Docente configura, Alumno valida
+    setAccessCode: (examenId, codigo, docente_cedula) => callGas('examen_codigo_guardar', {
+        examen_id: examenId,
+        codigo: codigo,
+        docente_cedula: docente_cedula,
+        timestamp: new Date().toISOString()
+    }, 'POST'),
+    
+    getAccessCode: (examenId) => callGas('examen_codigo_obtener', {
+        examen_id: examenId
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        codigo: r.codigo || null,
+        activo: r.activo !== false
+    })),
+    
+    myExamsWithCodes: (docente_cedula) => callGas('examen_listar_con_codigos', {
+        docente_cedula: docente_cedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        examenes: r.examenes || []
+    })),
+    
+    toggleAccessCode: (examenId, activo) => callGas('examen_codigo_toggle', {
+        examen_id: examenId,
+        activo: activo
+    }, 'POST')
 };
 
 API.attendance = {

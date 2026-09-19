@@ -193,3 +193,84 @@ const formatoGs = (monto) => monto.toLocaleString('es-PY') + ' Gs.';
 - [ ] Pruebas de flujo completo
 - [ ] Pruebas de exoneración selectiva
 
+
+---
+
+## 🏦 ARQUEO DE CAJA (Nuevo)
+
+**Fecha:** 19 Septiembre 2026
+**Estado:** ✅ Interfaz HTML + API Methods (frontend completo)
+
+### CARACTERÍSTICAS
+
+✅ **Períodos flexibles:**
+- Hoy
+- Esta Semana  
+- Este Mes
+- Este Semestre
+- Este Año
+- Rango personalizado (desde-hasta)
+
+✅ **Segmentación:**
+- General (total sin segmentación)
+- Por Carrera
+- Por Grado
+- Por Sección
+- Por Carrera + Grado
+
+✅ **Métricas por segmento:**
+- Cantidad de pagos
+- Monto total ingresado
+- Pago promedio
+- Monto mínimo y máximo
+- Porcentaje del total
+
+✅ **Características:**
+- Resumen general con 4 KPIs
+- Tabla de segmentación dinámmica
+- Gráfico de distribución (barras)
+- Detalle de pagos por segmento
+- Descarga CSV
+
+### API METHODS AGREGADOS
+
+```javascript
+CenturiaAPI.tesoreria.arqueoCaja(fechaDesde, fechaHasta, segmentarPor)
+  → Retorna: {general: {...}, segmentado: [...]}
+
+CenturiaAPI.tesoreria.obtenerPagosPorSegmento(segmentoId)
+  → Retorna: Array de pagos con detalles
+
+CenturiaAPI.tesoreria.reporteArqueoDetallado(fechaDesde, fechaHasta, formato)
+  → Retorna: Reporte multi-vista (json|csv|pdf)
+
+CenturiaAPI.tesoreria.arqueoDiscrepancias(fechaDesde, fechaHasta)
+  → Retorna: Array de inconsistencias detectadas
+```
+
+### ARCHIVO GENERADO
+
+```
+✅ app/admin/sections/arqueo-caja.html (500+ líneas)
+```
+
+### PRÓXIMO PASO DE INTEGRACIÓN
+
+Agregar botón al sidebar de admin:
+
+```html
+<button @click="switchTab('arqueo-caja')" 
+    :class="activeTab==='arqueo-caja' ? 'tab-active' : 'tab-inactive'"
+    class="text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors">
+    <i class="bi bi-calculator-fill text-base"></i> Arqueo de Caja
+</button>
+```
+
+En `switchTab()`:
+```javascript
+case 'arqueo-caja':
+    loadSection('arqueo-caja');
+    break;
+```
+
+---

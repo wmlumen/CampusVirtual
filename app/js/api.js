@@ -940,3 +940,66 @@ API.gestionEstudiantes = {
         bajas: r.bajas || []
     }))
 };
+
+    // ARQUEÓ DE CAJA
+    arqueoCaja: async function(fechaDesde, fechaHasta, segmentarPor = 'general') {
+        /**
+         * Arqueo de caja con segmentación flexible
+         * @param fechaDesde {string} Fecha inicio (YYYY-MM-DD)
+         * @param fechaHasta {string} Fecha fin (YYYY-MM-DD)
+         * @param segmentarPor {string} general|carrera|grado|seccion|carrera-grado
+         * @returns {object} Datos de arqueo con general y segmentado[]
+         */
+        const response = await google.script.run
+            .withSuccessHandler(data => data)
+            .arqueoCaja(fechaDesde, fechaHasta, segmentarPor);
+        
+        return {
+            general: {
+                totalIngresos: response.total || 0,
+                cantidadPagos: response.cantidad || 0,
+                promedioPago: response.promedio || 0,
+                minPago: response.minimo || 0,
+                maxPago: response.maximo || 0,
+                estudiantes: response.estudiantes || 0,
+                porcentajePago: response.porcentaje || 0
+            },
+            segmentado: response.segmentos || []
+        };
+    },
+
+    obtenerPagosPorSegmento: async function(segmentoId) {
+        /**
+         * Obtener detalle de pagos de un segmento específico
+         * @param segmentoId {string} ID del segmento
+         * @returns {array} Array de pagos {nombreEstudiante, cedula, fecha, monto, comprobante}
+         */
+        return await google.script.run
+            .withSuccessHandler(data => data)
+            .obtenerPagosPorSegmento(segmentoId);
+    },
+
+    reporteArqueoDetallado: async function(fechaDesde, fechaHasta, formato = 'json') {
+        /**
+         * Generar reporte detallado de arqueo con múltiples vistas
+         * @param fechaDesde {string} Fecha inicio
+         * @param fechaHasta {string} Fecha fin
+         * @param formato {string} json|csv|pdf
+         * @returns {object} Reporte con múltiples segmentaciones
+         */
+        return await google.script.run
+            .withSuccessHandler(data => data)
+            .reporteArqueoDetallado(fechaDesde, fechaHasta, formato);
+    },
+
+    arqueoDiscrepancias: async function(fechaDesde, fechaHasta) {
+        /**
+         * Detectar discrepancias en el arqueo de caja
+         * @param fechaDesde {string} Fecha inicio
+         * @param fechaHasta {string} Fecha fin
+         * @returns {array} Array de discrepancias detectadas
+         */
+        return await google.script.run
+            .withSuccessHandler(data => data)
+            .arqueoDiscrepancias(fechaDesde, fechaHasta);
+    }

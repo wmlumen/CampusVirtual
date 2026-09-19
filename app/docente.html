@@ -117,46 +117,27 @@
     <div class="sec" id="sec-exam-codes" style="display:none">
         <div class="sec-title"><i class="bi bi-key"></i> Códigos de Acceso a Exámenes</div>
         <p style="font-size:.7rem;color:#64748b;margin-bottom:12px">
-            <i class="bi bi-info-circle"></i> Configura un código único para que los alumnos accedan a cada examen.
+            <i class="bi bi-info-circle"></i> Configura un código único para que los alumnos accedan a cada examen de esta asignatura.
         </p>
-        <div class="frm-i" style="margin-bottom:12px">
-            <label style="flex:1">Examen</label>
-            <select id="sel-exam-code" onchange="cargarCodigoExamen()" style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem">
-                <option value="">-- Seleccionar examen --</option>
-                <option value="examen_parcial_1">Parcial 1 (Unidades 1-3)</option>
-                <option value="examen_parcial_2">Parcial 2 (Unidades 4-6)</option>
-                <option value="examen_virtual">Examen Virtual</option>
-                <option value="examen_virtual_completo">Examen Virtual Completo</option>
-                <option value="examen_final_virtual">Final Virtual</option>
-                <option value="examen_final_escrito">Final Escrito</option>
-            </select>
+        <div id="accordion-examen-codes" style="display:none">
+            <!-- Se llena dinámicamente con cargarCodigosExamenes() -->
         </div>
-        <div id="form-codigo-examen" style="display:none">
-            <div class="frm-i" style="margin-bottom:12px">
-                <label style="flex:1">Código de Acceso</label>
-                <input id="inp-codigo-examen" type="text" placeholder="Ej: ABC123" maxlength="12" style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;text-transform:uppercase" oninput="this.value = this.value.toUpperCase()">
-            </div>
-            <div class="frm-i">
-                <label style="flex:1">Estado</label>
-                <label style="display:flex;align-items:center;gap:4px;flex:1">
-                    <input id="chk-codigo-activo" type="checkbox" checked> Activo
-                </label>
-            </div>
-            <div class="toolbar" style="margin-top:12px">
-                <button class="btn btn-p" onclick="guardarCodigoExamen()"><i class="bi bi-check-lg"></i> Guardar Código</button>
-                <button class="btn btn-s" onclick="limpiarFormularioCodigoExamen()"><i class="bi bi-x-lg"></i> Limpiar</button>
-            </div>
-            <div id="msg-codigo-examen" style="margin-top:8px;font-size:.7rem;display:none"></div>
-        </div>
-        <table class="tbl" id="tbl-exam-codes" style="margin-top:12px;display:none">
-            <thead><tr><th>Examen</th><th>Código</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody id="tbody-exam-codes"></tbody>
-        </table>
         <div id="empty-exam-codes" style="text-align:center;padding:20px;color:#94a3b8;font-size:.7rem">
             <i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i>
-            Selecciona un examen para configurar su código de acceso.
+            No hay exámenes configurados para esta asignatura.
         </div>
     </div>
+    
+    <style>
+        .accordion-item { background: #f8fafc; border: 1px solid var(--bdr); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+        .accordion-header { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid var(--bdr); transition: .2s; }
+        .accordion-header:hover { background: #f1f5f9; }
+        .accordion-header.active { background: var(--azul); color: #fff; }
+        .accordion-body { padding: 12px 14px; display: none; }
+        .accordion-body.active { display: block; }
+        .accordion-toggle { font-size: .8rem; transition: transform .2s; }
+        .accordion-header.active .accordion-toggle { transform: rotate(180deg); }
+    </style>
 
     </div>
 
@@ -295,6 +276,7 @@ async function seleccionarAsig(codigo, tabEl) {
 
     document.getElementById('sec-title-text').textContent = `Alumnos — ${asigActual.nombre || asigActual.codigo}`;
     document.getElementById('sec-exam-codes').style.display = 'block';
+    await cargarCodigosExamenes(codigo);
     document.getElementById('statsRow').style.display = 'grid';
     document.getElementById('sumRow').style.display = 'grid';
 
@@ -627,54 +609,93 @@ async function solicitarAsignatura(codigo) {
 }
 
 // ═══ CÓDIGOS DE ACCESO A EXÁMENES ═══
-let codigosExamenesActual = {};
+const examesMapa = {
+    'examen_parcial_1': 'Parcial 1 (Unidades 1-3)',
+    'examen_parcial_2': 'Parcial 2 (Unidades 4-6)',
+    'examen_virtual': 'Examen Virtual',
+    'examen_virtual_completo': 'Examen Virtual Completo',
+    'examen_final_virtual': 'Final Virtual',
+    'examen_final_escrito': 'Final Escrito'
+};
 
-async function cargarCodigoExamen() {
-    const selExam = document.getElementById('sel-exam-code');
-    const examId = selExam.value;
-    const formEl = document.getElementById('form-codigo-examen');
-    const msgEl = document.getElementById('msg-codigo-examen');
+async function cargarCodigosExamenes(codigoAsignatura) {
+    const accordion = document.getElementById('accordion-examen-codes');
     const emptyEl = document.getElementById('empty-exam-codes');
     
-    if (!examId) {
-        formEl.style.display = 'none';
+    if (!codigoAsignatura) {
+        accordion.style.display = 'none';
         emptyEl.style.display = 'block';
         return;
     }
     
-    formEl.style.display = 'block';
+    accordion.innerHTML = '';
+    accordion.style.display = 'block';
     emptyEl.style.display = 'none';
-    msgEl.style.display = 'none';
-    document.getElementById('inp-codigo-examen').value = '';
-    document.getElementById('chk-codigo-activo').checked = true;
     
-    try {
-        const cedula = sessionStorage.getItem('current_cedula');
-        const res = await CenturiaAPI.exams.getAccessCode(examId);
-        if (res.ok && res.codigo) {
-            document.getElementById('inp-codigo-examen').value = res.codigo || '';
-            document.getElementById('chk-codigo-activo').checked = res.activo !== false;
-            codigosExamenesActual[examId] = res;
-        } else {
-            codigosExamenesActual[examId] = null;
+    // Crear items del acordeón para cada examen
+    for (const [examId, examNombre] of Object.entries(examesMapa)) {
+        try {
+            const res = await CenturiaAPI.exams.getAccessCode(examId);
+            const codigoActual = res.codigo || '';
+            const activoActual = res.activo !== false;
+            
+            const item = document.createElement('div');
+            item.className = 'accordion-item';
+            item.innerHTML = `
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div>
+                        <div style="font-size:.75rem;font-weight:700;color:var(--txt2)">${examNombre}</div>
+                        <div style="font-size:.6rem;color:#64748b;margin-top:2px">ID: ${examId}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font-size:.65rem;font-weight:600;background:${codigoActual ? '#D1FAE5' : '#F1F5F9'};color:${codigoActual ? '#065F46' : '#64748b'};padding:3px 10px;border-radius:6px">
+                            ${codigoActual ? '✓ ' + codigoActual : 'Sin código'}
+                        </span>
+                        <span class="accordion-toggle" style="color:#94a3b8">▼</span>
+                    </div>
+                </div>
+                <div class="accordion-body">
+                    <div class="frm-i" style="margin-bottom:12px">
+                        <label style="flex:1;font-size:.6rem">Código</label>
+                        <input class="inp-exam-codigo" type="text" value="${codigoActual}" maxlength="12" placeholder="Ej: ABC123" data-exam="${examId}" 
+                            style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;text-transform:uppercase" 
+                            oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="frm-i" style="margin-bottom:12px">
+                        <label style="flex:1;font-size:.6rem">Estado</label>
+                        <label style="display:flex;align-items:center;gap:4px;flex:1">
+                            <input class="chk-exam-activo" type="checkbox" ${activoActual ? 'checked' : ''} data-exam="${examId}"> Activo
+                        </label>
+                    </div>
+                    <div class="toolbar">
+                        <button class="btn btn-p" onclick="guardarCodigoExamen('${examId}')"><i class="bi bi-check-lg"></i> Guardar</button>
+                        <button class="btn btn-s" onclick="resetCodigoExamen('${examId}')"><i class="bi bi-arrow-clockwise"></i> Restaurar</button>
+                    </div>
+                    <div class="msg-codigo" data-exam="${examId}" style="margin-top:8px;font-size:.7rem;display:none"></div>
+                </div>
+            `;
+            accordion.appendChild(item);
+        } catch (e) {
+            console.error('Error cargando código para', examId, e);
         }
-    } catch (e) {
-        console.error('Error cargando código:', e);
     }
 }
 
-async function guardarCodigoExamen() {
-    const selExam = document.getElementById('sel-exam-code');
-    const inpCod = document.getElementById('inp-codigo-examen');
-    const chkAct = document.getElementById('chk-codigo-activo');
-    const msgEl = document.getElementById('msg-codigo-examen');
+function toggleAccordion(header) {
+    header.classList.toggle('active');
+    header.nextElementSibling?.classList.toggle('active');
+}
+
+async function guardarCodigoExamen(examId) {
+    const inpEl = document.querySelector(`.inp-exam-codigo[data-exam="${examId}"]`);
+    const chkEl = document.querySelector(`.chk-exam-activo[data-exam="${examId}"]`);
+    const msgEl = document.querySelector(`.msg-codigo[data-exam="${examId}"]`);
     
-    const examId = selExam.value;
-    const codigo = (inpCod.value || '').trim().toUpperCase();
+    const codigo = (inpEl.value || '').trim().toUpperCase();
     
-    if (!examId || !codigo) {
-        msgEl.textContent = '⚠️ Completá el examen y el código';
-        msgEl.className = 'msg-error';
+    if (!codigo) {
+        msgEl.textContent = '⚠️ Ingresá un código';
+        msgEl.style.color = '#d97706';
         msgEl.style.display = 'block';
         return;
     }
@@ -683,30 +704,26 @@ async function guardarCodigoExamen() {
         const cedula = sessionStorage.getItem('current_cedula');
         const res = await CenturiaAPI.exams.setAccessCode(examId, codigo, cedula);
         if (res.ok) {
-            msgEl.textContent = '✓ Código guardado correctamente';
-            msgEl.className = 'msg-success';
+            msgEl.textContent = '✓ Código guardado';
             msgEl.style.color = '#16a34a';
             msgEl.style.display = 'block';
-            codigosExamenesActual[examId] = { codigo: codigo, activo: chkAct.checked };
             setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
         } else {
             msgEl.textContent = '✗ Error: ' + (res.error || 'No se pudo guardar');
-            msgEl.className = 'msg-error';
             msgEl.style.color = '#dc2626';
             msgEl.style.display = 'block';
         }
     } catch (e) {
         msgEl.textContent = '✗ Error de conexión';
-        msgEl.className = 'msg-error';
         msgEl.style.color = '#dc2626';
         msgEl.style.display = 'block';
     }
 }
 
-function limpiarFormularioCodigoExamen() {
-    document.getElementById('inp-codigo-examen').value = '';
-    document.getElementById('chk-codigo-activo').checked = true;
-    document.getElementById('msg-codigo-examen').style.display = 'none';
+function resetCodigoExamen(examId) {
+    const inpEl = document.querySelector(`.inp-exam-codigo[data-exam="${examId}"]`);
+    inpEl.value = '';
+    inpEl.focus();
 }
 
 

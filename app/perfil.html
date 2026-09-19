@@ -7,6 +7,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         :root{
@@ -224,6 +225,24 @@
             </div>
 
             <!-- Botones -->
+
+            <!-- QR del Alumno -->
+            <div class="sec">
+                <div class="sec-title"><i class="bi bi-qr-code"></i> Código QR para Eventos</div>
+                <div style="display:flex;justify-content:center;align-items:center;flex-direction:column;padding:20px;background:var(--card);border-radius:10px">
+                    <div style="background:#fff;padding:12px;border-radius:8px;border:2px solid var(--verde);box-shadow:0 3px 12px rgba(0,0,0,.1)">
+                        <div id="qr-container" style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--txt3)">
+                            <i class="bi bi-hourglass-split"></i> Generando QR...
+                        </div>
+                    </div>
+                    <p style="font-size:.6rem;color:var(--txt3);margin-top:12px;text-align:center">
+                        <i class="bi bi-info-circle"></i> Escanea este código en eventos para registrar tu asistencia
+                    </p>
+                    <button class="btn btn-g" style="margin-top:10px" onclick="descargarQR()">
+                        <i class="bi bi-download"></i> Descargar QR
+                    </button>
+                </div>
+            </div>
             <div class="btns">
                 <button class="btn btn-p" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
                 <button class="btn btn-g" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Contraseña</button>
@@ -373,6 +392,9 @@ function mostrarLocal() {
     document.getElementById('p-rol').textContent = r.toUpperCase();
     document.getElementById('p-estado').textContent = 'ACTIVO';
 }
+    
+    // Generar QR del alumno
+    generarQR();
 
 // ═══ MODO EDICIÓN ═══
 function editarCampo(el) {
@@ -700,5 +722,69 @@ function pintarAvisoProvisoria() {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarFoto(); });
 document.addEventListener('DOMContentLoaded', cargarPerfil);
 </script>
+
+    // ═══ GENERAR Y DESCARGAR QR ═══
+    async function generarQR() {
+        try {
+            const user = CenturiaAPI.getCurrentUser() || {};
+            const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Alumno';
+            const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
+            const grado = user.grado || localStorage.getItem('centuria_grado') || '-';
+            const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '-';
+            const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '-';
+            
+            // Datos a codificar en el QR
+            const datos = {
+                nombre: nombre,
+                apellido: apellido,
+                grado: grado,
+                carrera: carrera,
+                seccion: seccion,
+                timestamp: new Date().toISOString()
+            };
+            
+            const qrString = JSON.stringify(datos);
+            
+            // Generar QR
+            const container = document.getElementById('qr-container');
+            container.innerHTML = ''; // Limpiar
+            
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: qrString,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#007A33',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                window.qrDataForDownload = qrString;
+            } else {
+                container.innerHTML = '<p style="color:#dc2626">Error: Librería QR no cargada</p>';
+            }
+        } catch (e) {
+            console.error('Error generando QR:', e);
+            document.getElementById('qr-container').innerHTML = '<p style="color:#dc2626">Error al generar QR</p>';
+        }
+    }
+    
+    function descargarQR() {
+        try {
+            const canvas = document.querySelector('#qr-container canvas');
+            if (!canvas) {
+                alert('Por favor, espera a que se genere el QR');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `qr-${new Date().getTime()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (e) {
+            alert('Error al descargar: ' + e.message);
+        }
+    }
 </body>
 </html>

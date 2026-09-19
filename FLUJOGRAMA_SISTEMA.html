@@ -25,9 +25,11 @@ button{padding:8px 14px;border:none;border-radius:6px;font-weight:600;font-size:
 .leg span{width:10px;height:10px;border-radius:2px;display:inline-block;border:2px solid}
 .canvas-wrap{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);border:1px solid #E2E8F0;overflow:auto;min-height:75vh;position:relative}
 canvas{display:block}
-.tooltip{position:fixed;background:#0D2C16;color:#fff;padding:10px 12px;border-radius:6px;font-size:.7rem;max-width:260px;z-index:999;pointer-events:none;opacity:0;transition:opacity .1s;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.tooltip{position:fixed;background:#0D2C16;color:#fff;padding:12px 14px;border-radius:6px;font-size:.75rem;max-width:320px;z-index:999;pointer-events:none;opacity:0;transition:opacity .1s;box-shadow:0 4px 16px rgba(0,0,0,.2);line-height:1.5}
 .tooltip.show{opacity:1}
-.tooltip strong{color:#D4A843;display:block;margin-bottom:3px}
+.tooltip strong{color:#D4A843;display:block;margin-bottom:4px}
+.tooltip ul{margin:6px 0 0 16px;padding:0}
+.tooltip li{margin:2px 0}
 .legend-badge{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle;border:2px solid}
 @media print{.controls,.legend,.view-toggle{display:none}.canvas-wrap{overflow:visible;box-shadow:none;border:none}canvas{min-width:100%}}
 </style>
@@ -128,28 +130,96 @@ const TE=[
 
 const TS={f:{f:'#E6F4EA',s:'#16813D',t:'#0D2C16',i:'🌐'},b:{f:'#E0F2FE',s:'#2563EB',t:'#1E3A8A',i:'☁️'},s:{f:'#FEFCE8',s:'#D4A843',t:'#8A6D2B',i:'📊'},a:{s:'#D94172',d:[6,4]},p:{s:'#7C3AED',d:[4,4]},d:{s:'#EF4444',d:[8,4]}};
 
-// ============ DATOS VISTA ROLES ============
+// ============ DATOS VISTA ROLES (DETALLADA) ============
 const RN=[
-{id:'alumno',x:150,y:200,w:160,h:80,t:'ALUMNO',ty:'a',d:'Accede a:\n• Dashboard\n• Materiales U1-U10\n• Libreta de notas\n• Asistencia (QR)\n• Calendario\n• Tesorería\n• Perfil'},
-{id:'docente',x:150,y:340,w:160,h:80,t:'DOCENTE',ty:'d',d:'Gestiona:\n• Mis asignaturas\n• Eventos asistencia\n• Calificaciones\n• Alumnos por sección\n• Solicita materias'},
-{id:'acad',x:450,y:150,w:180,h:80,t:'ACCESO\nACADÉMICO',ty:'c',d:'Coordina:\n• Plan de estudios\n• Horarios\n• Mallas curriculares\n• Evaluaciones\n• Reportes académicos'},
-{id:'adm_acc',x:450,y:300,w:180,h:80,t:'ACCESO\nADMINISTRATIVO',ty:'e',d:'Administra:\n• Matrículas\n• Pagos / Tesorería\n• Formularios\n• Certificados\n• Documentos'},
-{id:'sede',x:750,y:150,w:160,h:80,t:'ADMIN\nDE SEDE',ty:'s',d:'Gestiona sede:\n• Usuarios locales\n• Horarios aulas\n• Docentes sede\n• Reportes locales\n• Config. filial'},
-{id:'gen',x:750,y:300,w:160,h:80,t:'ADMIN\nGENERAL',ty:'g',d:'Control total:\n• Todas las sedes\n• Roles globales\n• Catálogos maestros\n• Constructor\n• Auditoría\n• Parámetros sistema'},
+{id:'alumno',x:200,y:180,w:280,h:220,t:'🎓 ALUMNO',ty:'a',
+d:`<strong>ALUMNO</strong>
+<ul>
+<li><strong>Dashboard</strong>: Vista general de cursos, alertas, accesos rápidos</li>
+<li><strong>Materiales U1–U10</strong>: Lectura guiada, flashcards, progreso, asistencia en clase, Cuaderno PDF</li>
+<li><strong>Libreta de Notas</strong>: Por período, materia, módulo, promedios, exportar PDF</li>
+<li><strong>Asistencia</strong>: Código QR / Geolocalización, historial personal, justificaciones</li>
+<li><strong>Calendario</strong>: Eventos, exámenes, clases, vista mes/semana/día, conflictos</li>
+<li><strong>Tesorería</strong>: Pagos, aranceles, cuotas, comprobantes, facturas, conciliación</li>
+<li><strong>Matrícula</strong>: Inscripción / Rematrícula, datos personales + académicos, docs adjuntos</li>
+<li><strong>Perfil</strong>: Contacto, cambio contraseña, foto → Drive</li>
+<li><strong>Exámenes</strong>: Parcial 1 (U1-U3), Parcial 2 (U4-U6), Final (U1-U10), timer 60 min, auto-guardado</li>
+<li><strong>Constructor</strong>: (Solo visualización) Programas curriculares asignados</li>
+</ul>`},
+{id:'docente',x:200,y:460,w:280,h:180,t:'👨‍🏫 DOCENTE',ty:'d',
+d:`<strong>DOCENTE</strong>
+<ul>
+<li><strong>Mis Asignaturas</strong>: Solo materias asignadas (vinculadas en hoja Roles)</li>
+<li><strong>Eventos Asistencia</strong>: Crear códigos QR, definir unidad/lugar/fecha/hora, cerrar evento</li>
+<li><strong>Calificaciones</strong>: Cargar notas por alumno/materia, guardar en Sheets (guarda_notas_asignatura)</li>
+<li><strong>Alumnos por Sección</strong>: Listado filtrado por carrera/sección (mis_alumnos)</li>
+<li><strong>Solicitar Materias</strong>: Pide asignación a nuevas asignaturas (flujo docente_solicitud → admin aprueba)</li>
+<li><strong>Autoevaluaciones</strong>: Pruebas formativas guiadas, examen virtual, examen parcial</li>
+<li><strong>Panel Analítico</strong>: Estadísticas de sus cursos, promedios, asistencia</li>
+<li><strong>Perfil</strong>: Contacto, foto, cambio contraseña</li>
+</ul>`},
+{id:'acad',x:580,y:120,w:260,h:180,t:'📚 ACCESO ACADÉMICO',ty:'c',
+d:`<strong>ACCESO ACADÉMICO (Coordinación)</strong>
+<ul>
+<li><strong>Plan de Estudios</strong>: Mallas curriculares, programas, unidades, competencias</li>
+<li><strong>Horarios</strong>: Asignación aulas, cruce docentes, conflictos</li>
+<li><strong>Evaluaciones</strong>: Banco de preguntas, rúbricas, ponderaciones ≤100%</li>
+<li><strong>Reportes Académicos</strong>: Promedios por materia/carrera, tasas aprobación, desertión</li>
+<li><strong>Constructor Curricular</strong>: Borradores → Revisión → Aprobado → Publicado (flujo editorial)</li>
+<li><strong>Catálogos Maestros</strong>: Grados, Carreras, Secciones, Asignaturas (CRUD)</li>
+<li><strong>Validación</strong>: Aprueba/rechaza solicitudes docentes, matrículas, formularios</li>
+<li><strong>Firmas Digitales</strong>: Actas, certificados, documentos oficiales</li>
+</ul>`},
+{id:'adm_acc',x:580,y:360,w:260,h:180,t:'📋 ACCESO ADMINISTRATIVO',ty:'e',
+d:`<strong>ACCESO ADMINISTRATIVO (Secretaría / Tesorería)</strong>
+<ul>
+<li><strong>Matrículas</strong>: CRUD completo, estados (pendiente/aprobada/rechazada), estadísticas</li>
+<li><strong>Pagos / Tesorería</strong>: Registro cuotas, comprobantes, facturas, VAN/TIR/Payback/ROI, conciliación</li>
+<li><strong>Formularios</strong>: Por carrera, campos dinámicos, completitud, respuestas alumno</li>
+<li><strong>Certificados</strong>: Generación con QR, validación online, plantillas</li>
+<li><strong>Documentos</strong>: Subida, versionado, acceso por rol</li>
+<li><strong>Usuarios</strong>: Alta/baja alumnos, asignación secciones, importación CSV</li>
+<li><strong>Filiales</strong>: CRUD sedes, admins por filial, asignación</li>
+<li><strong>Reportes Operativos</strong>: Matrículas por período, morosidad, certificados emitidos</li>
+</ul>`},
+{id:'sede',x:940,y:120,w:240,h:180,t:'🏫 ADMIN DE SEDE',ty:'s',
+d:`<strong>ADMINISTRADOR DE SEDE / FILIAL</strong>
+<ul>
+<li><strong>Usuarios Locales</strong>: Alumnos/docentes/admins de su filial (vista filtrada)</li>
+<li><strong>Horarios y Aulas</strong>: Asignación física, capacidad, recursos</li>
+<li><strong>Docentes Sede</strong>: Vinculación materias, carga horaria, sustituciones</li>
+<li><strong>Reportes Locales</strong>: Matrículas, asistencia, notas, pagos de su filial</li>
+<li><strong>Configuración Filial</strong>: Datos contacto, horarios atención, parámetros locales</li>
+<li><strong>Eventos Presenciales</strong>: Clases, exámenes, actos, uso de espacios</li>
+<li><strong>Soporte Local</strong>: Primer nivel incidencias, derivación a Admin General</li>
+</ul>`},
+{id:'gen',x:940,y:360,w:240,h:180,t:'⚙️ ADMIN GENERAL',ty:'g',
+d:`<strong>ADMINISTRADOR GENERAL (Plataforma)</strong>
+<ul>
+<li><strong>Todas las Sedes</strong>: Vista global, comparativas, consolidados</li>
+<li><strong>Roles Globales</strong>: Asignación/revocación alumno, docente, académico, admin sede, admin general</li>
+<li><strong>Catálogos Maestros</strong>: Grados, Carreras, Secciones, Asignaturas, Modalidades (CRUD + seed)</li>
+<li><strong>Constructor</strong>: Gestión completa borradores, revisiones, banco preguntas, publicaciones</li>
+<li><strong>Auditoría</strong>: Log de acciones críticas (login, cambios roles, pagos, notas, matrículas)</li>
+<li><strong>Parámetros Sistema</strong>: TTL token, claves admin docente, email remitente, límites</li>
+<li><strong>Salud del Sistema</strong>: Health check GAS, diagnóstico Sheets, conteos filas, sync status</li>
+<li><strong>Backup / Sync</strong>: Inicialización BD, sembrarTodo, poblarCatalogosBase, SyncControl</li>
+<li><strong>Drive</strong>: Carpeta institucional fotos, gestión almacenamiento</li>
+</ul>`},
 ];
 
 const RE=[
-['alumno','docente','Clases / Evaluación','ad'],
-['alumno','acad','Inscripciones / Plan','ac'],
-['alumno','adm_acc','Matrícula / Pagos','ae'],
-['docente','acad','Carga académica\nReportes notas','cd'],
-['docente','sede','Asignación aulas\nHorarios','ds'],
-['acad','adm_acc','Validación académica\nAdministrativa','ce'],
-['acad','sede','Lineamientos\ncurriculares','cs'],
-['acad','gen','Reportes consolidados\nPolíticas','cg'],
-['adm_acc','sede','Recursos sede\nPresupuesto','es'],
-['adm_acc','gen','Consolidado pagos\nMatrículas','eg'],
-['sede','gen','Reportes sede\nConfiguración','sg'],
+['alumno','docente','Clases / Evaluación / Asistencia','ad'],
+['alumno','acad','Inscripciones / Plan de estudios / Certificados','ac'],
+['alumno','adm_acc','Matrícula / Pagos / Formularios / Docs','ae'],
+['docente','acad','Carga académica / Reportes notas / Solicitudes','cd'],
+['docente','sede','Asignación aulas / Horarios / Sustituciones','ds'],
+['acad','adm_acc','Validación académica ↔ administrativa / Matrículas','ce'],
+['acad','sede','Lineamientos curriculares / Horarios compartidos','cs'],
+['acad','gen','Reportes consolidados / Políticas / Constructor','cg'],
+['adm_acc','sede','Recursos sede / Presupuesto / Usuarios locales','es'],
+['adm_acc','gen','Consolidado pagos / Matrículas / Reportes globales','eg'],
+['sede','gen','Reportes sede / Configuración / Escalamiento','sg'],
 ];
 
 const RS={
@@ -173,7 +243,7 @@ sg:{s:'#6366F1',d:[4,4]},
 };
 
 // ============ ESTADO ============
-let currentView='tech'; // 'tech' | 'roles'
+let currentView='tech';
 const cv=document.getElementById('c'),ctx=cv.getContext('2d'),wrap=document.getElementById('wrap'),tt=document.getElementById('tt');
 let sc=.5,ox=0,oy=0,pan=0,lx=0,ly=0,grid=1;
 let N=TN, E=TE, S=TS;
@@ -189,7 +259,7 @@ function rd(){ctx.clearRect(0,0,cv.width,cv.height);if(grid){ctx.strokeStyle='#E
 
 function gn(cx,cy){const r=cv.getBoundingClientRect();const x=(cx-r.left)/sc-ox,y=(cy-r.top)/sc-oy;return N.find(n=>x>=n.x&&x<=n.x+n.w&&y>=n.y&&y<=n.y+n.h);}
 
-cv.addEventListener('mousemove',e=>{const n=gn(e.clientX,e.clientY);if(n){tt.classList.add('show');tt.innerHTML=`<strong>${n.t.replace(/\n/g,' ')}</strong>${n.d}`;tt.style.left=e.clientX+12+'px';tt.style.top=e.clientY+12+'px'}else tt.classList.remove('show');});
+cv.addEventListener('mousemove',e=>{const n=gn(e.clientX,e.clientY);if(n){tt.classList.add('show');tt.innerHTML=n.d;tt.style.left=e.clientX+12+'px';tt.style.top=e.clientY+12+'px'}else tt.classList.remove('show');});
 cv.addEventListener('mouseleave',()=>tt.classList.remove('show'));
 cv.addEventListener('mousedown',e=>{if(e.button===0||e.button===2){pan=1;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing'}});
 window.addEventListener('mousemove',e=>{if(pan){ox+=(e.clientX-lx)/sc;oy+=(e.clientY-ly)/sc;lx=e.clientX;ly=e.clientY;rd()}});
@@ -197,7 +267,7 @@ window.addEventListener('mouseup',()=>{pan=0;cv.style.cursor='default'});
 wrap.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?.9:1.1,nsc=Math.min(2,Math.max(.2,sc*f));const r=cv.getBoundingClientRect();const mx=(e.clientX-r.left)/sc-ox,my=(e.clientY-r.top)/sc-oy;ox=mx-(e.clientX-r.left)/nsc;oy=my-(e.clientY-r.top)/nsc;sc=nsc;rd()},{passive:false});
 
 function zoom(f){const nsc=Math.min(2,Math.max(.2,sc*f));ox=cv.width/2/nsc-cv.width/2/sc+ox;oy=cv.height/2/nsc-cv.height/2/sc+oy;sc=nsc;rd()}
-function resetView(){sc=.5;ox=0;oy=0;rd()}
+function resetView(){sc=.55;ox=0;oy=0;rd()}
 function toggleGrid(){grid=1-grid;rd()}
 function downloadPNG(){const a=document.createElement('a');a.download='flujograma-centuria-'+currentView+'.png';a.href=cv.toDataURL('image/png');a.click()}
 
@@ -209,12 +279,12 @@ document.getElementById('techControls').style.display=v==='tech'?'flex':'none';
 document.getElementById('rolesControls').style.display=v==='roles'?'flex':'none';
 document.getElementById('techLegend').style.display=v==='tech'?'flex':'none';
 document.getElementById('rolesLegend').style.display=v==='roles'?'flex':'none';
-document.getElementById('subtitle').textContent=v==='tech'?'Frontend (GitHub Pages) ↔ Backend GAS ↔ Google Sheets (28 hojas) + Drive':'Roles del sistema y sus interacciones';
+document.getElementById('subtitle').textContent=v==='tech'?'Frontend (GitHub Pages) ↔ Backend GAS ↔ Google Sheets (28 hojas) + Drive':'Roles del sistema y sus interacciones (hover = detalle completo)';
 if(v==='tech'){N=TN;E=TE;S=TS}else{N=RN;E=RE;S=RS}
 resetView();
 }
 
-function resize(){cv.width=wrap.clientWidth;cv.height=Math.max(900,wrap.clientHeight);rd()}
+function resize(){cv.width=wrap.clientWidth;cv.height=Math.max(1000,wrap.clientHeight);rd()}
 new ResizeObserver(resize).observe(wrap);resize();
 </script>
 </body>

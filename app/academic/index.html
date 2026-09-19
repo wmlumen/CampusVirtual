@@ -165,22 +165,28 @@
         </div>
     </div>
 
-        <!-- REVISIÓN DE EXÁMENES -->
-        <h6 style="font-size:.65rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;margin-top:16px;"><i class="bi bi-check-circle me-1"></i> Revisión de Exámenes</h6>
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow-x:auto">
+        <!-- APROBACIÓN DE EXÁMENES -->
+        <h6 style="font-size:.65rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;margin-top:16px;"><i class="bi bi-check-circle me-1"></i> Aprobación de Exámenes</h6>
+        <div id="stat-pendientes" class="stat" style="grid-column:1;background:#FEF3C7;border-color:#FCD34D">
+            <div class="stat-val" style="color:#D97706;" id="count-pendientes">0</div>
+            <div class="stat-lbl">Pendientes</div>
+        </div>
+        
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow-x:auto;margin-bottom:16px">
             <table style="width:100%;border-collapse:collapse;font-size:.68rem;min-width:800px">
-                <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:8px;text-align:left;font-weight:700">Alumno</th><th style="padding:8px;text-align:left;font-weight:700">Cédula</th><th style="padding:8px;text-align:left;font-weight:700">Examen</th><th style="padding:8px;text-align:left;font-weight:700">Fecha</th><th style="padding:8px;text-align:center;font-weight:700">Calificación</th><th style="padding:8px;text-align:left;font-weight:700">Docente</th><th style="padding:8px;text-align:left;font-weight:700">Estado</th><th style="padding:8px;text-align:center;font-weight:700">Acciones</th></tr></thead>
-                <tbody id="tbody-examen-revision"><tr><td colspan="8" style="padding:20px;text-align:center;color:var(--texto-sec)"><i class="bi bi-hourglass-split"></i> Cargando exámenes...</td></tr></tbody>
+                <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:8px;text-align:left;font-weight:700">Examen</th><th style="padding:8px;text-align:left;font-weight:700">Docente</th><th style="padding:8px;text-align:center;font-weight:700">Intentos</th><th style="padding:8px;text-align:left;font-weight:700">Estado</th><th style="padding:8px;text-align:center;font-weight:700">Acciones</th></tr></thead>
+                <tbody id="tbody-examen-aprobacion"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--texto-sec)"><i class="bi bi-hourglass-split"></i> Cargando exámenes...</td></tr></tbody>
             </table>
         </div>
-        <div id="modal-respuestas-examen" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
-            <div style="background:var(--card-bg);border-radius:14px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto">
-                <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><h3 style="margin:0;font-size:.9rem;font-weight:700" id="modal-respuestas-titulo">Respuestas</h3><button onclick="cerrarModalRespuestas()" style="background:none;border:none;font-size:1.2rem;cursor:pointer">✕</button></div>
-                <div style="padding:16px" id="modal-respuestas-contenido"></div>
-                <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
-                    <button onclick="cerrarModalRespuestas()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:var(--border);border:none;cursor:pointer">Cerrar</button>
-                    <button id="btn-modal-aprobar" onclick="aprobarDesdeModal()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:#059669;color:#fff;border:none;cursor:pointer;font-weight:700">Aprobar</button>
-                    <button id="btn-modal-rechazar" onclick="rechazarDesdeModal()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:#dc2626;color:#fff;border:none;cursor:pointer;font-weight:700">Rechazar</button>
+
+        <!-- Modal de confirmación -->
+        <div id="modal-aprobacion-examen" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
+            <div style="background:var(--card-bg);border-radius:14px;width:100%;max-width:500px;padding:20px">
+                <h3 style="margin:0 0 12px;font-size:.9rem;font-weight:700" id="modal-titulo">Confirmar acción</h3>
+                <p style="font-size:.75rem;color:var(--texto-sec);margin:0 0 16px" id="modal-mensaje">¿Está seguro?</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button onclick="cerrarModalAprobacion()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:var(--border);border:none;cursor:pointer">Cancelar</button>
+                    <button id="btn-confirmar-aprobacion" onclick="confirmarAprobacion()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:#059669;color:#fff;border:none;cursor:pointer;font-weight:700">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -191,119 +197,103 @@
     <script src="../js/logout.js?v=2"></script>
     <script>
 
-        // ═══ REVISIÓN DE EXÁMENES ═══
-        let examenActualRevision = null;
+
+        // ═══ APROBACIÓN DE EXÁMENES ═══
+        let examenActualAprobacion = null;
+        let accionAprobacion = null; // 'aprobar' o 'rechazar'
         
-        async function cargarExamenesParaRevision() {
-            const tbody = document.getElementById('tbody-examen-revision');
+        async function cargarExamenesParaAprobacion() {
+            const tbody = document.getElementById('tbody-examen-aprobacion');
             try {
-                const res = await CenturiaAPI.exams.myExamsWithCodes(sessionStorage.getItem('current_cedula'));
+                const res = await CenturiaAPI.exams.getExamsForApproval();
                 const examenes = res.examenes || [];
                 
+                // Actualizar contador
+                document.getElementById('count-pendientes').textContent = res.pendientes_count || examenes.length;
+                
                 if (!examenes.length) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--texto-sec)">No hay exámenes para revisar</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--texto-sec)">✓ Todos los exámenes están aprobados</td></tr>';
                     return;
                 }
                 
                 tbody.innerHTML = examenes.map(ex => `
                     <tr style="border-bottom:1px solid var(--border)">
-                        <td style="padding:8px">${ex.alumno_nombre || 'N/A'}</td>
-                        <td style="padding:8px">${ex.alumno_cedula || 'N/A'}</td>
-                        <td style="padding:8px">${ex.examen_nombre || ex.examen_id || 'N/A'}</td>
-                        <td style="padding:8px">${ex.fecha ? new Date(ex.fecha).toLocaleDateString('es-ES') : 'N/A'}</td>
-                        <td style="padding:8px;text-align:center;font-weight:700">${ex.calificacion || '—'}</td>
+                        <td style="padding:8px;font-weight:600">${ex.examen_nombre || ex.examen_id || 'N/A'}</td>
                         <td style="padding:8px">${ex.docente_nombre || 'N/A'}</td>
+                        <td style="padding:8px;text-align:center">${ex.num_intentos || 2}</td>
                         <td style="padding:8px">
                             <span style="padding:3px 8px;border-radius:6px;font-size:.6rem;font-weight:600;background:${
                                 ex.estado === 'aprobado' ? '#D1FAE5;color:#065F46' : 
                                 ex.estado === 'rechazado' ? '#FEE2E2;color:#991B1B' :
-                                '#F1F5F9;color:#64748b'
+                                '#FEF3C7;color:#92400E'
                             }">
                                 ${ex.estado ? ex.estado.toUpperCase() : 'PENDIENTE'}
                             </span>
                         </td>
                         <td style="padding:8px;text-align:center">
-                            <button onclick="verRespuestasExamen('${ex.examen_id}', '${ex.alumno_cedula}')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#2563eb;color:#fff;border:none;cursor:pointer;margin-right:4px">Ver</button>
-                            <button onclick="aprobarExamen('${ex.examen_id}')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#059669;color:#fff;border:none;cursor:pointer;margin-right:4px">✓</button>
-                            <button onclick="rechazarExamen('${ex.examen_id}')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#dc2626;color:#fff;border:none;cursor:pointer">✕</button>
+                            <button onclick="abrirModalAprobacion('${ex.examen_id}', 'aprobar')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#059669;color:#fff;border:none;cursor:pointer;margin-right:4px;font-weight:600">✓ Aprobar</button>
+                            <button onclick="abrirModalAprobacion('${ex.examen_id}', 'rechazar')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#dc2626;color:#fff;border:none;cursor:pointer;font-weight:600">✕ Rechazar</button>
                         </td>
                     </tr>
                 `).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:#dc2626">Error cargando exámenes</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#dc2626">Error cargando exámenes</td></tr>';
                 console.error(e);
             }
         }
         
-        async function verRespuestasExamen(examId, alumnoCedula) {
-            examenActualRevision = { examen_id: examId, alumno_cedula: alumnoCedula };
-            document.getElementById('modal-respuestas-titulo').textContent = 'Respuestas: ' + examId;
-            document.getElementById('modal-respuestas-contenido').innerHTML = '<p style="text-align:center;color:var(--texto-sec)"><i class="bi bi-hourglass-split"></i> Cargando respuestas...</p>';
-            document.getElementById('modal-respuestas-examen').style.display = 'flex';
+        function abrirModalAprobacion(examId, accion) {
+            examenActualAprobacion = examId;
+            accionAprobacion = accion;
+            
+            const titulo = accion === 'aprobar' ? '✓ Aprobar Examen' : '✕ Rechazar Examen';
+            const mensaje = accion === 'aprobar' 
+                ? `¿Estás seguro que querés aprobar este examen? Los estudiantes podrán acceder una vez aprobado.`
+                : `¿Estás seguro que querés rechazar este examen? Se notificará al docente.`;
+            const btnColor = accion === 'aprobar' ? '#059669' : '#dc2626';
+            
+            document.getElementById('modal-titulo').textContent = titulo;
+            document.getElementById('modal-mensaje').textContent = mensaje;
+            document.getElementById('btn-confirmar-aprobacion').style.background = btnColor;
+            document.getElementById('modal-aprobacion-examen').style.display = 'flex';
+        }
+        
+        function cerrarModalAprobacion() {
+            document.getElementById('modal-aprobacion-examen').style.display = 'none';
+            examenActualAprobacion = null;
+            accionAprobacion = null;
+        }
+        
+        async function confirmarAprobacion() {
+            if (!examenActualAprobacion) return;
+            
+            const academicoCedula = sessionStorage.getItem('current_cedula');
             
             try {
-                const res = await CenturiaAPI.exams.getAccessCode(examId);
-                document.getElementById('modal-respuestas-contenido').innerHTML = `
-                    <div style="font-size:.7rem;line-height:1.6;color:var(--texto)">
-                        <p><strong>Alumno:</strong> ${alumnoCedula}</p>
-                        <p><strong>Examen:</strong> ${examId}</p>
-                        <p><strong>Respuestas:</strong></p>
-                        <pre style="background:#f1f5f9;padding:8px;border-radius:6px;overflow-x:auto;font-size:.6rem">${JSON.stringify(res, null, 2)}</pre>
-                    </div>
-                `;
+                if (accionAprobacion === 'aprobar') {
+                    await CenturiaAPI.exams.approveExam(examenActualAprobacion, academicoCedula);
+                    alert('✓ Examen aprobado exitosamente');
+                } else {
+                    await CenturiaAPI.exams.rejectExam(examenActualAprobacion, academicoCedula, 'Rechazado por académico');
+                    alert('✕ Examen rechazado');
+                }
+                cerrarModalAprobacion();
+                await cargarExamenesParaAprobacion();
             } catch (e) {
-                document.getElementById('modal-respuestas-contenido').innerHTML = '<p style="color:#dc2626">Error cargando respuestas</p>';
-            }
-        }
-        
-        function cerrarModalRespuestas() {
-            document.getElementById('modal-respuestas-examen').style.display = 'none';
-            examenActualRevision = null;
-        }
-        
-        async function aprobarDesdeModal() {
-            if (!examenActualRevision) return;
-            await aprobarExamen(examenActualRevision.examen_id);
-            cerrarModalRespuestas();
-        }
-        
-        async function rechazarDesdeModal() {
-            if (!examenActualRevision) return;
-            await rechazarExamen(examenActualRevision.examen_id);
-            cerrarModalRespuestas();
-        }
-        
-        async function aprobarExamen(examId) {
-            if (!confirm('¿Aprobar este examen?')) return;
-            try {
-                const res = await CenturiaAPI.exams.toggleAccessCode(examId, true);
-                alert('Examen aprobado');
-                await cargarExamenesParaRevision();
-            } catch (e) {
-                alert('Error al aprobar');
-            }
-        }
-        
-        async function rechazarExamen(examId) {
-            if (!confirm('¿Rechazar este examen?')) return;
-            try {
-                const res = await CenturiaAPI.exams.toggleAccessCode(examId, false);
-                alert('Examen rechazado');
-                await cargarExamenesParaRevision();
-            } catch (e) {
-                alert('Error al rechazar');
+                alert('Error: ' + (e.message || 'No se pudo procesar la acción'));
+                console.error(e);
             }
         }
         
         // Cargar exámenes al abrir panel
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', cargarExamenesParaRevision);
+            document.addEventListener('DOMContentLoaded', cargarExamenesParaAprobacion);
         } else {
-            cargarExamenesParaRevision();
+            cargarExamenesParaAprobacion();
         }
 
 
-                document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const user = CenturiaAPI.getCurrentUser();
             const nombre = user ? (user.firstname + ' ' + user.lastname) : (sessionStorage.getItem('current_nombre') || 'Académico');
             document.getElementById('userName').textContent = nombre;

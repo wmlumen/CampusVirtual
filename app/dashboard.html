@@ -315,6 +315,23 @@
             <div id="dash-courses">Cargando...</div>
         </div>
 
+        <!-- HISTORIAL DE INTENTOS -->
+        <div class="section">
+            <div class="sec-title"><i class="bi bi-repeat"></i> Historial de Intentos de Exámenes</div>
+            <div style="overflow-x:auto;background:var(--card-bg);border-radius:12px;padding:12px;">
+                <table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:600px;color:var(--txt-card)">
+                    <thead><tr style="border-bottom:2px solid var(--border)">
+                        <th style="padding:8px;text-align:left;font-weight:700">Examen</th>
+                        <th style="padding:8px;text-align:center;font-weight:700">Intento 1</th>
+                        <th style="padding:8px;text-align:center;font-weight:700">Intento 2</th>
+                        <th style="padding:8px;text-align:center;font-weight:700;background:#E6F4EA;color:var(--verde-dark)">Puntaje Final</th>
+                    </tr></thead>
+                    <tbody id="tbody-historial-intentos">
+                        <tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando intentos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <!-- EVENTOS -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="section">
@@ -459,6 +476,9 @@
             
             // Cargar notas
             await cargarNotas(token);
+            
+            // Cargar historial de intentos
+            if (cedulaVal) await cargarHistorialIntentos(cedulaVal);
         }
 
         // ═══ ASIGNATURAS DOCENTE — Solo las asignadas ═══
@@ -551,6 +571,70 @@
         }
 
         // ═══ TOGGLE VISTA ASIGNATURAS ═══
+
+        // ═══ HISTORIAL DE INTENTOS ═══
+        async function cargarHistorialIntentos(cedula) {
+            const tbody = document.getElementById('tbody-historial-intentos');
+            if (!tbody) return;
+            
+            try {
+                // Exámenes parciales a verificar
+                const examenes = [
+                    { id: 'examen_parcial_1', nombre: 'Parcial 1' },
+                    { id: 'examen_parcial_2', nombre: 'Parcial 2' },
+                    { id: 'examen_virtual', nombre: 'Examen Virtual' },
+                    { id: 'examen_final_virtual', nombre: 'Final Virtual' },
+                    { id: 'examen_final_escrito', nombre: 'Final Escrito' }
+                ];
+
+                let rows = [];
+                
+                for (const ex of examenes) {
+                    try {
+                        const res = await CenturiaAPI.exams.getAttempts(ex.id, cedula);
+                        const intentos = res.intentos || [];
+                        
+                        if (intentos.length === 0) continue;
+                        
+                        // Ordenar por timestamp
+                        intentos.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+                        
+                        const intento1 = intentos[0];
+                        const intento2 = intentos[1];
+                        const mejor = res.mejor_intento || Math.max(
+                            intento1?.puntaje || 0,
+                            intento2?.puntaje || 0
+                        );
+                        
+                        rows.push(`
+                            <tr style="border-bottom:1px solid var(--border)">
+                                <td style="padding:8px;font-weight:600">${ex.nombre}</td>
+                                <td style="padding:8px;text-align:center">
+                                    ${intento1 ? `<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">${intento1.puntaje || 0}</span>` : '—'}
+                                </td>
+                                <td style="padding:8px;text-align:center">
+                                    ${intento2 ? `<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">${intento2.puntaje || 0}</span>` : '—'}
+                                </td>
+                                <td style="padding:8px;text-align:center;background:#E6F4EA;font-weight:700;color:var(--verde-dark)">
+                                    ${mejor}
+                                </td>
+                            </tr>
+                        `);
+                    } catch (e) {
+                        // Examen sin intentos, continuar
+                    }
+                }
+                
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b">No tienes intentos registrados aún</td></tr>';
+                } else {
+                    tbody.innerHTML = rows.join('');
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#dc2626">Error cargando intentos</td></tr>';
+                console.error('Error en historial de intentos:', e);
+            }
+        }
         let currentView = 'grid';
         let lastSubjects = [];
 

@@ -601,6 +601,39 @@ API.exams = {
     }, 'POST').then(r => ({
         ok: r.ok !== false,
         pdf_url: r.pdf_url || null
+    }),
+    
+    // ═══ APROBACIÓN DE EXÁMENES POR ACADÉMICO ═══
+    approveExam: (examenId, academico_cedula) => callGas('examen_aprobar', {
+        examen_id: examenId,
+        academico_cedula: academico_cedula,
+        estado: 'aprobado',
+        fecha_aprobacion: new Date().toISOString()
+    }, 'POST'),
+    
+    rejectExam: (examenId, academico_cedula, motivo) => callGas('examen_rechazar', {
+        examen_id: examenId,
+        academico_cedula: academico_cedula,
+        estado: 'rechazado',
+        motivo: motivo || 'No especificado',
+        fecha_rechazo: new Date().toISOString()
+    }, 'POST'),
+    
+    getExamsForApproval: () => callGas('examen_listar_pendientes_aprobacion', {}, 'GET').then(r => ({
+        ok: r.ok !== false,
+        examenes: r.examenes || [],
+        pendientes_count: r.pendientes_count || 0
+    })),
+    
+    getExamApprovalStatus: (examenId) => callGas('examen_estado_aprobacion', {
+        examen_id: examenId
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        estado: r.estado || 'pendiente',
+        aprobado: r.aprobado === true,
+        fecha_aprobacion: r.fecha_aprobacion || null,
+        academico_cedula: r.academico_cedula || null
+    }))
     }))
 };
 

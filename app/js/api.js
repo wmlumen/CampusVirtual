@@ -804,3 +804,139 @@ function getCurrentUser() {
 // Objeto global usado por todas las pantallas
 window.CenturiaAPI = API;
 var CenturiaAPI = window.CenturiaAPI;
+
+// ═══ TESORERÍA - PAGOS Y EXONERACIONES ═══
+API.tesoreria = {
+    // Listar estudiantes con montos y estado de pago
+    listarEstudiantes: () => callGas('tesoreria_listar_estudiantes', {}, 'GET').then(r => ({
+        ok: r.ok !== false,
+        estudiantes: r.estudiantes || [],
+        total_pendiente: r.total_pendiente || 0
+    })),
+    
+    // Asignar exoneración a estudiante
+    asignarExoneracion: (alumno_cedula, porcentaje, concepto, responsable_cedula) => callGas('tesoreria_asignar_exoneracion', {
+        alumno_cedula: alumno_cedula,
+        porcentaje: porcentaje,
+        concepto: concepto || 'Beca',
+        responsable_cedula: responsable_cedula,
+        fecha_aplicacion: new Date().toISOString()
+    }, 'POST'),
+    
+    // Registrar pago
+    registrarPago: (alumno_cedula, monto, concepto, comprobante) => callGas('tesoreria_registrar_pago', {
+        alumno_cedula: alumno_cedula,
+        monto: monto,
+        concepto: concepto,
+        comprobante: comprobante,
+        fecha_pago: new Date().toISOString()
+    }, 'POST'),
+    
+    // Obtener historial de pagos de estudiante
+    obtenerHistorialPagos: (alumno_cedula) => callGas('tesoreria_historial_pagos', {
+        alumno_cedula: alumno_cedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        pagos: r.pagos || [],
+        total_pagado: r.total_pagado || 0,
+        saldo_pendiente: r.saldo_pendiente || 0
+    })),
+    
+    // Obtener exoneración vigente
+    obtenerExoneracion: (alumno_cedula) => callGas('tesoreria_obtener_exoneracion', {
+        alumno_cedula: alumno_cedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        tiene_exoneracion: r.tiene_exoneracion || false,
+        porcentaje: r.porcentaje || 0,
+        concepto: r.concepto || null,
+        fecha_desde: r.fecha_desde || null
+    })),
+    
+    // Generar reporte de cobranzas
+    reporteCobranzas: (fecha_desde, fecha_hasta) => callGas('tesoreria_reporte_cobranzas', {
+        fecha_desde: fecha_desde,
+        fecha_hasta: fecha_hasta
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        total_recaudado: r.total_recaudado || 0,
+        total_pendiente: r.total_pendiente || 0,
+        pagos: r.pagos || []
+    }))
+};
+
+// ═══ GESTIÓN DE ESTUDIANTES - BAJAS, BLOQUEOS, RUC ═══
+API.gestionEstudiantes = {
+    // Actualizar RUC de estudiante
+    actualizarRUC: (alumno_cedula, ruc) => callGas('estudiante_actualizar_ruc', {
+        alumno_cedula: alumno_cedula,
+        ruc: ruc,
+        fecha_actualizacion: new Date().toISOString()
+    }, 'POST'),
+    
+    // Obtener datos de facturación
+    obtenerDatosFacturacion: (alumno_cedula) => callGas('estudiante_datos_facturacion', {
+        alumno_cedula: alumno_cedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        ruc: r.ruc || null,
+        nombre: r.nombre || '',
+        apellido: r.apellido || '',
+        email: r.email || ''
+    })),
+    
+    // Dar de baja estudiante
+    darDeBaja: (alumno_cedula, motivo, detalles, responsable_cedula) => callGas('estudiante_dar_de_baja', {
+        alumno_cedula: alumno_cedula,
+        motivo: motivo, // 'pago', 'academico', 'otro'
+        detalles: detalles,
+        responsable_cedula: responsable_cedula,
+        fecha_baja: new Date().toISOString(),
+        estado: 'baja'
+    }, 'POST'),
+    
+    // Reactivar estudiante
+    reactivarEstudiante: (alumno_cedula, responsable_cedula) => callGas('estudiante_reactivar', {
+        alumno_cedula: alumno_cedula,
+        responsable_cedula: responsable_cedula,
+        fecha_reactivacion: new Date().toISOString(),
+        estado: 'activo'
+    }, 'POST'),
+    
+    // Bloquear estudiante
+    bloquearEstudiante: (alumno_cedula, motivo, responsable_cedula) => callGas('estudiante_bloquear', {
+        alumno_cedula: alumno_cedula,
+        motivo: motivo,
+        responsable_cedula: responsable_cedula,
+        fecha_bloqueo: new Date().toISOString(),
+        estado: 'bloqueado'
+    }, 'POST'),
+    
+    // Desbloquear estudiante
+    desbloquearEstudiante: (alumno_cedula, responsable_cedula) => callGas('estudiante_desbloquear', {
+        alumno_cedula: alumno_cedula,
+        responsable_cedula: responsable_cedula,
+        fecha_desbloqueo: new Date().toISOString(),
+        estado: 'activo'
+    }, 'POST'),
+    
+    // Obtener estado del estudiante
+    obtenerEstado: (alumno_cedula) => callGas('estudiante_obtener_estado', {
+        alumno_cedula: alumno_cedula
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        estado: r.estado || 'activo', // 'activo', 'bloqueado', 'baja'
+        motivo_bloqueo: r.motivo_bloqueo || null,
+        fecha_bloqueo: r.fecha_bloqueo || null,
+        puede_acceder: r.puede_acceder || r.estado === 'activo'
+    })),
+    
+    // Listar estudiantes con bajas
+    listarBajas: (fecha_desde, fecha_hasta) => callGas('estudiante_listar_bajas', {
+        fecha_desde: fecha_desde,
+        fecha_hasta: fecha_hasta
+    }, 'GET').then(r => ({
+        ok: r.ok !== false,
+        bajas: r.bajas || []
+    }))
+};

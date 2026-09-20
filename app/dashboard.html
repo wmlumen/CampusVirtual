@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- v08.5: Security Guard -->
+    <!-- v09.0: Unified Dashboard + Perfil -->
     <script src="./js/session-guard.js"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard & Mi Perfil — Campus Virtual Centuria</title>
+    <title>Dashboard — Campus Virtual Centuria</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -15,99 +15,47 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
-            --verde: #00B140;
-            --verde-dark: #007A33;
-            --verde-card: #E6F4EA;
-            --hover: #81C784;
-            --dorado: #d4a843;
-            --azul: #2563EB;
-            --rosa: #D94172;
-            --naranja: #D97706;
-            --texto: #FFFFFF;
-            --texto-sec: #2D2D2D;
-            --bg: #007A33;
-            --card-bg: #FFFFFF;
-            --border: #C8E6C9;
-            --txt-card: #2D2D2D;
+            --verde: #00B140; --verde-dark: #007A33; --verde-card: #E6F4EA;
+            --hover: #81C784; --dorado: #d4a843; --azul: #2563EB;
+            --rosa: #D94172; --naranja: #D97706; --texto: #FFFFFF;
+            --texto-sec: #2D2D2D; --bg: #007A33; --card-bg: #FFFFFF;
+            --border: #C8E6C9; --txt-card: #2D2D2D; --txt3: #64748b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--texto);
-            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,.04) 0%, transparent 50%),
-                              radial-gradient(circle at 80% 20%, rgba(0,177,64,.15) 0%, transparent 40%);
-        }
+        body { font-family: 'Montserrat', sans-serif; min-height: 100vh; background: var(--bg); color: var(--texto); background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,.04) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,177,64,.15) 0%, transparent 40%); }
         .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 80px; }
-
-        /* ═══ BARRA SUPERIOR FIJA ═══ */
-        .topbar {
-            position: sticky; top: 0; z-index: 100;
-            background: var(--verde-dark);
-            border-bottom: 2px solid var(--verde);
-            padding: 10px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 12px rgba(0,0,0,.3);
-        }
+        .topbar { position: sticky; top: 0; z-index: 100; background: var(--verde-dark); border-bottom: 2px solid var(--verde); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 12px rgba(0,0,0,.3); }
         .topbar-brand { font-size: .85rem; font-weight: 700; color: #fff; letter-spacing: 1px; }
         .topbar-nav { display: flex; gap: 6px; }
-        .topbar-nav a {
-            color: rgba(255,255,255,.7); text-decoration: none;
-            font-size: .6rem; font-weight: 600; padding: 5px 10px;
-            border-radius: 6px; transition: .2s; letter-spacing: .5px;
-        }
+        .topbar-nav a { color: rgba(255,255,255,.7); text-decoration: none; font-size: .6rem; font-weight: 600; padding: 5px 10px; border-radius: 6px; transition: .2s; letter-spacing: .5px; }
         .topbar-nav a:hover, .topbar-nav a.active { background: var(--verde); color: #fff; }
-
-        /* ═══ HEADER INSTITUCIONAL ═══ */
-        .hdr {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--card-bg); border: none;
-            border-radius: 14px; padding: 16px 20px; margin: 14px 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,.15);
-        }
+        .breadcrumb-bar { font-size: .55rem; color: rgba(255,255,255,.5); margin-bottom: 8px; padding: 4px 0; letter-spacing: .3px; }
+        .breadcrumb-bar a { color: rgba(255,255,255,.7); text-decoration: none; }
+        .breadcrumb-bar a:hover { color: #fff; }
+        .hdr { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: none; border-radius: 14px; padding: 16px 20px; margin: 14px 0; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
         .hdr-left { display: flex; align-items: center; gap: 14px; }
-        .avatar {
-            width: 48px; height: 48px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; font-weight: 800; color: #fff;
-            box-shadow: 0 3px 10px rgba(0,0,0,.2);
-        }
+        .avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.2); overflow: hidden; cursor: zoom-in; position: relative; }
         .avatar.alumno { background: linear-gradient(135deg, var(--verde), var(--verde-dark)); }
         .avatar.docente { background: linear-gradient(135deg, var(--verde), #004d20); }
         .avatar.admin { background: linear-gradient(135deg, var(--dorado), #a08530); }
         .avatar.academico { background: linear-gradient(135deg, var(--rosa), #c04070); }
         .avatar.administrador_plataforma { background: linear-gradient(135deg, var(--naranja), #c06020); }
         .avatar.admin_filial { background: linear-gradient(135deg, var(--naranja), #c06020); }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
         .hdr-name { font-size: 1rem; font-weight: 800; color: var(--verde-dark); }
         .hdr-sub { font-size: .65rem; font-weight: 500; color: #64748b; }
         .hdr-right { display: flex; align-items: center; gap: 10px; }
-        .badge-rol {
-            padding: 6px 14px; border-radius: 20px; font-size: .6rem;
-            font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
-        }
+        .badge-rol { padding: 6px 14px; border-radius: 20px; font-size: .6rem; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
         .badge-rol.alumno { background: var(--verde-card); color: var(--verde-dark); border: 1px solid var(--verde); }
         .badge-rol.docente { background: var(--verde); color: #fff; border: 1px solid var(--verde-dark); }
         .badge-rol.admin { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
         .badge-rol.academico { background: #FBCFE8; color: #831843; border: 1px solid #F9A8D4; }
         .badge-rol.administrador_plataforma { background: #FED7AA; color: #9A3412; border: 1px solid #FDBA74; }
         .badge-rol.admin_filial { background: #FED7AA; color: #9A3412; border: 1px solid #FDBA74; }
-        .btn-out {
-            padding: 7px 14px; border-radius: 8px; font-size: .62rem;
-            background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;
-            cursor: pointer; font-family: 'Montserrat'; font-weight: 700;
-            transition: .2s;
-        }
+        .btn-out { padding: 7px 14px; border-radius: 8px; font-size: .62rem; background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; cursor: pointer; font-family: 'Montserrat'; font-weight: 700; transition: .2s; }
         .btn-out:hover { background: #FECACA; transform: translateY(-1px); }
-
-        /* ═══ STATS ═══ */
         .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
-        .stat-card {
-            background: var(--card-bg); border: none;
-            border-radius: 12px; padding: 14px; text-align: center;
-            box-shadow: 0 3px 15px rgba(0,0,0,.1);
-            transition: .2s;
-        }
+        .stat-card { background: var(--card-bg); border: none; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 3px 15px rgba(0,0,0,.1); transition: .2s; }
         .stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,.15); }
         .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 6px; }
         .stat-icon.green { background: var(--verde-card); color: var(--verde-dark); }
@@ -116,907 +64,453 @@
         .stat-icon.rose { background: #FCE7F3; color: #D94172; }
         .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--verde-dark); }
         .stat-lbl { font-size: .58rem; font-weight: 600; color: #64748b; letter-spacing: .5px; text-transform: uppercase; }
-
-        /* ═══ SECTION ═══ */
-        .section {
-            background: var(--card-bg); border: none;
-            border-radius: 12px; padding: 16px; margin-bottom: 12px;
-            box-shadow: 0 3px 15px rgba(0,0,0,.1);
-        }
-        .sec-title {
-            font-size: .72rem; font-weight: 700; letter-spacing: .5px;
-            text-transform: uppercase; color: var(--verde-dark); margin-bottom: 12px;
-            display: flex; align-items: center; gap: 6px;
-            border-bottom: 2px solid var(--verde); padding-bottom: 8px;
-        }
+        .section { background: var(--card-bg); border: none; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 3px 15px rgba(0,0,0,.1); }
+        .sec-title { font-size: .72rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--verde-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid var(--verde); padding-bottom: 8px; }
         .sec-title i { color: var(--verde); font-size: .9rem; }
-
-        /* ═══ QUICK LINKS ═══ */
         .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-        .link {
-            background: var(--verde-card); border: 1px solid var(--border);
-            border-radius: 10px; padding: 12px 8px; text-align: center;
-            cursor: pointer; transition: .2s; text-decoration: none; color: var(--verde-dark);
-        }
+        .link { background: var(--verde-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: .2s; text-decoration: none; color: var(--verde-dark); }
         .link:hover { background: var(--verde); color: #fff; border-color: var(--verde); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,177,64,.3); }
         .link i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
         .link span { font-size: .55rem; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
-
-        /* ═══ SUBJECT CARD ═══ */
-        .subj {
-            background: var(--verde-card); border: 1px solid var(--border);
-            border-radius: 10px; padding: 12px 14px; margin-bottom: 6px;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: .2s;
-        }
+        .subj { background: var(--verde-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; transition: .2s; }
         .subj:hover { background: #D1FAE5; border-color: var(--verde); transform: translateX(4px); }
         .subj-info { flex: 1; }
         .subj-name { font-size: .78rem; font-weight: 700; color: var(--verde-dark); }
         .subj-meta { font-size: .58rem; font-weight: 500; color: #64748b; }
         .subj-meta i { margin-right: 3px; }
-        .subj-btn {
-            padding: 6px 14px; border-radius: 8px; font-size: .6rem;
-            background: var(--verde); color: #fff; text-decoration: none;
-            font-weight: 700; transition: .2s; border: none;
-        }
+        .subj-btn { padding: 6px 14px; border-radius: 8px; font-size: .6rem; background: var(--verde); color: #fff; text-decoration: none; font-weight: 700; transition: .2s; border: none; cursor: pointer; font-family: 'Montserrat'; display: inline-flex; align-items: center; gap: 4px; }
         .subj-btn:hover { background: var(--verde-dark); transform: translateY(-1px); }
-
-        /* ═══ GRID VIEW ═══ */
         .subj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-        .subj-grid .subj {
-            flex-direction: column; text-align: center; padding: 16px 12px; gap: 8px;
-            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
-        }
+        .subj-grid .subj { flex-direction: column; text-align: center; padding: 16px 12px; gap: 8px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
         .subj-grid .subj-btn { width: 100%; text-align: center; padding: 8px; }
         .subj-grid .subj-name { font-size: .82rem; }
         .subj-grid .subj-meta { font-size: .6rem; }
-
-        /* ═══ TOGGLE ═══ */
         .view-toggles { display: flex; gap: 4px; margin-left: auto; }
-        .view-btn {
-            width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border);
-            background: var(--card-bg); color: #64748b; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: .85rem; transition: .15s;
-        }
+        .view-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .85rem; transition: .15s; }
         .view-btn:hover { border-color: var(--verde); color: var(--verde); }
         .view-btn.active { background: var(--verde); color: #fff; border-color: var(--verde); }
-
-        /* ═══ EMPTY STATE ═══ */
         .empty { text-align: center; padding: 28px; color: #94a3b8; }
         .empty i { font-size: 2.2rem; margin-bottom: 8px; display: block; }
         .empty p { font-size: .72rem; }
-
-        /* ═══ EVENT ═══ */
-        .ev {
-            background: var(--verde-card); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px; margin-bottom: 6px;
-            display: flex; gap: 10px; align-items: center;
-        }
-        .ev-date {
-            width: 40px; height: 40px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--verde), var(--verde-dark));
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #fff; flex-shrink: 0;
-        }
+        .ev { background: var(--verde-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; gap: 10px; align-items: center; }
+        .ev-date { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--verde), var(--verde-dark)); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
         .ev-date .day { font-size: .95rem; font-weight: 800; line-height: 1; }
         .ev-date .month { font-size: .42rem; text-transform: uppercase; letter-spacing: .5px; }
         .ev-info { flex: 1; }
         .ev-title { font-size: .72rem; font-weight: 700; color: var(--verde-dark); }
         .ev-desc { font-size: .58rem; font-weight: 500; color: #64748b; }
-        .ev-tag {
-            padding: 3px 8px; border-radius: 8px; font-size: .48rem;
-            font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
-        }
+        .ev-tag { padding: 3px 8px; border-radius: 8px; font-size: .48rem; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
         .ev-tag.exam { background: #FEE2E2; color: #991B1B; }
         .ev-tag.assignment { background: #FEF3C7; color: #92400E; }
         .ev-tag.meeting { background: #DBEAFE; color: #1E3A8A; }
-
-        /* ═══ FOOTER ═══ */
-        .footer {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            text-align: center; padding: 8px 16px; z-index: 10;
-            background: var(--verde-dark); border-top: 2px solid var(--verde);
-            font-size: .5rem; font-weight: 500; color: rgba(255,255,255,.6);
-        }
-
-        /* ═══ BREADCRUMBS ═══ */
-        .breadcrumb-bar {
-            font-size: .55rem; color: rgba(255,255,255,.5); margin-bottom: 8px;
-            padding: 4px 0; letter-spacing: .3px;
-        }
-        .breadcrumb-bar a { color: rgba(255,255,255,.7); text-decoration: none; }
-        .breadcrumb-bar a:hover { color: #fff; }
-
-        /* ═══ PRINT ═══ */
-        @media print { .footer, .btn-out, .topbar { display: none; } body { background: #fff; color: #000; } }
-        /* ═══ RESPONSIVE ═══ */
-        @media (max-width: 768px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .hdr { flex-direction: column; gap: 10px; text-align: center; }
-            .topbar { flex-direction: column; gap: 6px; }
-        }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px 16px; z-index: 10; background: var(--verde-dark); border-top: 2px solid var(--verde); font-size: .5rem; font-weight: 500; color: rgba(255,255,255,.6); }
+        .profile-card { background: var(--card-bg); border: none; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+        .banner { height: 110px; background: linear-gradient(135deg, var(--verde-dark), var(--verde), #22c55e); position: relative; }
+        .banner::after { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='rgba(255,255,255,.08)'/%3E%3C/svg%3E"); }
+        .avatar-zone { text-align: center; margin-top: -55px; position: relative; z-index: 2; }
+        .avatar-big { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), var(--verde-dark)); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #fff; border: 5px solid var(--card-bg); box-shadow: 0 6px 20px rgba(0,0,0,.2); overflow: hidden; cursor: zoom-in; position: relative; }
+        .avatar-big img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .foto-zoom { position: absolute; right: 0; bottom: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--verde-dark); color: #fff; display: flex; align-items: center; justify-content: center; font-size: .75rem; border: 2px solid #fff; }
+        .foto-btns { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+        .foto-btn { padding: 6px 14px; border-radius: 8px; font-size: .62rem; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; border: 1px solid var(--verde); background: var(--verde-card); color: var(--verde-dark); display: inline-flex; align-items: center; gap: 5px; transition: .15s; text-decoration: none; }
+        .foto-btn:hover { background: #D1FAE5; }
+        .profile-name { font-size: 1.2rem; font-weight: 800; margin-top: 10px; color: var(--verde-dark); }
+        .profile-role { font-size: .65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--verde); }
+        .profile-cedula { font-size: .6rem; color: #64748b; margin-top: 2px; }
+        .card-body { padding: 18px 22px 26px; }
+        .sec { background: var(--verde-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .row-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .75rem; }
+        .row-item:last-child { border-bottom: none; }
+        .row-label { font-size: .68rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .3px; }
+        .row-value { font-size: .78rem; font-weight: 600; color: var(--txt-card); text-align: right; max-width: 55%; }
+        .row-value.editable { cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: .15s; }
+        .row-value.editable:hover { background: var(--verde-card); color: var(--verde); }
+        .row-input { width: 100%; max-width: 200px; padding: 6px 10px; border: 2px solid var(--verde); border-radius: 8px; font-size: .78rem; font-family: 'Montserrat'; font-weight: 600; color: var(--txt-card); background: #fff; outline: none; text-align: right; }
+        .btns { display: flex; gap: 8px; margin-top: 14px; }
+        .btn { flex: 1; padding: 10px; border-radius: 10px; font-size: .7rem; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; border: none; transition: .15s; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-p { background: var(--verde); color: #fff; }
+        .btn-p:hover { background: var(--verde-dark); transform: translateY(-1px); }
+        .btn-g { background: var(--verde-card); color: var(--verde-dark); border: 1px solid var(--verde); }
+        .btn-g:hover { background: #D1FAE5; }
+        .btn-s { background: #F1F5F9; color: var(--txt-card); }
+        .btn-s:hover { background: #e2e8f0; }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 10px; font-size: .72rem; font-weight: 600; z-index: 99999; animation: fadeIn .3s; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+        .toast-success { background: var(--verde-card); color: var(--verde-dark); border: 1px solid var(--verde); }
+        .toast-error { background: #FEE2E2; color: #991B1B; border: 1px solid #fca5a5; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        #modal-password { display: none; position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+        #modal-foto { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.85); align-items: center; justify-content: center; flex-direction: column; gap: 12px; cursor: zoom-out; }
+        #modal-foto img { width: min(82vw, 340px); height: min(82vw, 340px); object-fit: cover; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 8px 40px rgba(0,0,0,.5); }
+        #modal-foto .mf-name { color: #fff; font-weight: 700; font-size: .85rem; }
+        #modal-foto .mf-close { background: #fff; border: none; border-radius: 20px; padding: 6px 18px; font-size: .7rem; font-weight: 700; cursor: pointer; color: var(--verde-dark); font-family: 'Montserrat'; }
+        @media print { .footer, .btn-out, .topbar, .btns { display: none !important; } body { background: #fff; color: #000; } }
+        @media (max-width: 768px) { .stats { grid-template-columns: repeat(2, 1fr); } .hdr { flex-direction: column; gap: 10px; text-align: center; } .topbar { flex-direction: column; gap: 6px; } .row-input { max-width: 140px; } }
     </style>
 </head>
 <body>
-<!-- BARRA SUPERIOR FIJA -->
-    <div class="topbar">
-        <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
-        <div class="topbar-nav">
-            <a href="dashboard.html" class="active">Dashboard & Perfil</a>
-            <a href="Materiales_Clases/index.html">Materiales</a>
-            <a href="academic/index.html">Exámenes</a>
-            <a href="libreta.html">Libreta</a>
+<div class="topbar">
+    <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
+    <div class="topbar-nav">
+        <a href="dashboard.html" class="active">Dashboard</a>
+        <a href="Materiales_Clases/index.html">Materiales</a>
+    </div>
+</div>
+<div class="wrap">
+    <div class="breadcrumb-bar"><a href="dashboard.html">Inicio</a> / Dashboard</div>
+    <div id="pw-banner" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #d4a843;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.68rem;color:#92400E">
+        <i class="bi bi-shield-lock me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad institucional.
+        <button onclick="abrirModalPassword()" style="background:none;border:none;font-weight:700;color:#92400E;text-decoration:underline;cursor:pointer;margin-left:6px">Cambiar ahora →</button>
+    </div>
+    <div class="hdr">
+        <div class="hdr-left">
+            <div class="avatar" id="hdr-avatar" onclick="abrirFoto()" style="cursor:pointer" title="Clic para ver o cambiar foto">
+                <span id="hdr-initials">E</span>
+                <img id="hdr-img" style="width:100%;height:100%;object-fit:cover;display:none" alt="Avatar">
+            </div>
+            <div><div class="hdr-name" id="hdr-name">Cargando...</div><div class="hdr-sub" id="hdr-sub">Cargando...</div></div>
+        </div>
+        <div class="hdr-right">
+            <span class="badge-rol" id="hdr-badge">-</span>
+            <button class="btn-out" onclick="centuriaLogout(true)" aria-label="Cerrar sesión"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
         </div>
     </div>
-
-    <div class="wrap">
-        <!-- BREADCRUMBS -->
-        <div class="breadcrumb-bar">
-            <a href="dashboard.html">Inicio</a> / Dashboard & Mi Perfil
-        </div>
-
-        <div id="pw-banner-dash" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #d4a843;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.68rem;color:#92400E">
-            <i class="bi bi-shield-lock me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad institucional.
-            <button onclick="activarTab('tab-perfil'); abrirModalPassword();" style="background:none;border:none;font-weight:700;color:#92400E;text-decoration:underline;cursor:pointer;margin-left:6px">Cambiar ahora →</button>
-        </div>
-
-        <!-- HEADER INSTITUCIONAL UNIFICADO -->
-        <div class="hdr">
-            <div class="hdr-left">
-                <div class="avatar" id="dash-avatar" onclick="abrirFotoModal()" style="cursor:pointer;position:relative;overflow:hidden" title="Clic para ver o cambiar foto">
-                    <span id="dash-initials">E</span>
-                    <img id="dash-avatar-img" style="width:100%;height:100%;object-fit:cover;display:none" alt="Avatar">
-                </div>
-                <div>
-                    <div class="hdr-name" id="dash-name">Cargando...</div>
-                    <div class="hdr-sub" id="dash-sub">Cargando...</div>
-                </div>
+    <div class="stats">
+        <div class="stat-card"><div class="stat-icon green"><i class="bi bi-book"></i></div><div class="stat-val" id="stat-courses">0</div><div class="stat-lbl">Asignaturas</div></div>
+        <div class="stat-card"><div class="stat-icon gold"><i class="bi bi-calendar-event"></i></div><div class="stat-val" id="stat-events">0</div><div class="stat-lbl">Eventos</div></div>
+        <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-graph-up"></i></div><div class="stat-val" id="stat-promedio">-</div><div class="stat-lbl">Promedio</div></div>
+        <div class="stat-card"><div class="stat-icon rose"><i class="bi bi-clipboard-check"></i></div><div class="stat-val" id="stat-asistencia">-</div><div class="stat-lbl">Asistencia</div></div>
+    </div>
+    <div class="section"><div class="sec-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div><div class="links" id="dash-links"></div></div>
+    <div id="cta-matricula" style="display:none;margin-bottom:12px;background:#E6F4EA;border:1px solid var(--verde);border-left:4px solid var(--verde-dark);border-radius:12px;padding:12px 14px">
+        <div style="font-size:.72rem;font-weight:800;color:var(--verde-dark)"><i class="bi bi-file-earmark-text"></i> Completa tu Formulario de Matrícula</div>
+        <div style="font-size:.62rem;color:#2D2D2D;margin:4px 0 10px">Ya ves tu entorno. Ahora completa el formulario oficial para terminar tu inscripción.</div>
+        <a href="formulario-matricula.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none"><i class="bi bi-pencil-square"></i> Completar formulario</a>
+    </div>
+    <div class="profile-card">
+        <div class="banner"></div>
+        <div class="avatar-zone">
+            <div class="avatar-big" id="avatar-big" onclick="abrirFoto()" title="Clic para agrandar">
+                <span id="avatar-initials">P</span><img id="avatar-img" alt="Foto de perfil"><span class="foto-zoom"><i class="bi bi-zoom-in"></i></span>
             </div>
-            <div class="hdr-right">
-                <span class="badge-rol" id="dash-badge">-</span>
-                <button class="btn-out" onclick="centuriaLogout(true)" aria-label="Cerrar sesión">
-                    <i class="bi bi-box-arrow-right me-1"></i>Salir
-                </button>
+            <div class="profile-name" id="profile-name">Cargando...</div>
+            <div class="profile-role" id="profile-role">-</div>
+            <div class="profile-cedula" id="profile-cedula">C.I: -</div>
+            <div class="foto-btns">
+                <label class="foto-btn" for="foto-input"><i class="bi bi-cloud-upload"></i> Subir foto</label>
+                <button type="button" class="foto-btn" id="btn-quitar-foto" onclick="quitarFoto()" style="display:none;border-color:#FECACA;background:#FEE2E2;color:#991B1B"><i class="bi bi-trash"></i> Quitar</button>
+                <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
             </div>
         </div>
-
-        <!-- NAVEGACIÓN POR PESTAÑAS (DASHBOARD / MI PERFIL & DATOS) -->
-        <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid rgba(255,255,255,.15);padding-bottom:8px">
-            <button id="nav-btn-dash" class="btn" style="flex:initial;padding:8px 18px;background:var(--card-bg);color:var(--verde-dark);border-radius:10px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.1)" onclick="activarTab('tab-dash')">
-                <i class="bi bi-speedometer2 me-1"></i> Resumen Académico
-            </button>
-            <button id="nav-btn-perfil" class="btn" style="flex:initial;padding:8px 18px;background:rgba(255,255,255,.15);color:#fff;border-radius:10px;font-weight:700" onclick="activarTab('tab-perfil')">
-                <i class="bi bi-person-badge me-1"></i> Mi Perfil, QR y Datos
-            </button>
-        </div>
-
-        <!-- ════════ VISTA 1: DASHBOARD ACADÉMICO ════════ -->
-        <div id="tab-dash">
-            <!-- STATS -->
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="bi bi-book"></i></div>
-                    <div class="stat-val" id="stat-courses">0</div>
-                    <div class="stat-lbl">Asignaturas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon gold"><i class="bi bi-calendar-event"></i></div>
-                    <div class="stat-val" id="stat-events">0</div>
-                    <div class="stat-lbl">Eventos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon blue"><i class="bi bi-graph-up"></i></div>
-                    <div class="stat-val" id="stat-promedio">-</div>
-                    <div class="stat-lbl">Promedio</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon rose"><i class="bi bi-clipboard-check"></i></div>
-                    <div class="stat-val" id="stat-asistencia">-</div>
-                    <div class="stat-lbl">Asistencia</div>
+        <div class="card-body">
+            <div class="sec"><div class="sec-title"><i class="bi bi-person"></i> Datos Personales</div>
+                <div class="row-item"><span class="row-label">Cédula</span><span class="row-value" id="p-cedula">-</span></div>
+                <div class="row-item"><span class="row-label">Nombre</span><span class="row-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)">-</span></div>
+                <div class="row-item"><span class="row-label">Apellido</span><span class="row-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)">-</span></div>
+                <div class="row-item"><span class="row-label">Email</span><span class="row-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span></div>
+                <div class="row-item"><span class="row-label">Teléfono</span><span class="row-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)">-</span></div>
+            </div>
+            <div class="sec"><div class="sec-title"><i class="bi bi-mortarboard"></i> Datos Académicos</div>
+                <div class="row-item"><span class="row-label">Grado</span><span class="row-value" id="p-grado">-</span></div>
+                <div class="row-item"><span class="row-label">Carrera</span><span class="row-value" id="p-carrera">-</span></div>
+                <div class="row-item"><span class="row-label">Sección</span><span class="row-value" id="p-seccion">-</span></div>
+                <div class="row-item"><span class="row-label">Rol</span><span class="row-value" id="p-rol">-</span></div>
+                <div class="row-item"><span class="row-label">Estado</span><span class="row-value" id="p-estado">-</span></div>
+                <div class="row-item"><span class="row-label">Último Acceso</span><span class="row-value" id="p-login">-</span></div>
+            </div>
+            <div class="sec" id="sec-formularios" style="display:none"><div class="sec-title"><i class="bi bi-file-earmark-text"></i> Mis Formularios</div><div id="formularios-list"><div style="text-align:center;padding:10px;color:#64748b;font-size:.65rem">Cargando formularios...</div></div></div>
+            <div class="sec"><div class="sec-title"><i class="bi bi-qr-code"></i> Código QR para Eventos</div>
+                <div style="display:flex;justify-content:center;align-items:center;flex-direction:column;padding:20px;background:var(--card-bg);border-radius:10px">
+                    <div style="background:#fff;padding:12px;border-radius:8px;border:2px solid var(--verde);box-shadow:0 3px 12px rgba(0,0,0,.1)">
+                        <div id="qr-container" style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#64748b"><i class="bi bi-hourglass-split"></i> Generando QR...</div>
+                    </div>
+                    <p style="font-size:.6rem;color:#64748b;margin-top:12px;text-align:center"><i class="bi bi-info-circle"></i> Escanea este código en eventos para registrar tu asistencia</p>
+                    <button class="btn btn-g" style="margin-top:10px" onclick="descargarQR()"><i class="bi bi-download"></i> Descargar QR</button>
                 </div>
             </div>
-
-            <!-- ACCESO RÁPIDO -->
-            <div class="section">
-                <div class="sec-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div>
-                <div class="links" id="dash-links"></div>
-            </div>
-
-            <!-- ASIGNATURAS -->
-            <div class="section" id="section-courses">
-                <div class="sec-title">
-                    <i class="bi bi-mortarboard-fill"></i> Mis Asignaturas
-                    <div class="view-toggles">
-                        <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Cuadrícula" aria-label="Vista cuadrícula"><i class="bi bi-grid-3x3-gap-fill"></i></button>
-                        <button class="view-btn" id="btn-list" onclick="setView('list')" title="Lista" aria-label="Vista lista"><i class="bi bi-list-ul"></i></button>
-                    </div>
-                </div>
-                <div id="dash-courses">Cargando...</div>
-            </div>
-
-            <!-- HISTORIAL DE INTENTOS -->
-            <div class="section">
-                <div class="sec-title"><i class="bi bi-repeat"></i> Historial de Intentos de Exámenes</div>
-                <div style="overflow-x:auto;background:var(--card-bg);border-radius:12px;padding:12px;">
-                    <table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:600px;color:var(--txt-card)">
-                        <thead><tr style="border-bottom:2px solid var(--border)">
-                            <th style="padding:8px;text-align:left;font-weight:700">Examen</th>
-                            <th style="padding:8px;text-align:center;font-weight:700">Intento 1</th>
-                            <th style="padding:8px;text-align:center;font-weight:700">Intento 2</th>
-                            <th style="padding:8px;text-align:center;font-weight:700;background:#E6F4EA;color:var(--verde-dark)">Puntaje Final</th>
-                        </tr></thead>
-                        <tbody id="tbody-historial-intentos">
-                            <tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando intentos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- EVENTOS -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px;">
-                <div class="section">
-                    <div class="sec-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div>
-                    <div id="dash-calendar">Cargando...</div>
-                </div>
-                <div class="section">
-                    <div class="sec-title"><i class="bi bi-exclamation-triangle"></i> En Puerta</div>
-                    <div id="dash-events">Cargando...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ════════ VISTA 2: MI PERFIL Y DATOS PERSONALES ════════ -->
-        <div id="tab-perfil" style="display:none;">
-            <!-- CTA MATRÍCULA -->
-            <div id="cta-matricula" style="display:none;margin-bottom:12px;background:#E6F4EA;border:1px solid var(--verde);border-left:4px solid var(--verde-dark);border-radius:12px;padding:12px 14px">
-                <div style="font-size:.72rem;font-weight:800;color:var(--verde-dark)"><i class="bi bi-file-earmark-text"></i> Completa tu Formulario de Matrícula</div>
-                <div style="font-size:.62rem;color:#2D2D2D;margin:4px 0 10px">Ya ves tu entorno. Ahora completa el formulario oficial para terminar tu inscripción.</div>
-                <a href="formulario-matricula.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none"><i class="bi bi-pencil-square"></i> Completar formulario</a>
-            </div>
-
-            <!-- TARJETA PRINCIPAL DE PERFIL -->
-            <div class="section" style="padding:0;overflow:hidden">
-                <div style="height:90px;background:linear-gradient(135deg,var(--verde-dark),var(--verde),#22c55e);position:relative"></div>
-                <div style="text-align:center;margin-top:-45px;position:relative;z-index:2;padding-bottom:16px">
-                    <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:inline-flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.2);overflow:hidden;cursor:pointer" onclick="abrirFotoModal()">
-                        <span id="perfil-initials">E</span>
-                        <img id="perfil-avatar-img" style="width:100%;height:100%;object-fit:cover;display:none" alt="Foto">
-                    </div>
-                    <div style="font-size:1.1rem;font-weight:800;color:var(--verde-dark);margin-top:8px" id="p-nombre-completo">Cargando...</div>
-                    <div style="font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--verde)" id="p-rol-badge">-</div>
-                    <div style="font-size:.6rem;color:#64748b;margin-top:2px" id="p-cedula-txt">C.I: -</div>
-
-                    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
-                        <label for="foto-input-dash" class="subj-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
-                            <i class="bi bi-cloud-upload"></i> Subir Foto
-                        </label>
-                        <button type="button" class="btn-out" id="btn-quitar-foto" onclick="quitarFotoPerfil()" style="display:none">
-                            <i class="bi bi-trash"></i> Quitar
-                        </button>
-                        <input type="file" id="foto-input-dash" accept="image/*" style="display:none" onchange="subirFotoPerfil(this)">
-                    </div>
-                </div>
-
-                <div style="padding:16px 20px">
-                    <!-- DATOS PERSONALES -->
-                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
-                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-person"></i> Datos Personales (Clic para editar)</div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">CÉDULA</span>
-                            <span style="font-weight:700;color:var(--txt-card)" id="p-cedula">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">NOMBRE</span>
-                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-nombre" data-field="firstname" onclick="editarCampoPerfil(this)">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">APELLIDO</span>
-                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-apellido" data-field="lastname" onclick="editarCampoPerfil(this)">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">EMAIL</span>
-                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-email" data-field="email" onclick="editarCampoPerfil(this)">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">TELÉFONO</span>
-                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-telefono" data-field="telefono" onclick="editarCampoPerfil(this)">-</span>
-                        </div>
-                    </div>
-
-                    <!-- DATOS ACADÉMICOS -->
-                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
-                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-mortarboard"></i> Datos Académicos Institucionales</div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">GRADO</span>
-                            <span style="font-weight:700;color:var(--txt-card)" id="p-grado">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">CARRERA</span>
-                            <span style="font-weight:700;color:var(--txt-card)" id="p-carrera">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">SECCIÓN</span>
-                            <span style="font-weight:700;color:var(--txt-card)" id="p-seccion">-</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">ESTADO</span>
-                            <span style="font-weight:700;color:var(--verde-dark)" id="p-estado">ACTIVO</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.75rem">
-                            <span style="font-weight:600;color:#64748b">ÚLTIMO ACCESO</span>
-                            <span style="font-weight:700;color:var(--txt-card)" id="p-login">-</span>
-                        </div>
-                    </div>
-
-                    <!-- QR DE ASISTENCIA / EVENTOS -->
-                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center">
-                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-qr-code"></i> Código QR para Eventos y Asistencia</div>
-                        <div style="display:inline-block;background:#fff;padding:12px;border-radius:10px;border:2px solid var(--verde);margin:10px auto">
-                            <div id="qr-container-dash" style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#64748b">
-                                <i class="bi bi-hourglass-split"></i> Generando QR...
-                            </div>
-                        </div>
-                        <div style="font-size:.58rem;color:#64748b;margin-bottom:10px">Muestra este código para registrar tu presencia institucional.</div>
-                        <button class="subj-btn" onclick="descargarQRDash()"><i class="bi bi-download"></i> Descargar QR</button>
-                    </div>
-
-                    <!-- ACCIONES -->
-                    <div style="display:flex;gap:8px;margin-top:14px">
-                        <button class="btn" style="background:var(--verde);color:#fff;border-radius:8px;padding:8px" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Cambiar Contraseña</button>
-                        <button class="btn" style="background:#F1F5F9;color:#2D2D2D;border-radius:8px;padding:8px" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir Ficha</button>
-                    </div>
-                </div>
+            <div class="btns">
+                <button class="btn btn-p" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Contraseña</button>
+                <button class="btn btn-g" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+                <button class="btn btn-s" onclick="centuriaLogout(false)"><i class="bi bi-box-arrow-left"></i> Login</button>
             </div>
         </div>
     </div>
-
-    <!-- MODAL FOTO DE PERFIL AMPLIADA -->
-    <div id="modal-foto-dash" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:pointer" onclick="cerrarFotoModal()">
-        <img id="mf-img-dash" style="width:min(80vw,320px);height:min(80vw,320px);object-fit:cover;border-radius:50%;border:5px solid #fff;box-shadow:0 8px 32px rgba(0,0,0,.5)" alt="Foto ampliada">
-        <div id="mf-name-dash" style="color:#fff;font-weight:700;font-size:.9rem"></div>
-        <button class="subj-btn" style="background:#fff;color:var(--verde-dark);border-radius:20px;padding:6px 20px" onclick="cerrarFotoModal()">Cerrar ✕</button>
-    </div>
-
-    <!-- MODAL CAMBIAR CONTRASEÑA -->
-    <div id="modal-password" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
-        <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);color:#2D2D2D">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                <h3 style="margin:0;font-size:.9rem;color:var(--verde-dark);font-weight:800"><i class="bi bi-key"></i> Cambiar Contraseña</h3>
-                <button onclick="cerrarModalPassword()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#64748b">✕</button>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:10px">
-                <input id="pw-actual" type="password" placeholder="Contraseña actual" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
-                <input id="pw-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
-                <input id="pw-confirmar" type="password" placeholder="Confirmar nueva contraseña" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
-                <div id="pw-error" style="color:#991B1B;font-size:.7rem;display:none"></div>
-                <button class="subj-btn" onclick="cambiarPassword()" style="width:100%;padding:10px;font-size:.75rem"><i class="bi bi-check-lg"></i> Guardar Contraseña</button>
+    <div class="section" id="section-courses">
+        <div class="sec-title"><i class="bi bi-mortarboard-fill"></i> Mis Asignaturas
+            <div class="view-toggles">
+                <button class="view-btn active" id="btn-grid" onclick="setView('grid')"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                <button class="view-btn" id="btn-list" onclick="setView('list')"><i class="bi bi-list-ul"></i></button>
             </div>
         </div>
+        <div id="dash-courses">Cargando...</div>
     </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-        Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026
+    <div class="section">
+        <div class="sec-title"><i class="bi bi-repeat"></i> Historial de Intentos de Exámenes</div>
+        <div style="overflow-x:auto;background:var(--card-bg);border-radius:12px;padding:12px;">
+            <table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:600px;color:var(--txt-card)">
+                <thead><tr style="border-bottom:2px solid var(--border)">
+                    <th style="padding:8px;text-align:left;font-weight:700">Examen</th>
+                    <th style="padding:8px;text-align:center;font-weight:700">Intento 1</th>
+                    <th style="padding:8px;text-align:center;font-weight:700">Intento 2</th>
+                    <th style="padding:8px;text-align:center;font-weight:700;background:#E6F4EA;color:var(--verde-dark)">Puntaje Final</th>
+                </tr></thead>
+                <tbody id="tbody-historial-intentos">
+                    <tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando intentos...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px;">
+        <div class="section"><div class="sec-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div><div id="dash-calendar">Cargando...</div></div>
+        <div class="section"><div class="sec-title"><i class="bi bi-exclamation-triangle"></i> En Puerta</div><div id="dash-events">Cargando...</div></div>
+    </div>
+</div>
+<div id="modal-foto" onclick="cerrarFoto()" role="dialog" aria-label="Foto de perfil ampliada">
+    <img id="mf-img" alt="Foto de perfil ampliada">
+    <div class="mf-name" id="mf-name"></div>
+    <button class="mf-close" onclick="cerrarFoto()">Cerrar ✕</button>
+</div>
+<div id="modal-password">
+    <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0;font-size:.9rem;color:var(--verde-dark);font-weight:800"><i class="bi bi-key"></i> Cambiar Contraseña</h3>
+            <button onclick="cerrarModalPassword()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#64748b">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <input id="pw-actual" type="password" placeholder="Contraseña actual" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+            <input id="pw-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+            <input id="pw-confirmar" type="password" placeholder="Confirmar nueva contraseña" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+            <div id="pw-error" style="color:#991B1B;font-size:.7rem;display:none"></div>
+            <button class="btn btn-p" onclick="cambiarPassword()" style="width:100%"><i class="bi bi-check-lg"></i> Guardar Contraseña</button>
+        </div>
+    </div>
+</div>
+<div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
+<script src="js/api.js?v=12"></script>
+<script src="js/session-guard.js"></script>
+<script src="js/logout.js?v=2"></script>
+<script>
 
-    <script src="js/api.js?v=12"></script>
-    <script src="js/session-guard.js"></script>
-    <script src="js/logout.js?v=2"></script>
-    <script>
-        // ═══ ROLE CONFIG ═══
+        let userId = null;
+        let editando = null;
+        let currentUserRole = null;
+        let currentView = 'grid';
+        let lastSubjects = [];
+
         const roleConfig = {
-            alumno: {
-                label: 'Alumno',
-                links: [
-                    { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
-                    { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
-                    { href: 'academic/index.html', icon: 'bi-pencil-square', label: 'Exámenes' },
-                    { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
-                    { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            },
-            docente: {
-                label: 'Docente',
-                links: [
-                    { href: 'docente.html', icon: 'bi-chalkboard', label: 'Panel Docente' },
-                    { href: 'constructor/index.html', icon: 'bi-hammer', label: 'Constructor' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
-                    { href: 'habilitar_asig.html', icon: 'bi-journal-check', label: 'Habilitar Asig.' },
-                    { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            },
-            admin: {
-                label: 'Administrador',
-                links: [
-                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
-                    { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
-                    { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            },
-            academico: {
-                label: 'Acceso Académico',
-                links: [
-                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
-                    { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'academic/indicadores_por_unidad.html', icon: 'bi-graph-up', label: 'Indicadores' },
-                    { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            },
-            administrador_plataforma: {
-                label: 'Admin Plataforma',
-                links: [
-                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'admin/index.html#filiales', icon: 'bi-building', label: 'Filiales' },
-                    { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            },
-            admin_filial: {
-                label: 'Admin Filial',
-                links: [
-                    { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
-                    { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                    { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
-                    { href: 'perfil.html', icon: 'bi-person', label: 'Perfil' }
-                ]
-            }
+            alumno: { label: 'Alumno', links: [
+                { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
+                { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
+                { href: 'academic/index.html', icon: 'bi-pencil-square', label: 'Exámenes' },
+                { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
+                { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' }
+            ]},
+            docente: { label: 'Docente', links: [
+                { href: 'docente.html', icon: 'bi-chalkboard', label: 'Panel Docente' },
+                { href: 'constructor/index.html', icon: 'bi-hammer', label: 'Constructor' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
+                { href: 'habilitar_asig.html', icon: 'bi-journal-check', label: 'Habilitar Asig.' },
+                { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' }
+            ]},
+            admin: { label: 'Administrador', links: [
+                { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
+                { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
+                { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' }
+            ]},
+            academico: { label: 'Acceso Académico', links: [
+                { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
+                { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'academic/indicadores_por_unidad.html', icon: 'bi-graph-up', label: 'Indicadores' },
+                { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' }
+            ]},
+            administrador_plataforma: { label: 'Admin Plataforma', links: [
+                { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'admin/index.html#filiales', icon: 'bi-building', label: 'Filiales' },
+                { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' }
+            ]},
+            admin_filial: { label: 'Admin Filial', links: [
+                { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' }
+            ]}
         };
 
-        // ═══ PESTAÑAS (TABS) ═══
-        function activarTab(tabId) {
-            document.getElementById('tab-dash').style.display = tabId === 'tab-dash' ? 'block' : 'none';
-            document.getElementById('tab-perfil').style.display = tabId === 'tab-perfil' ? 'block' : 'none';
-            
-            const btnDash = document.getElementById('nav-btn-dash');
-            const btnPerfil = document.getElementById('nav-btn-perfil');
-            
-            if (tabId === 'tab-dash') {
-                btnDash.style.background = 'var(--card-bg)';
-                btnDash.style.color = 'var(--verde-dark)';
-                btnPerfil.style.background = 'rgba(255,255,255,.15)';
-                btnPerfil.style.color = '#fff';
-            } else {
-                btnPerfil.style.background = 'var(--card-bg)';
-                btnPerfil.style.color = 'var(--verde-dark)';
-                btnDash.style.background = 'rgba(255,255,255,.15)';
-                btnDash.style.color = '#fff';
-                generarQRDash();
-            }
-        }
-
-        // ═══ GESTIÓN DE PERFIL & DATOS ═══
-        let editandoPerfil = null;
-
-        function renderDatosPerfil(user) {
-            const n = user.firstname || user.nombre || 'Estudiante';
-            const a = user.lastname || user.apellido || '';
-            const c = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '-';
-            const r = user.role || user.rol || 'alumno';
-            const g = user.grado || localStorage.getItem('centuria_grado') || 'GRADO';
-            const ca = user.carrera || localStorage.getItem('centuria_carrera') || 'ADMINISTRACIÓN';
-            const s = user.seccion || localStorage.getItem('centuria_seccion') || 'S026';
-            const e = user.email || localStorage.getItem('centuria_email') || 'No registrado';
-            const t = user.telefono || localStorage.getItem('centuria_telefono') || 'No registrado';
-            const est = user.estado || 'ACTIVO';
-            const login = user.last_login || '';
-
-            document.getElementById('p-nombre-completo').textContent = n + ' ' + a;
-            document.getElementById('p-rol-badge').textContent = (roleConfig[r]?.label || r).toUpperCase();
-            document.getElementById('p-cedula-txt').textContent = 'C.I: ' + c;
-            document.getElementById('p-cedula').textContent = c;
-            document.getElementById('p-nombre').textContent = n;
-            document.getElementById('p-apellido').textContent = a;
-            document.getElementById('p-email').textContent = e;
-            document.getElementById('p-telefono').textContent = t;
-            document.getElementById('p-grado').textContent = g;
-            document.getElementById('p-carrera').textContent = ca;
-            document.getElementById('p-seccion').textContent = s;
-            document.getElementById('p-estado').textContent = est.toUpperCase();
-            document.getElementById('p-login').textContent = login ? new Date(login).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
-
-            // CTA Formulario de matricula si es alumno
-            const ctaMat = document.getElementById('cta-matricula');
-            if (ctaMat) ctaMat.style.display = (r === 'alumno' || r === 'student' || r === '') ? 'block' : 'none';
-
-            // Foto y avatares
-            const ini = ((n || 'U').charAt(0) + (a || '').charAt(0)).toUpperCase();
-            document.getElementById('dash-initials').textContent = ini;
-            document.getElementById('perfil-initials').textContent = ini;
-            resolverFotoPerfil(user);
-        }
-
-        function editarCampoPerfil(el) {
-            if (editandoPerfil) return;
-            editandoPerfil = el;
-            const valor = el.textContent.trim();
-            const field = el.dataset.field;
-            el.innerHTML = `<input class="row-input" style="padding:4px 8px;border:2px solid var(--verde);border-radius:6px;font-size:.75rem;font-weight:700;color:var(--verde-dark);outline:none;background:#fff;max-width:180px" type="${field === 'email' ? 'email' : 'text'}" value="${valor === 'No registrado' ? '' : valor}" 
-                onblur="guardarCampoPerfil(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicionPerfil(this,'${field}')}">`;
-            el.querySelector('input').focus();
-            el.querySelector('input').select();
-        }
-
-        function cancelarEdicionPerfil(input, field) {
-            const el = input.parentElement;
-            el.textContent = input.defaultValue || '-';
-            editandoPerfil = null;
-        }
-
-        async function guardarCampoPerfil(input, field) {
-            const el = input.parentElement;
-            const valor = input.value.trim();
-            el.textContent = valor || '-';
-            editandoPerfil = null;
-            if (!valor) return;
-
-            try {
-                const res = await CenturiaAPI.auth.updateProfile({ [field]: valor });
-                if (res && res.ok) {
-                    showToastDash('Perfil actualizado correctamente', 'success');
-                    // Actualizar localStorage
-                    if (field === 'firstname') localStorage.setItem('centuria_nombre', valor);
-                    if (field === 'lastname') localStorage.setItem('centuria_apellido', valor);
-                    if (field === 'email') localStorage.setItem('centuria_email', valor);
-                    if (field === 'telefono') localStorage.setItem('centuria_telefono', valor);
-                    const user = CenturiaAPI.getCurrentUser() || {};
-                    user[field] = valor;
-                    localStorage.setItem('centuria_user', JSON.stringify(user));
-                } else {
-                    showToastDash((res && res.error) || 'Error al guardar cambios', 'error');
-                }
-            } catch(e) {
-                showToastDash('Error de conexión', 'error');
-            }
-        }
-
-        // ═══ FOTO DE PERFIL ═══
-        function fotoKeyDash() {
-            const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
-            return 'centuria_foto_' + c;
-        }
-
-        function aplicarFotoPerfil(url) {
-            const has = !!url;
-            const dImg = document.getElementById('dash-avatar-img');
-            const dIni = document.getElementById('dash-initials');
-            const pImg = document.getElementById('perfil-avatar-img');
-            const pIni = document.getElementById('perfil-initials');
-            const btnQ = document.getElementById('btn-quitar-foto');
-
-            if (dImg) { dImg.src = url || ''; dImg.style.display = has ? 'block' : 'none'; }
-            if (dIni) dIni.style.display = has ? 'none' : 'block';
-            if (pImg) { pImg.src = url || ''; pImg.style.display = has ? 'block' : 'none'; }
-            if (pIni) pIni.style.display = has ? 'none' : 'block';
-            if (btnQ) btnQ.style.display = has ? 'inline-flex' : 'none';
-        }
-
-        function resolverFotoPerfil(user) {
-            let f = (user && (user.foto || user.photo)) || '';
-            if (!f) { try { f = localStorage.getItem(fotoKeyDash()) || ''; } catch(e) {} }
-            if (!f) { try { f = sessionStorage.getItem('centuria_foto_tmp') || ''; } catch(e) {} }
-            aplicarFotoPerfil(f);
-            return f;
-        }
-
-        function abrirFotoModal() {
-            const pImg = document.getElementById('perfil-avatar-img');
-            if (!pImg || !pImg.src || pImg.style.display === 'none') {
-                showToastDash('No hay foto personalizada cargada', 'error');
-                return;
-            }
-            document.getElementById('mf-img-dash').src = pImg.src;
-            document.getElementById('mf-name-dash').textContent = document.getElementById('p-nombre-completo').textContent || '';
-            document.getElementById('modal-foto-dash').style.display = 'flex';
-        }
-
-        function cerrarFotoModal() {
-            document.getElementById('modal-foto-dash').style.display = 'none';
-        }
-
-        function subirFotoPerfil(input) {
-            const file = input.files && input.files[0];
-            input.value = '';
-            if (!file) return;
-            if (!file.type.startsWith('image/')) { showToastDash('Selecciona un archivo de imagen', 'error'); return; }
-            if (file.size > 4 * 1024 * 1024) { showToastDash('La foto no debe superar 4MB', 'error'); return; }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const S = 240;
-                    const cv = document.createElement('canvas');
-                    cv.width = S; cv.height = S;
-                    const ctx = cv.getContext('2d');
-                    const m = Math.min(img.width, img.height);
-                    ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
-                    guardarFotoPerfil(cv.toDataURL('image/jpeg', 0.82));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function guardarFotoPerfil(dataUrl) {
-            aplicarFotoPerfil(dataUrl);
-            const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
-            let finalFoto = dataUrl;
-            try {
-                if (typeof gasUploadPhoto === 'function') {
-                    const nom = document.getElementById('p-nombre-completo').textContent || '';
-                    const up = await gasUploadPhoto(ced, nom, dataUrl);
-                    if (up && up.ok && up.url) finalFoto = up.url;
-                }
-            } catch(e) {}
-
-            try { localStorage.setItem(fotoKeyDash(), finalFoto); } catch(e) {}
-            try { sessionStorage.setItem('centuria_foto_tmp', finalFoto); } catch(e) {}
-            try {
-                const raw = localStorage.getItem('centuria_user');
-                if (raw) { const u = JSON.parse(raw); u.foto = finalFoto; localStorage.setItem('centuria_user', JSON.stringify(u)); }
-            } catch (e) {}
-
-            try { await CenturiaAPI.auth.updateProfile({ foto: finalFoto }); } catch(e) {}
-            showToastDash('Foto guardada exitosamente', 'success');
-        }
-
-        function quitarFotoPerfil() {
-            aplicarFotoPerfil('');
-            try { localStorage.removeItem(fotoKeyDash()); } catch(e) {}
-            try { sessionStorage.removeItem('centuria_foto_tmp'); } catch(e) {}
-            showToastDash('Foto de perfil eliminada', 'success');
-        }
-
-        // ═══ CÓDIGO QR ═══
-        function generarQRDash() {
-            try {
-                const user = CenturiaAPI.getCurrentUser() || {};
-                const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Alumno';
-                const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
-                const grado = user.grado || localStorage.getItem('centuria_grado') || '-';
-                const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '-';
-                const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '-';
-                const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || '-';
-
-                const datos = {
-                    cedula: cedula,
-                    nombre: nombre + ' ' + apellido,
-                    grado: grado,
-                    carrera: carrera,
-                    seccion: seccion,
-                    timestamp: new Date().toISOString()
-                };
-
-                const container = document.getElementById('qr-container-dash');
-                container.innerHTML = '';
-
-                if (typeof QRCode !== 'undefined') {
-                    new QRCode(container, {
-                        text: JSON.stringify(datos),
-                        width: 180,
-                        height: 180,
-                        colorDark: '#007A33',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                } else {
-                    container.innerHTML = '<span style="color:#64748b;font-size:.65rem">QR generado para ' + cedula + '</span>';
-                }
-            } catch(e) {
-                console.error('Error QR:', e);
-            }
-        }
-
-        function descargarQRDash() {
-            const canvas = document.querySelector('#qr-container-dash canvas');
-            if (!canvas) { showToastDash('Espera que se genere el QR', 'error'); return; }
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL('image/png');
-            link.download = `qr-centuria-${new Date().getTime()}.png`;
-            link.click();
-        }
-
-        // ═══ CONTRASEÑA ═══
-        function abrirModalPassword() {
-            document.getElementById('modal-password').style.display = 'flex';
-            document.getElementById('pw-actual').value = '';
-            document.getElementById('pw-nueva').value = '';
-            document.getElementById('pw-confirmar').value = '';
-            document.getElementById('pw-error').style.display = 'none';
-            document.getElementById('pw-actual').focus();
-        }
-
-        function cerrarModalPassword() {
-            document.getElementById('modal-password').style.display = 'none';
-        }
-
-        async function cambiarPassword() {
-            const actual = document.getElementById('pw-actual').value.trim();
-            const nueva = document.getElementById('pw-nueva').value.trim();
-            const confirmar = document.getElementById('pw-confirmar').value.trim();
-            const errEl = document.getElementById('pw-error');
-
-            errEl.style.display = 'none';
-            if (!actual || !nueva || !confirmar) {
-                errEl.textContent = 'Completa todos los campos';
-                errEl.style.display = 'block';
-                return;
-            }
-            if (nueva.length < 6) {
-                errEl.textContent = 'La nueva contraseña debe tener mínimo 6 caracteres';
-                errEl.style.display = 'block';
-                return;
-            }
-            if (nueva !== confirmar) {
-                errEl.textContent = 'Las contraseñas no coinciden';
-                errEl.style.display = 'block';
-                return;
-            }
-
-            try {
-                const res = await CenturiaAPI.auth.changePassword(actual, nueva);
-                if (res && res.ok) {
-                    showToastDash('Contraseña actualizada correctamente', 'success');
-                    cerrarModalPassword();
-                    try { sessionStorage.setItem('must_change', '0'); } catch(e) {}
-                    document.getElementById('pw-banner-dash').style.display = 'none';
-                } else {
-                    errEl.textContent = (res && res.error) || 'Error al cambiar contraseña';
-                    errEl.style.display = 'block';
-                }
-            } catch(e) {
-                errEl.textContent = 'Error de conexión';
-                errEl.style.display = 'block';
-            }
-        }
-
-        function showToastDash(msg, type) {
+        function showToast(msg, type) {
             const t = document.createElement('div');
-            t.style.position = 'fixed';
-            t.style.top = '20px';
-            t.style.right = '20px';
-            t.style.padding = '12px 20px';
-            t.style.borderRadius = '10px';
-            t.style.fontSize = '.75rem';
-            t.style.fontWeight = '700';
-            t.style.zIndex = '99999';
-            t.style.boxShadow = '0 4px 16px rgba(0,0,0,.2)';
-            t.style.background = type === 'success' ? '#D1FAE5' : '#FEE2E2';
-            t.style.color = type === 'success' ? '#065F46' : '#991B1B';
-            t.style.border = '1px solid ' + (type === 'success' ? '#6EE7B7' : '#FCA5A5');
+            t.className = 'toast toast-' + (type || 'success');
             t.textContent = msg;
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
 
-        // ═══ CARGAR DASHBOARD PRINCIPAL ═══
         async function cargarDashboard() {
-            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno', 'academico'], currentRolePage: 'dashboard' })) {
-                return;
+            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno','docente','admin','academico','administrador_plataforma','admin_filial'], currentRolePage: 'dashboard' })) return;
+            try {
+                const token = CenturiaAPI.getToken();
+                const user = CenturiaAPI.getCurrentUser() || {};
+                if (!user || (!user.cedula && !user.username)) {
+                    const cedula = (typeof CenturiaSession !== 'undefined' && CenturiaSession.getCedula()) || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+                    if (!cedula) { location.href = 'index.html'; return; }
+                    await cargarPorCedula(cedula); return;
+                }
+                mostrar(user);
+                userId = user.id || user.cedula;
+                currentUserRole = user.role || user.rol || localStorage.getItem('centuria_rol') || 'alumno';
+                const cedulaVal = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+                const nombre = user.firstname || user.nombre || 'Estudiante';
+                const apellido = user.lastname || user.apellido || '';
+                const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
+                const filial = user.filial || localStorage.getItem('centuria_filial') || '';
+                document.getElementById('hdr-name').textContent = nombre + ' ' + apellido;
+                document.getElementById('hdr-sub').textContent = cedulaVal + (carrera ? ' • ' + carrera : '') + (filial ? ' • ' + filial : '');
+                const badge = document.getElementById('hdr-badge');
+                badge.textContent = roleConfig[currentUserRole]?.label || currentUserRole;
+                badge.className = 'badge-rol ' + currentUserRole;
+                const cfg = roleConfig[currentUserRole] || roleConfig.alumno;
+                document.getElementById('dash-links').innerHTML = cfg.links.map(l => '<a href="'+l.href+'" class="link"><i class="bi '+l.icon+'"></i><span>'+l.label+'</span></a>').join('');
+                await Promise.all([cargarStats(user, token), cargarFormularios(token)]);
+                if (currentUserRole === 'docente') await cargarAsignaturasDocente(user, token, cedulaVal);
+                else await cargarAsignaturasGenerales();
+                await cargarEventos(token);
+                await cargarNotas(token);
+                if (currentUserRole === 'alumno' && cedulaVal) await cargarHistorialIntentos(cedulaVal);
+                pintarAvisoProvisoria();
+                sincronizarFotoDrive();
+                generarQR();
+            } catch(e) {
+                console.error('Error cargarDashboard:', e);
+                const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+                if (cedula) await cargarPorCedula(cedula);
             }
-
-            const token = CenturiaAPI.getToken();
-            const user = CenturiaAPI.getCurrentUser() || {};
-            const cedula = user.cedula || user.username || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
-
-            // Render datos del usuario y perfil unificado
-            const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Estudiante';
-            const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
-            const rawRole = user.role || user.rol || localStorage.getItem('centuria_rol') || 'alumno';
-            const rol = ROLE_ES[rawRole] || rawRole;
-            const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
-            const filial = user.filial || localStorage.getItem('centuria_filial') || '';
-            const cedulaVal = user.username || cedula || '';
-
-            // Render header
-            document.getElementById('dash-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('dash-sub').textContent = cedulaVal + (carrera ? ' • ' + carrera : '') + (filial ? ' • ' + filial : '');
-            document.getElementById('dash-badge').textContent = roleConfig[rol]?.label || rol;
-            document.getElementById('dash-badge').className = 'badge-rol ' + rol;
-
-            renderDatosPerfil(user);
-
-            // Quick links
-            const cfg = roleConfig[rol] || roleConfig.alumno;
-            document.getElementById('dash-links').innerHTML = cfg.links.map(l =>
-                `<a href="${l.href}" class="link" aria-label="${l.label}"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
-            ).join('');
-
-            // Asignaturas, eventos, notas, historial
-            if (rol === 'docente') {
-                await cargarAsignaturasDocente(user, token, cedulaVal);
-            } else {
-                await cargarAsignaturasGenerales();
-            }
-
-            await cargarEventos(token);
-            await cargarNotas(token);
-            if (cedulaVal) await cargarHistorialIntentos(cedulaVal);
         }
 
-        // ═══ ASIGNATURAS DOCENTE — Solo las asignadas ═══
+        async function cargarPorCedula(cedula) {
+            try {
+                const data = await CenturiaAPI.usuarios.get(cedula);
+                if ((data.success || data.ok) && (data.data || data.alumno || data.usuario)) {
+                    const u = data.data || data.alumno || data.usuario;
+                    userId = u.id || u.cedula; mostrar(u);
+                    currentUserRole = u.role || u.rol || 'alumno';
+                    const cfg = roleConfig[currentUserRole] || roleConfig.alumno;
+                    document.getElementById('dash-links').innerHTML = cfg.links.map(l => '<a href="'+l.href+'" class="link"><i class="bi '+l.icon+'"></i><span>'+l.label+'</span></a>').join('');
+                    await Promise.all([cargarStats(u, CenturiaAPI.getToken()), cargarFormularios(CenturiaAPI.getToken())]);
+                    if (currentUserRole === 'alumno') await cargarHistorialIntentos(cedula);
+                    await cargarEventos(CenturiaAPI.getToken());
+                    await cargarNotas(CenturiaAPI.getToken());
+                } else { mostrarLocal(); }
+                pintarAvisoProvisoria(); sincronizarFotoDrive(); generarQR();
+            } catch(e) { mostrarLocal(); }
+        }
+
+        function mostrar(user) {
+            const n = user.firstname || user.nombre || 'Usuario';
+            const a = user.lastname || user.apellido || '';
+            const c = user.username || user.cedula || '';
+            const r = user.role || user.rol || 'alumno';
+            const g = user.grado || ''; const ca = user.carrera || ''; const s = user.seccion || '';
+            const e = user.email || ''; const t = user.telefono || '';
+            const est = user.estado || 'activo'; const login = user.last_login || '';
+            document.getElementById('profile-name').textContent = n + ' ' + a;
+            document.getElementById('profile-role').textContent = r.toUpperCase();
+            document.getElementById('profile-cedula').textContent = 'C.I: ' + c;
+            document.getElementById('hdr-name').textContent = n + ' ' + a;
+            pintarIniciales(n, a); resolverFoto(user);
+            const badge = document.getElementById('hdr-badge');
+            badge.textContent = roleConfig[r]?.label || r;
+            badge.className = 'badge-rol ' + r;
+            document.getElementById('p-cedula').textContent = c;
+            document.getElementById('p-nombre').textContent = n;
+            document.getElementById('p-apellido').textContent = a;
+            document.getElementById('p-email').textContent = e || 'No registrado';
+            document.getElementById('p-telefono').textContent = t || 'No registrado';
+            document.getElementById('p-grado').textContent = g || 'No asignado';
+            document.getElementById('p-carrera').textContent = ca || 'No asignado';
+            document.getElementById('p-seccion').textContent = s || 'No asignado';
+            document.getElementById('p-rol').textContent = r.toUpperCase();
+            document.getElementById('p-estado').textContent = est.toUpperCase();
+            document.getElementById('p-login').textContent = login ? new Date(login).toLocaleDateString('es-ES') : '-';
+            pintarCTA(r);
+        }
+
+        function mostrarLocal() {
+            const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            const n = localStorage.getItem('centuria_nombre') || '';
+            const a = localStorage.getItem('centuria_apellido') || '';
+            const r = localStorage.getItem('centuria_rol') || 'alumno';
+            document.getElementById('profile-name').textContent = n + ' ' + a;
+            document.getElementById('profile-role').textContent = r.toUpperCase();
+            document.getElementById('profile-cedula').textContent = 'C.I: ' + c;
+            document.getElementById('hdr-name').textContent = n + ' ' + a;
+            pintarIniciales(n, a); resolverFoto(null); pintarCTA(r);
+            document.getElementById('p-cedula').textContent = c;
+            document.getElementById('p-nombre').textContent = n;
+            document.getElementById('p-apellido').textContent = a;
+            document.getElementById('p-email').textContent = localStorage.getItem('centuria_email') || 'No registrado';
+            document.getElementById('p-telefono').textContent = 'No registrado';
+            document.getElementById('p-grado').textContent = localStorage.getItem('centuria_grado') || 'No asignado';
+            document.getElementById('p-carrera').textContent = localStorage.getItem('centuria_carrera') || 'No asignado';
+            document.getElementById('p-seccion').textContent = localStorage.getItem('centuria_seccion') || 'No asignado';
+            document.getElementById('p-rol').textContent = r.toUpperCase();
+            document.getElementById('p-estado').textContent = 'ACTIVO';
+            document.getElementById('p-login').textContent = '-';
+        }
+
+        function pintarCTA(rol) {
+            const r = (rol || '').toLowerCase();
+            document.getElementById('cta-matricula').style.display = (r === 'alumno' || r === 'student' || r === '') ? 'block' : 'none';
+        }
+
         async function cargarAsignaturasDocente(user, token, cedula) {
             try {
                 const data = await CenturiaAPI.docente.getMySubjects(cedula);
                 const subjects = (data.subjects || []).filter(s => {
                     const assignments = data.assignments || [];
-                    return assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo');
+                    return assignments.some(a => a.asignatura === s.codigo && ['docente','teacher'].includes(a.rol) && a.estado === 'activo');
                 });
                 document.getElementById('stat-courses').textContent = subjects.length;
                 renderMisAsignaturas(subjects);
             } catch (e) {
-                console.error('Error cargando asignaturas docente:', e);
-                document.getElementById('dash-courses').innerHTML = `<div class="empty"><i class="bi bi-exclamation-circle"></i><p>Error al cargar asignaturas</p></div>`;
+                document.getElementById('dash-courses').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i><p>Error al cargar asignaturas</p></div>';
             }
         }
 
-        // ═══ ASIGNATURAS GENERALES (alumno/admin/académico) ═══
         async function cargarAsignaturasGenerales() {
             try {
                 const dKit = await CenturiaAPI.kit.getHabilitadas();
                 const habilitadas = dKit.asignaturas || [];
                 document.getElementById('stat-courses').textContent = habilitadas.length;
-
                 if (habilitadas.length === 0) {
-                    document.getElementById('dash-courses').innerHTML = `
-                        <div class="empty">
-                            <i class="bi bi-lock"></i>
-                            <p><strong>Sin asignaturas habilitadas</strong></p>
-                            <p style="margin-top:4px;font-size:.58rem;color:#64748b;">
-                                Las asignaturas aparecen aquí una vez que el docente completa todo el kit de contenidos.
-                            </p>
-                        </div>`;
+                    document.getElementById('dash-courses').innerHTML = '<div class="empty"><i class="bi bi-lock"></i><p><strong>Sin asignaturas habilitadas</strong></p><p style="margin-top:4px;font-size:.58rem;color:#64748b;">Las asignaturas aparecen aquí una vez que el docente completa todo el kit de contenidos.</p></div>';
                     return;
                 }
                 renderMisAsignaturas(habilitadas);
             } catch (e) {
-                document.getElementById('dash-courses').innerHTML = `<div class="empty"><i class="bi bi-inbox"></i><p>No hay asignaturas</p></div>`;
+                document.getElementById('dash-courses').innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p>No hay asignaturas</p></div>';
             }
         }
 
-        // ═══ EVENTOS ═══
         async function cargarEventos(token) {
             const container = document.getElementById('dash-calendar');
             try {
                 const data = await CenturiaAPI.calendar.list();
                 const events = data.data || data.events || [];
                 const now = new Date();
-                const upcoming = events.filter(e => new Date(e.fecha || e.date) >= now)
-                    .sort((a, b) => new Date(a.fecha || a.date) - new Date(b.fecha || b.date));
+                const upcoming = events.filter(e => new Date(e.fecha || e.date) >= now).sort((a, b) => new Date(a.fecha || a.date) - new Date(b.fecha || b.date));
                 document.getElementById('stat-events').textContent = upcoming.length;
-
-                if (upcoming.length === 0) {
-                    container.innerHTML = `<div class="empty"><i class="bi bi-calendar-x"></i><p>No hay eventos próximos</p></div>`;
-                    return;
-                }
-
+                if (upcoming.length === 0) { container.innerHTML = '<div class="empty"><i class="bi bi-calendar-x"></i><p>No hay eventos próximos</p></div>'; return; }
                 container.innerHTML = upcoming.slice(0, 4).map(e => {
                     const d = new Date(e.fecha || e.date);
-                    return `
-                    <div class="ev">
-                        <div class="ev-date"><div class="day">${d.getDate()}</div><div class="month">${d.toLocaleString('es',{month:'short'})}</div></div>
-                        <div class="ev-info"><div class="ev-title">${e.titulo || e.title || 'Evento'}</div><div class="ev-desc">${e.descripcion || ''}</div></div>
-                        <span class="ev-tag ${e.tipo || 'meeting'}">${e.tipo || 'evento'}</span>
-                    </div>`;
+                    return '<div class="ev"><div class="ev-date"><div class="day">'+d.getDate()+'</div><div class="month">'+d.toLocaleString('es',{month:'short'})+'</div></div><div class="ev-info"><div class="ev-title">'+(e.titulo||e.title||'Evento')+'</div><div class="ev-desc">'+(e.descripcion||'')+'</div></div><span class="ev-tag '+(e.tipo||'meeting')+'">'+(e.tipo||'evento')+'</span></div>';
                 }).join('');
-            } catch (e) {
-                container.innerHTML = `<div class="empty"><i class="bi bi-calendar-x"></i><p>Sin eventos</p></div>`;
-            }
+            } catch (e) { container.innerHTML = '<div class="empty"><i class="bi bi-calendar-x"></i><p>Sin eventos</p></div>'; }
         }
 
-        // ═══ NOTAS ═══
         async function cargarNotas(token) {
             try {
                 const data = await CenturiaAPI.grades.list();
@@ -1029,11 +523,9 @@
             } catch (e) {}
         }
 
-        // ═══ HISTORIAL DE INTENTOS ═══
         async function cargarHistorialIntentos(cedula) {
             const tbody = document.getElementById('tbody-historial-intentos');
             if (!tbody) return;
-            
             try {
                 const examenes = [
                     { id: 'examen_parcial_1', nombre: 'Parcial 1' },
@@ -1042,7 +534,6 @@
                     { id: 'examen_final_virtual', nombre: 'Final Virtual' },
                     { id: 'examen_final_escrito', nombre: 'Final Escrito' }
                 ];
-
                 let rows = [];
                 for (const ex of examenes) {
                     try {
@@ -1050,35 +541,14 @@
                         const intentos = res.intentos || [];
                         if (intentos.length === 0) continue;
                         intentos.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-                        const intento1 = intentos[0];
-                        const intento2 = intentos[1];
-                        const mejor = res.mejor_intento || Math.max(intento1?.puntaje || 0, intento2?.puntaje || 0);
-                        
-                        rows.push(`
-                            <tr style="border-bottom:1px solid var(--border)">
-                                <td style="padding:8px;font-weight:600">${ex.nombre}</td>
-                                <td style="padding:8px;text-align:center">
-                                    ${intento1 ? `<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">${intento1.puntaje || 0}</span>` : '—'}
-                                </td>
-                                <td style="padding:8px;text-align:center">
-                                    ${intento2 ? `<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">${intento2.puntaje || 0}</span>` : '—'}
-                                </td>
-                                <td style="padding:8px;text-align:center;background:#E6F4EA;font-weight:700;color:var(--verde-dark)">
-                                    ${mejor}
-                                </td>
-                            </tr>
-                        `);
+                        const i1 = intentos[0]; const i2 = intentos[1];
+                        const mejor = res.mejor_intento || Math.max(i1?.puntaje || 0, i2?.puntaje || 0);
+                        rows.push('<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;font-weight:600">'+ex.nombre+'</td><td style="padding:8px;text-align:center">'+(i1?'<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">'+(i1.puntaje||0)+'</span>':'—')+'</td><td style="padding:8px;text-align:center">'+(i2?'<span style="background:#D1FAE5;padding:2px 8px;border-radius:4px;color:var(--verde-dark);font-weight:600">'+(i2.puntaje||0)+'</span>':'—')+'</td><td style="padding:8px;text-align:center;background:#E6F4EA;font-weight:700;color:var(--verde-dark)">'+mejor+'</td></tr>');
                     } catch (e) {}
                 }
-                
                 tbody.innerHTML = rows.length === 0 ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b">No tienes intentos registrados aún</td></tr>' : rows.join('');
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#dc2626">Error cargando intentos</td></tr>';
-            }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#dc2626">Error cargando intentos</td></tr>'; }
         }
-
-        let currentView = 'grid';
-        let lastSubjects = [];
 
         function setView(view) {
             currentView = view;
@@ -1091,34 +561,282 @@
             lastSubjects = subjects;
             const container = document.getElementById('dash-courses');
             if (!subjects || subjects.length === 0) {
-                container.innerHTML = `<div class="empty"><i class="bi bi-inbox"></i><p><strong>Sin asignaturas asignadas</strong></p><p style="margin-top:4px;font-size:.58rem;color:#64748b;">Tu asignación será visible aquí una vez que el administrador te vincule a una materia.</p></div>`;
+                container.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p><strong>Sin asignaturas asignadas</strong></p><p style="margin-top:4px;font-size:.58rem;color:#64748b;">Tu asignación será visible aquí una vez que el administrador te vincule a una materia.</p></div>';
                 return;
             }
             const isGrid = currentView === 'grid';
             container.className = isGrid ? 'subj-grid' : '';
-            container.innerHTML = subjects.map(s => `
-                <div class="subj" style="${!isGrid ? 'border-left:3px solid ' + (s.color || '#00B140') : ''}">
-                    <div class="subj-info">
-                        <div class="subj-name">
-                            <i class="bi ${s.icono || 'bi-book'}" style="color:${s.color || '#00B140'};margin-right:4px;"></i>
-                            ${s.nombre || s.nombre_completo || 'Asignatura'}
-                        </div>
-                        <div class="subj-meta"><i class="bi bi-tag"></i>${s.codigo || ''} • <i class="bi bi-building"></i>${s.carrera || ''} • <i class="bi bi-calendar3"></i>${s.semestre || ''}</div>
-                    </div>
-                    <a href="Materiales_Clases/programa.html?curso=${s.codigo}" class="subj-btn">
-                        <i class="bi bi-arrow-right"></i> Ver curso
-                    </a>
-                </div>
-            `).join('');
+            container.innerHTML = subjects.map(s => '<div class="subj" style="'+(!isGrid?'border-left:3px solid '+(s.color||'#00B140'):'')+'"><div class="subj-info"><div class="subj-name"><i class="bi '+(s.icono||'bi-book')+'" style="color:'+(s.color||'#00B140')+';margin-right:4px;"></i>'+(s.nombre||s.nombre_completo||'Asignatura')+'</div><div class="subj-meta"><i class="bi bi-tag"></i>'+(s.codigo||'')+' • <i class="bi bi-building"></i>'+(s.carrera||'')+' • <i class="bi bi-calendar3"></i>'+(s.semestre||'')+'</div></div><a href="Materiales_Clases/programa.html?curso='+(s.codigo||'')+'" class="subj-btn"><i class="bi bi-arrow-right"></i> Ver curso</a></div>').join('');
         }
 
-        // ═══ INIT ═══
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarDashboard();
-            if (window.location.hash === '#perfil') {
-                activarTab('tab-perfil');
+        // === PERFIL FUNCTIONS ===
+        function editarCampo(el) {
+            if (editando) return;
+            editando = el;
+            const valor = el.textContent.trim();
+            const field = el.dataset.field;
+            el.innerHTML = '<input class="row-input" type="'+(field==='email'?'email':'text')+'" value="'+(valor==='No registrado'?'':valor)+'" onblur="guardarCampo(this, ''+field+'')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this,''+field+'')}">';
+            el.querySelector('input').focus();
+            el.querySelector('input').select();
+        }
+
+        function cancelarEdicion(input, field) {
+            const el = input.parentElement;
+            el.textContent = input.defaultValue || '-';
+            editando = null;
+        }
+
+        async function guardarCampo(input, field) {
+            const el = input.parentElement;
+            const valor = input.value.trim();
+            el.textContent = valor || '-';
+            editando = null;
+            if (!valor) return;
+            try {
+                const res = await CenturiaAPI.auth.updateProfile({ [field]: valor });
+                if (res && res.ok) {
+                    showToast('Campo actualizado correctamente', 'success');
+                    if (field === 'firstname') localStorage.setItem('centuria_nombre', valor);
+                    if (field === 'lastname') localStorage.setItem('centuria_apellido', valor);
+                    if (field === 'email') localStorage.setItem('centuria_email', valor);
+                    if (field === 'telefono') localStorage.setItem('centuria_telefono', valor);
+                } else { showToast((res && res.error) || 'Error al guardar', 'error'); }
+            } catch(e) { showToast('Error de conexión', 'error'); }
+        }
+
+        async function cargarStats(user, token) {
+            try {
+                const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+                const rol = user.role || user.rol || 'alumno';
+                if (rol === 'docente') {
+                    const d = await CenturiaAPI.docente.getMySubjects(cedula);
+                    document.getElementById('stat-courses').textContent = (d.subjects || []).length;
+                }
+                const dN = await CenturiaAPI.grades.list();
+                const grades = dN.data || [];
+                if (grades.length > 0) {
+                    const avg = (grades.reduce((s, g) => s + (g.score || 0), 0) / grades.length).toFixed(1);
+                    document.getElementById('stat-promedio').textContent = avg;
+                }
+                const dA = await CenturiaAPI.attendance.list();
+                const asist = dA.data || [];
+                if (asist.length > 0) {
+                    const pct = Math.round((asist.filter(a => a.status === 'present' || a.estado === 'presente').length / asist.length) * 100);
+                    document.getElementById('stat-asistencia').textContent = pct + '%';
+                }
+            } catch(e) {}
+        }
+
+        async function cargarFormularios(token) {
+            try {
+                const user = CenturiaAPI.getCurrentUser() || {};
+                const cedula = user.cedula || user.username || '';
+                const data = await CenturiaAPI.formularios.my(cedula);
+                const forms = data.formularios || [];
+                if (forms.length === 0) return;
+                const sec = document.getElementById('sec-formularios');
+                sec.style.display = 'block';
+                const list = document.getElementById('formularios-list');
+                list.innerHTML = forms.map(f => {
+                    const estado = f.mi_estado || 'pendiente';
+                    const badge = estado === 'completado'
+                        ? '<span style="padding:3px 10px;border-radius:20px;font-size:.5rem;font-weight:700;background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7"><i class="bi bi-check-circle"></i> COMPLETADO</span>'
+                        : '<span style="padding:3px 10px;border-radius:20px;font-size:.5rem;font-weight:700;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A"><i class="bi bi-clock"></i> PENDIENTE</span>';
+                    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px"><div><div style="font-size:.72rem;font-weight:700;color:var(--txt-card)">'+(f.nombre||'Formulario')+'</div><div style="font-size:.55rem;color:#64748b;margin-top:2px">Código: '+(f.codigo||f.id)+' · Tipo: '+(f.tipo||'matrícula')+'</div></div><div style="display:flex;align-items:center;gap:8px">'+badge+'<a href="formulario-matricula.html?id='+f.id+'" style="padding:5px 12px;border-radius:8px;font-size:.6rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-pencil-square"></i> '+(estado==='completado'?'Ver':'Completar')+'</a></div></div>';
+                }).join('');
+            } catch(e) { console.error('Error cargando formularios:', e); }
+        }
+
+        // === FOTO DE PERFIL ===
+        function fotoKey() {
+            const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            return 'centuria_foto_' + c;
+        }
+
+        function pintarIniciales(n, a) {
+            const ini = ((n || 'U').charAt(0) + (a || '').charAt(0)).toUpperCase();
+            const s1 = document.getElementById('avatar-initials');
+            if (s1) s1.textContent = ini;
+            const s2 = document.getElementById('hdr-initials');
+            if (s2) s2.textContent = ini;
+        }
+
+        function aplicarFoto(dataUrl) {
+            const has = !!dataUrl;
+            const big = document.getElementById('avatar-img');
+            if (big) { big.src = dataUrl || ''; big.style.display = has ? 'block' : 'none'; }
+            const ini = document.getElementById('avatar-initials');
+            if (ini) ini.style.display = has ? 'none' : 'block';
+            const hdr = document.getElementById('hdr-img');
+            if (hdr) { hdr.src = dataUrl || ''; hdr.style.display = has ? 'block' : 'none'; }
+            const hi = document.getElementById('hdr-initials');
+            if (hi) hi.style.display = has ? 'none' : 'block';
+            const bq = document.getElementById('btn-quitar-foto');
+            if (bq) bq.style.display = has ? 'inline-flex' : 'none';
+        }
+
+        function resolverFoto(user) {
+            let f = (user && (user.foto || user.photo)) || '';
+            if (!f) { try { f = localStorage.getItem(fotoKey()) || ''; } catch(e) {} }
+            if (!f) { try { f = sessionStorage.getItem('centuria_foto_tmp') || ''; } catch(e) {} }
+            aplicarFoto(f);
+            return f;
+        }
+
+        function abrirFoto() {
+            const big = document.getElementById('avatar-img');
+            if (!big || !big.src || big.style.display === 'none') { showToast('No hay foto para mostrar', 'error'); return; }
+            document.getElementById('mf-img').src = big.src;
+            document.getElementById('mf-name').textContent = document.getElementById('profile-name').textContent || '';
+            document.getElementById('modal-foto').style.display = 'flex';
+        }
+
+        function cerrarFoto() { document.getElementById('modal-foto').style.display = 'none'; }
+
+        function subirFoto(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showToast('El archivo debe ser una imagen', 'error'); return; }
+            if (file.size > 4 * 1024 * 1024) { showToast('La imagen no puede superar 4MB', 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const S = 240; const cv = document.createElement('canvas');
+                    cv.width = S; cv.height = S;
+                    const ctx = cv.getContext('2d'); const m = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+                    guardarFoto(cv.toDataURL('image/jpeg', 0.82));
+                };
+                img.onerror = function() { showToast('No se pudo leer la imagen', 'error'); };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function guardarFoto(dataUrl) {
+            aplicarFoto(dataUrl);
+            const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            const nom = (document.getElementById('profile-name').textContent || '').trim();
+            let finalFoto = dataUrl;
+            try {
+                showToast('Subiendo foto a Drive...', 'success');
+                const up = await gasUploadPhoto(ced, nom, dataUrl);
+                if (up && up.ok && up.url) { finalFoto = up.url; aplicarFoto(finalFoto); }
+            } catch(e) {}
+            try { localStorage.setItem(fotoKey(), finalFoto); } catch(e) {}
+            try { sessionStorage.setItem('centuria_foto_tmp', finalFoto); } catch(e) {}
+            try {
+                const raw = localStorage.getItem('centuria_user');
+                if (raw) { const u = JSON.parse(raw); u.foto = finalFoto; localStorage.setItem('centuria_user', JSON.stringify(u)); }
+            } catch(e) {}
+            if (userId) { try { await CenturiaAPI.auth.updateProfile({ foto: finalFoto }); } catch(e) {} }
+            showToast('Foto guardada exitosamente', 'success');
+        }
+
+        async function sincronizarFotoDrive() {
+            try {
+                const big = document.getElementById('avatar-img');
+                if (big && big.style.display === 'block') return;
+                const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+                if (!ced || typeof gasGetPhoto !== 'function') return;
+                const r = await gasGetPhoto(ced);
+                if (r && r.ok && r.existe && r.url) {
+                    aplicarFoto(r.url);
+                    try { localStorage.setItem(fotoKey(), r.url); } catch(e) {}
+                }
+            } catch(e) {}
+        }
+
+        function quitarFoto() {
+            aplicarFoto('');
+            try { localStorage.removeItem(fotoKey()); } catch(e) {}
+            try { sessionStorage.removeItem('centuria_foto_tmp'); } catch(e) {}
+            try {
+                const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+                if (ced && typeof gasDeletePhoto === 'function') gasDeletePhoto(ced);
+            } catch(e) {}
+            showToast('Foto eliminada', 'success');
+        }
+
+        // === QR ===
+        function generarQR() {
+            try {
+                const user = CenturiaAPI.getCurrentUser() || {};
+                const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Alumno';
+                const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
+                const grado = user.grado || localStorage.getItem('centuria_grado') || '-';
+                const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '-';
+                const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '-';
+                const datos = { nombre: nombre, apellido: apellido, grado: grado, carrera: carrera, seccion: seccion, timestamp: new Date().toISOString() };
+                const qrString = JSON.stringify(datos);
+                const container = document.getElementById('qr-container');
+                container.innerHTML = '';
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(container, { text: qrString, width: 200, height: 200, colorDark: '#007A33', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+                    window.qrDataForDownload = qrString;
+                } else { container.innerHTML = '<p style="color:#dc2626">Error: Librería QR no cargada</p>'; }
+            } catch (e) { console.error('Error generando QR:', e); }
+        }
+
+        function descargarQR() {
+            try {
+                const canvas = document.querySelector('#qr-container canvas');
+                if (!canvas) { showToast('Espera a que se genere el QR', 'error'); return; }
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = 'qr-' + new Date().getTime() + '.png';
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            } catch (e) { alert('Error al descargar: ' + e.message); }
+        }
+
+        // === CONTRASEÑA ===
+        function abrirModalPassword() {
+            document.getElementById('modal-password').style.display = 'flex';
+            document.getElementById('pw-actual').value = '';
+            document.getElementById('pw-nueva').value = '';
+            document.getElementById('pw-confirmar').value = '';
+            document.getElementById('pw-error').style.display = 'none';
+            document.getElementById('pw-actual').focus();
+        }
+
+        function cerrarModalPassword() { document.getElementById('modal-password').style.display = 'none'; }
+
+        async function cambiarPassword() {
+            const actual = document.getElementById('pw-actual').value.trim();
+            const nueva = document.getElementById('pw-nueva').value.trim();
+            const confirmar = document.getElementById('pw-confirmar').value.trim();
+            const errEl = document.getElementById('pw-error');
+            errEl.style.display = 'none';
+            if (!actual || !nueva || !confirmar) { errEl.textContent = 'Todos los campos son obligatorios'; errEl.style.display = 'block'; return; }
+            if (nueva.length < 6) { errEl.textContent = 'La nueva contraseña debe tener mínimo 6 caracteres'; errEl.style.display = 'block'; return; }
+            if (nueva !== confirmar) { errEl.textContent = 'Las contraseñas no coinciden'; errEl.style.display = 'block'; return; }
+            try {
+                const res = await CenturiaAPI.auth.changePassword(actual, nueva);
+                if (res && res.ok) {
+                    showToast('Contraseña actualizada correctamente', 'success');
+                    cerrarModalPassword();
+                    try { sessionStorage.setItem('must_change', '0'); } catch(e) {}
+                    try {
+                        const raw = localStorage.getItem('centuria_user');
+                        if (raw) { const u = JSON.parse(raw); u.must_change_password = 0; localStorage.setItem('centuria_user', JSON.stringify(u)); }
+                    } catch(e) {}
+                    pintarAvisoProvisoria();
+                } else { errEl.textContent = (res && res.error) || 'Error al cambiar contraseña'; errEl.style.display = 'block'; }
+            } catch(e) { errEl.textContent = 'Error de conexión'; errEl.style.display = 'block'; }
+        }
+
+        function pintarAvisoProvisoria() {
+            let mc = sessionStorage.getItem('must_change') === '1';
+            if (!mc) {
+                try { const raw = localStorage.getItem('centuria_user'); if (raw) mc = !!JSON.parse(raw).must_change_password; } catch(e) {}
             }
-        });
-    </script>
+            document.getElementById('pw-banner').style.display = mc ? 'block' : 'none';
+        }
+
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarFoto(); });
+        document.addEventListener('DOMContentLoaded', cargarDashboard);
+</script>
 </body>
 </html>

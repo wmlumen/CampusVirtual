@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="../js/session-guard.js?v=2"></script>
+    <script src="../js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -229,7 +229,7 @@
     <div class="footer">Constructor Académico · Centuria © 2026</div>
     <div id="toast-wrap"></div>
 
-    <script src="../js/api.js?v=13"></script>
+    <script src="../js/api.js?v=19"></script>
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
@@ -260,19 +260,11 @@
             };
             const g = gmap[accion] || accion;
             try {
-                if (body) {
-                    const r = await fetch(GAS_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: g, ...body })
-                    });
-                    return { fuente: 'Cloud', d: await r.json() };
-                }
-                const r2 = await fetch(GAS_URL + '?' + new URLSearchParams({ action: g, ...params }).toString());
-                return { fuente: 'Cloud', d: await r2.json() };
+                const r = await CenturiaAPI.constructor.submit(g, body || params);
+                return { fuente: 'Firebase', d: r };
             } catch (e) {
                 console.error('Error en API constructor:', e);
-                return { fuente: 'Cloud', d: { ok: false, error: e.message } };
+                return { fuente: 'Firebase', d: { ok: false, error: e.message } };
             }
         }
 
@@ -282,18 +274,60 @@
                 return;
             }
             document.getElementById('app').style.display = 'block';
-            await cargarDrafts();
+            await procesarInicio();
         });
 
         function badge(e) { return `<span class="badge b-${e}">${e.replace(/_/g, ' ')}</span>`; }
 
+        async function procesarInicio() {
+            const paramsUrl = new URLSearchParams(window.location.search);
+            const urlId = paramsUrl.get('id');
+            const urlCodigo = paramsUrl.get('codigo') || paramsUrl.get('asignatura');
+            const urlCarrera = paramsUrl.get('carrera');
+            const urlNombre = paramsUrl.get('nombre');
+
+            // 1. Cargar lista de drafts
+            const drafts = await cargarDrafts();
+
+            // 2. Si vino un ID directo en URL, abrirlo
+            if (urlId) {
+                await abrirDraft(urlId);
+                return;
+            }
+
+            // 3. Si vino un código en URL, buscar coincidencia en los borradores existentes
+            if (urlCodigo) {
+                const codClean = urlCodigo.trim().toLowerCase();
+                const found = (drafts || []).find(x => 
+                    String(x.Codigo || x.codigo || '').trim().toLowerCase() === codClean ||
+                    String(x.ID || x.id || '').trim().toLowerCase() === codClean ||
+                    String(x.Nombre || x.nombre || '').trim().toLowerCase() === codClean
+                );
+
+                if (found) {
+                    await abrirDraft(found.ID || found.id);
+                } else {
+                    // No existe borrador previo: Iniciar nuevo borrador con datos de URL precargados
+                    nuevoDraft({
+                        codigo: urlCodigo.trim(),
+                        nombre: urlNombre ? urlNombre.trim() : (urlCodigo.trim() + (urlCarrera ? ' - ' + urlCarrera.trim() : '')),
+                        carrera: urlCarrera ? urlCarrera.trim() : ''
+                    });
+                }
+            }
+        }
+
         async function cargarDrafts() {
-            const params = (MI_ROL === 'docente' || MI_ROL === 'teacher') && MI_CEDULA ? { docente: MI_CEDULA } : {};
-            const { fuente, d } = await api('list_drafts', params);
-            document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente + ' · ' + (d.drafts || []).length + ' asignatura(s)';
+            // Se solicita sin filtro forzado para que el docente vea también borradores generales
+            const { fuente, d } = await api('list_drafts', {});
+            const drafts = d.drafts || [];
+            document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente + ' · ' + drafts.length + ' asignatura(s)';
             const el = document.getElementById('lista-drafts');
-            if (!(d.drafts || []).length) { el.innerHTML = '<p class="text-muted">Sin asignaturas. Crea la primera.</p>'; return; }
-            el.innerHTML = d.drafts.map(x => `
+            if (!drafts.length) { 
+                el.innerHTML = '<p class="text-muted">Sin asignaturas. Crea la primera.</p>'; 
+                return []; 
+            }
+            el.innerHTML = drafts.map(x => `
                 <div class="draft">
                     <div><b>${x.Nombre || x.nombre || '(sin nombre)'}</b> <small class="text-muted">${x.Codigo || x.codigo || ''}</small><br>${badge(x.Estado || x.estado || 'borrador')} <small class="text-muted">v${x.Version || x.version || 1}</small></div>
                     <div class="d-flex gap-1 flex-wrap">
@@ -303,22 +337,37 @@
                         <button class="btn btn-r" onclick="archivarDraft('${x.ID || x.id}')">Archivar</button>
                     </div>
                 </div>`).join('');
+            return drafts;
         }
 
-        function nuevoDraft() {
+        function nuevoDraft(precarga) {
             cur = null;
             ['p-codigo', 'p-nombre', 'p-carrera', 'p-grado', 'p-semestre', 'p-carga', 'p-fund', 'p-objg', 'p-obje', 'p-comp', 'p-capa', 'p-met', 'p-req', 'p-bib'].forEach(id => document.getElementById(id).value = '');
+            
+            if (precarga) {
+                if (precarga.codigo) document.getElementById('p-codigo').value = precarga.codigo;
+                if (precarga.nombre) document.getElementById('p-nombre').value = precarga.nombre;
+                if (precarga.carrera) document.getElementById('p-carrera').value = precarga.carrera;
+                if (precarga.grado) document.getElementById('p-grado').value = precarga.grado;
+                if (precarga.semestre) document.getElementById('p-semestre').value = precarga.semestre;
+            }
+
             document.getElementById('view-list').style.display = 'none';
             document.getElementById('view-edit').style.display = 'block';
-            document.getElementById('ed-titulo').textContent = 'Nueva asignatura';
+            document.getElementById('ed-titulo').textContent = precarga && precarga.nombre ? ('Nueva: ' + precarga.nombre) : 'Nueva asignatura';
+            document.getElementById('ed-estado').innerHTML = badge('borrador') + ' v1';
+            document.getElementById('ed-pond').textContent = 'Ponderación: 0%';
+            document.getElementById('lista-units').innerHTML = '<p class="text-muted">Sin unidades creadas aún. Guarda el programa para habilitar.</p>';
+            document.getElementById('lista-evals').innerHTML = '<p class="text-muted">Sin evaluaciones.</p>';
+            document.getElementById('lista-acts').innerHTML = '<p class="text-muted">Sin actividades.</p>';
             tabEditor('prog', document.querySelector('#ed-tabs .tab'));
         }
 
         async function abrirDraft(id) {
             const { d } = await api('get_subject', { id });
-            if (!d || !d.ok) { toast('No se pudo abrir', true); return; }
+            if (!d || !d.ok) { toast('No se pudo abrir la asignatura (' + (d && d.error ? d.error : 'error desconocido') + ')', true); return; }
             cur = d;
-            const dr = d.draft;
+            const dr = d.draft || {};
             document.getElementById('p-codigo').value = dr.Codigo || '';
             document.getElementById('p-nombre').value = dr.Nombre || '';
             document.getElementById('p-carrera').value = dr.Carrera || '';

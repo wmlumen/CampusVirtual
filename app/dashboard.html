@@ -461,6 +461,10 @@
             margin: 0;
         }
 
+        .qr-barra { width: 200px; max-width: 100%; height: 4px; border-radius: 4px; background: rgba(13,44,22,.15); margin-top: 10px; overflow: hidden; }
+        .qr-barra span { display: block; height: 100%; width: 0; background: #16813D; transition: width 1s linear; }
+        .qr-estado { margin-top: 5px; font-size: .62rem; font-weight: 700; color: rgba(13,44,22,.75); }
+
         /* Modal QR Pantalla Completa */
         #modal-qr-fullscreen {
             display: none;
@@ -921,16 +925,18 @@
                     <div id="qr-card-cedula" style="margin-top:10px;font-size:.82rem;font-weight:800;color:#0d2c16;letter-spacing:.5px;">
                         C.I. N° —
                     </div>
+                    <div class="qr-barra"><span id="qr-barra-fill"></span></div>
+                    <div id="qr-estado" class="qr-estado" aria-live="off">Generando código…</div>
                     <div style="margin-top:4px;font-size:.62rem;color:rgba(13,44,22,.65);font-weight:700;display:flex;align-items:center;gap:4px;">
                         <i class="bi bi-arrows-fullscreen"></i> Toca para pantalla completa
                     </div>
                 </div>
                 <p style="font-size:.68rem;color:rgba(255,255,255,.6);max-width:380px;margin:0 auto 16px;">
-                    Presenta este código QR en clases presenciales o eventos institucionales para registrar tu presencia oficial.
+                    Presenta este código QR en clases presenciales o eventos institucionales para registrar tu presencia oficial. Es dinámico: cambia solo cada pocos segundos y sirve una única vez, por eso una captura de pantalla no funciona.
                 </p>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                     <button class="dash-btn dash-btn-primary" onclick="abrirQRModal()"><i class="bi bi-arrows-fullscreen"></i> Pantalla Completa</button>
-                    <button class="dash-btn dash-btn-gold" onclick="descargarQR()"><i class="bi bi-download"></i> Descargar QR</button>
+                    <button class="dash-btn dash-btn-gold" onclick="renovarQR(true)"><i class="bi bi-arrow-repeat"></i> Renovar código</button>
                 </div>
             </div>
         </div>
@@ -947,8 +953,8 @@
             </div>
             <div id="qr-modal-user" style="font-size:.85rem;font-weight:700;margin-top:14px;color:#fff"></div>
             <div id="qr-modal-cedula" style="font-size:.72rem;color:var(--dorado-claro);margin-bottom:12px;"></div>
+            <div id="qr-modal-estado" style="font-size:.66rem;color:rgba(255,255,255,.7);margin-bottom:12px;"></div>
             <div style="display:flex;gap:10px;justify-content:center;">
-                <button class="dash-btn dash-btn-gold" onclick="descargarQR()"><i class="bi bi-download"></i> Descargar</button>
                 <button class="dash-btn dash-btn-ghost" onclick="cerrarQRModal()">Cerrar ✕</button>
             </div>
         </div>
@@ -990,10 +996,13 @@
     </div>
 
     <!-- ═══ Scripts ═══ -->
-    <script src="js/api.js?v=14"></script>
+    <script src="js/api.js?v=15"></script>
+    <script src="js/localidades-py.js?v=1"></script>
+    <script src="js/catalogos-py.js?v=1"></script>
     <script src="js/session-guard.js?v=3"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
+        LocalidadesPY.configurar({ base: 'data/localidades-py/' });
         let userId = null;
         let editando = null;
         let currentUserRole = 'alumno';
@@ -1679,76 +1688,112 @@
             showToast('Foto eliminada', 'success');
         }
 
-        // === QR CODE ===
-        let qrCodeInstance = null;
-        let qrModalInstance = null;
+        // === QR CODE DINÁMICO ===
+        // El QR lleva un código que emite el servidor: vale unos segundos, se usa una sola vez y NO contiene datos personales.
+        // Se renueva solo mientras la pestaña está a la vista. Una captura de pantalla deja de servir enseguida.
         let lastQRText = '';
+        let qrExpiraAt = 0;
+        let qrTtlMs = 45000;
+        let qrPidiendo = false;
+        let qrRenovarTimer = null;
+        let qrTickTimer = null;
 
-        function generarQR(user, cedula) {
+        function qrVisible() {
+            const v = document.getElementById('view-tab-qr');
+            return !document.hidden && !!v && v.style.display !== 'none';
+        }
+
+        function qrModalAbierto() {
+            const m = document.getElementById('modal-qr-fullscreen');
+            return !!m && m.style.display === 'flex';
+        }
+
+        function dibujarQR(container, texto, size) {
+            if (!container) return;
+            container.innerHTML = '';
+            if (typeof QRCode === 'undefined') {
+                container.innerHTML = '<div style="color:#b91c1c;font-size:.7rem;padding:20px"><i class="bi bi-exclamation-triangle"></i> No se pudo cargar el generador de QR. Recarga la página.</div>';
+                return;
+            }
+            new QRCode(container, {
+                text: texto, width: size, height: size,
+                colorDark: '#0d2c16', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function qrMensaje(html) {
+            const c = document.getElementById('qr-container');
+            if (c) c.innerHTML = '<div style="color:#0d2c16;font-size:.72rem;font-weight:700;padding:24px 12px;text-align:center;line-height:1.5">' + html + '</div>';
+            const f = document.getElementById('qr-fullscreen-container');
+            if (f && qrModalAbierto()) f.innerHTML = '<div style="color:#0d2c16;font-size:.85rem;font-weight:700;padding:24px;text-align:center">' + html + '</div>';
+        }
+
+        function qrEstado(txt, pct) {
+            ['qr-estado', 'qr-modal-estado'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = txt; });
+            const bar = document.getElementById('qr-barra-fill');
+            if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        }
+
+        function qrTick() {
+            if (!qrVisible()) { clearInterval(qrTickTimer); qrTickTimer = null; return; }
+            const resta = qrExpiraAt - Date.now();
+            if (!lastQRText) return;
+            if (resta <= 0) {
+                lastQRText = '';
+                qrMensaje('<i class="bi bi-arrow-repeat"></i> Código vencido.<br>Renovando…');
+                qrEstado('Renovando…', 0);
+                renovarQR();
+                return;
+            }
+            qrEstado('Válido ' + Math.ceil(resta / 1000) + ' s · se renueva solo', resta / qrTtlMs * 100);
+        }
+
+        async function renovarQR(manual) {
+            if (qrPidiendo) return;
+            qrPidiendo = true;
+            clearTimeout(qrRenovarTimer);
+            let espera = 8000;
             try {
-                const u = user || CenturiaAPI.getCurrentUser() || {};
-                const c = cedula || u.username || u.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
-                const nombreCompleto = ((u.firstname || u.nombre || localStorage.getItem('centuria_nombre') || 'Alumno') + ' ' + (u.lastname || u.apellido || localStorage.getItem('centuria_apellido') || '')).trim();
-                
-                const datos = {
-                    tipo: 'credencial_asistencia',
-                    institucion: 'CENTURIA',
-                    nombre: u.firstname || u.nombre || localStorage.getItem('centuria_nombre') || 'Alumno',
-                    apellido: u.lastname || u.apellido || localStorage.getItem('centuria_apellido') || '',
-                    cedula: c,
-                    grado: u.grado || localStorage.getItem('centuria_grado') || '-',
-                    carrera: u.carrera || localStorage.getItem('centuria_carrera') || '-',
-                    seccion: u.seccion || localStorage.getItem('centuria_seccion') || '-',
-                    timestamp: new Date().toISOString()
-                };
-                
-                lastQRText = JSON.stringify(datos);
-                
-                const cardCedulaEl = document.getElementById('qr-card-cedula');
-                if (cardCedulaEl) {
-                    cardCedulaEl.textContent = c ? ('C.I. N° ' + Number(c).toLocaleString('es-PY')) : 'C.I. N° —';
+                const d = await CenturiaAPI.credencial.generar();
+                if (!d || d.ok === false) throw new Error((d && d.error) || 'Sin respuesta del servidor');
+                lastQRText = d.codigo;
+                qrTtlMs = (Number(d.expira_en) || 45) * 1000;
+                qrExpiraAt = Date.now() + qrTtlMs;
+                dibujarQR(document.getElementById('qr-container'), lastQRText, 200);
+                if (qrModalAbierto()) {
+                    const fs = document.getElementById('qr-fullscreen-container');
+                    dibujarQR(fs, lastQRText, Math.round(fs.getBoundingClientRect().width) || 300);
                 }
-
-                const container = document.getElementById('qr-container');
-                if (!container) return;
-                container.innerHTML = '';
-
-                // Método 1: Librería QRCode (qrcodejs / qrcode.js)
-                if (typeof QRCode !== 'undefined') {
-                    try {
-                        qrCodeInstance = new QRCode(container, {
-                            text: lastQRText,
-                            width: 200,
-                            height: 200,
-                            colorDark: '#0d2c16',
-                            colorLight: '#ffffff',
-                            correctLevel: (typeof QRCode.CorrectLevel !== 'undefined') ? QRCode.CorrectLevel.M : 2
-                        });
-                        return;
-                    } catch (errQ) {
-                        console.warn('Fallo render inicial QRCode, aplicando fallback...', errQ);
-                    }
+                qrTick();
+                espera = (Number(d.renovar_en) || 25) * 1000;
+            } catch (e) {
+                console.warn('QR dinámico:', e);
+                // Nunca se deja a la vista un código que ya venció
+                if (Date.now() >= qrExpiraAt) {
+                    lastQRText = '';
+                    qrMensaje('<i class="bi bi-wifi-off"></i> No se pudo obtener el código.<br>Reintentando…');
+                    qrEstado('Sin conexión con el servidor', 0);
                 }
-
-                // Método 2 Fallback API QR de alta confiabilidad
-                const encodedData = encodeURIComponent(lastQRText);
-                const qrImg = document.createElement('img');
-                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0d2c16&bgcolor=ffffff&data=${encodedData}`;
-                qrImg.alt = 'Código QR de Asistencia';
-                qrImg.style.width = '200px';
-                qrImg.style.height = '200px';
-                qrImg.style.borderRadius = '8px';
-                qrImg.crossOrigin = 'anonymous';
-                container.appendChild(qrImg);
-
-            } catch(e) {
-                console.error('Error generando QR:', e);
-                const container = document.getElementById('qr-container');
-                if (container) {
-                    container.innerHTML = '<div style="color:#ef4444;font-size:.7rem;padding:20px"><i class="bi bi-exclamation-triangle"></i> Error al generar QR</div>';
-                }
+                if (manual) showToast(e.message || 'No se pudo renovar el código', 'error');
+                if (/Espera/i.test(e.message || '')) espera = 4000;
+            } finally {
+                qrPidiendo = false;
+                qrRenovarTimer = setTimeout(() => { if (qrVisible()) renovarQR(); }, espera);
             }
         }
+
+        // Punto de entrada (se llama al abrir la pestaña y tras editar el perfil). Los argumentos ya no se usan:
+        // el servidor toma la cédula de la sesión.
+        function generarQR() {
+            if (!qrVisible()) return;
+            const cedula = (CenturiaAPI.getCurrentUser() || {}).username || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            const el = document.getElementById('qr-card-cedula');
+            if (el) el.textContent = cedula ? ('C.I. N° ' + (Number(cedula) ? Number(cedula).toLocaleString('es-PY') : cedula)) : 'C.I. N° —';
+            if (!qrTickTimer) qrTickTimer = setInterval(qrTick, 1000);
+            if (!lastQRText || Date.now() > qrExpiraAt - 8000) renovarQR();
+        }
+        document.addEventListener('visibilitychange', () => { if (qrVisible()) generarQR(); });
 
         function abrirQRModal() {
             const modal = document.getElementById('modal-qr-fullscreen');
@@ -1758,37 +1803,19 @@
             const u = CenturiaAPI.getCurrentUser() || {};
             const c = u.username || u.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
             const nombreCompleto = ((u.firstname || u.nombre || localStorage.getItem('centuria_nombre') || 'Alumno') + ' ' + (u.lastname || u.apellido || localStorage.getItem('centuria_apellido') || '')).trim();
-
             const userEl = document.getElementById('qr-modal-user');
             const cedEl = document.getElementById('qr-modal-cedula');
             if (userEl) userEl.textContent = nombreCompleto;
             if (cedEl) cedEl.textContent = 'C.I. N° ' + c;
 
-            fsContainer.innerHTML = '';
-            const modalSize = Math.min(Math.min(window.innerWidth * 0.75, window.innerHeight * 0.75), 420);
-
-            if (typeof QRCode !== 'undefined' && lastQRText) {
-                try {
-                    qrModalInstance = new QRCode(fsContainer, {
-                        text: lastQRText,
-                        width: modalSize,
-                        height: modalSize,
-                        colorDark: '#0d2c16',
-                        colorLight: '#ffffff',
-                        correctLevel: (typeof QRCode.CorrectLevel !== 'undefined') ? QRCode.CorrectLevel.M : 2
-                    });
-                } catch(e) {
-                    const encodedData = encodeURIComponent(lastQRText);
-                    fsContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${modalSize}x${modalSize}&color=0d2c16&bgcolor=ffffff&data=${encodedData}" style="width:${modalSize}px;height:${modalSize}px;border-radius:12px;" alt="QR Fullscreen">`;
-                }
-            } else if (lastQRText) {
-                const encodedData = encodeURIComponent(lastQRText);
-                fsContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${modalSize}x${modalSize}&color=0d2c16&bgcolor=ffffff&data=${encodedData}" style="width:${modalSize}px;height:${modalSize}px;border-radius:12px;" alt="QR Fullscreen">`;
-            } else {
-                generarQR();
-            }
-
             modal.style.display = 'flex';
+            if (lastQRText && Date.now() < qrExpiraAt) {
+                dibujarQR(fsContainer, lastQRText, Math.round(fsContainer.getBoundingClientRect().width) || 300);
+                qrTick();
+            } else {
+                qrMensaje('<i class="bi bi-arrow-repeat"></i> Generando código…');
+                renovarQR();
+            }
         }
 
         function cerrarQRModal() {
@@ -1796,73 +1823,8 @@
             if (modal) modal.style.display = 'none';
         }
 
-        async function descargarQR() {
-            try {
-                const container = document.getElementById('modal-qr-fullscreen')?.style.display === 'flex'
-                    ? document.getElementById('qr-fullscreen-container')
-                    : document.getElementById('qr-container');
-                if (!container) return;
-
-                const canvas = container.querySelector('canvas');
-                const img = container.querySelector('img');
-                const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || 'Estudiante';
-                const filename = `Credencial_QR_${ced}.png`;
-
-                if (canvas) {
-                    const a = document.createElement('a');
-                    a.href = canvas.toDataURL('image/png');
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    showToast('QR descargado exitosamente', 'success');
-                    return;
-                }
-
-                if (img && img.src) {
-                    if (img.src.startsWith('data:')) {
-                        const a = document.createElement('a');
-                        a.href = img.src;
-                        a.download = filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        showToast('QR descargado exitosamente', 'success');
-                        return;
-                    }
-
-                    // Descargar imagen remota convirtiéndola a blob canvas
-                    try {
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = 200;
-                        tempCanvas.height = 200;
-                        const ctx = tempCanvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, 200, 200);
-                        const a = document.createElement('a');
-                        a.href = tempCanvas.toDataURL('image/png');
-                        a.download = filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        showToast('QR descargado exitosamente', 'success');
-                        return;
-                    } catch (eBlob) {
-                        window.open(img.src, '_blank');
-                        showToast('QR abierto para descargar', 'success');
-                        return;
-                    }
-                }
-
-                showToast('Generando QR...', 'error');
-            } catch(e) {
-                console.error('Error al descargar QR:', e);
-                showToast('Error al descargar código QR', 'error');
-            }
-        }
-
-        // === EDICIÓN DE CAMPOS ===
-        // Grado, Carrera y Sección NO se escriben a mano: se eligen de la base de datos (planilla: Grados, Carreras, Secciones).
-        const CAMPOS_CATALOGO = ['grado', 'carrera', 'seccion'];
+        // === EDICIÓN DE CAMPOS CON CATÁLOGOS Y API DE LOCALIDADES PY ===
+        const CAMPOS_CATALOGO = ['grado', 'carrera', 'seccion', 'departamento', 'ciudad', 'barrio', 'nacionalidad', 'estado_civil'];
         const CACHE_CATALOGO = { grado: 'centuria_cache_grados', carrera: 'centuria_cache_carreras', seccion: 'centuria_cache_secciones' };
 
         async function opcionesCatalogo(field, user) {
@@ -1874,10 +1836,44 @@
                 } else if (field === 'carrera') {
                     const d = await CenturiaAPI.catalogos.getCarreras(user.grado || '');
                     lista = d.carreras || d.items || [];
-                } else {
+                } else if (field === 'seccion') {
                     const d = await CenturiaAPI.catalogos.getSecciones();
                     lista = d.secciones || d.items || [];
+                } else if (field === 'departamento') {
+                    if (typeof LocalidadesPY !== 'undefined') {
+                        const deps = await LocalidadesPY.departamentos();
+                        return deps.map(d => d.n);
+                    }
+                } else if (field === 'ciudad') {
+                    if (typeof LocalidadesPY !== 'undefined') {
+                        let depCod = null;
+                        const depNombre = user.departamento || localStorage.getItem('centuria_departamento') || '';
+                        if (depNombre) {
+                            const deps = await LocalidadesPY.departamentos();
+                            const foundDep = LocalidadesPY.buscarPorNombre(deps, depNombre);
+                            if (foundDep) depCod = foundDep.c;
+                        }
+                        const cius = await LocalidadesPY.ciudades(depCod);
+                        return cius.map(c => c.n);
+                    }
+                } else if (field === 'barrio') {
+                    if (typeof LocalidadesPY !== 'undefined') {
+                        let ciuCod = null;
+                        const ciuNombre = user.ciudad || localStorage.getItem('centuria_ciudad') || '';
+                        if (ciuNombre) {
+                            const cius = await LocalidadesPY.ciudades();
+                            const foundCiu = LocalidadesPY.buscarPorNombre(cius, ciuNombre);
+                            if (foundCiu) ciuCod = foundCiu.c;
+                        }
+                        const bars = await LocalidadesPY.barrios(ciuCod);
+                        return bars.map(b => b.n);
+                    }
+                } else if (field === 'nacionalidad') {
+                    return (typeof window.CV_NACIONALIDADES !== 'undefined') ? window.CV_NACIONALIDADES : ['Paraguaya', 'Argentina', 'Brasileña', 'Uruguaya', 'Boliviana', 'Chilena', 'Española', 'Otra'];
+                } else if (field === 'estado_civil') {
+                    return (typeof window.CV_ESTADOS_CIVILES !== 'undefined') ? window.CV_ESTADOS_CIVILES : ['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a'];
                 }
+
                 if (!lista.length) throw new Error('catálogo vacío');
                 try { localStorage.setItem(CACHE_CATALOGO[field], JSON.stringify(lista)); } catch (x) {}
             } catch (e) {
@@ -1909,6 +1905,15 @@
                 showToast('Primero elige tu grado para ver las carreras.', 'error');
                 return;
             }
+            if (field === 'ciudad' && !String(userAct.departamento || localStorage.getItem('centuria_departamento') || '').trim()) {
+                showToast('Primero elige tu Departamento para listar los Distritos / Ciudades.', 'error');
+                return;
+            }
+            if (field === 'barrio' && !String(userAct.ciudad || localStorage.getItem('centuria_ciudad') || '').trim()) {
+                showToast('Primero elige tu Ciudad para listar los Barrios / Compañías.', 'error');
+                return;
+            }
+
             editando = el;
             const actual = el.textContent.trim();
             const actualVacio = ['-', 'No registrado', 'No asignado', 'No asignada'].includes(actual);
@@ -1919,13 +1924,13 @@
             if (!opciones.length) {
                 el.textContent = actualVacio ? '-' : actual;
                 editando = null;
-                showToast('No se pudo cargar la lista desde la base de datos. Intenta de nuevo.', 'error');
+                showToast('No se encontraron registros para esta selección. Intenta de nuevo.', 'error');
                 return;
             }
-            const etiqueta = { grado: 'grado', carrera: 'carrera', seccion: 'sección' }[field];
+            const etiqueta = { grado: 'grado', carrera: 'carrera', seccion: 'sección', departamento: 'departamento', ciudad: 'distrito / ciudad', barrio: 'barrio / localidad', nacionalidad: 'nacionalidad', estado_civil: 'estado civil' }[field] || field;
             const enLista = opciones.some(o => normTxt(o) === normTxt(actual));
             let html = `<select class="profile-data-select" data-original="${escHtml(actualVacio ? '' : actual)}" data-texto="${escHtml(actual)}" aria-label="Elegir ${etiqueta}">`;
-            if (!enLista) html += `<option value="" selected disabled>${actualVacio ? 'Elige tu ' + etiqueta + '…' : escHtml(actual) + ' (no está en la base de datos)'}</option>`;
+            if (!enLista) html += `<option value="" selected disabled>${actualVacio ? 'Elige tu ' + etiqueta + '…' : escHtml(actual) + ' (personalizado)'}</option>`;
             html += opciones.map(o => `<option value="${escHtml(o)}"${normTxt(o) === normTxt(actual) ? ' selected' : ''}>${escHtml(o)}</option>`).join('');
             html += '</select>';
             el.innerHTML = html;

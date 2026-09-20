@@ -12,8 +12,8 @@
 //   Académico aprueba/rechaza/revoca cada examen ANTES de que los alumnos puedan rendirlo.
 //   exam-lock.js consulta examen_estado_aprobacion.
 //
-// Requiere 02_Examenes_Factura.gs (comparte CV_TZ, cvExamHoja, cvExamFilas, cvExamTxt, CV_EXAM_PAGINAS, CV_EXAM_NOMBRES,
-// cvExamenValidarId) y las utilidades cvAuth* de 01_Script_Cloud_Completo.gs.
+// Requiere 02_Examenes_Factura_v08.4.gs (comparte CV_TZ, cvExamHoja, cvExamFilas, cvExamTxt, CV_EXAM_PAGINAS, CV_EXAM_NOMBRES,
+// cvExamenValidarId) y las utilidades cvAuth* de 01_Script_Cloud_Completo_v08.4.1.gs.
 // ══════════════════════════════════════════════════════════════
 
 var CV_ROLES_ASIGNADORES = ['academico', 'académico', 'academic', 'admin', 'administrador', 'administrador_plataforma', 'admin_plataforma'];

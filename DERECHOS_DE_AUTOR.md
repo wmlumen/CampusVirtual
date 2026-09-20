@@ -10,7 +10,7 @@ Copyright © 2026. Todos los derechos reservados.
 
 * **Arquitectura de Software**: Plataforma de Gestión de Aprendizaje (LMS Propio y Autónomo) optimizada para ejecución estática en GitHub Pages con persistencia en Infraestructura Cloud Serverless.
 * **Código Fuente de Frontend**: Toda la implementación en HTML5, CSS3, JavaScript nativo, integración Alpine.js y adaptadores de comunicación (`CenturiaAPI`, `CenturiaSession`).
-* **Controladores Cloud**: Lógica de negocio y servicios en backend cloud (`app/Backend_Scripts/01_Script_Cloud_Completo.gs`), estructuras de datos en Base de Datos Cloud y gestión de archivos en Almacenamiento Cloud.
+* **Controladores Cloud**: Lógica de negocio y servicios en backend cloud (`app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs`), estructuras de datos en Base de Datos Cloud y gestión de archivos en Almacenamiento Cloud.
 * **Diseño e Identidad Visual**: Paleta cromática oficial, componentes de interfaz de usuario, tipografía institucional y experiencia de usuario.
 * **Contenidos y Programas Curriculares**: Material didáctico, unidades temáticas, guías de estudio, instrumentos de evaluación y recursos alojados en `app/Materiales_Clases/`.
 

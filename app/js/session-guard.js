@@ -1,6 +1,9 @@
 /**
  * session-guard.js — Protección y control estricto de sesiones y roles en Campus Virtual Centuria
  * Verifica tokens, tiempo de expiración (8h), correspondencia de roles y realiza validación en segundo plano.
+ *
+ * v08.5.1 (2026-09-20): la raíz de la app se deduce del propio <script src>; no redirige a la página actual
+ *          (corrige bucle no_session en index.html). Los HTML lo cargan con ?v=2 para evitar caché vieja.
  */
 (function (global) {
     'use strict';

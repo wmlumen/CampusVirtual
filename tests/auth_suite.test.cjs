@@ -150,7 +150,7 @@ function createGasContext(mockSS, mockCache) {
     sandbox.global = sandbox;
 
     const ctx = vm.createContext(sandbox);
-    const gasCode = fs.readFileSync(path.join(__dirname, '../app/Backend_Scripts/01_Script_Cloud_Completo.gs'), 'utf8');
+    const gasCode = fs.readFileSync(path.join(__dirname, '../app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs'), 'utf8');
     vm.runInContext(gasCode, ctx);
     return ctx;
 }

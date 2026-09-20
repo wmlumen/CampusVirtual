@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN v08.4
+ * SCRIPT BACKEND CENTURIA - VERSIÓN v08.4.1
  * Cursos activos (grado + carrera + sección) + nómina de alumnos + asignación de docentes
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  *
@@ -35,12 +35,15 @@
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
+ * v08.4.1 (2026-09-20): Catálogos (Grados/Carreras/Secciones) tolerantes: encabezados sin distinguir mayúsculas/tildes,
+ *         Nombre<->Codigo de respaldo, pestaña por nombre aproximado y respaldo por gid para Secciones;
+ *         listar_secciones vacío devuelve _diag (pestañas y encabezados). Sin cambios en 02 ni 03.
  * v08.4 (2026-09-20): Cursos activos: grado + carrera + sección con nómina independiente de usuarios.
  *         Asignación de múltiples docentes/asignaturas por curso.
  *         Hojas: Cursos, NominaCurso; rutas: cursos_listar, curso_guardar, curso_nomina_*, asignacion_*.
- *         (ver 03_Asignaciones_Academico.gs; lógica de examen en 02_Examenes_Factura.gs)
+ *         (ver 03_Asignaciones_Academico_v08.4.gs; lógica de examen en 02_Examenes_Factura_v08.4.gs)
  * v08.1 (2026-09-19): Exámenes por factura: el alumno carga su N° de factura, recibe enlace + clave por mail,
- *         el docente fija fecha/hora de inicio y cierre e intentos (ver 02_Examenes_Factura.gs;
+ *         el docente fija fecha/hora de inicio y cierre e intentos (ver 02_Examenes_Factura_v08.4.gs;
  *         hojas ConfigExamen, AccesoExamen, IntentosExamen)
  * v07.1 (2026-09-16): CONSTRUCTOR ACADÉMICO (hojas propias SubjectDrafts/Programs/Units/
  *         Blocks/Activities/Evaluations/QuestionBank/Reviews + CRUD + flujo editorial +
@@ -191,7 +194,7 @@ function doGet(e) {
     return responderJSON({ cursos: cursos });
   }
 
-  // ── EXÁMENES POR FACTURA v08.1 (lógica en 02_Examenes_Factura.gs) ──
+  // ── EXÁMENES POR FACTURA v08.1 (lógica en 02_Examenes_Factura_v08.4.gs) ──
   if (action === 'pagos_ultimos' || action === 'examen_config_listar' || action === 'examen_config_publica' || action === 'examen_solicitudes') {
     try {
       if (action === 'pagos_ultimos') return responderJSON(cvPagosUltimos(ss, e.parameter));
@@ -201,7 +204,7 @@ function doGet(e) {
     } catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
-  // ── ACCESO ACADÉMICO v08.2 (lógica en 03_Asignaciones_Academico.gs) ──
+  // ── ACCESO ACADÉMICO v08.2 (lógica en 03_Asignaciones_Academico_v08.4.gs) ──
   if (action === 'asignaciones_docentes' || action === 'examen_listar_pendientes_aprobacion' || action === 'examen_estado_aprobacion') {
     try {
       if (action === 'asignaciones_docentes') return responderJSON(cvAsigDocentesListar(ss, e.parameter));
@@ -389,7 +392,18 @@ function doGet(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
   if (action === 'listar_secciones') {
-    try { return responderJSON({ secciones: listarCatalogoSimple(ss, 'Secciones') }); }
+    try {
+      var secs = listarCatalogoSimple(ss, 'Secciones');
+      var resp = { secciones: secs };
+      if (!secs.length) { // diagnóstico: solo nombres de pestañas y encabezados (sin datos de alumnos)
+        resp._diag = ss.getSheets().map(function (h) {
+          var cols = h.getLastColumn();
+          return { hoja: h.getName(), gid: h.getSheetId(), filas: h.getLastRow(),
+                   encabezados: (cols > 0 && h.getLastRow() > 0) ? h.getRange(1, 1, 1, Math.min(cols, 15)).getValues()[0] : [] };
+        });
+      }
+      return responderJSON(resp);
+    }
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
@@ -645,7 +659,7 @@ function doPost(e) {
     catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
-  // ── EXÁMENES POR FACTURA v08.1 (lógica en 02_Examenes_Factura.gs) ──
+  // ── EXÁMENES POR FACTURA v08.1 (lógica en 02_Examenes_Factura_v08.4.gs) ──
   if (data.action === 'examen_config_guardar' || data.action === 'examen_solicitar' ||
       data.action === 'examen_resolver' || data.action === 'examen_acceso_validar') {
     try {
@@ -656,7 +670,7 @@ function doPost(e) {
     } catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
-  // ── ACCESO ACADÉMICO v08.2 (lógica en 03_Asignaciones_Academico.gs) ──
+  // ── ACCESO ACADÉMICO v08.2 (lógica en 03_Asignaciones_Academico_v08.4.gs) ──
   if (['asignacion_guardar', 'asignacion_revocar', 'asignacion_docente_decidir', 'examen_aprobar', 'examen_rechazar', 'examen_revocar_aprobacion'].indexOf(data.action) >= 0) {
     try {
       if (data.action === 'asignacion_guardar') return responderJSON(cvAsigGuardar(ss, data));
@@ -3181,26 +3195,71 @@ function listarAsignaturas(ss) {
 }
 
 // Lee una hoja de catálogo y devuelve [{nombre, codigo, grado, carrera}] (v06.5)
-function listarCatalogoSimple(ss, nombreHoja) {
-  var sheet = ss.getSheetByName(nombreHoja);
-  if (!sheet) return [];
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var idx = {};
-  for (var j = 0; j < headers.length; j++) idx[headers[j]] = j;
+// ── Catálogos simples (Grados / Carreras / Secciones) ─────────────────────────
+// Tolerante con la planilla: encabezados sin distinguir mayúsculas/tildes ("codigo", "Código",
+// "CODIGO"), nombre de pestaña sin distinguir mayúsculas/singular ("Seccion"), y si falta la
+// columna Nombre se usa Codigo (y al revés). Solo se omite la fila si NO tiene ni nombre ni código.
+var CV_SECCIONES_GID = 626602208; // pestaña de la planilla con las secciones (respaldo si "Secciones" no da filas)
+
+function _catNorm(v) {
+  return String(v == null ? '' : v).trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function _catHoja(ss, nombreHoja) {
+  var exacta = ss.getSheetByName(nombreHoja);
+  if (exacta) return exacta;
+  var want = _catNorm(nombreHoja), sing = want.replace(/(es|s)$/, '');
+  var hojas = ss.getSheets();
+  for (var i = 0; i < hojas.length; i++) {
+    var n = _catNorm(hojas[i].getName());
+    if (n === want || n === sing) return hojas[i];
+  }
+  return null;
+}
+
+function _catLeer(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
   var data = sheet.getDataRange().getValues();
+  var idx = {};
+  for (var j = 0; j < data[0].length; j++) {
+    var k = _catNorm(data[0][j]);
+    if (k && idx[k] === undefined) idx[k] = j;
+  }
+  function col(row, nombres) {
+    for (var n = 0; n < nombres.length; n++) {
+      if (idx[nombres[n]] !== undefined) return row[idx[nombres[n]]];
+    }
+    return '';
+  }
   var out = [];
   for (var i = 1; i < data.length; i++) {
-    var nombre = (idx['Nombre'] !== undefined ? data[i][idx['Nombre']] : '') || '';
-    if (!nombre) continue;
-    var act = idx['Activo'] !== undefined ? data[i][idx['Activo']] : '';
-    var off = act === false || act === 0 || act === '0' || ['false', 'no', 'inactivo', 'inactiva'].indexOf(String(act).toLowerCase()) >= 0;
+    var row = data[i];
+    var nombre = String(col(row, ['nombre', 'seccion', 'descripcion']) || '').trim();
+    var codigo = String(col(row, ['codigo', 'cod', 'code']) || '').trim();
+    if (!nombre && !codigo) continue;
+    if (!nombre) nombre = codigo;
+    var act = col(row, ['activo', 'estado']);
+    var off = act === false || act === 0 || act === '0' ||
+      ['false', 'no', 'inactivo', 'inactiva'].indexOf(_catNorm(act)) >= 0;
     if (off) continue;
     out.push({
-      nombre: nombre.toString(),
-      codigo: (idx['Codigo'] !== undefined ? data[i][idx['Codigo']] : '') || '',
-      grado: (idx['Grado'] !== undefined ? data[i][idx['Grado']] : '') || '',
-      carrera: (idx['Carrera'] !== undefined ? data[i][idx['Carrera']] : '') || ''
+      nombre: nombre,
+      codigo: codigo,
+      grado: String(col(row, ['grado']) || '').trim(),
+      carrera: String(col(row, ['carrera']) || '').trim()
     });
+  }
+  return out;
+}
+
+function listarCatalogoSimple(ss, nombreHoja) {
+  var out = _catLeer(_catHoja(ss, nombreHoja));
+  if (!out.length && nombreHoja === 'Secciones') {
+    var hojas = ss.getSheets();
+    for (var i = 0; i < hojas.length; i++) {
+      if (hojas[i].getSheetId() === CV_SECCIONES_GID) { out = _catLeer(hojas[i]); break; }
+    }
   }
   return out;
 }

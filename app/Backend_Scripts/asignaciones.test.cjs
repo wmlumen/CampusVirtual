@@ -1,5 +1,5 @@
-// Prueba de 03_Asignaciones_Academico.gs (asignación de docentes y aprobación de exámenes) con Sheets simulados.
-// Ejecutar: node asignaciones.test.cjs   (junto a 02_Examenes_Factura.gs y 03_Asignaciones_Academico.gs)
+// Prueba de 03_Asignaciones_Academico_v08.4.gs (asignación de docentes y aprobación de exámenes) con Sheets simulados.
+// Ejecutar: node asignaciones.test.cjs   (junto a 02_Examenes_Factura_v08.4.gs y 03_Asignaciones_Academico_v08.4.gs)
 const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -63,8 +63,8 @@ const context = {
   cvAuthFindUser: (s, c) => context.cvAuthGetAllUsers().filter(u => norm(u.cedula) === norm(c))[0] || null
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '02_Examenes_Factura.gs'), 'utf8'), context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '03_Asignaciones_Academico.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '02_Examenes_Factura_v08.4.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '03_Asignaciones_Academico_v08.4.gs'), 'utf8'), context);
 const J = x => JSON.parse(JSON.stringify(x));
 const F = context;
 

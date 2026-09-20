@@ -52,7 +52,7 @@ Copyright © 2026. Todos los derechos reservados.
 | **Frontend Estático** | HTML5, CSS3, JavaScript (ES6+), Alpine.js, Tailwind CSS, Bootstrap 5 | Interfaz moderna, responsiva, accesible y reactiva sin necesidad de empaquetador. |
 | **Tipografía e Iconografía** | Montserrat (vía Bunny Fonts CDN privado), Bootstrap Icons | Identidad visual corporativa de alta legibilidad y componentes vectoriales. |
 | **Capa de Abstracción API** | `app/js/api.js` (CenturiaAPI v12), `app/js/session-guard.js` | Conector universal asíncrono para consumo de endpoints serverless en la nube. |
-| **Backend Cloud Serverless** | Web App Cloud Serverless ([`app/Backend_Scripts/01_Script_Cloud_Completo.gs`](app/Backend_Scripts/01_Script_Cloud_Completo.gs)) | API REST en la nube con `LockService` para control de concurrencia y hashing criptográfico. |
+| **Backend Cloud Serverless** | Web App Cloud Serverless ([`app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs`](app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs)) | API REST en la nube con `LockService` para control de concurrencia y hashing criptográfico. |
 | **Base de Datos Cloud** | Base de Datos Cloud (`BasedeDatosCampus`) | Persistencia estructurada de usuarios, sesiones, calificaciones, pagos y matrículas. |
 | **Almacenamiento Multimedia** | Almacenamiento Cloud Seguro | Almacenamiento institucional de fotos de perfil y respaldos documentales. |
 | **Alojamiento y Despliegue** | GitHub Actions, GitHub Pages (HTTPS) | Distribución global estática de alta disponibilidad y tolerancia a fallos. |
@@ -114,7 +114,7 @@ CampusVirtual/
 │   ├── Materiales_Clases/       # Contenidos educativos y materias curriculares (PRESERVADOS)
 │   │
 │   └── Backend_Scripts/         # Código fuente de los controladores serverless
-│       ├── 01_Script_Cloud_Completo.gs # Script de producción para backend cloud
+│       ├── 01_Script_Cloud_Completo_v08.4.1.gs # Script de producción para backend cloud
 │       └── LEER_INSTRUCCIONES.md# Guía de publicación y actualización del backend
 │
 └── tests/                       # Banco de pruebas automatizadas

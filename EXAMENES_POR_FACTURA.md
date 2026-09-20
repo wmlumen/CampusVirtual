@@ -15,8 +15,8 @@
 
 | Archivo | Qué hace |
 |---|---|
-| `app/Backend_Scripts/02_Examenes_Factura.gs` | Lógica del servidor (**archivo nuevo: hay que agregarlo al proyecto de Apps Script junto con el 01**) |
-| `app/Backend_Scripts/01_Script_Cloud_Completo.gs` | 8 rutas nuevas (`pagos_ultimos`, `examen_config_listar`, `examen_config_publica`, `examen_solicitudes`, `examen_config_guardar`, `examen_solicitar`, `examen_resolver`, `examen_acceso_validar`) |
+| `app/Backend_Scripts/02_Examenes_Factura_v08.4.gs` | Lógica del servidor (**archivo nuevo: hay que agregarlo al proyecto de Apps Script junto con el 01**) |
+| `app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs` | 8 rutas nuevas (`pagos_ultimos`, `examen_config_listar`, `examen_config_publica`, `examen_solicitudes`, `examen_config_guardar`, `examen_solicitar`, `examen_resolver`, `examen_acceso_validar`) |
 | `app/js/api.js` | Métodos en `CenturiaAPI.exams` |
 | `app/js/exam-lock.js` | Pantalla de acceso del alumno (reemplaza el código compartido por clave personal por mail) |
 | `app/docente.html` | Panel de habilitación y solicitudes |
@@ -26,7 +26,7 @@ Hojas nuevas (se crean solas): `ConfigExamen`, `AccesoExamen` (la clave se guard
 
 ## Puesta en marcha
 
-1. En Apps Script: agregar `02_Examenes_Factura.gs` y reemplazar `01_Script_Cloud_Completo.gs`; **Implementar → Nueva versión**.
+1. En Apps Script: agregar `02_Examenes_Factura_v08.4.gs` y reemplazar `01_Script_Cloud_Completo_v08.4.1.gs`; **Implementar → Nueva versión**.
 2. La primera vez que se envíe un mail, Google pide autorizar el envío de correo (`MailApp`).
 3. Propiedades del script (opcionales): `EXAM_BASE_URL` (por defecto `https://wmlumen.github.io/CampusVirtual/app/`) y `EXAM_MAIL_REMITENTE` (reply-to de los mails).
 4. Requisito de datos: el alumno debe tener **email** en `Usuarios` y sus pagos deben registrarse con el **N° de factura** en la hoja `Pagos` (columna `Factura`).

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js"></script>
+    <script src="./js/session-guard.js?v=2"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -80,14 +80,13 @@
         <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
         <div class="topbar-nav">
             <a href="dashboard.html">Dashboard</a>
-            <a href="perfil.html">Perfil</a>
             <a href="formulario-matricula.html" class="active">Matrícula</a>
         </div>
     </div>
 
     <div class="wrap">
         <div class="breadcrumb">
-            <a href="dashboard.html">Inicio</a> / <a href="perfil.html">Mi Perfil</a> / Formulario de Matrícula
+            <a href="dashboard.html">Inicio</a> / Formulario de Matrícula
         </div>
 
         <div class="form-card">
@@ -524,7 +523,7 @@
 
                 <!-- ═══ BOTONES ═══ -->
                 <div class="btns no-print">
-                    <button type="button" class="btn btn-secondary" onclick="location.href='perfil.html'"><i class="bi bi-arrow-left"></i> Volver</button>
+                    <button type="button" class="btn btn-secondary" onclick="location.href='dashboard.html'"><i class="bi bi-arrow-left"></i> Volver</button>
                     <button type="button" class="btn btn-print" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
                     <button type="button" class="btn btn-primary" id="btn-guardar" onclick="guardarMatricula()"><i class="bi bi-check-lg"></i> Guardar Matrícula</button>
                 </div>
@@ -535,7 +534,7 @@
     <div class="loader" id="global-loader"><div class="loader-spinner"></div></div>
     <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
 
-    <script src="js/api.js?v=12"></script>
+    <script src="js/api.js?v=13"></script>
     <script>
     (function(){
         const token = CenturiaAPI.getToken();

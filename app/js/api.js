@@ -1,14 +1,15 @@
-// api.js - Centuria Portal API Client (v12)
+// api.js - Centuria Portal API Client (v13)
+// v13 (2026-09-20): GAS_URL apunta al despliegue con backend v08.4.1 (catálogos tolerantes, secciones desde la planilla).
 // Cliente unificado para Servidor Cloud + Base de Datos / Almacenamiento Cloud
 // 100% compatible con GitHub Pages (sin dependencia de PHP ni SQLite)
 // Usado por: index.html, dashboard.html, docente.html, libreta.html, attendance.html,
-//            calendario.html, formulario-matricula.html, tesoreria.html, perfil.html, admin/
+//            calendario.html, formulario-matricula.html, tesoreria.html, admin/
 
 const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'academico',inactive:'inactivo'};
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
 // Servidor Cloud URL (planilla BasedeDatosCampus = única base en la nube).
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbymm5cpXSVOEBl6ayUQVMk59TfecOZqpErZ9zRLkD4kPAvXUBnYuf14UDf8Bk5w4-EP/exec';
 
 // Configuración central institucional
 window.CENTURIA_CONFIG = {

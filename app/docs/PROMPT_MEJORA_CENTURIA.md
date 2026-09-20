@@ -3,7 +3,7 @@
 > Úsalo como instrucción para el agente ejecutor. No avances de fase sin cumplir los criterios de aceptación.
 
 ## 0. Reglas del juego
-- Stack: PHP 7.4 + SQLite (`api/centuria.db`), frontend estático en GitHub Pages (`app/` → raíz), Servidor Cloud (`app/Backend_Scripts/01_Script_Cloud_Completo.gs`) + planilla **TIC DATOS** (`1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`).
+- Stack: PHP 7.4 + SQLite (`api/centuria.db`), frontend estático en GitHub Pages (`app/` → raíz), Servidor Cloud (`app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs`) + planilla **TIC DATOS** (`1TRxrgXIojONTrszwF9cmgJn75qx-zUbacjRzwrT8xeo`).
 - URL GAS oficial: `https://script.google.com/macros/s/AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI/exec` (planilla BasedeDatosCampus; anteriores obsoletas).
 - Prohibido romper lo que funciona: cada cambio se prueba con los comandos de §5 antes de commitear.
 - Commits atómicos en español + push a `main` (Pages redespliega solo).

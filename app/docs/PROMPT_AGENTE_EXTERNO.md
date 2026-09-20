@@ -14,10 +14,10 @@ implementa, prueba y verifica en producción.
 ## 0. Estado real verificado (NO lo redescubras, parte de aquí)
 
 - Frontend estático en GitHub Pages (se publica `app/` a la raíz vía `.github/workflows/deploy-pages.yml`).
-- Backend en la nube: **Servidor Cloud v06.8** en repo (`app/Backend_Scripts/01_Script_Cloud_Completo.gs`,
+- Backend en la nube: **Servidor Cloud v06.8** en repo (`app/Backend_Scripts/01_Script_Cloud_Completo_v08.4.1.gs`,
   archivo único, sintaxis validada) + planilla **BasedeDatosCampus** (`1ekVxeLfFDdhXBpqgF_9NQCBenF8iR7s8TfsHfmc66I4`).
 - URL GAS oficial y única:
-  `https://script.google.com/macros/s/AKfycbxek9YPO_GaFBMwqrBnmzqt9Ooh1w7VP9kbfTN64y-af9PrhWyZ_xWkdT5IFpwAIcR1/exec`
+  `https://script.google.com/macros/s/AKfycbymm5cpXSVOEBl6ayUQVMk59TfecOZqpErZ9zRLkD4kPAvXUBnYuf14UDf8Bk5w4-EP/exec`
 - Backend local: PHP 7.4 + SQLite (`api/centuria.db`), solo en la PC del administrador.
 - Frontend ya trae fallbacks offline (login/registro/recuperación/roles/catálogos vía GAS + local). **Funcionan y están
   verificados: NO los quites.**

@@ -1,4 +1,4 @@
-// Prueba de 02_Examenes_Factura.gs con Sheets/Mail simulados (no toca la planilla real).
+// Prueba de 02_Examenes_Factura_v08.4.gs con Sheets/Mail simulados (no toca la planilla real).
 // Ejecutar: node examenes.test.cjs
 const vm = require('node:vm');
 const fs = require('node:fs');
@@ -60,7 +60,7 @@ const context = {
   CacheService: { getScriptCache: () => ({ get: k => cacheStore[k] ?? null, put: (k, v) => { cacheStore[k] = v; }, remove: k => { delete cacheStore[k]; } }) },
   PropertiesService: { getScriptProperties: () => ({ getProperty: () => null }) },
   MailApp: { sendEmail: o => mails.push(o) },
-  // Auxiliares del backend principal (01_Script_Cloud_Completo.gs), versión mínima equivalente
+  // Auxiliares del backend principal (01_Script_Cloud_Completo_v08.4.1.gs), versión mínima equivalente
   cvAuthNormalizeCedula: v => String(v == null ? '' : v).replace(/[^0-9A-Za-z]/g, ''),
   cvAuthFindUser: (s, c) => users[String(c)] || null,
   cvAuthSanitizeText: (v, n) => String(v == null ? '' : v).trim().slice(0, n || 100).replace(/<[^>]*>/g, ''),
@@ -69,7 +69,7 @@ const context = {
   cvDocenteEqual: (a, b) => String(a) === String(b)
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '02_Examenes_Factura.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '02_Examenes_Factura_v08.4.gs'), 'utf8'), context);
 const J = x => JSON.parse(JSON.stringify(x));
 const T = (fecha, hora) => context.cvExamMs(fecha, hora);
 

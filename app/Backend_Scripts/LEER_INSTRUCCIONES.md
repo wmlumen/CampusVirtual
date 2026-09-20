@@ -3,7 +3,7 @@
 Esta carpeta contiene el código fuente de los scripts que hacen funcionar el Servidor y la Base de Datos Cloud.
 
 ## Historial de Versiones:
-* **`01_Script_Cloud_Completo.gs`**: Versión actual en producción. Incluye registro estricto, asistencia virtual/presencial, progreso de unidades y preparado para recibir calificaciones de exámenes.
+* **`01_Script_Cloud_Completo_v08.4.1.gs`**: Versión actual en producción. Incluye registro estricto, asistencia virtual/presencial, progreso de unidades y preparado para recibir calificaciones de exámenes.
 
 ## ¿Cómo actualizar el servidor?
 Si en el futuro creamos un script `02_...`, solo debes:

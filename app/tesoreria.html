@@ -2,116 +2,406 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesorería — Instituto Superior Centuria</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--dorado:#d4a843;--txt2:#2D2D2D;--txt3:#64748b;--border:#C8E6C9}
-        *{box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fdf4;color:var(--txt2);min-height:100vh;margin:0}
-        .topbar{background:var(--verde-dark);border-bottom:2px solid var(--verde);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-        .topbar-brand{font-size:.85rem;font-weight:700;color:#fff}
-        .topbar-nav{display:flex;gap:6px}
-        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.62rem;font-weight:600;padding:5px 10px;border-radius:6px}
-        .topbar-nav a:hover,.topbar-nav a.active{background:var(--verde);color:#fff}
-        .wrap{max-width:1050px;margin:0 auto;padding:20px 16px 80px}
-        .page-title{font-size:1.1rem;font-weight:800;color:var(--verde-dark);display:flex;align-items:center;gap:8px;margin-bottom:4px}
-        .page-sub{font-size:.7rem;color:var(--txt3);margin-bottom:16px}
-        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-        .kpi{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);text-align:center;border-top:4px solid var(--verde)}
-        .kpi .val{font-size:1.15rem;font-weight:800;color:var(--verde-dark)}
-        .kpi .lbl{font-size:.58rem;font-weight:700;color:var(--txt3);text-transform:uppercase}
-        .cardx{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:18px;margin-bottom:16px}
-        .cardx h2{font-size:.85rem;font-weight:800;color:var(--verde-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-        .fld{margin-bottom:10px}
-        .fld label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-bottom:4px}
-        .fld input,.fld select{width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.8rem;outline:none}
-        .fld input:focus,.fld select:focus{border-color:var(--verde)}
-        .btn{padding:9px 18px;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
-        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark)}
-        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
-        .btn-r{background:#FEE2E2;color:#991B1B}
-        .btn-a{background:#FEF3C7;color:#92400E}
-        table{width:100%;border-collapse:collapse;font-size:.75rem}
-        th{background:#f8fafc;color:var(--txt3);text-transform:uppercase;font-size:.6rem;padding:8px;text-align:left}
-        td{padding:8px;border-top:1px solid #f1f5f9;vertical-align:middle}
-        .badge{padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
-        .b-pagado{background:#D1FAE5;color:#065F46}.b-pendiente{background:#FEF3C7;color:#92400E}.b-anulado{background:#F1F5F9;color:#64748b}
-        .b-modulo{background:#E0F2FE;color:#075985}.b-curso{background:#EDE9FE;color:#5B21B6}.b-seminario{background:#FCE7F3;color:#9D174D}.b-otro{background:#F1F5F9;color:#475569}
-        .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-        .filters input,.filters select{padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.75rem}
-        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-        .toast-success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
-        .toast-error{background:#FEE2E2;color:#991B1B;border:1px solid #fca5a5}
-        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px;background:var(--verde-dark);color:rgba(255,255,255,.6);font-size:.55rem}
-        @media(max-width:768px){.kpis{grid-template-columns:repeat(2,1fr)}.topbar{flex-direction:column;gap:6px}}
+        :root {
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #1fa04d;
+            --verde-hover: #22c55e;
+            --verde-light: #e8f5ec;
+            --dorado: #d4a843;
+            --dorado-light: #e0b84d;
+            --azul: #2563EB;
+            --rosa: #D94172;
+            --naranja: #D97706;
+            --txt: #ffffff;
+            --txt2: #c8e6d0;
+            --txt3: rgba(255,255,255,0.65);
+            --bg: #0d2c16;
+            --card-glass: rgba(255,255,255,0.07);
+            --bdr: rgba(255,255,255,0.12);
+            --bdr-gold: rgba(212,168,67,0.35);
+            --shadow: 0 8px 32px rgba(0,0,0,0.3);
+            --radius: 18px;
+            --ok: #3ddc6e;
+            --rojo: #ff8a87;
+        }
+        * { box-sizing: border-box; margin:0; padding:0; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            color: var(--txt);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ═══ FONDO TEXTURIZADO IDENTICO A INDEX ═══ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(22,129,61,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212,168,67,0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(22,129,61,0.10) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .topbar {
+            background: rgba(13,44,22,0.92);
+            border-bottom: 1px solid var(--bdr-gold);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .topbar-brand {
+            font-size: .92rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: .5px;
+        }
+        .topbar-brand i { color: var(--dorado); }
+        .topbar-nav { display: flex; gap: 8px; }
+        .topbar-nav a {
+            color: var(--txt2);
+            text-decoration: none;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            transition: all .2s;
+        }
+        .topbar-nav a:hover {
+            background: rgba(22,129,61,0.4);
+            color: #fff;
+            border-color: var(--verde-medio);
+        }
+        .topbar-nav a.active {
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            color: #fff;
+            border-color: var(--dorado);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+        }
+
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; width: 100%; flex: 1; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 2px;
+            letter-spacing: .5px;
+        }
+        .page-title i { color: var(--dorado); }
+        .page-sub { font-size: .72rem; color: var(--txt2); margin-bottom: 0; }
+
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        .kpi {
+            background: var(--card-glass);
+            border: 1px solid var(--bdr);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            backdrop-filter: blur(16px);
+            border-top: 3px solid var(--verde-medio);
+            box-shadow: var(--shadow);
+            transition: transform .2s;
+        }
+        .kpi:hover { transform: translateY(-2px); }
+        .kpi .val { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+        .kpi .lbl { font-size: .62rem; font-weight: 800; color: var(--dorado); text-transform: uppercase; letter-spacing: .5px; }
+
+        .cardx {
+            background: var(--card-glass);
+            border: 1px solid var(--bdr);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+        }
+        .cardx h2 {
+            font-size: .92rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: .5px;
+        }
+        .cardx h2 i { color: var(--dorado); }
+
+        .fld { margin-bottom: 12px; }
+        .fld label {
+            display: block;
+            font-size: .62rem;
+            font-weight: 800;
+            color: var(--dorado);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 6px;
+        }
+        .fld input, .fld select, .fld textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--bdr);
+            border-radius: 10px;
+            font-size: .8rem;
+            font-family: inherit;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(255,255,255,0.06);
+            color-scheme: dark;
+            outline: none;
+            transition: all .2s;
+        }
+        .fld select option { background: var(--verde-oscuro); color: #fff; }
+        .fld input::placeholder { color: rgba(255,255,255,0.35); }
+        .fld input:focus, .fld select:focus {
+            border-color: var(--dorado);
+            box-shadow: 0 0 0 3px rgba(212,168,67,0.2);
+            background: rgba(255,255,255,0.09);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: .74rem;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .2s;
+            letter-spacing: .3px;
+        }
+        .btn-p {
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            color: #fff;
+            border: 1px solid var(--dorado);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+        .btn-p:hover {
+            background: linear-gradient(135deg, var(--verde-claro), var(--verde-medio));
+            transform: translateY(-1px);
+            color: #fff;
+        }
+        .btn-g {
+            background: rgba(255,255,255,0.08);
+            color: var(--txt2);
+            border: 1px solid var(--bdr);
+        }
+        .btn-g:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-color: var(--dorado);
+        }
+        .btn-r {
+            background: rgba(239,83,80,0.18);
+            color: var(--rojo);
+            border: 1px solid rgba(239,83,80,0.35);
+        }
+        .btn-r:hover { background: rgba(239,83,80,0.3); color: #fff; }
+        .btn-a {
+            background: rgba(212,168,67,0.18);
+            color: var(--dorado-light);
+            border: 1px solid rgba(212,168,67,0.4);
+        }
+        .btn-a:hover { background: rgba(212,168,67,0.3); color: #fff; }
+        .btn-sm { padding: 6px 12px; font-size: .65rem; border-radius: 8px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .76rem; }
+        th {
+            background: rgba(255,255,255,0.05);
+            color: var(--dorado);
+            text-transform: uppercase;
+            font-size: .62rem;
+            font-weight: 800;
+            letter-spacing: .8px;
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--bdr);
+        }
+        td {
+            padding: 12px 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            vertical-align: middle;
+            color: #fff;
+        }
+        tbody tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: .62rem;
+            font-weight: 800;
+            letter-spacing: .5px;
+            display: inline-block;
+        }
+        .b-pagado { background: rgba(61,220,110,0.18); color: var(--ok); border: 1px solid rgba(61,220,110,0.4); }
+        .b-pendiente { background: rgba(212,168,67,0.18); color: var(--dorado-light); border: 1px solid rgba(212,168,67,0.4); }
+        .b-anulado { background: rgba(255,255,255,0.08); color: var(--txt3); border: 1px solid var(--bdr); }
+        .b-modulo { background: rgba(37,99,235,0.18); color: #93c5fd; border: 1px solid rgba(37,99,235,0.4); }
+        .b-curso { background: rgba(139,92,246,0.18); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }
+        .b-seminario { background: rgba(217,65,114,0.18); color: #f472b6; border: 1px solid rgba(217,65,114,0.4); }
+        .b-otro { background: rgba(255,255,255,0.08); color: var(--txt2); border: 1px solid var(--bdr); }
+
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .filters input, .filters select {
+            padding: 9px 14px;
+            border: 1px solid var(--bdr);
+            border-radius: 10px;
+            font-size: .76rem;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            color-scheme: dark;
+            outline: none;
+        }
+        .filters select option { background: var(--verde-oscuro); color: #fff; }
+        .filters input:focus, .filters select:focus {
+            border-color: var(--dorado);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-size: .75rem;
+            font-weight: 700;
+            z-index: 9999;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            backdrop-filter: blur(12px);
+        }
+        .toast-success { background: rgba(13,44,22,0.95); color: var(--ok); border: 1px solid var(--ok); }
+        .toast-error { background: rgba(40,10,10,0.95); color: var(--rojo); border: 1px solid var(--rojo); }
+
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 14px;
+            background: rgba(13,44,22,0.95);
+            border-top: 1px solid var(--bdr);
+            color: var(--txt3);
+            font-size: .65rem;
+            letter-spacing: .5px;
+        }
+        @media(max-width:768px){
+            .kpis { grid-template-columns: repeat(2,1fr); }
+            .topbar { flex-direction: column; gap: 8px; padding: 12px 16px; }
+        }
     </style>
 </head>
 <body>
     <div class="topbar">
-        <div class="topbar-brand">🏛 Tesorería Centuria</div>
+        <div class="topbar-brand">
+            <i class="bi bi-bank2"></i>
+            <span>Tesorería Centuria</span>
+        </div>
         <div class="topbar-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="admin/index.html">Admin</a>
-            <a href="tesoreria.html" class="active">Tesorería</a>
+            <a href="dashboard.html"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+            <a href="admin/index.html"><i class="bi bi-gear me-1"></i>Admin</a>
+            <a href="tesoreria.html" class="active"><i class="bi bi-cash-coin me-1"></i>Tesorería</a>
         </div>
     </div>
 
     <div class="wrap">
-        <div class="page-title"><i class="bi bi-cash-coin"></i> Tablero de Tesorería</div>
-        <div class="page-sub">Pagos de módulos, cursos y seminarios con número de factura. Solo administración.</div>
+        <div class="page-header">
+            <div>
+                <div class="page-title"><i class="bi bi-cash-stack"></i> Tablero de Tesorería</div>
+                <div class="page-sub">Control oficial de pagos de módulos, cuotas y seminarios con número de factura.</div>
+            </div>
+        </div>
 
         <div id="acceso-denegado" style="display:none" class="cardx text-center">
-            <p style="color:#991B1B;font-weight:700">Acceso restringido a administración.</p>
+            <p style="color:var(--rojo);font-weight:800;font-size:1rem;margin-bottom:12px;">
+                <i class="bi bi-shield-x me-2"></i>Acceso restringido a la Administración General.
+            </p>
             <a href="dashboard.html" class="btn btn-g">Volver al Dashboard</a>
         </div>
 
         <div id="contenido" style="display:none">
             <!-- KPIs -->
             <div class="kpis">
-                <div class="kpi"><div class="val" id="k-recaudado">-</div><div class="lbl">Recaudado</div></div>
-                <div class="kpi" style="border-color:var(--dorado)"><div class="val" id="k-pendiente">-</div><div class="lbl">Pendiente</div></div>
-                <div class="kpi" style="border-color:#2563EB"><div class="val" id="k-facturas">-</div><div class="lbl">Facturas</div></div>
-                <div class="kpi" style="border-color:#64748b"><div class="val" id="k-total">-</div><div class="lbl">Registros</div></div>
+                <div class="kpi"><div class="val" id="k-recaudado">-</div><div class="lbl">Total Recaudado</div></div>
+                <div class="kpi" style="border-top-color:var(--dorado)"><div class="val" id="k-pendiente">-</div><div class="lbl">Monto Pendiente</div></div>
+                <div class="kpi" style="border-top-color:var(--azul)"><div class="val" id="k-facturas">-</div><div class="lbl">Facturas Emitidas</div></div>
+                <div class="kpi" style="border-top-color:var(--rosa)"><div class="val" id="k-total">-</div><div class="lbl">Total Registros</div></div>
             </div>
 
             <!-- REGISTRAR -->
             <div class="cardx">
-                <h2><i class="bi bi-plus-circle"></i> Registrar pago / factura</h2>
-                <div class="row g-2">
+                <h2><i class="bi bi-plus-circle-fill"></i> Registrar Pago / Factura</h2>
+                <div class="row g-3">
                     <div class="col-md-3"><div class="fld"><label>Cédula *</label><input id="f-cedula" placeholder="SIN PUNTOS"></div></div>
-                    <div class="col-md-5"><div class="fld"><label>Alumno</label><input id="f-nombre" placeholder="Nombre (o pulsa Buscar)"></div></div>
-                    <div class="col-md-4"><div class="fld"><label>&nbsp;</label><button class="btn btn-g w-100" onclick="buscarAlumno()"><i class="bi bi-search"></i> Buscar alumno</button></div></div>
+                    <div class="col-md-5"><div class="fld"><label>Alumno</label><input id="f-nombre" placeholder="Nombre completo"></div></div>
+                    <div class="col-md-4"><div class="fld"><label>&nbsp;</label><button class="btn btn-g w-100" onclick="buscarAlumno()"><i class="bi bi-search"></i> Buscar Alumno</button></div></div>
                 </div>
-                <div class="row g-2">
-                    <div class="col-md-5"><div class="fld"><label>Concepto * (módulo, curso, seminario)</label><input id="f-concepto" placeholder="Ej: Módulo 3 - TIC"></div></div>
-                    <div class="col-md-3"><div class="fld"><label>Tipo</label><select id="f-tipo"><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select></div></div>
+                <div class="row g-3">
+                    <div class="col-md-5"><div class="fld"><label>Concepto * (módulo, curso, arancel)</label><input id="f-concepto" placeholder="Ej: Módulo 3 - TIC Aplicada"></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Tipo de Arancel</label><select id="f-tipo"><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select></div></div>
                     <div class="col-md-2"><div class="fld"><label>Monto *</label><input id="f-monto" type="number" min="0" placeholder="0"></div></div>
                     <div class="col-md-2"><div class="fld"><label>Moneda</label><select id="f-moneda"><option>Gs.</option><option>USD</option></select></div></div>
                 </div>
-                <div class="row g-2">
+                <div class="row g-3">
                     <div class="col-md-3"><div class="fld"><label>Fecha</label><input id="f-fecha" type="date"></div></div>
-                    <div class="col-md-3"><div class="fld"><label>N° Factura</label><input id="f-factura" placeholder="Ej: 001-004-0001234"></div></div>
-                    <div class="col-md-3"><div class="fld"><label>Estado</label><select id="f-estado"><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select></div></div>
-                    <div class="col-md-3"><div class="fld"><label>Comprobante</label><input id="f-comprobante" placeholder="N° recibo / obs."></div></div>
+                    <div class="col-md-3"><div class="fld"><label>N° Factura Oficial</label><input id="f-factura" placeholder="Ej: 001-004-0001234"></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Estado del Pago</label><select id="f-estado"><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select></div></div>
+                    <div class="col-md-3"><div class="fld"><label>Comprobante / Recibo</label><input id="f-comprobante" placeholder="N° recibo / obs."></div></div>
                 </div>
-                <button class="btn btn-p" onclick="guardarPago()"><i class="bi bi-check-lg"></i> Guardar pago</button>
+                <div class="mt-2">
+                    <button class="btn btn-p" onclick="guardarPago()"><i class="bi bi-check-circle-fill"></i> Guardar Registro de Pago</button>
+                </div>
             </div>
 
             <!-- LISTA -->
             <div class="cardx">
-                <h2><i class="bi bi-list-ul"></i> Movimientos</h2>
+                <h2><i class="bi bi-journal-text"></i> Movimientos y Estados de Cuenta</h2>
                 <div class="filters">
-                    <input id="q" placeholder="Buscar cédula, nombre, factura..." oninput="cargarPagos()" style="flex:1;min-width:180px">
-                    <select id="f-estado" onchange="cargarPagos()"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select>
-                    <select id="f-tipo" onchange="cargarPagos()"><option value="">Todos los tipos</option><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select>
-                    <button class="btn btn-g" onclick="cargarTodo()"><i class="bi bi-arrow-clockwise"></i></button>
-                    <button class="btn btn-g" onclick="exportarCSV()"><i class="bi bi-download"></i> CSV</button>
+                    <input id="q" placeholder="Buscar cédula, nombre, factura..." oninput="cargarPagos()" style="flex:1;min-width:200px">
+                    <select id="f-estado-filtro" onchange="cargarPagos()"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="anulado">Anulado</option></select>
+                    <select id="f-tipo-filtro" onchange="cargarPagos()"><option value="">Todos los tipos</option><option value="modulo">Módulo</option><option value="curso">Curso</option><option value="seminario">Seminario</option><option value="otro">Otro</option></select>
+                    <button class="btn btn-g" onclick="cargarTodo()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+                    <button class="btn btn-a" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar CSV</button>
                 </div>
                 <div class="table-responsive">
                     <table>
@@ -125,7 +415,7 @@
 
     <div class="footer">Instituto Superior Centuria — Tesorería © 2026</div>
 
-    <script src="js/api.js?v=13"></script>
+    <script src="js/api.js?v=19"></script>
     <script>
         let pagosCache = [];
         const token = () => CenturiaAPI.getToken();
@@ -192,8 +482,10 @@
         async function cargarPagos() {
             const tb = document.getElementById('tbody');
             const q = document.getElementById('q').value.trim().toLowerCase();
-            const est = document.getElementById('f-estado').value;
-            const tipo = document.getElementById('f-tipo').value;
+            const estFiltro = document.getElementById('f-estado-filtro');
+            const tipoFiltro = document.getElementById('f-tipo-filtro');
+            const est = estFiltro ? estFiltro.value : '';
+            const tipo = tipoFiltro ? tipoFiltro.value : '';
             try {
                 const d = await CenturiaAPI.pagos.list();
                 let raw = d.pagos || d.data || [];
@@ -203,20 +495,20 @@
 
                 pagosCache = raw;
                 if (!pagosCache.length) {
-                    tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Sin movimientos</td></tr>';
+                    tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Sin movimientos registrados</td></tr>';
                     return;
                 }
                 tb.innerHTML = pagosCache.map(p => `
                     <tr>
                         <td>${esc(p.fecha || p.Fecha) || '-'}</td>
-                        <td><b>${esc(p.factura_numero || p.Factura) || '-'}</b></td>
-                        <td>${esc(p.nombre || p.Nombre)}<br><small class="text-muted">${esc(p.cedula || p.Cedula)}</small></td>
+                        <td><b style="color:var(--dorado)">${esc(p.factura_numero || p.Factura) || '-'}</b></td>
+                        <td><strong style="color:#fff">${esc(p.nombre || p.Nombre)}</strong><br><small style="color:var(--txt2)">${esc(p.cedula || p.Cedula)}</small></td>
                         <td>${esc(p.concepto || p.Concepto || p.modulo || p.Modulo)}</td>
                         <td>${badgeTipo(p.tipo || p.Tipo)}</td>
-                        <td><b>${fmtMonto(p.monto || p.Monto, p.moneda || 'PYG')}</b></td>
+                        <td><b style="color:var(--dorado)">${fmtMonto(p.monto || p.Monto, p.moneda || 'PYG')}</b></td>
                         <td>${badgeEstado(p.estado || p.Estado)}</td>
                         <td style="white-space:nowrap">
-                            ${(p.estado || p.Estado) !== 'pagado' ? `<button class="btn btn-g btn-sm" onclick="cambiarEstado('${p.id || p.cedula}','pagado')" title="Marcar pagado"><i class="bi bi-check-lg"></i></button>` : ''}
+                            ${(p.estado || p.Estado) !== 'pagado' ? `<button class="btn btn-g btn-sm" onclick="cambiarEstado('${p.id || p.cedula}','pagado')" title="Marcar pagado"><i class="bi bi-check-lg text-success"></i></button>` : ''}
                             ${(p.estado || p.Estado) !== 'anulado' ? `<button class="btn btn-a btn-sm" onclick="cambiarEstado('${p.id || p.cedula}','anulado')" title="Anular"><i class="bi bi-x-lg"></i></button>` : ''}
                             <button class="btn btn-r btn-sm" onclick="eliminarPago('${p.id || p.cedula}')" title="Eliminar"><i class="bi bi-trash"></i></button>
                         </td>

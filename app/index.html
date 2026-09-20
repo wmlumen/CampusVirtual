@@ -886,11 +886,11 @@
                     </div>
                     <div id="mustchange-banner" style="display:none;background:#FEFCE8;border:1px solid #FDE68A;border-left:3px solid var(--dorado);border-radius:10px;color:#92400E;font-size:0.68rem;padding:10px 12px;margin-bottom:12px">
                         <i class="bi bi-exclamation-triangle me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad.
-                        <a href="perfil.html" style="font-weight:700;color:#92400E">Ir a mi perfil →</a>
+                        <a href="dashboard.html" style="font-weight:700;color:#92400E">Ir a mi dashboard →</a>
                     </div>
                     <div class="d-flex gap-2 mb-3" id="step3-links">
                         <a href="dashboard.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
-                        <a href="perfil.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-person me-1"></i>Perfil</a>
+                        <a href="dashboard.html" class="btn-ghost" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-person me-1"></i>Mi Cuenta</a>
                         <a href="libreta.html" class="btn-ghost step3-student-only" style="flex:1;text-align:center;text-decoration:none"><i class="bi bi-book me-1"></i>Libreta</a>
                     </div>
                     <div id="lista-cursos" class="d-grid gap-2 mb-3"></div>
@@ -950,7 +950,7 @@
 
 <!-- Overlay de carga: avisa que hay que esperar al servidor -->
 <div id="global-loading" role="status" aria-live="polite"><div class="spin"></div><p id="global-loading-text">Conectando con el servidor... espera</p></div>
-<script src="js/api.js?v=12"></script>
+<script src="js/api.js?v=13"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -969,7 +969,7 @@ function a11yContrast() {
 async function cargarCatalogos(){try{const d=await CenturiaAPI.catalogos.getGrados();const g=d.grados||d.items||[];try{localStorage.setItem('centuria_cache_grados',JSON.stringify(g))}catch(x){}pintarGrados(g)}catch(e){pintarGrados(await catalogoConRespaldo('grados','centuria_cache_grados',[{nombre:'GRADO'}]))}}
 function pintarGrados(g){const s=document.getElementById('reg-grado');if(s)s.innerHTML='<option value="" selected disabled>Seleccionar...</option>'+g.map(x=>'<option value="'+x.nombre+'">'+x.nombre+'</option>').join('')}
 async function cargarCarrerasPorGrado(){const grado=document.getElementById('reg-grado').value;const s=document.getElementById('reg-carrera');if(!grado){s.innerHTML='<option value="" selected disabled>Primero selecciona un grado...</option>';s.disabled=true;return}let lista=null;try{const d=await CenturiaAPI.catalogos.getCarreras(grado);lista=d.carreras||d.items||[];try{localStorage.setItem('centuria_cache_carreras',JSON.stringify(lista))}catch(x){}}catch(e){lista=await catalogoConRespaldo('carreras','centuria_cache_carreras',[{nombre:'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA',codigo:'G-AGP',grado:'GRADO'},{nombre:'ADMINISTRACION DE EMPRESAS',codigo:'G-AE',grado:'GRADO'},{nombre:'ADMINISTRACIÓN ADUANERA',codigo:'G-AD',grado:'GRADO'}])}let c=(lista||[]).filter(x=>!x.grado||x.grado===grado);if(!c.length)c=lista||[];s.innerHTML='<option value="" selected disabled>Selecciona tu carrera...</option>';c.forEach(x=>{const o=document.createElement('option');o.value=x.nombre;o.textContent=x.nombre;s.appendChild(o)});s.disabled=c.length===0;if(s.disabled)s.innerHTML='<option value="" selected disabled>No hay carreras para este grado</option>'}
-async function cargarSecciones(){const s=document.getElementById('reg-seccion');let sec=null;try{const d=await CenturiaAPI.catalogos.getSecciones();sec=d.secciones||d.items||[];try{localStorage.setItem('centuria_cache_secciones',JSON.stringify(sec))}catch(x){}}catch(e){sec=await catalogoConRespaldo('secciones','centuria_cache_secciones',[{codigo:'S026',nombre:'SABADO',grado:'GRADO'},{codigo:'LV026',nombre:'LUNES - VIERNES',grado:'GRADO'}])}const carrera=(document.getElementById('reg-carrera').value||'').trim();let filtradas=sec;if(carrera){const f=sec.filter(x=>!x.carrera||x.carrera===carrera);if(f.length)filtradas=f}const vistos={};const unicas=[];filtradas.forEach(x=>{if(!vistos[x.codigo]){vistos[x.codigo]=true;unicas.push(x)}});s.innerHTML='<option value="" selected disabled>Selecciona tu sección...</option>';unicas.forEach(x=>{const o=document.createElement('option');o.value=x.codigo;o.textContent=x.codigo;s.appendChild(o)});if(s.options.length<=1)s.innerHTML='<option value="" selected disabled>No hay secciones creadas aún</option>'}
+async function cargarSecciones(){const s=document.getElementById('reg-seccion');let sec=null;try{const d=await CenturiaAPI.catalogos.getSecciones();sec=d.secciones||d.items||[];try{localStorage.setItem('centuria_cache_secciones',JSON.stringify(sec))}catch(x){}}catch(e){sec=await catalogoConRespaldo('secciones','centuria_cache_secciones',[{codigo:'S026',nombre:'SABADO',grado:'GRADO'},{codigo:'LV026',nombre:'LUNES - VIERNES',grado:'GRADO'}])}const carrera=(document.getElementById('reg-carrera').value||'').trim();let filtradas=sec;if(carrera){const f=sec.filter(x=>!x.carrera||x.carrera===carrera);if(f.length)filtradas=f}const vistos={};const unicas=[];filtradas.forEach(x=>{const c=String(x.codigo||x.nombre||'').trim();if(c&&!vistos[c]){vistos[c]=true;unicas.push(Object.assign({},x,{codigo:c}))}});s.innerHTML='<option value="" selected disabled>Selecciona tu sección...</option>';unicas.forEach(x=>{const o=document.createElement('option');o.value=x.codigo;o.textContent=x.codigo;s.appendChild(o)});if(s.options.length<=1)s.innerHTML='<option value="" selected disabled>No hay secciones creadas aún</option>'}
 // Catálogo con respaldo: Servidor Cloud -> caché -> valores base
 async function catalogoConRespaldo(tipo,cacheKey,defecto){
     try{const g=await CenturiaAPI.catalogos.list(tipo);const items=g[tipo]||g.items||[];if(items&&items.length){try{localStorage.setItem(cacheKey,JSON.stringify(items))}catch(x){}return items}}catch(e){}
@@ -1189,7 +1189,7 @@ async function registrarOffline(userData,cedula,nombre,apellido,email,telefono,g
     }catch(gasErr){console.warn('[API] Sin conexión al Servidor Cloud:',gasErr)}
     hideLoadingGlobal();
     if(!sheetsOk)alert('Registrado en ESTE dispositivo.\n\nAviso: no se pudo anotar en el servidor en la nube (revisa tu internet). Si entras desde otro celular, regístrate de nuevo allí o avisa al administrador.');
-    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';location.href='perfil.html';
+    sessionStorage.setItem('current_cedula',cedula);sessionStorage.setItem('current_nombre',nombre+' '+apellido);sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:nombre,apellido:apellido}));sessionStorage.setItem('rol','alumno');sessionStorage.setItem('must_change','0');loginSource='local';location.href='dashboard.html';
 }
 
 // Reintenta subir al servidor el registro guardado en este dispositivo (una vez por sesión)

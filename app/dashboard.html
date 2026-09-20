@@ -441,22 +441,24 @@
             transform: scale(1.03);
             box-shadow: 0 12px 35px rgba(212,168,67,.3);
         }
+        /* El QR (canvas + img que genera qrcodejs) se apila en la misma caja: nunca se reparten el ancho ni quedan desplazados. */
         #qr-container {
+            position: relative;
             width: 200px;
             height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0 auto;
+            flex: none;
             overflow: hidden;
         }
         #qr-container canvas,
         #qr-container img {
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 200px;
-            max-height: 200px;
-            display: block;
-            margin: 0 auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200px !important;
+            height: 200px !important;
+            max-width: none;
+            margin: 0;
         }
 
         /* Modal QR Pantalla Completa */
@@ -484,18 +486,18 @@
             max-height: 80vh;
         }
         #qr-fullscreen-container {
+            position: relative;
             width: min(75vw, 75vh, 420px);
             height: min(75vw, 75vh, 420px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         #qr-fullscreen-container canvas,
         #qr-fullscreen-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100% !important;
             height: 100% !important;
             object-fit: contain;
-            display: block;
         }
 
         /* ── Events List ── */
@@ -1090,8 +1092,9 @@
                         user.firstname = user.firstname || user.nombre || m.nombres || m.Nombres || '';
                         user.lastname = user.lastname || user.apellido || m.apellidos || m.Apellidos || '';
                         user.email = user.email || m.correo_electronico || m.CorreoElectronico || '';
-                        user.telefono = user.telefono || m.telefono_movil || m.TelefonoMovil || '';
-                        user.telefono_alternativo = user.telefono_alternativo || m.telefono_fijo || m.TelefonoFijo || '';
+                        user.telefono = user.telefono || m.telefono_movil || m.TelefonoMovil || m.telefono || m.celular || '';
+                        user.telefono_alternativo = user.telefono_alternativo || m.telefono_alternativo || m.telefono_fijo || m.TelefonoFijo || m.telefono2 || '';
+                        user.contacto_emergencia = user.contacto_emergencia || m.contacto_emergencia || m.ContactoEmergencia || m.emergencia || m.contacto_urgencia || '';
                         user.fecha_nacimiento = user.fecha_nacimiento || m.fecha_nacimiento || m.FechaNacimiento || '';
                         user.lugar_nacimiento = user.lugar_nacimiento || m.lugar_nacimiento || m.LugarNacimiento || '';
                         user.nacionalidad = user.nacionalidad || m.nacionalidad || m.Nacionalidad || m.pais || m.Pais || '';
@@ -1140,7 +1143,7 @@
             const grado = user.grado || localStorage.getItem('centuria_grado') || '';
             const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '';
             const email = user.email || localStorage.getItem('centuria_email') || 'No registrado';
-            const tel = user.telefono || localStorage.getItem('centuria_telefono') || 'No registrado';
+            const tel = user.telefono || user.telefono_movil || user.celular || localStorage.getItem('centuria_telefono') || 'No registrado';
 
             // Nuevos campos
             const fechaNac = user.fecha_nacimiento || localStorage.getItem('centuria_fecha_nacimiento') || '';
@@ -1159,8 +1162,8 @@
             }
 
             const estadoCivil = user.estado_civil || localStorage.getItem('centuria_estado_civil') || '';
-            const telAlt = user.telefono_alternativo || user.telefono_fijo || localStorage.getItem('centuria_telefono_alternativo') || '';
-            const contactoEmergencia = user.contacto_emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
+            const telAlt = user.telefono_alternativo || user.telefono_fijo || user.telefono2 || localStorage.getItem('centuria_telefono_alternativo') || localStorage.getItem('centuria_telefono_fijo') || '';
+            const contactoEmergencia = user.contacto_emergencia || user.contacto_urgencia || user.emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
             const estado = user.estado || user.status || localStorage.getItem('centuria_estado') || 'ACTIVO';
             const legajo = user.legajo_numero || user.legajo || user.expediente || localStorage.getItem('centuria_legajo_numero') || '';
             const fechaInscripcion = user.fecha_inscripcion || localStorage.getItem('centuria_fecha_inscripcion') || '';

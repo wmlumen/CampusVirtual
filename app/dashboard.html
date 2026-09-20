@@ -1382,6 +1382,18 @@
                 sincronizarFotoDrive(cedula);
                 generarQR(user, cedula);
 
+                // Si es administrador general, abrir por defecto el panel de Áreas del Sistema
+                const realRoleInit = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || '').toLowerCase();
+                const esAdminInit = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'].includes(realRoleInit);
+                const urlParams = new URLSearchParams(window.location.search);
+                const modoEstudianteExplicito = urlParams.get('modo') === 'estudiante' || sessionStorage.getItem('admin_preview_mode') === '1';
+                
+                if (esAdminInit && !modoEstudianteExplicito) {
+                    setTimeout(() => {
+                        abrirAdminSuiteModal();
+                    }, 400);
+                }
+
             } catch (e) {
                 console.error('Error cargando dashboard:', e);
             }

@@ -245,6 +245,49 @@
     </div>
 </div>
 
+<!-- Modal: Registro de Proceso Académico y Calificaciones -->
+<div id="modal-proceso-academico" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#132a33;border:1px solid var(--dorado);border-radius:16px;max-width:480px;width:100%;padding:22px;color:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:1px solid var(--bdr);padding-bottom:10px;">
+            <div>
+                <h4 style="font-size:.9rem;font-weight:700;color:var(--dorado);margin:0;"><i class="bi bi-person-check-fill me-1"></i> Proceso Académico</h4>
+                <div id="m-proceso-nombre" style="font-size:.78rem;font-weight:700;margin-top:2px;">—</div>
+                <div id="m-proceso-cedula" style="font-size:.62rem;color:var(--txt2);">—</div>
+            </div>
+            <button type="button" onclick="cerrarModalProceso()" style="background:none;border:none;color:var(--txt2);font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+
+        <input type="hidden" id="m-proceso-id">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div>
+                <label style="font-size:.58rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:4px;">Parcial 1 (0-100)</label>
+                <input type="number" id="m-p1" min="0" max="100" placeholder="Ej: 85" oninput="recalcularPromedioModal()" style="width:100%;padding:8px;background:#0d1e24;border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.8rem;text-align:center;">
+            </div>
+            <div>
+                <label style="font-size:.58rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:4px;">Parcial 2 (0-100)</label>
+                <input type="number" id="m-p2" min="0" max="100" placeholder="Ej: 90" oninput="recalcularPromedioModal()" style="width:100%;padding:8px;background:#0d1e24;border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.8rem;text-align:center;">
+            </div>
+            <div>
+                <label style="font-size:.58rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:4px;">Examen Final</label>
+                <input type="number" id="m-fin" min="0" max="100" placeholder="Ej: 80" oninput="recalcularPromedioModal()" style="width:100%;padding:8px;background:#0d1e24;border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.8rem;text-align:center;">
+            </div>
+        </div>
+
+        <div style="background:#0d1e24;border:1px solid var(--bdr);border-radius:10px;padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:.65rem;color:var(--txt2);font-weight:600;">Estado / Promedio:</span>
+            <span id="m-prom-preview" style="font-size:.85rem;font-weight:800;color:#4ade80;">En Proceso</span>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button type="button" onclick="cerrarModalProceso()" class="btn btn-s">Cancelar</button>
+            <button type="button" id="btn-guardar-proceso" onclick="guardarProcesoModal()" class="btn btn-p" style="background:var(--verde);">
+                <i class="bi bi-check-lg me-1"></i> Guardar Calificaciones
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
 <script src="js/api.js?v=19"></script>
@@ -349,36 +392,64 @@ async function seleccionarAsig(codigo, tabEl, idx) {
 // ═══ CARGAR DATOS DE LA ASIGNATURA ═══
 async function cargarDatosAsignatura(codigo) {
     const tbody = document.getElementById('tbodyAlumnos');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt2)"><i class="bi bi-hourglass-split"></i> Cargando datos...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt2)"><i class="bi bi-hourglass-split"></i> Cargando datos de alumnos y proceso académico...</td></tr>';
 
-    // Alcance de la asignación: el sistema estira los nombres de esa carrera + sección
     let carA = (asigActual && (asigActual.carrera_asignada || asigActual.carrera)) || '';
     let secA = (asigActual && (asigActual.seccion_asignada || asigActual.seccion)) || '';
     try {
-        // Cargar todos los usuarios
-        const dUsers = await CenturiaAPI.usuarios.list();
-        const todos = dUsers.usuarios || dUsers.data || [];
-
-        // Filtrar alumnos (rol alumno + carrera/sección asignadas al docente)
-        alumnosData = todos.filter(u => {
-            const roles = u.roles || [];
-            return roles.some(r => r.rol === 'alumno'
-                && (!r.carrera || !carA || r.carrera === carA)
-                && (!r.seccion || !secA || r.seccion === secA));
-        });
-        if (!alumnosData.length && (carA || secA)) {
-            // Sin coincidencias: nómina por carrera + sección (requiere al menos un filtro)
-            const dM = await CenturiaAPI.docente.getStudents(carA, secA);
-            alumnosData = (dM.alumnos || []).map(a => ({ id: null, cedula: a.cedula, nombre_completo: a.nombre, carrera: a.carrera, seccion: a.seccion, roles: [{ rol: 'alumno' }] }));
+        // 1. Cargar alumnos desde lista general y/o nómina de la materia
+        let todos = [];
+        try {
+            const dUsers = await CenturiaAPI.usuarios.list();
+            todos = dUsers.usuarios || dUsers.data || [];
+        } catch (eU) {
+            console.warn('Fallo usuarios.list, intentando nómina:', eU);
         }
 
-        // Cargar notas
+        // Filtrado flexible: alumnos que coincidan con la carrera/sección de la materia o alumnos activos
+        alumnosData = todos.filter(u => {
+            const roles = u.roles || [];
+            const esAlumno = roles.some(r => r.rol === 'alumno') || (u.rol && u.rol.toLowerCase() === 'alumno') || (u.role && u.role.toLowerCase() === 'alumno');
+            if (!esAlumno) return false;
+            
+            // Si la asignatura tiene carrera/sección específica, filtrar pero siendo tolerante
+            if (!carA && !secA) return true;
+            const uCar = (u.carrera || '').toLowerCase().trim();
+            const uSec = (u.seccion || '').toLowerCase().trim();
+            const fCar = carA.toLowerCase().trim();
+            const fSec = secA.toLowerCase().trim();
+
+            const matchCar = !fCar || !uCar || uCar === fCar || roles.some(r => !r.carrera || r.carrera.toLowerCase().trim() === fCar);
+            const matchSec = !fSec || !uSec || uSec === fSec || roles.some(r => !r.seccion || r.seccion.toLowerCase().trim() === fSec);
+            return matchCar && matchSec;
+        });
+
+        // Si no se encontraron por usuarios.list, invocar directamente getStudents por carrera/sección
+        if (!alumnosData.length) {
+            try {
+                const dM = await CenturiaAPI.docente.getStudents(carA, secA);
+                const listaNomina = dM.alumnos || dM.data || [];
+                if (listaNomina.length) {
+                    alumnosData = listaNomina.map(a => ({
+                        id: a.cedula || a.id,
+                        cedula: a.cedula,
+                        nombre: a.nombre,
+                        nombre_completo: a.nombre,
+                        carrera: a.carrera || carA,
+                        seccion: a.seccion || secA,
+                        roles: [{ rol: 'alumno' }]
+                    }));
+                }
+            } catch (eNom) {}
+        }
+
+        // 2. Cargar notas
         try {
             const dN = await CenturiaAPI.grades.list({ asignatura: asigActual.codigo });
             notasData = dN.data || dN.notas || [];
         } catch(e) { notasData = []; }
 
-        // Cargar asistencia
+        // 3. Cargar asistencia
         try {
             const dA = await CenturiaAPI.attendance.list({ asignatura: asigActual.codigo });
             asistData = dA.data || dA.asistencias || [];
@@ -387,21 +458,8 @@ async function cargarDatosAsignatura(codigo) {
         renderTabla();
 
     } catch(e) {
-        console.error('Error:', e);
-        // Fallback: nómina por carrera + sección (con filtro)
-        if (!carA && !secA) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
-            return;
-        }
-        try {
-            const dM = await CenturiaAPI.docente.getStudents(carA, secA);
-            alumnosData = (dM.alumnos || []).map(a => ({ id: null, cedula: a.cedula, nombre_completo: a.nombre, carrera: a.carrera, seccion: a.seccion, roles: [{ rol: 'alumno' }] }));
-            notasData = [];
-            asistData = [];
-            renderTabla();
-        } catch (e2) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos</td></tr>';
-        }
+        console.error('Error cargando datos de asignatura:', e);
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#dc2626">Error al cargar datos del servidor</td></tr>';
     }
 }
 
@@ -410,7 +468,7 @@ function renderTabla() {
     const tbody = document.getElementById('tbodyAlumnos');
 
     if (alumnosData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="bi bi-people"></i><p>No hay alumnos en esta asignatura</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="bi bi-people"></i><p>No se encontraron alumnos registrados en esta materia/carrera</p></td></tr>';
         actualizarStats([], [], []);
         return;
     }
@@ -422,23 +480,36 @@ function renderTabla() {
     let todasAsist = [];
 
     alumnosData.forEach((alumno, idx) => {
-        const nombre = alumno.nombre_completo || ((alumno.firstname||'') + ' ' + (alumno.lastname||'')).trim() || 'Sin nombre';
-        const cedula = alumno.cedula || alumno.username || '-';
-        const uid = alumno.id;
+        const nom = alumno.nombre || alumno.nombre_completo || '';
+        const ape = alumno.apellido || '';
+        const nomCompleto = (nom + ' ' + ape).trim() || ((alumno.firstname||'') + ' ' + (alumno.lastname||'')).trim() || 'Estudiante C.I: ' + (alumno.cedula || '-');
+        const cedula = alumno.cedula || alumno.username || alumno.id || '-';
+        const uid = alumno.cedula || alumno.id || cedula;
 
         // Notas del alumno para esta asignatura
         const notas = notasData.filter(n => {
-            const matchUser = n.user_id == uid || n.cedula == cedula;
-            const matchAsig = !n.curso_id || n.curso_id == asigActual.codigo || (n.asignatura||'').includes(asigActual.codigo);
+            const cFiltro = String(cedula).replace(/[\.\s]/g, '');
+            const cNota = String(n.cedula || n.user_id || '').replace(/[\.\s]/g, '');
+            const matchUser = cNota === cFiltro;
+            const matchAsig = !n.asignatura || !n.curso_id || n.curso_id == asigActual.codigo || (n.asignatura||'').toLowerCase().includes((asigActual.codigo||'').toLowerCase());
             return matchUser && matchAsig;
         });
 
-        const p1 = getNota(notas, 'parcial1');
-        const p2 = getNota(notas, 'parcial2');
-        const fin = getNota(notas, 'final');
+        // Extraer notas considerando tanto score/component como campos directos parcial1, parcial2, final
+        let p1 = getNota(notas, 'parcial1');
+        let p2 = getNota(notas, 'parcial2');
+        let fin = getNota(notas, 'final');
+
+        // Búsqueda directa en objeto si la fila de notas viene plana
+        if (notas.length > 0) {
+            const nDirecta = notas[0];
+            if (p1 === null && nDirecta.parcial1 !== undefined && nDirecta.parcial1 !== '') p1 = parseFloat(nDirecta.parcial1);
+            if (p2 === null && nDirecta.parcial2 !== undefined && nDirecta.parcial2 !== '') p2 = parseFloat(nDirecta.parcial2);
+            if (fin === null && nDirecta.final !== undefined && nDirecta.final !== '') fin = parseFloat(nDirecta.final);
+        }
 
         let prom = '-';
-        if (p1 !== null && p2 !== null && fin !== null) {
+        if (p1 !== null && p2 !== null && fin !== null && !isNaN(p1) && !isNaN(p2) && !isNaN(fin)) {
             prom = ((p1 + p2 + fin) / 3).toFixed(1);
             totalP1 += p1; cntP1++;
             totalP2 += p2; cntP2++;
@@ -449,22 +520,25 @@ function renderTabla() {
 
         // Asistencia
         const asist = asistData.filter(a => {
-            const matchUser = a.user_id == uid || a.cedula == cedula;
-            const matchAsig = !a.curso_id || a.curso_id == asigActual.codigo;
-            return matchUser && matchAsig;
+            const cFiltro = String(cedula).replace(/[\.\s]/g, '');
+            const cAsist = String(a.cedula || a.user_id || '').replace(/[\.\s]/g, '');
+            return cAsist === cFiltro;
         });
         const totalA = asist.length;
-        const presente = asist.filter(a => a.estado === 'presente').length;
+        const presente = asist.filter(a => (a.estado||'').toLowerCase() === 'presente').length;
         const pctAsist = totalA > 0 ? Math.round(presente / totalA * 100) : null;
         if (pctAsist !== null) todasAsist.push(pctAsist);
 
-        const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'Pendiente';
+        const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'En Proceso';
         const estClass = prom !== '-' ? (parseFloat(prom) >= 70 ? 'est-ap' : 'est-re') : 'est-pen';
 
         html += `<tr>
             <td style="text-align:center;color:var(--txt2)">${idx+1}</td>
-            <td><strong>${nombre}</strong></td>
-            <td style="color:var(--txt2)">${cedula}</td>
+            <td>
+                <strong style="color:#fff;font-size:.72rem">${nomCompleto}</strong>
+                <div style="font-size:.56rem;color:var(--txt2)">${alumno.carrera || asigActual.carrera || 'General'} • Sec: ${alumno.seccion || asigActual.seccion || 'A'}</div>
+            </td>
+            <td style="color:var(--dorado);font-weight:600">${cedula}</td>
             <td class="nota ${pctAsist!==null?(pctAsist>=80?'aprobado':pctAsist>=70?'':'reprobado'):'pendiente'}" style="text-align:center">${pctAsist!==null?pctAsist+'%':'-'}</td>
             <td class="nota ${p1!==null?(p1>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center">${p1!==null?p1:'-'}</td>
             <td class="nota ${p2!==null?(p2>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center">${p2!==null?p2:'-'}</td>
@@ -472,7 +546,9 @@ function renderTabla() {
             <td class="nota ${prom!=='-'?(parseFloat(prom)>=70?'aprobado':'reprobado'):'pendiente'}" style="text-align:center;font-size:.8rem">${prom}</td>
             <td style="text-align:center"><span class="est ${estClass}">${estado}</span></td>
             <td style="text-align:center">
-                <button class="btn btn-s" style="padding:3px 6px;font-size:.55rem" onclick="editarAlumno(${uid},'${nombre}')"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-p" style="padding:4px 8px;font-size:.6rem" onclick="abrirModalProceso('${cedula}','${nomCompleto.replace(/'/g, "\\'")}',${p1!==null?p1:"''"},${p2!==null?p2:"''"},${fin!==null?fin:"''"})" title="Gestionar proceso académico">
+                    <i class="bi bi-pencil-square me-1"></i> Calificar
+                </button>
             </td>
         </tr>`;
     });
@@ -519,33 +595,70 @@ function getNota(notas, componente) {
     return null;
 }
 
-// ═══ EDITAR ALUMNO ═══
-function editarAlumno(uid, nombre) {
-    const p1 = prompt(`Nota Parcial 1 de ${nombre}:`);
-    if (p1 === null) return;
-    const p2 = prompt(`Nota Parcial 2 de ${nombre}:`);
-    if (p2 === null) return;
-    const fin = prompt(`Nota Final de ${nombre}:`);
-    if (fin === null) return;
+// ═══ MODAL Y GESTIÓN DE PROCESO ACADÉMICO ═══
+function abrirModalProceso(cedula, nombre, p1, p2, fin) {
+    document.getElementById('m-proceso-nombre').textContent = nombre;
+    document.getElementById('m-proceso-cedula').textContent = 'C.I: ' + cedula;
+    document.getElementById('m-proceso-id').value = cedula;
+    document.getElementById('m-p1').value = p1 !== undefined ? p1 : '';
+    document.getElementById('m-p2').value = p2 !== undefined ? p2 : '';
+    document.getElementById('m-fin').value = fin !== undefined ? fin : '';
+    
+    recalcularPromedioModal();
+    document.getElementById('modal-proceso-academico').style.display = 'flex';
+}
 
-    (async () => {
-        try {
-            await CenturiaAPI.grades.save({
-                asignatura: asigActual.codigo,
-                notas: [{
-                    cedula: uid,
-                    parcial1: p1,
-                    parcial2: p2,
-                    final: fin
-                }]
-            });
-            alert('Calificaciones guardadas');
-            await cargarDatosAsignatura(asigActual.codigo);
-        } catch (err) {
-            console.error('Error al guardar notas:', err);
-            alert('Error al guardar calificaciones: ' + (err.message || err));
-        }
-    })();
+function cerrarModalProceso() {
+    document.getElementById('modal-proceso-academico').style.display = 'none';
+}
+
+function recalcularPromedioModal() {
+    const v1 = parseFloat(document.getElementById('m-p1').value);
+    const v2 = parseFloat(document.getElementById('m-p2').value);
+    const v3 = parseFloat(document.getElementById('m-fin').value);
+    const promEl = document.getElementById('m-prom-preview');
+
+    if (!isNaN(v1) && !isNaN(v2) && !isNaN(v3)) {
+        const p = ((v1 + v2 + v3) / 3).toFixed(1);
+        promEl.textContent = p + (p >= 70 ? ' (Aprobado)' : ' (Reprobado)');
+        promEl.style.color = p >= 70 ? '#4ade80' : '#f87171';
+    } else {
+        promEl.textContent = 'En Proceso';
+        promEl.style.color = '#94a3b8';
+    }
+}
+
+async function guardarProcesoModal() {
+    const cedula = document.getElementById('m-proceso-id').value;
+    const p1 = document.getElementById('m-p1').value;
+    const p2 = document.getElementById('m-p2').value;
+    const fin = document.getElementById('m-fin').value;
+    const btn = document.getElementById('btn-guardar-proceso');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando...';
+
+    try {
+        await CenturiaAPI.grades.save({
+            asignatura: asigActual.codigo,
+            carrera: asigActual.carrera || '',
+            seccion: asigActual.seccion || '',
+            notas: [{
+                cedula: cedula,
+                parcial1: p1,
+                parcial2: p2,
+                final: fin
+            }]
+        });
+        
+        cerrarModalProceso();
+        await cargarDatosAsignatura(asigActual.codigo);
+    } catch (err) {
+        alert('Error al guardar calificaciones: ' + (err.message || err));
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Guardar Calificaciones';
+    }
 }
 
 // ═══ EXPORTAR CSV ═══

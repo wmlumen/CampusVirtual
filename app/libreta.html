@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +17,7 @@
             --verde-medio: #16813D;
             --verde-claro: #e8f5ec;
             --dorado: #d4a843;
+            --dorado-claro: #f3dfa2;
             --blanco: #ffffff;
             --rosa: #D94172;
             --azul: #2563EB;
@@ -56,6 +57,7 @@
             margin: 0 auto;
             padding: 20px;
             animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
+            padding-bottom: 50px;
         }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
@@ -85,12 +87,12 @@
         .lib-btn {
             padding: 8px 16px; border-radius: 12px; font-size: .7rem;
             font-family: 'Montserrat'; font-weight: 600; cursor: pointer;
-            border: none; transition: .2s;
+            border: none; transition: .2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
         }
         .lib-btn-print { background: rgba(197,165,90,.2); color: var(--dorado); border: 1px solid rgba(197,165,90,.3); }
-        .lib-btn-print:hover { background: rgba(197,165,90,.3); }
-        .lib-btn-home { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.15); }
-        .lib-btn-home:hover { background: rgba(255,255,255,.12); color: var(--blanco); }
+        .lib-btn-print:hover { background: rgba(197,165,90,.3); color: #fff; }
+        .lib-btn-home { background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.15); }
+        .lib-btn-home:hover { background: rgba(255,255,255,.15); color: var(--blanco); }
 
         /* ── GPA Summary ── */
         .gpa-bar {
@@ -109,122 +111,193 @@
         .gpa-item { text-align: center; }
         .gpa-value { font-size: 2rem; font-weight: 800; }
         .gpa-label { font-size: .6rem; color: rgba(255,255,255,.5); letter-spacing: 1px; text-transform: uppercase; }
-        .gpa-excellent { color: var(--verde-medio); }
+        .gpa-excellent { color: #4ade80; }
         .gpa-good { color: var(--dorado); }
         .gpa-fair { color: var(--naranja); }
         .gpa-poor { color: var(--rojo); }
 
-        /* ── Subject Table ── */
+        /* ── Pestañas de Filtro ── */
+        .lib-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .lib-tab {
+            padding: 9px 18px;
+            border-radius: 12px;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .5px;
+            cursor: pointer;
+            background: rgba(255,255,255,.05);
+            color: rgba(255,255,255,.6);
+            border: 1px solid rgba(255,255,255,.1);
+            transition: .2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lib-tab:hover {
+            background: rgba(255,255,255,.1);
+            color: #fff;
+        }
+        .lib-tab.active {
+            background: rgba(0,177,64,.25);
+            color: #4ade80;
+            border-color: rgba(0,177,64,.4);
+            font-weight: 700;
+        }
+        .lib-tab .tab-badge {
+            font-size: .6rem;
+            padding: 2px 7px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.15);
+            color: #fff;
+        }
+
+        /* ── Subject Table & Sections ── */
         .lib-section {
             background: rgba(255,255,255,.07);
             border: 1px solid rgba(255,255,255,.12);
             border-radius: 18px;
             padding: 20px;
             backdrop-filter: blur(20px);
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.2);
         }
         .lib-section-title {
-            font-size: .8rem; font-weight: 700; letter-spacing: 1px;
-            text-transform: uppercase; margin-bottom: 16px;
-            display: flex; align-items: center; gap: 8px;
+            font-size: .85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .lib-section-title-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .lib-section-title i { color: var(--dorado); }
 
         .lib-table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0 4px;
-            margin-bottom: 0;
+            border-spacing: 0 6px;
+            font-size: .75rem;
         }
         .lib-table thead th {
-            background: rgba(0,122,51,.3);
+            background: #0f3a1f;
             color: var(--dorado);
-            font-size: .6rem;
+            padding: 12px 14px;
+            text-align: left;
             font-weight: 700;
+            font-size: .65rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            padding: 10px 12px;
             border: none;
         }
         .lib-table thead th:first-child { border-radius: 10px 0 0 10px; }
         .lib-table thead th:last-child { border-radius: 0 10px 10px 0; }
         .lib-table tbody td {
             background: rgba(255,255,255,.04);
-            padding: 10px 12px;
-            font-size: .75rem;
+            padding: 12px 14px;
             border: none;
-            color: var(--blanco);
+            color: #fff;
+            vertical-align: middle;
         }
-        .lib-table tbody tr:first-child td:first-child { border-radius: 0 0 0 10px; }
-        .lib-table tbody tr:last-child td:first-child { border-radius: 0 0 0 10px; }
-        .lib-table tbody tr:first-child td:last-child { border-radius: 0 0 10px 0; }
-        .lib-table tbody tr:last-child td:last-child { border-radius: 0 0 10px 0; }
-        .lib-table tbody tr:hover td { background: rgba(255,255,255,.08); }
+        .lib-table tbody tr:hover td {
+            background: rgba(255,255,255,.08);
+        }
+        .lib-table tbody td:first-child { border-radius: 10px 0 0 10px; }
+        .lib-table tbody td:last-child { border-radius: 0 10px 10px 0; }
 
-        .grade-cell { font-weight: 700; text-align: center; }
-        .grade-a { color: var(--verde-medio); }
-        .grade-b { color: var(--dorado); }
-        .grade-c { color: var(--naranja); }
-        .grade-f { color: var(--rojo); }
-        .grade-pending { color: rgba(255,255,255,.3); }
-
-        .subject-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 10px;
-            font-size: .6rem;
-            font-weight: 600;
-            letter-spacing: .5px;
-        }
-        .subject-badge.active { background: rgba(0,177,64,.2); color: var(--verde-medio); }
-        .subject-badge.inactive { background: rgba(255,255,255,.08); color: rgba(255,255,255,.3); }
-
-        /* ── Progress Bar ── */
-        .lib-progress {
-            width: 80px;
-        }
-        .lib-progress .progress { height: 6px; }
-        .lib-progress .progress-text { font-size: .55rem; color: var(--dorado); text-align: right; margin-top: 2px; }
-
-        /* ── Career Tabs ── */
-        .lib-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .lib-tab {
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: .7rem;
-            font-weight: 600;
-            letter-spacing: .5px;
-            cursor: pointer;
-            background: rgba(255,255,255,.05);
-            color: rgba(255,255,255,.5);
-            border: 1px solid rgba(255,255,255,.1);
-            transition: .2s;
-            font-family: 'Montserrat';
-        }
-        .lib-tab:hover { background: rgba(255,255,255,.08); color: var(--blanco); }
-        .lib-tab.active { background: rgba(0,177,64,.2); color: var(--verde-medio); border-color: rgba(0,177,64,.3); }
-
-        /* ── Summary Cards ── */
-        .lib-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .lib-summary-card {
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 14px;
-            padding: 16px;
+        .grade-cell {
+            font-weight: 700;
+            font-size: .85rem;
             text-align: center;
         }
-        .lib-summary-card .value { font-size: 1.4rem; font-weight: 800; }
-        .lib-summary-card .label { font-size: .6rem; color: rgba(255,255,255,.4); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+        .grade-a { color: #4ade80 !important; }
+        .grade-b { color: var(--dorado) !important; }
+        .grade-c { color: var(--naranja) !important; }
+        .grade-f { color: var(--rojo) !important; }
+        .grade-pending { color: rgba(255,255,255,.3) !important; }
+
+        /* Badges de Curso / Estado */
+        .subject-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+        .subject-badge.desarrollado {
+            background: rgba(0,177,64,.2);
+            color: #4ade80;
+            border: 1px solid rgba(0,177,64,.4);
+        }
+        .subject-badge.activo {
+            background: rgba(37,99,235,.2);
+            color: #60a5fa;
+            border: 1px solid rgba(37,99,235,.4);
+        }
+        .subject-badge.pendiente {
+            background: rgba(255,255,255,.06);
+            color: rgba(255,255,255,.45);
+            border: 1px solid rgba(255,255,255,.1);
+        }
+        .subject-badge.recuperacion {
+            background: rgba(217,119,6,.2);
+            color: #fbbf24;
+            border: 1px solid rgba(217,119,6,.4);
+        }
+        .subject-badge.reprobado {
+            background: rgba(239,83,80,.2);
+            color: #ff8a87;
+            border: 1px solid rgba(239,83,80,.4);
+        }
+
+        .lib-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 90px;
+        }
+        .lib-progress .progress {
+            flex-grow: 1;
+            background: rgba(255,255,255,.1);
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+        .lib-progress .progress-text {
+            font-size: .65rem;
+            font-weight: 700;
+            min-width: 32px;
+            text-align: right;
+            color: rgba(255,255,255,.6);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255,255,255,.4);
+        }
+        .empty-state i {
+            font-size: 2.2rem;
+            color: rgba(255,255,255,.2);
+            margin-bottom: 10px;
+            display: block;
+        }
 
         /* ── Footer ── */
         .premium-footer-wrapper {
@@ -237,7 +310,6 @@
         .premium-footer-wrapper .premium-footer .institution { font-size: .55rem; margin-bottom: 0; }
         .premium-footer-wrapper .premium-footer .motto { font-size: .5rem; }
         .premium-footer-wrapper .premium-footer .year { font-size: .45rem; margin-top: 0; }
-        .lib-wrapper { padding-bottom: 44px; }
 
         /* ── Print ── */
         @media print {
@@ -247,7 +319,7 @@
             .lib-header, .lib-section { color: black; }
             .lib-table thead th { background: #007A33 !important; color: white !important; }
             .lib-table tbody td { background: #f9f9f9 !important; color: black !important; }
-            .lib-btn { display: none; }
+            .lib-btn, .lib-tabs { display: none !important; }
             .premium-footer-wrapper { display: none; }
             .lib-wrapper { padding-bottom: 0; }
             .grade-a { color: #007A33 !important; }
@@ -258,11 +330,11 @@
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
-            .lib-wrapper { padding: 12px; }
-            .lib-header { flex-direction: column; gap: 12px; }
-            .lib-header-right { width: 100%; justify-content: flex-end; }
+            .lib-wrapper { padding: 12px; padding-bottom: 50px; }
+            .lib-header { flex-direction: column; gap: 12px; align-items: flex-start; }
             .gpa-bar { flex-direction: column; }
             .lib-table { font-size: .65rem; }
+            .lib-table thead th, .lib-table tbody td { padding: 8px 10px; }
         }
     </style>
 </head>
@@ -274,15 +346,15 @@
                 <div class="lib-avatar" id="lib-avatar">E</div>
                 <div>
                     <div class="lib-header-name" id="lib-name">Libreta de Calificaciones</div>
-                    <div class="lib-header-sub" id="lib-sub">Cargando...</div>
+                    <div class="lib-header-sub" id="lib-sub">Cargando expediente...</div>
                 </div>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="lib-btn lib-btn-print" onclick="window.print()">
-                    <i class="bi bi-printer me-1"></i>Imprimir
+                    <i class="bi bi-printer"></i> Imprimir Libreta
                 </button>
                 <button class="lib-btn lib-btn-home" onclick="location.href='dashboard.html'">
-                    <i class="bi bi-grid-3x3-gap me-1"></i>Dashboard
+                    <i class="bi bi-grid-3x3-gap"></i> Dashboard
                 </button>
             </div>
         </div>
@@ -295,29 +367,47 @@
             </div>
             <div class="gpa-item">
                 <div class="gpa-value" id="gpa-asistencia" style="color:var(--azul);">-</div>
-                <div class="gpa-label">Asistencia %</div>
+                <div class="gpa-label">Asistencia Global</div>
             </div>
             <div class="gpa-item">
-                <div class="gpa-value" id="gpa-courses" style="color:var(--dorado);">0</div>
-                <div class="gpa-label">Asignaturas</div>
+                <div class="gpa-value" id="gpa-desarrolladas" style="color:#4ade80;">0</div>
+                <div class="gpa-label">Cursos Desarrollados</div>
             </div>
             <div class="gpa-item">
-                <div class="gpa-value" id="gpa-approved" style="color:var(--verde-medio);">0</div>
-                <div class="gpa-label">Aprobadas</div>
+                <div class="gpa-value" id="gpa-activas" style="color:#60a5fa;">0</div>
+                <div class="gpa-label">Cursos Activos</div>
+            </div>
+            <div class="gpa-item">
+                <div class="gpa-value" id="gpa-pendientes" style="color:rgba(255,255,255,.5);">0</div>
+                <div class="gpa-label">Cursos Pendientes</div>
             </div>
         </div>
 
-        <!-- ═══ Career Tabs ═══ -->
+        <!-- ═══ Filter Tabs ═══ -->
         <div class="lib-tabs" id="lib-tabs">
-            <div class="lib-tab active" data-carrera="todas" onclick="filterCareer('todas')">Todas</div>
+            <div class="lib-tab active" data-filtro="todas" onclick="setFilter('todas')">
+                <i class="bi bi-collection"></i> Todas <span class="tab-badge" id="badge-todas">0</span>
+            </div>
+            <div class="lib-tab" data-filtro="desarrolladas" onclick="setFilter('desarrolladas')">
+                <i class="bi bi-check2-circle" style="color:#4ade80;"></i> Cursos Desarrollados <span class="tab-badge" id="badge-desarrolladas">0</span>
+            </div>
+            <div class="lib-tab" data-filtro="activas" onclick="setFilter('activas')">
+                <i class="bi bi-play-circle" style="color:#60a5fa;"></i> Cursos Activos <span class="tab-badge" id="badge-activas">0</span>
+            </div>
+            <div class="lib-tab" data-filtro="pendientes" onclick="setFilter('pendientes')">
+                <i class="bi bi-hourglass" style="color:rgba(255,255,255,.5);"></i> Cursos Pendientes <span class="tab-badge" id="badge-pendientes">0</span>
+            </div>
         </div>
 
         <!-- ═══ Subject Tables ═══ -->
         <div id="lib-content">
             <div class="lib-section">
-                <div class="lib-section-title"><i class="bi bi-hourglass-split"></i> Cargando calificaciones...</div>
-                <div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">
-                    <i class="bi bi-hourglass" style="font-size:2rem;"></i>
+                <div class="lib-section-title">
+                    <div class="lib-section-title-left"><i class="bi bi-hourglass-split"></i> Cargando calificaciones...</div>
+                </div>
+                <div class="empty-state">
+                    <i class="bi bi-hourglass-split"></i>
+                    <p>Sincronizando información académica y notas oficiales...</p>
                 </div>
             </div>
         </div>
@@ -332,345 +422,498 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=13"></script>
+    <script src="js/api.js?v=17"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
-        // ═══ DATOS DE ASIGNATURAS POR CARRERA ═══
-        const carreraData = {
-            'Administración de Empresas': {
-                icono: 'bi-briefcase',
-                asignaturas: [
-                    { codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6 },
-                    { codigo: 'ADE19', nombre: 'Contabilidad General', creditos: 5 },
-                    { codigo: 'ADE20', nombre: 'Administración y Gestión Pública', creditos: 5 },
-                    { codigo: 'ADE21', nombre: 'Logística y Comercio Internacional', creditos: 4 },
-                    { codigo: 'ADE22', nombre: 'Dirección de Empresas', creditos: 4 }
-                ]
-            },
-            'Contabilidad': {
-                icono: 'bi-calculator',
-                asignaturas: [
-                    { codigo: 'CON18', nombre: 'Contabilidad General', creditos: 6 },
-                    { codigo: 'CON19', nombre: 'Contabilidad Costera', creditos: 5 },
-                    { codigo: 'CON20', nombre: 'Auditoría Financiera', creditos: 5 },
-                    { codigo: 'CON21', nombre: 'Gestión Tributaria', creditos: 4 },
-                    { codigo: 'CON22', nombre: 'Contabilidad Avanzada', creditos: 4 }
-                ]
-            },
-            'Ingeniería Comercial': {
-                icono: 'bi-circuit',
-                asignaturas: [
-                    { codigo: 'ING18', nombre: 'Matemáticas Aplicadas', creditos: 6 },
-                    { codigo: 'ING19', nombre: 'Estadística Empresarial', creditos: 5 },
-                    { codigo: 'ING20', nombre: 'Investigación de Operaciones', creditos: 5 },
-                    { codigo: 'ING21', nombre: 'Finanzas Corporativas', creditos: 4 },
-                    { codigo: 'ING22', nombre: 'Marketing Digital', creditos: 4 }
-                ]
-            },
-            'Administración Aduanera': {
-                icono: 'bi-truck',
-                asignaturas: [
-                    { codigo: 'ADU18', nombre: 'Derecho Aduanero', creditos: 6 },
-                    { codigo: 'ADU19', nombre: 'Logística Internacional', creditos: 5 },
-                    { codigo: 'ADU20', nombre: 'Tributación Aduanera', creditos: 5 },
-                    { codigo: 'ADU21', nombre: 'Comercio Exterior', creditos: 4 },
-                    { codigo: 'ADU22', nombre: 'Gestión Portuaria', creditos: 4 }
-                ]
-            },
-            'Administración y Gestión Pública': {
-                icono: 'bi-building',
-                asignaturas: [
-                    { codigo: 'AGP18', nombre: 'Administración Pública', creditos: 6 },
-                    { codigo: 'AGP19', nombre: 'Derecho Administrativo', creditos: 5 },
-                    { codigo: 'AGP20', nombre: 'Gestión Municipal', creditos: 5 },
-                    { codigo: 'AGP21', nombre: 'Presupuesto Público', creditos: 4 },
-                    { codigo: 'AGP22', nombre: 'Políticas Públicas', creditos: 4 }
-                ]
-            },
-            'Ciencias Sociales': {
-                icono: 'bi-people',
-                asignaturas: [
-                    { codigo: 'CS18', nombre: 'Sociología General', creditos: 6 },
-                    { codigo: 'CS19', nombre: 'Antropología Social', creditos: 5 },
-                    { codigo: 'CS20', nombre: 'Ciencia Política', creditos: 5 },
-                    { codigo: 'CS21', nombre: 'Economía Social', creditos: 4 },
-                    { codigo: 'CS22', nombre: 'Metodología de Investigación', creditos: 4 }
-                ]
-            }
+        // Malla curricular de referencia por carrera
+        const mallaCurricular = {
+            'Administración de Empresas': [
+                { codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'ADE19', nombre: 'Contabilidad General', creditos: 5, grado: 'Grado' },
+                { codigo: 'ADE20', nombre: 'Administración y Gestión Pública', creditos: 5, grado: 'Grado' },
+                { codigo: 'ADE21', nombre: 'Logística y Comercio Internacional', creditos: 4, grado: 'Grado' },
+                { codigo: 'ADE22', nombre: 'Dirección de Empresas', creditos: 4, grado: 'Grado' }
+            ],
+            'Contabilidad': [
+                { codigo: 'CON18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'CON19', nombre: 'Contabilidad General', creditos: 6, grado: 'Grado' },
+                { codigo: 'CON20', nombre: 'Contabilidad Costera', creditos: 5, grado: 'Grado' },
+                { codigo: 'CON21', nombre: 'Auditoría Financiera', creditos: 5, grado: 'Grado' },
+                { codigo: 'CON22', nombre: 'Gestión Tributaria', creditos: 4, grado: 'Grado' }
+            ],
+            'Ingeniería Comercial': [
+                { codigo: 'ING18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'ING19', nombre: 'Matemáticas Aplicadas', creditos: 6, grado: 'Grado' },
+                { codigo: 'ING20', nombre: 'Estadística Empresarial', creditos: 5, grado: 'Grado' },
+                { codigo: 'ING21', nombre: 'Investigación de Operaciones', creditos: 5, grado: 'Grado' },
+                { codigo: 'ING22', nombre: 'Finanzas Corporativas', creditos: 4, grado: 'Grado' }
+            ],
+            'Administración Aduanera': [
+                { codigo: 'ADU18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'ADU19', nombre: 'Derecho Aduanero', creditos: 6, grado: 'Grado' },
+                { codigo: 'ADU20', nombre: 'Logística Internacional', creditos: 5, grado: 'Grado' },
+                { codigo: 'ADU21', nombre: 'Tributación Aduanera', creditos: 5, grado: 'Grado' },
+                { codigo: 'ADU22', nombre: 'Comercio Exterior', creditos: 4, grado: 'Grado' }
+            ],
+            'Administración y Gestión Pública': [
+                { codigo: 'AGP18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'AGP19', nombre: 'Administración Pública', creditos: 6, grado: 'Grado' },
+                { codigo: 'AGP20', nombre: 'Derecho Administrativo', creditos: 5, grado: 'Grado' },
+                { codigo: 'AGP21', nombre: 'Gestión Municipal', creditos: 5, grado: 'Grado' },
+                { codigo: 'AGP22', nombre: 'Presupuesto Público', creditos: 4, grado: 'Grado' }
+            ],
+            'Ciencias Sociales': [
+                { codigo: 'CS18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
+                { codigo: 'CS19', nombre: 'Sociología General', creditos: 6, grado: 'Grado' },
+                { codigo: 'CS20', nombre: 'Antropología Social', creditos: 5, grado: 'Grado' },
+                { codigo: 'CS21', nombre: 'Ciencia Política', creditos: 5, grado: 'Grado' },
+                { codigo: 'CS22', nombre: 'Economía Social', creditos: 4, grado: 'Grado' }
+            ]
         };
+
+        // Estado global de la vista
+        let currentFilter = 'todas';
+        let materiasProcesadas = [];
+        let globalUser = null;
+
+        function normTxt(v) {
+            return String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase().replace(/\s+/g, ' ');
+        }
+
+        function escHtml(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function getGradeClass(score) {
+            const n = parseFloat(score);
+            if (isNaN(n)) return 'grade-pending';
+            if (n >= 90) return 'grade-a';
+            if (n >= 70) return 'grade-b';
+            if (n >= 60) return 'grade-c';
+            return 'grade-f';
+        }
+
+        function habilitadaPara(a, user) {
+            if (['INACTIVO', 'INACTIVA', 'FALSE', 'NO', '0', 'BAJA'].includes(normTxt(a.estado))) return false;
+            const g = normTxt(user.grado);
+            if (a.grado && g && normTxt(a.grado) !== g) return false;
+            const c = normTxt(user.carrera), ac = normTxt(a.carrera);
+            if (ac && c && !['GENERAL', 'TODAS', 'TODOS', 'TODAS LAS CARRERAS'].includes(ac) && ac !== c) return false;
+            const sec = normTxt(user.seccion);
+            if (a.secciones && a.secciones.length && sec && !a.secciones.includes(sec)) return false;
+            return true;
+        }
+
+        function normAsignatura(s) {
+            const sec = s.seccion || s.Seccion || s.secciones || s.Secciones || '';
+            return {
+                nombre: s.nombre || s.Nombre || s.nombre_completo || s.asignatura || '',
+                codigo: s.codigo || s.Codigo || '',
+                carrera: s.carrera || s.Carrera || '',
+                grado: s.grado || s.Grado || 'Grado',
+                seccion: Array.isArray(sec) ? sec.join(', ') : String(sec),
+                secciones: (Array.isArray(sec) ? sec : String(sec).split(/[,;\/]/)).map(normTxt).filter(Boolean),
+                estado: s.estado || s.Estado || 'activo',
+                creditos: s.creditos || s.Creditos || 5,
+                icono: s.icono || s.Icono || 'bi-journal-bookmark'
+            };
+        }
 
         // ═══ CARGAR LIBRETA ═══
         async function cargarLibreta() {
             try {
-                const token = CenturiaAPI.getToken();
                 const user = CenturiaAPI.getCurrentUser();
-                
                 if (!user) {
                     const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
                     if (!cedula) { location.href = 'index.html'; return; }
                     await cargarDatosLocal(cedula);
                     return;
                 }
-
-                await cargarDatosAPI(user, token);
+                await cargarDatosAPI(user);
             } catch(e) {
-                console.error('Error:', e);
+                console.error('Error cargando libreta:', e);
                 const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
                 if (cedula) await cargarDatosLocal(cedula);
             }
         }
 
-        async function cargarDatosAPI(user, token) {
-            const nombre = user.firstname || 'Estudiante';
-            const apellido = user.lastname || '';
-            const cedula = user.username || '';
-            const carrera = user.carrera || 'No asignada';
-            const grado = user.grado || '';
+        async function cargarDatosAPI(user) {
+            globalUser = user;
+            const nombre = user.firstname || user.nombre || 'Estudiante';
+            const apellido = user.lastname || user.apellido || '';
+            const cedula = user.username || user.cedula || '';
+            const carrera = user.carrera || 'Administración de Empresas';
+            const grado = user.grado || 'Grado';
+            const seccion = user.seccion || '';
 
             document.getElementById('lib-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('lib-sub').textContent = cedula + ' • ' + carrera + ' • ' + grado;
-            document.getElementById('lib-avatar').textContent = nombre.charAt(0) + apellido.charAt(0);
+            document.getElementById('lib-sub').textContent = `CI: ${cedula} • ${grado} • ${carrera} ${seccion ? '• Sección ' + seccion : ''}`;
+            const initials = ((nombre.charAt(0) || 'U') + (apellido.charAt(0) || '')).toUpperCase();
+            document.getElementById('lib-avatar').textContent = initials;
 
-            // Load grades
+            // 1. Obtener notas oficiales del alumno
             let grades = [];
             try {
-                const data = await CenturiaAPI.grades.list({ cedula: user.cedula });
-                grades = data.data || data.notas || [];
-            } catch(e) {}
+                const resG = await CenturiaAPI.grades.list({ cedula: cedula });
+                grades = resG.data || resG.notas || [];
+            } catch(e) {
+                console.warn('No se pudieron obtener notas del API:', e);
+            }
 
-            // Load courses
-            let courses = [];
-            try {
-                const data = await CenturiaAPI.courses.list({ cedula: user.cedula });
-                courses = data.data || data.cursos || [];
-            } catch(e) {}
-
-            // Load attendance
+            // 2. Obtener asistencias del alumno
             let attendance = [];
             try {
-                const data = await CenturiaAPI.attendance.list({ cedula: user.cedula });
-                attendance = data.data || data.asistencias || [];
-            } catch(e) {}
+                const resA = await CenturiaAPI.attendance.list({ cedula: cedula });
+                attendance = resA.data || resA.asistencias || [];
+            } catch(e) {
+                console.warn('No se pudieron obtener asistencias:', e);
+            }
 
-            renderLibreta(carrera, grades, courses, attendance);
+            // 3. Obtener catálogo / asignaturas habilitadas del servidor
+            let apiSubjects = [];
+            try {
+                const resKit = await CenturiaAPI.kit.getHabilitadas();
+                apiSubjects = (resKit.asignaturas || []).map(normAsignatura);
+            } catch(e) {
+                console.warn('No se pudieron obtener asignaturas del kit:', e);
+            }
+
+            procesarMaterias(user, grades, attendance, apiSubjects);
         }
 
         async function cargarDatosLocal(cedula) {
             const nombre = localStorage.getItem('centuria_nombre') || 'Estudiante';
             const apellido = localStorage.getItem('centuria_apellido') || '';
             const carrera = localStorage.getItem('centuria_carrera') || 'Administración de Empresas';
-            const grado = localStorage.getItem('centuria_grado') || '';
+            const grado = localStorage.getItem('centuria_grado') || 'Grado';
+            const seccion = localStorage.getItem('centuria_seccion') || '';
+
+            const user = { nombre, apellido, cedula, carrera, grado, seccion };
+            globalUser = user;
 
             document.getElementById('lib-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('lib-sub').textContent = cedula + ' • ' + carrera + ' • ' + grado;
-            document.getElementById('lib-avatar').textContent = nombre.charAt(0) + apellido.charAt(0);
+            document.getElementById('lib-sub').textContent = `CI: ${cedula} • ${grado} • ${carrera} ${seccion ? '• Sección ' + seccion : ''}`;
+            const initials = ((nombre.charAt(0) || 'U') + (apellido.charAt(0) || '')).toUpperCase();
+            document.getElementById('lib-avatar').textContent = initials;
 
-            renderLibretaLocal(carrera);
+            procesarMaterias(user, [], [], []);
         }
 
-        // ═══ RENDER LIBRETA ═══
-        function renderLibreta(carrera, grades, courses, attendance) {
-            const container = document.getElementById('lib-content');
-            const tabsContainer = document.getElementById('lib-tabs');
-
-            // Get all careers from data
-            const carreras = Object.keys(carreraData);
+        // ═══ PROCESAR Y CLASIFICAR MATERIAS ═══
+        function procesarMaterias(user, grades, attendance, apiSubjects) {
+            const miCarrera = user.carrera || 'Administración de Empresas';
+            const miGrado = user.grado || 'Grado';
             
-            // Add career tabs
-            tabsContainer.innerHTML = '<div class="lib-tab active" data-carrera="todas" onclick="filterCareer(\'todas\')">Todas</div>' +
-                carreras.map(c => `<div class="lib-tab" data-carrera="${c}" onclick="filterCareer('${c}')">${c}</div>`).join('');
+            // Asignaturas base de la carrera del alumno
+            let asignaturasBase = [];
+            
+            // Filtrar las asignaturas de la API que corresponden a la carrera y grado del alumno
+            const filteredApi = apiSubjects.filter(a => habilitadaPara(a, user));
+            
+            if (filteredApi.length > 0) {
+                asignaturasBase = filteredApi;
+            } else if (mallaCurricular[miCarrera]) {
+                asignaturasBase = mallaCurricular[miCarrera].map(normAsignatura);
+            } else {
+                // Fallback por defecto si no está en catálogo estático
+                asignaturasBase = [
+                    normAsignatura({ codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: miGrado, carrera: miCarrera }),
+                    normAsignatura({ codigo: 'ADE19', nombre: 'Contabilidad General', creditos: 5, grado: miGrado, carrera: miCarrera }),
+                    normAsignatura({ codigo: 'ADE20', nombre: 'Administración y Gestión Pública', creditos: 5, grado: miGrado, carrera: miCarrera })
+                ];
+            }
 
-            // Calculate stats
-            const allGrades = grades || [];
-            const totalGrades = allGrades.length;
-            const approved = allGrades.filter(g => (g.score || 0) >= 70).length;
-            const avgGrade = totalGrades > 0 ? (allGrades.reduce((s,g) => s + (g.score || 0), 0) / totalGrades).toFixed(1) : '-';
-            const attendanceRate = attendance && attendance.length > 0 ? Math.round((attendance.filter(a => a.estado === 'presente').length / attendance.length) * 100) : '-';
+            // También agregar cualquier materia que esté en las notas del alumno aunque no estuviera en la malla base
+            grades.forEach(g => {
+                const nombreG = g.asignatura || g.subject || g.curso || '';
+                const codigoG = g.codigo || g.curso_id || '';
+                if (!nombreG && !codigoG) return;
+                
+                const yaExiste = asignaturasBase.some(a => 
+                    (codigoG && normTxt(a.codigo) === normTxt(codigoG)) || 
+                    (nombreG && normTxt(a.nombre) === normTxt(nombreG))
+                );
+                
+                if (!yaExiste) {
+                    asignaturasBase.push(normAsignatura({
+                        codigo: codigoG || 'EXT',
+                        nombre: nombreG || 'Asignatura Cursada',
+                        creditos: 5,
+                        grado: g.grado || miGrado,
+                        carrera: g.carrera || miCarrera
+                    }));
+                }
+            });
 
-            document.getElementById('gpa-general').textContent = avgGrade;
-            document.getElementById('gpa-asistencia').textContent = attendanceRate + '%';
-            document.getElementById('gpa-courses').textContent = courses.length;
-            document.getElementById('gpa-approved').textContent = approved;
+            // Mapear cada asignatura con su información de notas, asistencia y estado
+            materiasProcesadas = asignaturasBase.map(asig => {
+                // Buscar nota
+                const asigGrade = grades.find(g => {
+                    const gCode = normTxt(g.codigo || g.curso_id || '');
+                    const gName = normTxt(g.asignatura || g.subject || g.curso || '');
+                    const aCode = normTxt(asig.codigo);
+                    const aName = normTxt(asig.nombre);
+                    
+                    if (aCode && gCode && aCode === gCode) return true;
+                    if (aName && gName && (gName.includes(aName) || aName.includes(gName))) return true;
+                    return false;
+                });
 
-            // Render all subjects
-            renderAllSubjects(container, carrera, grades, courses, attendance);
+                // Buscar asistencias
+                const asigAtt = attendance.filter(a => {
+                    const attCode = normTxt(a.curso_id || a.codigo || '');
+                    const attName = normTxt(a.asignatura || a.curso || '');
+                    const aCode = normTxt(asig.codigo);
+                    const aName = normTxt(asig.nombre);
+                    if (aCode && attCode && aCode === attCode) return true;
+                    if (aName && attName && (attName.includes(aName) || aName.includes(attName))) return true;
+                    return false;
+                });
+
+                // Extraer calificaciones
+                const gv = v => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : parseFloat(v);
+                let p1 = null, p2 = null, fin = null, prom = null;
+                
+                if (asigGrade) {
+                    p1 = gv(asigGrade.parcial1 !== undefined ? asigGrade.parcial1 : asigGrade.p1);
+                    p2 = gv(asigGrade.parcial2 !== undefined ? asigGrade.parcial2 : asigGrade.p2);
+                    fin = gv(asigGrade.final !== undefined ? asigGrade.final : asigGrade.examen_final);
+                    prom = gv(asigGrade.promedio !== undefined ? asigGrade.promedio : asigGrade.score);
+
+                    if (prom === null && (p1 !== null || p2 !== null || fin !== null)) {
+                        const notasArr = [p1, p2, fin].filter(n => n !== null);
+                        if (notasArr.length > 0) {
+                            prom = parseFloat((notasArr.reduce((s, n) => s + n, 0) / notasArr.length).toFixed(1));
+                        }
+                    }
+                }
+
+                // Calcular porcentaje de asistencia
+                let asistPct = null;
+                if (asigAtt.length > 0) {
+                    const presentes = asigAtt.filter(a => a.estado === 'presente' || a.status === 'present').length;
+                    asistPct = Math.round((presentes / asigAtt.length) * 100);
+                }
+
+                // DETERMINACIÓN DEL ESTADO DEL CURSO:
+                // 1. "desarrollado": Si tiene nota final o promedio completado (rindió evaluaciones / completó el curso)
+                // 2. "activo": Es la materia actual habilitada en el campus (ej. TIC / ADE18 o con asistencia activa / curso en progreso)
+                // 3. "pendiente": Materia de la malla que aún no se ha cursado ni evaluado
+                let estadoCurso = 'pendiente';
+                let estadoBadgeClass = 'pendiente';
+                let estadoTexto = 'Curso Pendiente';
+                let progreso = 0;
+
+                const tieneNotas = (prom !== null || fin !== null || p1 !== null || p2 !== null);
+                const tieneAsistencia = (asigAtt.length > 0);
+                const esMateriaActiva = normTxt(asig.codigo) === 'ADE18' || normTxt(asig.nombre).includes('TIC') || asig.estado === 'activo' || asig.estado === 'habilitada';
+
+                if (prom !== null && (fin !== null || (p1 !== null && p2 !== null))) {
+                    // Ha completado evaluaciones
+                    estadoCurso = 'desarrollado';
+                    progreso = 100;
+                    if (prom >= 70) {
+                        estadoBadgeClass = 'desarrollado';
+                        estadoTexto = 'Desarrollado • Aprobado';
+                    } else if (prom >= 50) {
+                        estadoBadgeClass = 'recuperacion';
+                        estadoTexto = 'Desarrollado • Recuperación';
+                    } else {
+                        estadoBadgeClass = 'reprobado';
+                        estadoTexto = 'Desarrollado • Reprobado';
+                    }
+                } else if (tieneNotas || tieneAsistencia || esMateriaActiva) {
+                    estadoCurso = 'activo';
+                    estadoBadgeClass = 'activo';
+                    estadoTexto = 'Curso Activo';
+                    progreso = p1 !== null ? 65 : (tieneAsistencia ? 40 : 25);
+                } else {
+                    estadoCurso = 'pendiente';
+                    estadoBadgeClass = 'pendiente';
+                    estadoTexto = 'Curso Pendiente';
+                    progreso = 0;
+                }
+
+                return {
+                    codigo: asig.codigo || 'ADE18',
+                    nombre: asig.nombre,
+                    grado: asig.grado || miGrado,
+                    carrera: asig.carrera || miCarrera,
+                    creditos: asig.creditos || 5,
+                    parcial1: p1 !== null ? p1 : '-',
+                    parcial2: p2 !== null ? p2 : '-',
+                    final: fin !== null ? fin : '-',
+                    promedio: prom !== null ? prom : '-',
+                    asistenciaPct: asistPct !== null ? asistPct : '-',
+                    estadoCurso: estadoCurso,
+                    estadoBadgeClass: estadoBadgeClass,
+                    estadoTexto: estadoTexto,
+                    progreso: progreso
+                };
+            });
+
+            actualizarEstadisticasYBadges();
+            renderLibreta();
         }
 
-        function renderAllSubjects(container, carreraFilter, grades, courses, attendance) {
+        // ═══ ACTUALIZAR ESTADÍSTICAS Y CONTADORES ═══
+        function actualizarEstadisticasYBadges() {
+            const desarrolladas = materiasProcesadas.filter(m => m.estadoCurso === 'desarrollado');
+            const activas = materiasProcesadas.filter(m => m.estadoCurso === 'activo');
+            const pendientes = materiasProcesadas.filter(m => m.estadoCurso === 'pendiente');
+
+            // Badges de filtros
+            document.getElementById('badge-todas').textContent = materiasProcesadas.length;
+            document.getElementById('badge-desarrolladas').textContent = desarrolladas.length;
+            document.getElementById('badge-activas').textContent = activas.length;
+            document.getElementById('badge-pendientes').textContent = pendientes.length;
+
+            // GPA y Asistencia Global
+            const conPromedio = materiasProcesadas.filter(m => m.promedio !== '-');
+            let promGeneral = '-';
+            if (conPromedio.length > 0) {
+                const suma = conPromedio.reduce((acc, m) => acc + parseFloat(m.promedio), 0);
+                promGeneral = (suma / conPromedio.length).toFixed(1);
+            }
+
+            const conAsistencia = materiasProcesadas.filter(m => m.asistenciaPct !== '-');
+            let asistGlobal = '-';
+            if (conAsistencia.length > 0) {
+                const suma = conAsistencia.reduce((acc, m) => acc + parseFloat(m.asistenciaPct), 0);
+                asistGlobal = Math.round(suma / conAsistencia.length) + '%';
+            }
+
+            document.getElementById('gpa-general').textContent = promGeneral;
+            document.getElementById('gpa-asistencia').textContent = asistGlobal;
+            document.getElementById('gpa-desarrolladas').textContent = desarrolladas.length;
+            document.getElementById('gpa-activas').textContent = activas.length;
+            document.getElementById('gpa-pendientes').textContent = pendientes.length;
+        }
+
+        // ═══ FILTRO DE PESTAÑAS ═══
+        function setFilter(filtro) {
+            currentFilter = filtro;
+            document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+            const activeBtn = document.querySelector(`.lib-tab[data-filtro="${filtro}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            renderLibreta();
+        }
+
+        // ═══ RENDER TABLA ═══
+        function renderLibreta() {
+            const container = document.getElementById('lib-content');
+            
+            let listado = materiasProcesadas;
+            if (currentFilter === 'desarrolladas') {
+                listado = listado.filter(m => m.estadoCurso === 'desarrollado');
+            } else if (currentFilter === 'activas') {
+                listado = listado.filter(m => m.estadoCurso === 'activo');
+            } else if (currentFilter === 'pendientes') {
+                listado = listado.filter(m => m.estadoCurso === 'pendiente');
+            }
+
+            if (listado.length === 0) {
+                container.innerHTML = `
+                    <div class="lib-section">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>No se encontraron asignaturas en la categoría seleccionada (<strong>${currentFilter}</strong>).</p>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            // Agrupar por Carrera / Grado
+            const grupos = {};
+            listado.forEach(m => {
+                const grupoKey = `${m.grado} • ${m.carrera}`;
+                if (!grupos[grupoKey]) grupos[grupoKey] = [];
+                grupos[grupoKey].push(m);
+            });
+
             let html = '';
-            const carreras = carreraFilter === 'todas' ? Object.keys(carreraData) : [carreraFilter];
-
-            carreras.forEach(carrera => {
-                const data = carreraData[carrera];
-                if (!data) return;
-
+            for (const [tituloGrupo, items] of Object.entries(grupos)) {
                 html += `
                 <div class="lib-section">
                     <div class="lib-section-title">
-                        <i class="bi ${data.icono}"></i> ${carrera}
-                        <span style="font-size:.6rem;color:rgba(255,255,255,.3);margin-left:8px;">(${data.asignaturas.length} asignaturas)</span>
+                        <div class="lib-section-title-left">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            <span>${escHtml(tituloGrupo)}</span>
+                        </div>
+                        <span style="font-size:.65rem;color:rgba(255,255,255,.5);text-transform:none;">
+                            ${items.length} ${items.length === 1 ? 'asignatura mostrada' : 'asignaturas mostradas'}
+                        </span>
                     </div>
                     <div style="overflow-x:auto;">
-                    <table class="lib-table">
-                        <thead>
-                            <tr>
-                                <th>Asignatura</th>
-                                <th>Créditos</th>
-                                <th>Asist.</th>
-                                <th>Parcial 1</th>
-                                <th>Parcial 2</th>
-                                <th>Final</th>
-                                <th>Promedio</th>
-                                <th>Estado</th>
-                                <th>Progreso</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+                        <table class="lib-table">
+                            <thead>
+                                <tr>
+                                    <th>Asignatura & Código</th>
+                                    <th style="text-align:center">Créd.</th>
+                                    <th style="text-align:center">Asistencia</th>
+                                    <th style="text-align:center">Parcial 1</th>
+                                    <th style="text-align:center">Parcial 2</th>
+                                    <th style="text-align:center">Final</th>
+                                    <th style="text-align:center">Promedio</th>
+                                    <th>Estado del Curso</th>
+                                    <th style="min-width:110px">Progreso</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
 
-                data.asignaturas.forEach(asig => {
-                    const asigGrades = grades.filter(g => (g.asignatura || g.subject || '').includes(asig.nombre.split(' ')[0]) || (g.curso_id || '').includes(asig.codigo));
-                    const asistencia = attendance.filter(a => (a.curso_id || a.asignatura || '').includes(asig.codigo));
-                    
-                    const asistenciaPct = asistencia.length > 0 ? Math.round(asistencia.filter(a => a.estado === 'presente').length / asistencia.length * 100) : '-';
-                    // El backend (cvListarNotas) devuelve una fila por alumno+asignatura con
-                    // los campos parcial1/parcial2/final directos (no 'component'/'score').
-                    const gradeRow = asigGrades[0];
-                    const gv = v => (v === undefined || v === null || v === '') ? '-' : v;
-                    const parcial1 = gradeRow ? gv(gradeRow.parcial1) : '-';
-                    const parcial2 = gradeRow ? gv(gradeRow.parcial2) : '-';
-                    const final = gradeRow ? gv(gradeRow.final) : '-';
-                    
-                    const avg = (parcial1 !== '-' && parcial2 !== '-' && final !== '-') 
-                        ? ((parcial1 + parcial2 + final) / 3).toFixed(1) 
-                        : '-';
-                    
-                    const estado = avg !== '-' ? (avg >= 70 ? 'Aprobado' : avg >= 50 ? 'Recuperación' : 'Reprobado') : 'Pendiente';
-                    const estadoClass = avg !== '-' ? (avg >= 70 ? 'grade-a' : avg >= 50 ? 'grade-c' : 'grade-f') : 'grade-pending';
-                    const progressPct = avg !== '-' ? Math.min(avg, 100) : 0;
+                items.forEach(asig => {
+                    const p1Class = asig.parcial1 !== '-' ? getGradeClass(asig.parcial1) : 'grade-pending';
+                    const p2Class = asig.parcial2 !== '-' ? getGradeClass(asig.parcial2) : 'grade-pending';
+                    const finClass = asig.final !== '-' ? getGradeClass(asig.final) : 'grade-pending';
+                    const promClass = asig.promedio !== '-' ? getGradeClass(asig.promedio) : 'grade-pending';
+                    const asistClass = asig.asistenciaPct !== '-' ? (asig.asistenciaPct >= 80 ? 'grade-a' : asig.asistenciaPct >= 70 ? 'grade-b' : 'grade-c') : 'grade-pending';
 
                     html += `
                         <tr>
-                            <td><strong>${asig.nombre}</strong><br><span style="font-size:.6rem;color:rgba(255,255,255,.4);">${asig.codigo}</span></td>
-                            <td style="text-align:center;">${asig.creditos}</td>
-                            <td class="grade-cell ${asistenciaPct !== '-' && asistenciaPct >= 80 ? 'grade-a' : asistenciaPct !== '-' && asistenciaPct >= 70 ? 'grade-b' : 'grade-c'}">${asistenciaPct !== '-' ? asistenciaPct + '%' : '-'}</td>
-                            <td class="grade-cell ${parcial1 !== '-' ? getGradeClass(parcial1) : 'grade-pending'}">${parcial1 !== '-' ? parcial1 : '-'}</td>
-                            <td class="grade-cell ${parcial2 !== '-' ? getGradeClass(parcial2) : 'grade-pending'}">${parcial2 !== '-' ? parcial2 : '-'}</td>
-                            <td class="grade-cell ${final !== '-' ? getGradeClass(final) : 'grade-pending'}">${final !== '-' ? final : '-'}</td>
-                            <td class="grade-cell ${avg !== '-' ? getGradeClass(avg) : 'grade-pending'}" style="font-size:.85rem;">${avg !== '-' ? avg : '-'}</td>
-                            <td><span class="subject-badge ${avg !== '-' ? (avg >= 70 ? 'active' : '') : ''}" style="${avg === '-' ? 'background:rgba(255,255,255,.05);color:rgba(255,255,255,.3);' : ''}">${estado}</span></td>
+                            <td>
+                                <strong>${escHtml(asig.nombre)}</strong><br>
+                                <span style="font-size:.62rem;color:rgba(255,255,255,.45);letter-spacing:.5px;">
+                                    <i class="bi bi-tag me-1"></i>${escHtml(asig.codigo)} • ${escHtml(asig.carrera)}
+                                </span>
+                            </td>
+                            <td style="text-align:center;font-weight:600;">${asig.creditos}</td>
+                            <td class="grade-cell ${asistClass}">${asig.asistenciaPct !== '-' ? asig.asistenciaPct + '%' : '-'}</td>
+                            <td class="grade-cell ${p1Class}">${asig.parcial1}</td>
+                            <td class="grade-cell ${p2Class}">${asig.parcial2}</td>
+                            <td class="grade-cell ${finClass}">${asig.final}</td>
+                            <td class="grade-cell ${promClass}" style="font-size:.9rem;">${asig.promedio}</td>
+                            <td>
+                                <span class="subject-badge ${asig.estadoBadgeClass}">
+                                    ${asig.estadoBadgeClass === 'desarrollado' ? '<i class="bi bi-check2-circle"></i>' : ''}
+                                    ${asig.estadoBadgeClass === 'activo' ? '<i class="bi bi-play-circle-fill"></i>' : ''}
+                                    ${asig.estadoBadgeClass === 'pendiente' ? '<i class="bi bi-hourglass"></i>' : ''}
+                                    ${asig.estadoBadgeClass === 'recuperacion' ? '<i class="bi bi-exclamation-triangle"></i>' : ''}
+                                    ${asig.estadoBadgeClass === 'reprobado' ? '<i class="bi bi-x-circle"></i>' : ''}
+                                    ${asig.estadoTexto}
+                                </span>
+                            </td>
                             <td>
                                 <div class="lib-progress">
-                                    <div class="progress" style="height:6px;">
-                                        <div class="progress-bar" style="width:${progressPct}%;background:${avg >= 70 ? 'var(--verde-medio)' : avg >= 50 ? 'var(--dorado)' : 'var(--rojo)'};"></div>
+                                    <div class="progress">
+                                        <div class="progress-bar" style="width:${asig.progreso}%;background:${asig.estadoCurso === 'desarrollado' ? 'var(--verde-medio)' : asig.estadoCurso === 'activo' ? 'var(--azul)' : 'rgba(255,255,255,.2)'};"></div>
                                     </div>
-                                    <div class="progress-text">${progressPct}%</div>
+                                    <div class="progress-text">${asig.progreso}%</div>
                                 </div>
                             </td>
                         </tr>`;
                 });
 
                 html += `
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
                     </div>
                 </div>`;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function renderLibretaLocal(carrera) {
-            const container = document.getElementById('lib-content');
-            const tabsContainer = document.getElementById('lib-tabs');
-            const carreras = Object.keys(carreraData);
-
-            tabsContainer.innerHTML = '<div class="lib-tab active" data-carrera="todas" onclick="filterCareer(\'todas\')">Todas</div>' +
-                carreras.map(c => `<div class="lib-tab" data-carrera="${c}" onclick="filterCareer('${c}')">${c}</div>`).join('');
-
-            let html = '';
-            carreras.forEach(carreraName => {
-                const data = carreraData[carreraName];
-                if (!data) return;
-
-                html += `
-                <div class="lib-section">
-                    <div class="lib-section-title">
-                        <i class="bi ${data.icono}"></i> ${carreraName}
-                    </div>
-                    <div style="overflow-x:auto;">
-                    <table class="lib-table">
-                        <thead>
-                            <tr>
-                                <th>Asignatura</th>
-                                <th>Créditos</th>
-                                <th>Asist.</th>
-                                <th>Parcial 1</th>
-                                <th>Parcial 2</th>
-                                <th>Final</th>
-                                <th>Promedio</th>
-                                <th>Estado</th>
-                                <th>Progreso</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                data.asignaturas.forEach(asig => {
-                    html += `
-                        <tr>
-                            <td><strong>${asig.nombre}</strong><br><span style="font-size:.6rem;color:rgba(255,255,255,.4);">${asig.codigo}</span></td>
-                            <td style="text-align:center;">${asig.creditos}</td>
-                            <td class="grade-cell grade-pending">-</td>
-                            <td class="grade-cell grade-pending">-</td>
-                            <td class="grade-cell grade-pending">-</td>
-                            <td class="grade-cell grade-pending">-</td>
-                            <td class="grade-cell grade-pending">-</td>
-                            <td><span class="subject-badge" style="background:rgba(255,255,255,.05);color:rgba(255,255,255,.3);">Pendiente</span></td>
-                            <td><div class="lib-progress"><div class="progress" style="height:6px;"><div class="progress-bar" style="width:0%;"></div></div><div class="progress-text">0%</div></div></td>
-                        </tr>`;
-                });
-
-                html += `
-                        </tbody>
-                    </table>
-                    </div>
-                </div>`;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function filterCareer(carrera) {
-            document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.lib-tab[data-carrera="${carrera}"]`).classList.add('active');
-            
-            const grades = []; // Would need to reload
-            const container = document.getElementById('lib-content');
-            const token = CenturiaAPI.getToken();
-            const user = CenturiaAPI.getCurrentUser();
-            
-            if (user) {
-                // Reload with filter
-                Promise.all([
-                    CenturiaAPI.grades.list({ cedula: user.cedula }).catch(() => ({ data: [] })),
-                    CenturiaAPI.courses.list({ cedula: user.cedula }).catch(() => ({ data: [] })),
-                    CenturiaAPI.attendance.list({ cedula: user.cedula }).catch(() => ({ data: [] }))
-                ]).then(([gRes, cRes, aRes]) => {
-                    const gradesData = gRes.data || gRes.notas || [];
-                    const coursesData = cRes.data || cRes.cursos || [];
-                    const attendanceData = aRes.data || aRes.asistencias || [];
-                    renderAllSubjects(container, carrera, gradesData, coursesData, attendanceData);
-                });
             }
+
+            container.innerHTML = html;
         }
 
-        function getGradeClass(score) {
-            if (score >= 90) return 'grade-a';
-            if (score >= 70) return 'grade-b';
-            if (score >= 60) return 'grade-c';
-            return 'grade-f';
-        }
-
-        // ═══ INIT ═══
+        // ═══ INICIALIZACIÓN ═══
         document.addEventListener('DOMContentLoaded', cargarLibreta);
     </script>
 </body>

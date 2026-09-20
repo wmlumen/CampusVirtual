@@ -628,7 +628,7 @@
                         </div>
                         <div class="profile-data-row"><span class="profile-data-label">Fecha de Nacimiento</span><span class="profile-data-value editable" id="p-fecha-nacimiento" data-field="fecha_nacimiento" data-type="date" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Lugar de Nacimiento</span><span class="profile-data-value editable" id="p-lugar-nacimiento" data-field="lugar_nacimiento" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Nacionalidad</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Nacionalidad / País</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Calle y Número</span><span class="profile-data-value editable" id="p-direccion-calle" data-field="direccion_calle" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Barrio / Localidad</span><span class="profile-data-value editable" id="p-direccion-barrio" data-field="barrio" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Ciudad</span><span class="profile-data-value editable" id="p-direccion-ciudad" data-field="ciudad" onclick="editarCampo(this)">-</span></div>
@@ -1667,7 +1667,8 @@
                     contacto_emergencia: valDe('p-contacto-emergencia') || u.contacto_emergencia || '',
                     fecha_nacimiento: valDe('p-fecha-nacimiento') || u.fecha_nacimiento || '',
                     lugar_nacimiento: valDe('p-lugar-nacimiento') || u.lugar_nacimiento || '',
-                    nacionalidad: valDe('p-nacionalidad') || u.nacionalidad || '',
+                    nacionalidad: valDe('p-nacionalidad') || u.nacionalidad || u.pais || '',
+                    pais: valDe('p-nacionalidad') || u.nacionalidad || u.pais || '',
                     direccion_calle: valDe('p-direccion-calle') || u.direccion_calle || '',
                     barrio: valDe('p-direccion-barrio') || u.barrio || '',
                     ciudad: valDe('p-direccion-ciudad') || u.ciudad || '',

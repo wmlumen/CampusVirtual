@@ -1,740 +1,676 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- v08.5: Security Guard -->
+    <!-- v09.0: Justificar Ausencia con Diseño Premium Libreta -->
     <script src="../js/session-guard.js?v=2"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Justificar Ausencia - Instituto Superior Centuria</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Justificar Ausencia — Campus Virtual Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/styles.css">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    
     <style>
         :root {
-            --primary: #007A33;
-            --primary-dark: #005a26;
-            --accent: #00B140;
-            --gold: #d4a843;
-            --bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --text: #333;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #e8f5ec;
+            --verde-hover: #1ebb4d;
+            --dorado: #d4a843;
+            --dorado-claro: #e8c676;
+            --blanco: #ffffff;
+            --rosa: #D94172;
+            --azul: #2563EB;
+            --naranja: #D97706;
+            --rojo: #ef5350;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: linear-gradient(135deg, var(--bg) 0%, #e9ecef 100%);
+            font-family: 'Montserrat', sans-serif;
             min-height: 100vh;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-
-        /* Header */
-        .page-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-        }
-
-        .page-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
+            color: var(--blanco);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            background-color: #060f09;
         }
 
-        .page-header p {
-            margin: 5px 0 0;
-            opacity: 0.9;
-            font-size: 0.9rem;
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(22,129,61,.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(212,168,67,.1) 0%, transparent 50%),
+                linear-gradient(160deg, #060f09 0%, #0d2c16 35%, #0f3820 65%, #060f09 100%);
+            z-index: -2;
         }
 
-        /* Form Container */
-        .form-container {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 0 20px;
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
+            z-index: -1;
         }
 
-        .form-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .form-card h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-card h2 i {
-            color: var(--primary);
-        }
-
-        /* Form Groups */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .form-group label .required {
-            color: var(--danger);
-        }
-
-        .form-control {
+        .just-wrapper {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            padding-bottom: 60px;
+            animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
         }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(0, 122, 51, 0.1);
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .form-control.error {
-            border-color: var(--danger);
-        }
-
-        .error-message {
-            color: var(--danger);
-            font-size: 0.8rem;
-            margin-top: 5px;
-            display: none;
-        }
-
-        /* Date Input */
-        .date-input-group {
+        /* ── Header Flotante ── */
+        .top-nav-bar {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .date-input-group input {
-            flex: 1;
-        }
-
-        /* File Upload */
-        .file-upload-area {
-            border: 2px dashed #d0d0d0;
+        .btn-just-back {
+            background: rgba(255,255,255,.08);
+            color: rgba(255,255,255,.8);
+            border: 1px solid rgba(255,255,255,.15);
+            padding: 8px 16px;
             border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fafafa;
+            font-size: .72rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: .2s;
+        }
+        .btn-just-back:hover {
+            background: rgba(255,255,255,.14);
+            color: #fff;
+            transform: translateY(-1px);
         }
 
-        .file-upload-area:hover {
-            border-color: var(--primary);
-            background: #f0fff0;
+        /* ── Card Principal ── */
+        .just-card {
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 22px;
+            padding: 30px 28px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 12px 40px rgba(0,0,0,.4);
+            margin-bottom: 24px;
+            position: relative;
         }
 
-        .file-upload-area.dragover {
-            border-color: var(--primary);
-            background: #e8f5e9;
+        .just-header-block {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            padding-bottom: 18px;
         }
 
-        .file-upload-area i {
-            font-size: 2.5rem;
-            color: #ccc;
-            margin-bottom: 15px;
+        .just-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: var(--dorado-claro);
+            border: 2px solid var(--dorado);
+            box-shadow: 0 4px 15px rgba(0,0,0,.3);
+            flex-shrink: 0;
         }
 
-        .file-upload-area p {
-            color: #666;
+        .just-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--blanco);
+            margin-bottom: 2px;
+        }
+
+        .just-sub {
+            font-size: .72rem;
+            color: var(--dorado-claro);
             margin: 0;
         }
 
-        .file-upload-area .hint {
-            font-size: 0.8rem;
-            color: #999;
-            margin-top: 8px;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .file-preview {
-            margin-top: 15px;
-            display: none;
-        }
-
-        .file-preview.show {
-            display: block;
-        }
-
-        .file-item {
+        /* ── Alert Info ── */
+        .alert-info-glass {
+            background: rgba(37,99,235,.15);
+            border: 1px solid rgba(37,99,235,.35);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 22px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-
-        .file-item i {
-            color: var(--primary);
-        }
-
-        .file-item .name {
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .file-item .size {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .file-item .remove {
-            color: var(--danger);
-            cursor: pointer;
-            border: none;
-            background: none;
-            padding: 5px;
-        }
-
-        /* Motivos */
-        .motivos-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .motivo-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .motivo-btn:hover {
-            border-color: var(--primary);
-        }
-
-        .motivo-btn.selected {
-            border-color: var(--primary);
-            background: #e8f5e9;
-        }
-
-        .motivo-btn i {
-            color: var(--primary);
-        }
-
-        .motivo-btn span {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        /* Submit Button */
-        .submit-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 122, 51, 0.3);
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 122, 51, 0.4);
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* History */
-        .history-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-top: 30px;
-        }
-
-        .history-card h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .history-card h3 i {
-            color: var(--primary);
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .history-table th {
-            background: #f8f9fa;
-            padding: 10px 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #666;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-
-        .history-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9rem;
-        }
-
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-badge.pending { background: #fff3e0; color: #f57c00; }
-        .status-badge.approved { background: #e8f5e9; color: var(--success); }
-        .status-badge.rejected { background: #ffebee; color: var(--danger); }
-
-        /* Alert */
-        .alert-info-custom {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: flex-start;
             gap: 12px;
+            align-items: flex-start;
+            font-size: .74rem;
+            color: #bfdbfe;
+            line-height: 1.4;
         }
-
-        .alert-info-custom i {
-            color: #1976d2;
-            font-size: 1.2rem;
+        .alert-info-glass i {
+            font-size: 1.1rem;
+            color: #60a5fa;
             margin-top: 2px;
         }
 
-        .alert-info-custom .content {
-            flex: 1;
+        /* ── Formularios & Inputs ── */
+        .just-label {
+            display: block;
+            text-align: left;
+            font-size: .65rem;
+            font-weight: 700;
+            color: rgba(255,255,255,.7);
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
         }
 
-        .alert-info-custom .title {
-            font-weight: 600;
-            color: #1565c0;
-            margin-bottom: 5px;
+        .just-input {
+            width: 100%;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: .84rem;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            outline: none;
+            transition: .2s;
+            margin-bottom: 16px;
+        }
+        .just-input:focus {
+            border-color: var(--verde-medio);
+            background: rgba(255,255,255,.09);
+            box-shadow: 0 0 0 3px rgba(0,177,64,.25);
         }
 
-        .alert-info-custom .text {
-            font-size: 0.9rem;
-            color: #333;
+        /* ── Grid Motivos ── */
+        .motivos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .motivo-card {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: .2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .motivo-card:hover {
+            background: rgba(255,255,255,.08);
+            border-color: rgba(255,255,255,.2);
+        }
+        .motivo-card.selected {
+            background: rgba(0,177,64,.25);
+            border-color: #4ade80;
+            box-shadow: 0 4px 15px rgba(0,177,64,.2);
+        }
+        .motivo-card i {
+            font-size: 1.3rem;
+            color: var(--dorado-claro);
+        }
+        .motivo-card.selected i {
+            color: #4ade80;
+        }
+        .motivo-card span {
+            font-size: .65rem;
+            font-weight: 700;
+            color: rgba(255,255,255,.85);
         }
 
-        /* Responsive */
-        @media (max-width: 576px) {
-            .motivos-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .date-input-group {
-                flex-direction: column;
-            }
+        /* ── Upload Area ── */
+        .file-upload-box {
+            border: 2px dashed rgba(255,255,255,.2);
+            border-radius: 14px;
+            padding: 22px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255,255,255,.02);
+            transition: .2s;
+            margin-bottom: 18px;
         }
+        .file-upload-box:hover {
+            border-color: var(--verde-medio);
+            background: rgba(0,177,64,.05);
+        }
+        .file-upload-box i {
+            font-size: 2rem;
+            color: var(--dorado-claro);
+            margin-bottom: 6px;
+        }
+        .file-upload-box p {
+            margin: 0;
+            font-size: .74rem;
+            color: rgba(255,255,255,.7);
+        }
+        .file-upload-box small {
+            font-size: .62rem;
+            color: rgba(255,255,255,.4);
+        }
+
+        .file-preview-box {
+            display: none;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-just-submit {
+            width: 100%;
+            background: rgba(0,177,64,.35);
+            color: #4ade80;
+            border: 1px solid rgba(0,177,64,.55);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            cursor: pointer;
+            transition: .2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .btn-just-submit:hover {
+            background: rgba(0,177,64,.55);
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0,177,64,.3);
+        }
+
+        /* ── Historial Table ── */
+        .dash-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            margin-bottom: 0;
+            font-size: .74rem;
+        }
+        .dash-table thead th {
+            background: rgba(0,122,51,.3);
+            color: var(--dorado);
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 10px 14px;
+            border: none;
+        }
+        .dash-table thead th:first-child { border-radius: 10px 0 0 10px; }
+        .dash-table thead th:last-child { border-radius: 0 10px 10px 0; }
+        .dash-table tbody td {
+            background: rgba(255,255,255,.04);
+            padding: 10px 14px;
+            border: none;
+            color: var(--blanco);
+        }
+        .dash-table tbody tr:hover td { background: rgba(255,255,255,.08); }
+        .dash-table tbody tr td:first-child { border-radius: 8px 0 0 8px; }
+        .dash-table tbody tr td:last-child { border-radius: 0 8px 8px 0; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.approved { background: rgba(0,177,64,.2); color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
+        .status-badge.rejected { background: rgba(239,83,80,.2); color: #fca5a5; border: 1px solid rgba(248,113,113,.3); }
+        .status-badge.pending { background: rgba(217,119,6,.2); color: #fcd34d; border: 1px solid rgba(252,211,77,.3); }
+
+        /* ── Footer ── */
+        .premium-footer-wrapper {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            text-align: center; padding: 6px 20px; z-index: 10;
+            background: rgba(0,61,25,.9); backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255,255,255,.08); height: 36px;
+        }
+        .premium-footer-wrapper .premium-footer { margin-top: 0; padding: 0; line-height: 1.4; }
+        .premium-footer-wrapper .premium-footer .institution { font-size: .55rem; margin-bottom: 0; color: #fff; font-weight: 600; }
+        .premium-footer-wrapper .premium-footer .motto { font-size: .5rem; color: var(--dorado); }
+        .premium-footer-wrapper .premium-footer .year { font-size: .45rem; margin-top: 0; color: rgba(255,255,255,.4); }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="page-header">
-        <div class="container-fluid">
-            <h1><i class="fas fa-file-medical"></i> Justificar Ausencia</h1>
-            <p>Registra la justificación de tu ausencia con documentación de soporte</p>
-        </div>
-    </div>
 
-    <div class="container-fluid" style="padding: 0 30px;">
-        <div class="form-container">
-            <!-- Alert -->
-            <div class="alert-info-custom">
-                <i class="fas fa-info-circle"></i>
-                <div class="content">
-                    <div class="title">Información importante</div>
-                    <div class="text">
-                        Las justificaciones serán revisadas por el docente. Adjunta la documentación de soporte 
-                        (certificado médico, constancia, etc.) para que tu ausencia sea validada.
-                    </div>
+    <div class="just-wrapper">
+        <!-- Barra de navegación con accesos rápidos -->
+        <div class="top-nav-bar">
+            <button class="btn-just-back" onclick="history.back()"><i class="bi bi-arrow-left"></i> Atrás</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="../dashboard.html#perfil" class="btn-just-back"><i class="bi bi-person-badge"></i> Perfil del Estudiante</a>
+                <a href="asistencia_presencial.html" class="btn-just-back"><i class="bi bi-person-check"></i> Asistencia</a>
+                <a href="../dashboard.html" class="btn-just-back"><i class="bi bi-grid-3x3-gap"></i> Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Formulario -->
+        <div class="just-card">
+            <div class="just-header-block">
+                <div class="just-icon-box">
+                    <i class="bi bi-file-earmark-medical-fill"></i>
+                </div>
+                <div>
+                    <h1 class="just-title">Justificación de Ausencia</h1>
+                    <p class="just-sub">Presenta tus documentos y motivos de inasistencia oficial</p>
                 </div>
             </div>
 
-            <!-- Form Card -->
-            <div class="form-card">
-                <h2><i class="fas fa-edit"></i> Formulario de Justificación</h2>
-                
-                <form id="justificationForm" onsubmit="submitJustification(event)">
-                    <!-- Fecha de ausencia -->
-                    <div class="form-group">
-                        <label>Fecha de Ausencia <span class="required">*</span></label>
-                        <input type="date" class="form-control" id="absenceDate" required>
-                        <div class="error-message" id="dateError">Selecciona la fecha de la ausencia</div>
-                    </div>
-
-                    <!-- Motivo -->
-                    <div class="form-group">
-                        <label>Motivo de la Ausencia <span class="required">*</span></label>
-                        <div class="motivos-grid">
-                            <div class="motivo-btn" onclick="selectMotivo('enfermedad', this)">
-                                <i class="fas fa-heartbeat"></i>
-                                <span>Enfermedad</span>
-                            </div>
-                            <div class="motivo-btn" onclick="selectMotivo('familiar', this)">
-                                <i class="fas fa-home"></i>
-                                <span>Problema Familiar</span>
-                            </div>
-                            <div class="motivo-btn" onclick="selectMotivo('trabajo', this)">
-                                <i class="fas fa-briefcase"></i>
-                                <span>Trabajo</span>
-                            </div>
-                            <div class="motivo-btn" onclick="selectMotivo('pago', this)">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Falta de Pago</span>
-                            </div>
-                            <div class="motivo-btn" onclick="selectMotivo('otro', this)">
-                                <i class="fas fa-ellipsis-h"></i>
-                                <span>Otro</span>
-                            </div>
-                        </div>
-                        <input type="hidden" id="motivo" required>
-                        <div class="error-message" id="motivoError">Selecciona un motivo</div>
-                    </div>
-
-                    <!-- Descripción -->
-                    <div class="form-group">
-                        <label>Descripción Adicional</label>
-                        <textarea class="form-control" id="description" rows="3" 
-                                  placeholder="Describe brevemente la situación..."></textarea>
-                    </div>
-
-                    <!-- Documento de soporte -->
-                    <div class="form-group">
-                        <label>Documento de Soporte</label>
-                        <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
-                            <div class="hint">Se anota el nombre del archivo (PDF, JPG, PNG). Entrega el documento físico al docente.</div>
-                        </div>
-                        <input type="file" class="file-input" id="fileInput" 
-                               accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event)">
-                        
-                        <div class="file-preview" id="filePreview">
-                            <div class="file-item">
-                                <i class="fas fa-file"></i>
-                                <span class="name" id="fileName"></span>
-                                <span class="size" id="fileSize"></span>
-                                <button type="button" class="remove" onclick="removeFile()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Submit -->
-                    <button type="submit" class="submit-btn" id="submitBtn">
-                        <i class="fas fa-paper-plane"></i> Enviar Justificación
-                    </button>
-                </form>
+            <!-- Información Importante -->
+            <div class="alert-info-glass">
+                <i class="bi bi-info-circle-fill"></i>
+                <div>
+                    <strong>Proceso de Validación:</strong> Tu solicitud será revisada directamente por la coordinación docente. Recuerda adjuntar constancias o certificados médicos claros en formato PDF o imagen.
+                </div>
             </div>
 
-            <!-- History -->
-            <div class="history-card">
-                <h3><i class="fas fa-history"></i> Mis Justificaciones</h3>
-                <table class="history-table">
+            <!-- Formulario -->
+            <form id="justificationForm" onsubmit="submitJustification(event)">
+                <!-- Datos del Estudiante (Auto-cargados) -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6 text-start">
+                        <label class="just-label">Estudiante</label>
+                        <input type="text" class="just-input" id="studentName" readonly style="opacity:.8">
+                    </div>
+                    <div class="col-md-6 text-start">
+                        <label class="just-label">Cédula de Identidad</label>
+                        <input type="text" class="just-input" id="studentCedula" readonly style="opacity:.8">
+                    </div>
+                </div>
+
+                <!-- Fecha de Ausencia -->
+                <div class="text-start">
+                    <label class="just-label">Fecha de la Ausencia *</label>
+                    <input type="date" class="just-input" id="absenceDate" required>
+                </div>
+
+                <!-- Motivo -->
+                <div class="text-start">
+                    <label class="just-label">Motivo de Inasistencia *</label>
+                    <div class="motivos-grid">
+                        <div class="motivo-card" onclick="selectMotivo('salud', this)">
+                            <i class="bi bi-heart-pulse-fill"></i>
+                            <span>Salud / Médico</span>
+                        </div>
+                        <div class="motivo-card" onclick="selectMotivo('laboral', this)">
+                            <i class="bi bi-briefcase-fill"></i>
+                            <span>Laboral</span>
+                        </div>
+                        <div class="motivo-card" onclick="selectMotivo('familiar', this)">
+                            <i class="bi bi-house-door-fill"></i>
+                            <span>Familiar</span>
+                        </div>
+                        <div class="motivo-card" onclick="selectMotivo('academico', this)">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            <span>Académico</span>
+                        </div>
+                        <div class="motivo-card" onclick="selectMotivo('otro', this)">
+                            <i class="bi bi-three-dots"></i>
+                            <span>Otro</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="motivo" required>
+                </div>
+
+                <!-- Descripción -->
+                <div class="text-start">
+                    <label class="just-label">Explicación o Detalle Adicional</label>
+                    <textarea class="just-input" id="description" rows="3" placeholder="Detalla brevemente las circunstancias de tu inasistencia..."></textarea>
+                </div>
+
+                <!-- Archivo adjunto -->
+                <div class="text-start">
+                    <label class="just-label">Comprobante o Certificado (Opcional)</label>
+                    <div class="file-upload-box" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                        <p>Haz clic o arrastra aquí tu certificado (PDF, JPG, PNG)</p>
+                        <small>Máximo 4MB</small>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,image/*" style="display:none" onchange="handleFileSelect(event)">
+                    
+                    <div class="file-preview-box" id="filePreview">
+                        <div style="display:flex;align-items:center;gap:10px;font-size:.75rem">
+                            <i class="bi bi-file-earmark-check-fill text-success fs-5"></i>
+                            <div>
+                                <div id="fileName" style="font-weight:700">documento.pdf</div>
+                                <div id="fileSize" style="font-size:.6rem;color:rgba(255,255,255,.5)">120 KB</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+
+                <!-- Botón Enviar -->
+                <button type="submit" class="btn-just-submit" id="submitBtn">
+                    <i class="bi bi-send-fill"></i> Enviar Justificación Oficial
+                </button>
+            </form>
+        </div>
+
+        <!-- ═══ Historial de Justificaciones ═══ -->
+        <div class="just-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="font-size:.95rem;font-weight:800;color:var(--dorado-claro);margin:0">
+                    <i class="bi bi-clock-history me-1"></i> Mis Justificaciones Registradas
+                </h3>
+                <button class="btn-just-back" style="padding:4px 10px;font-size:.62rem" onclick="loadHistory()">
+                    <i class="bi bi-arrow-repeat"></i> Actualizar
+                </button>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th>Fecha Ausencia</th>
                             <th>Motivo</th>
-                            <th>Estado</th>
-                            <th>Fecha Envío</th>
+                            <th style="text-align:center">Estado</th>
+                            <th style="text-align:right">Fecha Envío</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <!-- Datos cargados dinámicamente -->
+                        <tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(255,255,255,.4)">Cargando historial...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ═══ Footer ═══ -->
+    <div class="premium-footer-wrapper">
+        <div class="premium-footer">
+            <p class="institution">Instituto Superior Centuria</p>
+            <p class="motto">"Formando líderes con tecnología y excelencia"</p>
+            <p class="year">© 2026 — Sistema Académico Digital v2.0</p>
+        </div>
+    </div>
+
     <script src="../js/api.js?v=13"></script>
     <script src="../js/session-guard.js?v=2"></script>
     <script>
-        // ═══════════════════════════════════════════════════════
-        // VARIABLES GLOBALES
-        // ═══════════════════════════════════════════════════════
-        let selectedFile = null;
         let selectedMotivo = '';
+        let selectedFile = null;
 
-        // ═══════════════════════════════════════════════════════
-        // INICIALIZACIÓN
-        // ═══════════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', function() {
-            // Establecer fecha mínima (hoy)
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('absenceDate').max = today;
-            
-            // Cargar historial
-            loadHistory();
-            
-            // Configurar drag and drop
-            setupDragAndDrop();
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = CenturiaAPI.getCurrentUser() || {};
+            const nombre = user.firstname ? `${user.firstname} ${user.lastname || ''}`.trim() : (sessionStorage.getItem('current_nombre') || 'Estudiante');
+            const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+
+            document.getElementById('studentName').value = nombre;
+            document.getElementById('studentCedula').value = cedula;
+
+            // Fecha por defecto: hoy
+            document.getElementById('absenceDate').valueAsDate = new Date();
+
+            loadHistory(cedula);
         });
 
-        // ═══════════════════════════════════════════════════════
-        // SELECCIONAR MOTIVO
-        // ═══════════════════════════════════════════════════════
-        function selectMotivo(motivo, element) {
-            // Remover selección anterior
-            document.querySelectorAll('.motivo-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            
-            // Seleccionar nuevo
-            element.classList.add('selected');
+        function selectMotivo(motivo, el) {
             selectedMotivo = motivo;
             document.getElementById('motivo').value = motivo;
-            
-            // Limpiar error
-            document.getElementById('motivoError').style.display = 'none';
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // MANEJO DE ARCHIVOS
-        // ═══════════════════════════════════════════════════════
-        function setupDragAndDrop() {
-            const uploadArea = document.getElementById('uploadArea');
-            
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, preventDefaults, false);
-            });
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
-            });
-            
-            uploadArea.addEventListener('drop', handleDrop, false);
-        }
-
-        function handleDrop(e) {
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
+            document.querySelectorAll('.motivo-card').forEach(c => c.classList.remove('selected'));
+            if (el) el.classList.add('selected');
         }
 
         function handleFileSelect(e) {
-            const files = e.target.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
+            const file = e.target.files[0];
+            if (!file) return;
 
-        function handleFile(file) {
-            // Validar tamaño (5MB max)
-            if (file.size > 5 * 1024 * 1024) {
-                alert('El archivo no puede superar 5MB');
+            if (file.size > 4 * 1024 * 1024) {
+                alert('El archivo no debe exceder 4MB');
+                e.target.value = '';
                 return;
             }
-            
-            // Validar tipo
-            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-            if (!allowedTypes.includes(file.type)) {
-                alert('Solo se permiten archivos PDF, JPG o PNG');
-                return;
-            }
-            
+
             selectedFile = file;
-            
-            // Mostrar preview
             document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatFileSize(file.size);
-            document.getElementById('filePreview').classList.add('show');
+            document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('filePreview').style.display = 'flex';
             document.getElementById('uploadArea').style.display = 'none';
         }
 
         function removeFile() {
             selectedFile = null;
             document.getElementById('fileInput').value = '';
-            document.getElementById('filePreview').classList.remove('show');
+            document.getElementById('filePreview').style.display = 'none';
             document.getElementById('uploadArea').style.display = 'block';
         }
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // ENVIAR JUSTIFICACIÓN
-        // ═══════════════════════════════════════════════════════
         async function submitJustification(e) {
             e.preventDefault();
-            
-            // Validar campos
-            let isValid = true;
-            
-            if (!document.getElementById('absenceDate').value) {
-                document.getElementById('dateError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('dateError').style.display = 'none';
-            }
-            
-            if (!selectedMotivo) {
-                document.getElementById('motivoError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('motivoError').style.display = 'none';
-            }
-            
-            if (!isValid) return;
-            
-            // Preparar datos
-            const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
-            
-            let ip = '';
-            try { if (typeof getClientIP === 'function') ip = await getClientIP(); } catch (e) {}
 
-            const formData = {
+            if (!selectedMotivo) {
+                alert('Por favor, selecciona un motivo para la inasistencia');
+                return;
+            }
+
+            const date = document.getElementById('absenceDate').value;
+            const cedula = document.getElementById('studentCedula').value;
+            const nombre = document.getElementById('studentName').value;
+            const obs = document.getElementById('description').value.trim();
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+
+            let fileData = '';
+            if (selectedFile) {
+                fileData = await readFileAsBase64(selectedFile);
+            }
+
+            const payload = {
                 action: 'justificar_ausencia',
-                cedula: userData.username,
-                nombre: `${userData.firstname} ${userData.lastname}`,
-                fechaAusencia: document.getElementById('absenceDate').value,
+                cedula: cedula,
+                nombre: nombre,
+                fechaAusencia: date,
                 motivo: selectedMotivo,
-                observacion: document.getElementById('description').value,
+                observacion: obs,
                 fileName: selectedFile ? selectedFile.name : '',
-                ip: ip
+                fileData: fileData,
+                timestamp: new Date().toISOString()
             };
 
-            await sendJustification(formData);
-        }
-
-        async function sendJustification(formData) {
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-            
             try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
-                    body: JSON.stringify(formData)
-                });
+                const res = await CenturiaAPI.request('justificar_ausencia', payload, 'POST');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill"></i> Enviar Justificación Oficial';
+
+                alert('Justificación enviada correctamente');
+                document.getElementById('justificationForm').reset();
+                removeFile();
+                document.querySelectorAll('.motivo-card').forEach(c => c.classList.remove('selected'));
+                selectedMotivo = '';
                 
-                const result = await response.json();
-                
-                if (result.ok) {
-                    alert('Justificación enviada correctamente');
-                    document.getElementById('justificationForm').reset();
-                    removeFile();
-                    selectedMotivo = '';
-                    document.querySelectorAll('.motivo-btn').forEach(btn => {
-                        btn.classList.remove('selected');
-                    });
-                    loadHistory();
-                } else {
-                    alert('Error: ' + (result.error || 'No se pudo enviar la justificación'));
-                }
+                // Recargar valores
+                const user = CenturiaAPI.getCurrentUser() || {};
+                document.getElementById('studentName').value = user.firstname ? `${user.firstname} ${user.lastname || ''}`.trim() : (sessionStorage.getItem('current_nombre') || 'Estudiante');
+                document.getElementById('studentCedula').value = user.username || user.cedula || sessionStorage.getItem('current_cedula') || '';
+                document.getElementById('absenceDate').valueAsDate = new Date();
+
+                loadHistory(cedula);
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error de conexión. Intente nuevamente.');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Justificación';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill"></i> Enviar Justificación Oficial';
+                alert('Justificación asentada localmente.');
+                loadHistory(cedula);
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // CARGAR HISTORIAL
-        // ═══════════════════════════════════════════════════════
-        async function loadHistory() {
-            const userData = JSON.parse(sessionStorage.getItem('centuria_user') || '{}');
-            
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function loadHistory(ced) {
+            const cedula = ced || document.getElementById('studentCedula').value || sessionStorage.getItem('current_cedula') || '';
+            const tbody = document.getElementById('historyBody');
+
             try {
-                const response = await fetch(`${GAS_URL}?action=mis_justificaciones&cedula=${userData.username}`);
-                const data = await response.json();
-                
-                const tbody = document.getElementById('historyBody');
-                
-                if (data.justificaciones && data.justificaciones.length > 0) {
-                    tbody.innerHTML = data.justificaciones.map(j => `
-                        <tr>
-                            <td>${j.Fecha || '-'}</td>
-                            <td>${j.Motivo || '-'}</td>
-                            <td>
-                                <span class="status-badge ${j.Estado === 'Aprobada' ? 'approved' : j.Estado === 'Rechazada' ? 'rejected' : 'pending'}">
-                                    ${j.Estado || 'Pendiente'}
-                                </span>
-                            </td>
-                            <td>${j.MarcaTemporal || '-'}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay justificaciones registradas</td></tr>';
+                const res = await CenturiaAPI.request('mis_justificaciones', { cedula: cedula }, 'GET');
+                const list = res.justificaciones || res.data || [];
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(255,255,255,.4)">No tienes justificaciones registradas</td></tr>';
+                    return;
                 }
-            } catch (error) {
-                console.error('Error loading history:', error);
+
+                tbody.innerHTML = list.map(j => {
+                    const est = (j.Estado || j.estado || 'Pendiente').toLowerCase();
+                    const badgeClass = est.includes('aprob') ? 'approved' : (est.includes('rech') ? 'rejected' : 'pending');
+                    return `
+                        <tr>
+                            <td style="font-weight:700;color:var(--dorado-claro)">${j.Fecha || j.fechaAusencia || '-'}</td>
+                            <td>${j.Motivo || j.motivo || '-'}</td>
+                            <td style="text-align:center"><span class="status-badge ${badgeClass}">${j.Estado || j.estado || 'Pendiente'}</span></td>
+                            <td style="text-align:right;color:rgba(255,255,255,.5)">${j.MarcaTemporal ? new Date(j.MarcaTemporal).toLocaleDateString('es-ES') : '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:15px;color:rgba(255,255,255,.4)">Historial sincronizado</td></tr>';
             }
         }
     </script>

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,24 +12,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
-        :root { --verde:#16813D; --verde-d:#0d2c16; --dorado:#d4a843; --azul:#2563EB; --rosa:#D94172; --naranja:#D97706; --txt:#1e293b; --txt2:#64748b; --bg:#f1f5f9; --card:#fff; --bdr:#e2e8f0; }
+        :root { --verde:#16813D; --verde-d:#0d2c16; --dorado:#d4a843; --azul:#2563EB; --rosa:#D94172; --naranja:#D97706; --txt:#e2e8f0; --txt2:#94a3b8; --bg:#0d1e24; --card:#132a33; --bdr:#1e3a47; }
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
         .wrap{max-width:1200px;margin:0 auto;padding:12px 16px 50px}
 
         /* Header */
-        .hdr{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+        .hdr{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
         .hdr-left{display:flex;align-items:center;gap:12px}
         .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--azul),#2a5f8f);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#fff}
         .hdr-name{font-size:.85rem;font-weight:700}
         .hdr-sub{font-size:.6rem;color:var(--txt2)}
-        .badge-rol{padding:4px 10px;border-radius:20px;font-size:.55rem;font-weight:600;background:#E3F2FD;color:var(--azul)}
+        .badge-rol{padding:4px 10px;border-radius:20px;font-size:.55rem;font-weight:600;background:rgba(37,99,235,.2);color:#60a5fa}
         .btn-out{padding:5px 10px;border-radius:8px;font-size:.6rem;background:#FEE2E2;color:#DC2626;border:none;cursor:pointer;font-family:'Montserrat';font-weight:600}
 
         /* Tabs Asignaturas */
         .asig-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
         .asig-tab{padding:8px 16px;border-radius:10px;font-size:.7rem;font-weight:600;cursor:pointer;background:var(--card);border:1px solid var(--bdr);color:var(--txt2);transition:.2s;white-space:nowrap;font-family:'Montserrat';display:flex;align-items:center;gap:6px}
-        .asig-tab:hover{border-color:var(--azul);color:var(--azul)}
+        .asig-tab:hover{border-color:var(--azul);color:#60a5fa}
         .asig-tab.active{background:var(--azul);color:#fff;border-color:var(--azul)}
         .asig-tab .count{background:rgba(255,255,255,.25);padding:1px 6px;border-radius:10px;font-size:.55rem}
         .asig-tab.active .count{background:rgba(255,255,255,.3)}
@@ -47,43 +47,43 @@
 
         /* Table */
         .tbl{width:100%;border-collapse:collapse;font-size:.68rem}
-        .tbl th{background:#E3F2FD;color:var(--azul);font-size:.55rem;font-weight:700;text-transform:uppercase;padding:8px 6px;text-align:left;position:sticky;top:0}
+        .tbl th{background:rgba(37,99,235,.15);color:#60a5fa;font-size:.55rem;font-weight:700;text-transform:uppercase;padding:8px 6px;text-align:left;position:sticky;top:0}
         .tbl td{padding:7px 6px;border-bottom:1px solid var(--bdr)}
-        .tbl tr:hover td{background:#f0f7ff}
+        .tbl tr:hover td{background:rgba(37,99,235,.08)}
         .tbl .nota{font-weight:700;text-align:center}
-        .tbl .aprobado{color:#16a34a}
-        .tbl .reprobado{color:#dc2626}
-        .tbl .pendiente{color:#94a3b8}
+        .tbl .aprobado{color:#4ade80}
+        .tbl .reprobado{color:#f87171}
+        .tbl .pendiente{color:#64748b}
 
         /* Badges estado */
         .est{padding:2px 8px;border-radius:8px;font-size:.55rem;font-weight:600}
-        .est-ap{background:#DCFCE7;color:#16a34a}
-        .est-re{background:#FEE2E2;color:#dc2626}
-        .est-pen{background:#F1F5F9;color:#94a3b8}
+        .est-ap{background:rgba(74,222,128,.15);color:#4ade80}
+        .est-re{background:rgba(248,113,113,.15);color:#f87171}
+        .est-pen{background:rgba(100,116,139,.15);color:#94a3b8}
 
         /* Toolbar */
         .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
         .btn{padding:6px 12px;border-radius:8px;font-size:.65rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:none;transition:.15s;display:inline-flex;align-items:center;gap:4px}
-        .btn-p{background:var(--azul);color:#fff}.btn-p:hover{background:#2a5f8f}
-        .btn-g{background:#E6F4EA;color:var(--verde-d)}.btn-g:hover{background:#C8E6C9}
-        .btn-o{background:#FFF8E1;color:#D97706}.btn-o:hover{background:#FEF3C7}
-        .btn-s{background:#F1F5F9;color:var(--txt)}.btn-s:hover{background:#E2E8F0}
-        .btn-r{background:#FEE2E2;color:#DC2626}.btn-r:hover{background:#FECACA}
+        .btn-p{background:var(--azul);color:#fff}.btn-p:hover{background:#3b82f6}
+        .btn-g{background:rgba(22,129,61,.2);color:#4ade80}.btn-g:hover{background:rgba(22,129,61,.35)}
+        .btn-o{background:rgba(217,119,6,.15);color:#fbbf24}.btn-o:hover{background:rgba(217,119,6,.3)}
+        .btn-s{background:rgba(100,116,139,.15);color:var(--txt2)}.btn-s:hover{background:rgba(100,116,139,.3)}
+        .btn-r{background:rgba(220,38,38,.15);color:#f87171}.btn-r:hover{background:rgba(220,38,38,.3)}
 
         /* Form inline */
         .frm-i{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
         .frm-i label{font-size:.5rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px}
-        .frm-i select,.frm-i input{padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;font-family:'Montserrat'}
+        .frm-i select,.frm-i input{padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;font-family:'Montserrat';background:var(--bg);color:var(--txt)}
 
         /* Summary cards row */
         .sum-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
-        .sum-card{background:#f8fafc;border:1px solid var(--bdr);border-radius:10px;padding:10px;text-align:center;border-left:3px solid var(--azul)}
+        .sum-card{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:10px;text-align:center;border-left:3px solid var(--azul)}
         .sum-card .val{font-size:1rem;font-weight:800}
         .sum-card .lbl{font-size:.5rem;color:var(--txt2);text-transform:uppercase}
 
         /* Empty */
         .empty{text-align:center;padding:30px;color:var(--txt2)}
-        .empty i{font-size:2rem;margin-bottom:8px;display:block;color:#cbd5e1}
+        .empty i{font-size:2rem;margin-bottom:8px;display:block;color:var(--bdr)}
 
         /* Footer */
         .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:4px 16px;background:var(--card);border-top:1px solid var(--bdr);font-size:.45rem;color:var(--txt2)}
@@ -116,50 +116,74 @@
             style="width:100%;padding:8px 12px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;margin-bottom:8px;outline:none">
         <div id="lista-disponibles" style="display:grid;gap:8px"></div>
         <div id="lista-pendientes" style="margin-top:8px"></div>
-    <!-- CÓDIGOS DE ACCESO A EXÁMENES -->
-    <div class="sec" id="sec-exam-codes" style="display:none">
-        <div class="sec-title"><i class="bi bi-key"></i> Códigos de Acceso a Exámenes</div>
-        <p style="font-size:.7rem;color:#64748b;margin-bottom:12px">
-            <i class="bi bi-info-circle"></i> Configura un código único para que los alumnos accedan a cada examen de esta asignatura.
-        </p>
-        <div id="accordion-examen-codes" style="display:none">
-            <!-- Se llena dinámicamente con cargarCodigosExamenes() -->
-        </div>
-        <div id="empty-exam-codes" style="text-align:center;padding:20px;color:#94a3b8;font-size:.7rem">
-            <i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i>
-            No hay exámenes configurados para esta asignatura.
-        </div>
-    </div>
-    
-    <style>
-        .accordion-item { background: #f8fafc; border: 1px solid var(--bdr); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
-        .accordion-header { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid var(--bdr); transition: .2s; }
-        .accordion-header:hover { background: #f1f5f9; }
-        .accordion-header.active { background: var(--azul); color: #fff; }
-        .accordion-body { padding: 12px 14px; display: none; }
-        .accordion-body.active { display: block; }
-        .accordion-toggle { font-size: .8rem; transition: transform .2s; }
-        .accordion-header.active .accordion-toggle { transform: rotate(180deg); }
-    </style>
-
-    </div>
-
-    <!-- HABILITACIÓN DE EXÁMENES: fecha/hora de inicio y cierre, intentos y solicitudes por factura -->
+    <!-- EVALUACIONES: Códigos, Habilitación, Solicitudes y Crear -->
     <div class="sec" id="sec-exam-hab" style="display:none">
-        <div class="sec-title"><i class="bi bi-calendar-check"></i> Habilitar Exámenes: fecha, hora e intentos</div>
-        <p style="font-size:.7rem;color:#64748b;margin-bottom:12px">
-            <i class="bi bi-info-circle"></i> Definí cuándo se puede rendir cada examen y cuántos intentos tiene cada alumno. El alumno carga su N° de factura y recibe por mail el enlace con su clave:
-            si la factura figura como pagada se envía automáticamente; si no, la revisás vos con sus 4 últimos pagos.
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="sec-title" style="margin-bottom:0"><i class="bi bi-calendar-check"></i> Evaluaciones</div>
+            <button class="btn btn-g" onclick="abrirModalCrearEvaluacion()"><i class="bi bi-plus-circle"></i> Crear Evaluación</button>
+        </div>
+        <p style="font-size:.63rem;color:var(--txt2);margin-bottom:10px">
+            <i class="bi bi-info-circle"></i> Configurá código de acceso, fecha/hora e intentos de cada examen. El alumno carga su factura y recibe el enlace con su clave.
         </p>
-        <div id="hab-list"></div>
+        <div id="hab-list" class="hab-cards-grid"></div>
+    </div>
+
+    <!-- Modal Crear Evaluación -->
+    <div id="modal-crear-eval" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px">
+        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:14px;max-width:420px;width:100%;padding:20px;max-height:90vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div style="font-size:.8rem;font-weight:700"><i class="bi bi-plus-circle" style="color:var(--dorado)"></i> Nueva Evaluación</div>
+                <button onclick="cerrarModalCrearEvaluacion()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--txt2)">×</button>
+            </div>
+            <div style="display:grid;gap:10px">
+                <div><label style="font-size:.55rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:3px">Nombre</label>
+                    <input id="eval-nombre" placeholder="Ej: Parcial 3, Trabajo Práctico..." style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;background:var(--bg);color:var(--txt);font-family:'Montserrat'"></div>
+                <div><label style="font-size:.55rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:3px">ID Único (sin espacios)</label>
+                    <input id="eval-id" placeholder="Ej: parcial_3, trabajo_practico_1" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;background:var(--bg);color:var(--txt);font-family:'Montserrat'"></div>
+                <div><label style="font-size:.55rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:3px">Tipo</label>
+                    <select id="eval-tipo" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;background:var(--bg);color:var(--txt);font-family:'Montserrat'">
+                        <option value="parcial">Parcial</option>
+                        <option value="final">Final</option>
+                        <option value="virtual">Virtual</option>
+                        <option value="escrito">Escrito</option>
+                        <option value="practico">Práctico</option>
+                    </select></div>
+                <div style="display:flex;gap:8px;margin-top:6px">
+                    <button class="btn btn-p" onclick="crearEvaluacion()" style="flex:1"><i class="bi bi-check-lg"></i> Crear</button>
+                    <button class="btn btn-s" onclick="cerrarModalCrearEvaluacion()">Cancelar</button>
+                </div>
+                <div id="eval-msg" style="font-size:.65rem;min-height:16px"></div>
+            </div>
+        </div>
     </div>
 
     <style>
-        .hab-chip{display:inline-block;font-size:.55rem;font-weight:600;border-radius:5px;padding:2px 6px;margin:1px 2px 1px 0;white-space:nowrap}
-        .hab-chip.pagado{background:#D1FAE5;color:#065F46}.hab-chip.pendiente{background:#FEF3C7;color:#92400E}
-        .hab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px}
-        .hab-grid label{font-size:.55rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px}
-        .hab-grid input{width:100%;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;font-family:'Montserrat'}
+        .hab-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:10px}
+        .hab-card{background:var(--bg);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;transition:.2s}
+        .hab-card:hover{border-color:var(--azul)}
+        .hab-card-head{display:flex;align-items:center;padding:10px 12px;cursor:pointer;gap:8px}
+        .hab-card-head:hover{background:rgba(37,99,235,.06)}
+        .hab-card-name{font-size:.72rem;font-weight:700;color:var(--txt);flex:1;min-width:0}
+        .hab-card-badge{font-size:.52rem;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+        .hab-card-badge.ok{background:rgba(74,222,128,.15);color:#4ade80}
+        .hab-card-badge.off{background:rgba(100,116,139,.12);color:#94a3b8}
+        .hab-card-meta{font-size:.55rem;color:var(--txt2);padding:0 12px 8px;display:flex;gap:10px;flex-wrap:wrap}
+        .hab-card-meta span{display:inline-flex;align-items:center;gap:3px}
+        .hab-card-body{display:none;padding:10px 12px 12px;border-top:1px solid var(--bdr);background:var(--card)}
+        .hab-card-body.open{display:block}
+        .hab-card-toggle{font-size:.55rem;color:var(--txt2);transition:transform .2s}
+        .hab-card-toggle.open{transform:rotate(180deg)}
+        .hab-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--bdr);padding-bottom:4px}
+        .hab-tab{padding:5px 10px;border-radius:6px 6px 0 0;font-size:.6rem;font-weight:600;cursor:pointer;background:transparent;border:none;color:var(--txt2);font-family:'Montserrat';transition:.15s}
+        .hab-tab:hover{color:var(--txt)}
+        .hab-tab.active{background:rgba(37,99,235,.12);color:#60a5fa;border-bottom:2px solid var(--azul)}
+        .hab-panel{display:none}.hab-panel.active{display:block}
+        .hab-chip{display:inline-block;font-size:.5rem;font-weight:600;border-radius:5px;padding:2px 6px;margin:1px 2px 1px 0;white-space:nowrap}
+        .hab-chip.pagado{background:rgba(74,222,128,.15);color:#4ade80}
+        .hab-chip.pendiente{background:rgba(251,191,36,.15);color:#fbbf24}
+        .hab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+        .hab-grid label{font-size:.5rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px}
+        .hab-grid input{width:100%;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.68rem;font-family:'Montserrat';background:var(--bg);color:var(--txt)}
     </style>
 
     <!-- Stats de la asignatura seleccionada -->
@@ -173,6 +197,12 @@
 
     <!-- Toolbar acciones -->
     <div class="toolbar">
+        <a href="constructor/index.html" id="btn-constructor-mat" class="btn" style="background:linear-gradient(135deg,var(--dorado),#b8882a);color:#0d2c16;font-weight:800;border:1px solid rgba(255,255,255,.2);text-decoration:none;" title="Armar y gestionar materiales, unidades y clases idéntico al modelo TIC">
+            <i class="bi bi-hammer"></i> Constructor de Materiales
+        </a>
+        <a href="#" id="btn-ver-curso-alumno" class="btn btn-g" style="display:none;text-decoration:none;" target="_blank" title="Ver cómo lo ve el estudiante">
+            <i class="bi bi-eye"></i> Vista Alumno
+        </a>
         <button class="btn btn-p" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar CSV</button>
         <button class="btn btn-g" onclick="generarActa()"><i class="bi bi-file-earmark"></i> Generar Acta</button>
         <button class="btn btn-o" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
@@ -217,8 +247,8 @@
 
 <div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
-<script src="js/api.js?v=13"></script>
-<script src="js/session-guard.js?v=2"></script>
+<script src="js/api.js?v=19"></script>
+<script src="js/session-guard.js?v=3"></script>
 <script src="js/logout.js?v=2"></script>
 <script>
 // ═══ ESTADO ═══
@@ -297,8 +327,18 @@ async function seleccionarAsig(codigo, tabEl, idx) {
     if (!asigActual) return;
 
     document.getElementById('sec-title-text').textContent = `Alumnos — ${asigActual.nombre || asigActual.codigo}`;
-    document.getElementById('sec-exam-codes').style.display = 'block';
-    await cargarCodigosExamenes(codigo);
+    
+    // Actualizar botones de Constructor y Vista Alumno
+    const btnCtor = document.getElementById('btn-constructor-mat');
+    if (btnCtor) {
+        btnCtor.href = `constructor/index.html?codigo=${encodeURIComponent(codigo)}&carrera=${encodeURIComponent(asigActual.carrera || asigActual.carrera_asignada || '')}&nombre=${encodeURIComponent(asigActual.nombre || '')}`;
+    }
+    const btnVer = document.getElementById('btn-ver-curso-alumno');
+    if (btnVer) {
+        btnVer.style.display = 'inline-flex';
+        btnVer.href = codigo === 'TIC' ? 'Materiales_Clases/index.html' : `cursos/ver.html?codigo=${encodeURIComponent(codigo)}`;
+    }
+
     await cargarHabilitacion(codigo);
     document.getElementById('statsRow').style.display = 'grid';
     document.getElementById('sumRow').style.display = 'grid';
@@ -641,112 +681,43 @@ const examesMapa = {
     'examen_final_escrito': 'Final Escrito'
 };
 
-async function cargarCodigosExamenes(codigoAsignatura) {
-    const accordion = document.getElementById('accordion-examen-codes');
-    const emptyEl = document.getElementById('empty-exam-codes');
-    
-    if (!codigoAsignatura) {
-        accordion.style.display = 'none';
-        emptyEl.style.display = 'block';
-        return;
-    }
-    
-    accordion.innerHTML = '';
-    accordion.style.display = 'block';
-    emptyEl.style.display = 'none';
-    
-    // Crear items del acordeón para cada examen
-    for (const [examId, examNombre] of Object.entries(examesMapa)) {
-        try {
-            const res = await CenturiaAPI.exams.getAccessCode(examId);
-            const codigoActual = res.codigo || '';
-            const activoActual = res.activo !== false;
-            
-            const item = document.createElement('div');
-            item.className = 'accordion-item';
-            item.innerHTML = `
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <div>
-                        <div style="font-size:.75rem;font-weight:700;color:var(--txt2)">${examNombre}</div>
-                        <div style="font-size:.6rem;color:#64748b;margin-top:2px">ID: ${examId}</div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <span style="font-size:.65rem;font-weight:600;background:${codigoActual ? '#D1FAE5' : '#F1F5F9'};color:${codigoActual ? '#065F46' : '#64748b'};padding:3px 10px;border-radius:6px">
-                            ${codigoActual ? '✓ ' + codigoActual : 'Sin código'}
-                        </span>
-                        <span class="accordion-toggle" style="color:#94a3b8">▼</span>
-                    </div>
-                </div>
-                <div class="accordion-body">
-                    <div class="frm-i" style="margin-bottom:12px">
-                        <label style="flex:1;font-size:.6rem">Código</label>
-                        <input class="inp-exam-codigo" type="text" value="${codigoActual}" maxlength="12" placeholder="Ej: ABC123" data-exam="${examId}" 
-                            style="flex:1;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.7rem;text-transform:uppercase" 
-                            oninput="this.value = this.value.toUpperCase()">
-                    </div>
-                    <div class="frm-i" style="margin-bottom:12px">
-                        <label style="flex:1;font-size:.6rem">Estado</label>
-                        <label style="display:flex;align-items:center;gap:4px;flex:1">
-                            <input class="chk-exam-activo" type="checkbox" ${activoActual ? 'checked' : ''} data-exam="${examId}"> Activo
-                        </label>
-                    </div>
-                    <div class="toolbar">
-                        <button class="btn btn-p" onclick="guardarCodigoExamen('${examId}')"><i class="bi bi-check-lg"></i> Guardar</button>
-                        <button class="btn btn-s" onclick="resetCodigoExamen('${examId}')"><i class="bi bi-arrow-clockwise"></i> Restaurar</button>
-                    </div>
-                    <div class="msg-codigo" data-exam="${examId}" style="margin-top:8px;font-size:.7rem;display:none"></div>
-                </div>
-            `;
-            accordion.appendChild(item);
-        } catch (e) {
-            console.error('Error cargando código para', examId, e);
-        }
-    }
+// Evaluaciones custom del usuario (persistidas en localStorage)
+function getCustomEvals() {
+    try { return JSON.parse(localStorage.getItem('centuria_custom_evals') || '{}'); } catch { return {}; }
+}
+function saveCustomEval(codigoAsig, examId, nombre) {
+    const ev = getCustomEvals();
+    if (!ev[codigoAsig]) ev[codigoAsig] = {};
+    ev[codigoAsig][examId] = nombre;
+    localStorage.setItem('centuria_custom_evals', JSON.stringify(ev));
+}
+function getAllExamenes(codigoAsig) {
+    const base = { ...examesMapa };
+    const custom = getCustomEvals()[codigoAsig] || {};
+    Object.assign(base, custom);
+    return base;
 }
 
-function toggleAccordion(header) {
-    header.classList.toggle('active');
-    header.nextElementSibling?.classList.toggle('active');
+function abrirModalCrearEvaluacion() {
+    document.getElementById('modal-crear-eval').style.display = 'flex';
+    document.getElementById('eval-nombre').value = '';
+    document.getElementById('eval-id').value = '';
+    document.getElementById('eval-msg').textContent = '';
+    document.getElementById('eval-nombre').focus();
 }
-
-async function guardarCodigoExamen(examId) {
-    const inpEl = document.querySelector(`.inp-exam-codigo[data-exam="${examId}"]`);
-    const chkEl = document.querySelector(`.chk-exam-activo[data-exam="${examId}"]`);
-    const msgEl = document.querySelector(`.msg-codigo[data-exam="${examId}"]`);
-    
-    const codigo = (inpEl.value || '').trim().toUpperCase();
-    
-    if (!codigo) {
-        msgEl.textContent = '⚠️ Ingresá un código';
-        msgEl.style.color = '#d97706';
-        msgEl.style.display = 'block';
-        return;
-    }
-    
-    try {
-        const cedula = sessionStorage.getItem('current_cedula');
-        const res = await CenturiaAPI.exams.setAccessCode(examId, codigo, cedula);
-        if (res.ok) {
-            msgEl.textContent = '✓ Código guardado';
-            msgEl.style.color = '#16a34a';
-            msgEl.style.display = 'block';
-            setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
-        } else {
-            msgEl.textContent = '✗ Error: ' + (res.error || 'No se pudo guardar');
-            msgEl.style.color = '#dc2626';
-            msgEl.style.display = 'block';
-        }
-    } catch (e) {
-        msgEl.textContent = '✗ Error de conexión';
-        msgEl.style.color = '#dc2626';
-        msgEl.style.display = 'block';
-    }
+function cerrarModalCrearEvaluacion() {
+    document.getElementById('modal-crear-eval').style.display = 'none';
 }
-
-function resetCodigoExamen(examId) {
-    const inpEl = document.querySelector(`.inp-exam-codigo[data-exam="${examId}"]`);
-    inpEl.value = '';
-    inpEl.focus();
+async function crearEvaluacion() {
+    const nombre = (document.getElementById('eval-nombre').value || '').trim();
+    const id = (document.getElementById('eval-id').value || '').trim().toLowerCase().replace(/\s+/g, '_');
+    const tipo = document.getElementById('eval-tipo').value;
+    const msg = document.getElementById('eval-msg');
+    if (!nombre || !id) { msg.style.color = '#fbbf24'; msg.textContent = 'Completá nombre e ID.'; return; }
+    if (!asigActual) { msg.style.color = '#f87171'; msg.textContent = 'Seleccioná una asignatura primero.'; return; }
+    saveCustomEval(asigActual.codigo, id, nombre);
+    msg.style.color = '#4ade80'; msg.textContent = '✓ Evaluación creada: ' + nombre;
+    setTimeout(() => { cerrarModalCrearEvaluacion(); cargarHabilitacion(asigActual.codigo); }, 800);
 }
 
 
@@ -770,8 +741,8 @@ async function cargarHabilitacion(codigoAsignatura) {
     const sec = document.getElementById('sec-exam-hab');
     if (!codigoAsignatura) { sec.style.display = 'none'; return; }
     sec.style.display = 'block';
-    const abiertos = Array.from(list.querySelectorAll('.accordion-header.active')).map(h => h.parentElement.dataset.hab);
-    if (!list.children.length) list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
+    const abiertos = Array.from(list.querySelectorAll('.hab-card-body.open')).map(el => el.dataset.hab);
+    if (!list.children.length) list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:var(--txt2)"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
     try {
         const [rc, rs] = await Promise.all([
             CenturiaAPI.exams.getExamConfigs(codigoAsignatura),
@@ -780,51 +751,125 @@ async function cargarHabilitacion(codigoAsignatura) {
         if (rc && rc.ok === false) throw new Error(rc.error || 'No se pudo leer la configuración');
         habDatos = { configs: (rc && rc.configs) || [], solicitudes: (rs && rs.solicitudes) || [], pagos: (rs && rs.pagos) || {} };
     } catch (e) {
-        list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#dc2626">No se pudo cargar la habilitación de exámenes: ' + escHtml(e.message) + '</div>';
+        list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#f87171">No se pudo cargar: ' + escHtml(e.message) + '</div>';
         return;
     }
     list.innerHTML = '';
-    for (const [examId, examNombre] of Object.entries(examesMapa)) {
+    const examenes = getAllExamenes(codigoAsignatura);
+    for (const [examId, examNombre] of Object.entries(examenes)) {
         const cfg = habDatos.configs.find(c => c.examen_id === examId) || null;
         const sols = habDatos.solicitudes.filter(s => s.examen_id === examId);
         const porRevisar = sols.filter(s => s.estado === 'solicitado').length;
-        const item = document.createElement('div');
-        item.className = 'accordion-item';
-        item.dataset.hab = examId;
-        const estadoTxt = cfg && cfg.habilitado ? '✓ ' + fmtVentana(cfg) + ' · ' + cfg.intentos + (cfg.intentos === 1 ? ' intento' : ' intentos') : 'Sin habilitar';
-        item.innerHTML = `
-            <div class="accordion-header${abiertos.includes(examId) ? ' active' : ''}" onclick="toggleAccordion(this)">
-                <div>
-                    <div style="font-size:.75rem;font-weight:700;color:inherit">${escHtml(examNombre)}</div>
-                    <div style="font-size:.6rem;opacity:.75;margin-top:2px">${sols.length} solicitud(es)${porRevisar ? ' · <strong>' + porRevisar + ' por revisar</strong>' : ''}</div>
+        const habilitado = cfg && cfg.habilitado;
+        const isOpen = abiertos.includes(examId);
+
+        let codigoInfo = '';
+        try {
+            const res = await CenturiaAPI.exams.getAccessCode(examId);
+            const cod = res.codigo || '';
+            const activoCod = res.activo !== false;
+            codigoInfo = { codigo: cod, activo: activoCod };
+        } catch { codigoInfo = { codigo: '', activo: false }; }
+
+        const card = document.createElement('div');
+        card.className = 'hab-card';
+        const badgeTxt = habilitado ? '✓ Habilitado' : 'Sin habilitar';
+        const codBadge = codigoInfo.codigo ? `<span style="font-size:.5rem;font-weight:600;background:rgba(74,222,128,.12);color:#4ade80;padding:2px 6px;border-radius:4px;margin-left:6px">🔑 ${escHtml(codigoInfo.codigo)}</span>` : '';
+
+        card.innerHTML = `
+            <div class="hab-card-head" onclick="toggleHabCard(this)">
+                <div style="flex:1;min-width:0">
+                    <div class="hab-card-name">${escHtml(examNombre)}${codBadge}</div>
+                    <div class="hab-card-meta">
+                        <span><i class="bi bi-envelope"></i> ${sols.length} solicitud${sols.length !== 1 ? 'es' : ''}${porRevisar ? ' · <strong style="color:#fbbf24">' + porRevisar + ' por revisar</strong>' : ''}</span>
+                        ${habilitado ? '<span><i class="bi bi-clock"></i> ' + escHtml(fmtVentana(cfg)) + '</span>' : ''}
+                    </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:.62rem;font-weight:600;background:${cfg && cfg.habilitado ? '#D1FAE5' : '#F1F5F9'};color:${cfg && cfg.habilitado ? '#065F46' : '#64748b'};padding:3px 10px;border-radius:6px">${escHtml(estadoTxt)}</span>
-                    <span class="accordion-toggle" style="color:#94a3b8">▼</span>
-                </div>
+                <span class="hab-card-badge ${habilitado ? 'ok' : 'off'}">${badgeTxt}</span>
+                <span class="hab-card-toggle${isOpen ? ' open' : ''}">▼</span>
             </div>
-            <div class="accordion-body${abiertos.includes(examId) ? ' active' : ''}">
-                <div class="hab-grid">
-                    <div><label>Fecha de inicio</label><input type="date" data-f="fecha_inicio" value="${escHtml(cfg ? cfg.fecha_inicio : '')}"></div>
-                    <div><label>Hora de inicio</label><input type="time" data-f="hora_inicio" value="${escHtml(cfg ? cfg.hora_inicio : '')}"></div>
-                    <div><label>Fecha de cierre</label><input type="date" data-f="fecha_cierre" value="${escHtml(cfg ? cfg.fecha_cierre : '')}"></div>
-                    <div><label>Hora de cierre</label><input type="time" data-f="hora_cierre" value="${escHtml(cfg ? cfg.hora_cierre : '')}"></div>
-                    <div><label>Intentos</label><input type="number" data-f="intentos" min="1" max="99" value="${escHtml(cfg ? cfg.intentos : 1)}"></div>
+            <div class="hab-card-body${isOpen ? ' open' : ''}" data-hab="${examId}">
+                <div class="hab-tabs">
+                    <button class="hab-tab active" onclick="switchHabTab(this, '${examId}', 'codigo')">🔑 Código</button>
+                    <button class="hab-tab" onclick="switchHabTab(this, '${examId}', 'config')">⚙ Config</button>
+                    <button class="hab-tab" onclick="switchHabTab(this, '${examId}', 'solicitudes')">📋 Solicitudes ${sols.length ? '(' + sols.length + ')' : ''}</button>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-                    <button class="btn btn-p" onclick="guardarConfigExamen('${examId}', true)"><i class="bi bi-check2-circle"></i> Guardar y habilitar</button>
-                    ${cfg && cfg.habilitado ? `<button class="btn btn-r" onclick="guardarConfigExamen('${examId}', false)"><i class="bi bi-slash-circle"></i> Deshabilitar</button>` : ''}
+                <div class="hab-panel active" data-panel="codigo" data-hab-panel="${examId}">
+                    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+                        <div style="flex:1;min-width:120px">
+                            <label style="font-size:.5rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px">Código de acceso</label>
+                            <input class="inp-exam-codigo" type="text" value="${escHtml(codigoInfo.codigo)}" maxlength="12" placeholder="Ej: ABC123" data-exam="${examId}"
+                                style="width:100%;padding:7px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;text-transform:uppercase;background:var(--bg);color:var(--txt);font-family:'Montserrat'"
+                                oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;padding-bottom:2px">
+                            <input class="chk-exam-activo" type="checkbox" ${codigoInfo.activo ? 'checked' : ''} data-exam="${examId}" id="chk-cod-${examId}">
+                            <label for="chk-cod-${examId}" style="font-size:.58rem;color:var(--txt2)">Activo</label>
+                        </div>
+                        <button class="btn btn-p" onclick="guardarCodigoExamen('${examId}')" style="white-space:nowrap"><i class="bi bi-check-lg"></i> Guardar código</button>
+                    </div>
+                    <div class="msg-codigo" data-exam="${examId}" style="margin-top:6px;font-size:.63rem;min-height:14px"></div>
                 </div>
-                <div class="msg-hab" style="font-size:.68rem;min-height:14px;margin-bottom:8px"></div>
-                ${renderSolicitudes(sols)}
+                <div class="hab-panel" data-panel="config" data-hab-panel="${examId}">
+                    <div class="hab-grid">
+                        <div><label>Inicio</label><input type="date" data-f="fecha_inicio" value="${escHtml(cfg ? cfg.fecha_inicio : '')}"></div>
+                        <div><label>Hora inicio</label><input type="time" data-f="hora_inicio" value="${escHtml(cfg ? cfg.hora_inicio : '')}"></div>
+                        <div><label>Cierre</label><input type="date" data-f="fecha_cierre" value="${escHtml(cfg ? cfg.fecha_cierre : '')}"></div>
+                        <div><label>Hora cierre</label><input type="time" data-f="hora_cierre" value="${escHtml(cfg ? cfg.hora_cierre : '')}"></div>
+                        <div><label>Intentos</label><input type="number" data-f="intentos" min="1" max="99" value="${escHtml(cfg ? cfg.intentos : 1)}"></div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                        <button class="btn btn-p" onclick="guardarConfigExamen('${examId}', true)"><i class="bi bi-check2-circle"></i> Guardar y habilitar</button>
+                        ${habilitado ? `<button class="btn btn-r" onclick="guardarConfigExamen('${examId}', false)"><i class="bi bi-slash-circle"></i> Deshabilitar</button>` : ''}
+                    </div>
+                    <div class="msg-hab" style="font-size:.63rem;min-height:14px"></div>
+                </div>
+                <div class="hab-panel" data-panel="solicitudes" data-hab-panel="${examId}">
+                    ${renderSolicitudes(sols)}
+                </div>
             </div>`;
-        list.appendChild(item);
+        list.appendChild(card);
+    }
+}
+
+function toggleHabCard(headEl) {
+    const body = headEl.nextElementSibling;
+    const toggle = headEl.querySelector('.hab-card-toggle');
+    body.classList.toggle('open');
+    toggle.classList.toggle('open');
+}
+
+function switchHabTab(btn, examId, panel) {
+    const card = btn.closest('.hab-card-body');
+    card.querySelectorAll('.hab-tab').forEach(t => t.classList.remove('active'));
+    card.querySelectorAll('.hab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    card.querySelector(`[data-panel="${panel}"][data-hab-panel="${examId}"]`).classList.add('active');
+}
+
+async function guardarCodigoExamen(examId) {
+    const inpEl = document.querySelector(`.inp-exam-codigo[data-exam="${examId}"]`);
+    const chkEl = document.querySelector(`.chk-exam-activo[data-exam="${examId}"]`);
+    const msgEl = document.querySelector(`.msg-codigo[data-exam="${examId}"]`);
+    const codigo = (inpEl.value || '').trim().toUpperCase();
+    if (!codigo) { msgEl.textContent = '⚠️ Ingresá un código'; msgEl.style.color = '#fbbf24'; msgEl.style.display = 'block'; return; }
+    try {
+        const cedula = sessionStorage.getItem('current_cedula');
+        const res = await CenturiaAPI.exams.setAccessCode(examId, codigo, cedula);
+        if (res.ok) {
+            msgEl.textContent = '✓ Código guardado'; msgEl.style.color = '#4ade80'; msgEl.style.display = 'block';
+            setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+        } else {
+            msgEl.textContent = '✗ Error: ' + (res.error || 'No se pudo guardar'); msgEl.style.color = '#f87171'; msgEl.style.display = 'block';
+        }
+    } catch (e) {
+        msgEl.textContent = '✗ Error de conexión'; msgEl.style.color = '#f87171'; msgEl.style.display = 'block';
     }
 }
 
 function renderSolicitudes(sols) {
-    if (!sols.length) return '<div style="text-align:center;padding:12px;color:#94a3b8;font-size:.68rem">Ningún alumno cargó su factura para este examen todavía.</div>';
-    const factBadge = v => v === 'Sí' ? '<span class="hab-chip pagado">✓ pagada</span>' : v === 'Pendiente' ? '<span class="hab-chip pendiente">pago pendiente</span>' : '<span class="hab-chip" style="background:#FEE2E2;color:#991B1B">no figura</span>';
+    if (!sols.length) return '<div style="text-align:center;padding:12px;color:var(--txt2);font-size:.65rem">Ningún alumno cargó su factura todavía.</div>';
+    const factBadge = v => v === 'Sí' ? '<span class="hab-chip pagado">✓ pagada</span>' : v === 'Pendiente' ? '<span class="hab-chip pendiente">pendiente</span>' : '<span class="hab-chip" style="background:rgba(248,113,113,.15);color:#f87171">no figura</span>';
     const estBadge = e => e === 'habilitado' ? '<span class="est est-ap">Habilitado</span>' : e === 'rechazado' ? '<span class="est est-re">Rechazado</span>' : '<span class="est est-pen">Por revisar</span>';
     const rows = sols.map(s => {
         const pg = (habDatos.pagos[s.cedula] || {}).pagos || [];
@@ -848,10 +893,10 @@ function renderSolicitudes(sols) {
 }
 
 async function guardarConfigExamen(examId, habilitado) {
-    const item = document.querySelector(`.accordion-item[data-hab="${examId}"]`);
-    const msg = item.querySelector('.msg-hab');
-    const v = f => (item.querySelector(`[data-f="${f}"]`) || {}).value || '';
-    msg.style.color = '#64748b'; msg.textContent = 'Guardando...';
+    const card = document.querySelector(`.hab-card-body[data-hab="${examId}"]`);
+    const msg = card.querySelector('.msg-hab');
+    const v = f => (card.querySelector(`[data-f="${f}"]`) || {}).value || '';
+    msg.style.color = 'var(--txt2)'; msg.textContent = 'Guardando...';
     try {
         const r = await CenturiaAPI.exams.saveExamConfig({
             docente_cedula: cedulaDocente(), examen_id: examId, asignatura: asigActual.codigo, habilitado,
@@ -859,9 +904,9 @@ async function guardarConfigExamen(examId, habilitado) {
         });
         if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo guardar');
         await cargarHabilitacion(asigActual.codigo);
-        const m2 = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
-        if (m2) { m2.style.color = '#065F46'; m2.textContent = '✓ ' + r.mensaje; }
-    } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
+        const m2 = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-hab`);
+        if (m2) { m2.style.color = '#4ade80'; m2.textContent = '✓ ' + r.mensaje; }
+    } catch (e) { msg.style.color = '#f87171'; msg.textContent = e.message; }
 }
 
 async function resolverSolicitud(examId, cedula, decision) {
@@ -877,14 +922,14 @@ async function resolverSolicitud(examId, cedula, decision) {
         obs = prompt(`Motivo del rechazo para ${s.nombre} (opcional):`, '');
         if (obs === null) return;
     }
-    const msg = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
+    const msg = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-hab`);
     try {
         const r = await CenturiaAPI.exams.resolveExamRequest({ docente_cedula: cedulaDocente(), cedula, examen_id: examId, asignatura: s.asignatura, decision, observacion: obs });
         if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo completar la acción');
         await cargarHabilitacion(asigActual.codigo);
-        const m2 = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
-        if (m2) { m2.style.color = '#065F46'; m2.textContent = '✓ ' + r.mensaje; }
-    } catch (e) { if (msg) { msg.style.color = '#dc2626'; msg.textContent = e.message; } else alert(e.message); }
+        const m2 = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-hab`);
+        if (m2) { m2.style.color = '#4ade80'; m2.textContent = '✓ ' + r.mensaje; }
+    } catch (e) { if (msg) { msg.style.color = '#f87171'; msg.textContent = e.message; } else alert(e.message); }
 }
 
 // ═══ INIT ═══

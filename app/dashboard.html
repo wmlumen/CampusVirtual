@@ -493,6 +493,22 @@
             .dash-table thead th { background: #007A33 !important; color: #fff !important; }
             .dash-table tbody td { background: #f9f9f9 !important; color: #000 !important; }
         }
+
+        /* ── Mensaje flotante de cumpleaños (v08.5.2) ── */
+        .cumple-flotante{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:9000;width:min(440px,calc(100vw - 24px));padding:20px 22px 18px;border-radius:20px;background:linear-gradient(145deg,#0f3a1f,#0d2c16);border:2px solid #d4a843;box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 0 6px rgba(212,168,67,.15);color:#fff;text-align:center;animation:cumpleEntra .6s cubic-bezier(.2,1.2,.4,1) both}
+        .cumple-flotante .cumple-icono{font-size:2.6rem;color:#d4a843;line-height:1;animation:cumpleBota 1.6s ease-in-out infinite}
+        .cumple-flotante h2{font-size:1.15rem;font-weight:800;margin:8px 0 4px;color:#d4a843}
+        .cumple-flotante p{font-size:.8rem;line-height:1.5;margin:4px 0;color:rgba(255,255,255,.9)}
+        .cumple-flotante .cumple-beneficios{margin:12px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(212,168,67,.14);border:1px dashed rgba(212,168,67,.6);text-align:left}
+        .cumple-flotante .cumple-beneficios b{display:block;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:#d4a843;margin-bottom:4px}
+        .cumple-flotante .cumple-beneficios div{font-size:.78rem;font-weight:600;padding:2px 0}
+        .cumple-flotante .cumple-beneficios small{color:rgba(255,255,255,.6);font-weight:500}
+        .cumple-flotante .cumple-cerrar{margin-top:12px;padding:8px 22px;border-radius:12px;border:1px solid rgba(212,168,67,.5);background:rgba(212,168,67,.2);color:#d4a843;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
+        .cumple-flotante .cumple-cerrar:hover{background:rgba(212,168,67,.35)}
+        .cumple-flotante .cumple-x{position:absolute;top:8px;right:12px;background:none;border:none;color:rgba(255,255,255,.6);font-size:1.1rem;cursor:pointer}
+        @keyframes cumpleEntra{from{opacity:0;transform:translate(-50%,-30px) scale(.9)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+        @keyframes cumpleBota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        @media (prefers-reduced-motion:reduce){.cumple-flotante,.cumple-flotante .cumple-icono{animation:none}}
     </style>
 </head>
 <body>
@@ -1920,19 +1936,26 @@
             }
 
             if (!leafletMap) {
+                // Si ya tiene coordenadas personalizadas, abrir directamente en zoom máximo (18), si es default en 15
+                const esDefault = (curLat === -25.3397 && curLng === -57.5089);
+                const zoomInicial = esDefault ? 15 : 18;
+
                 leafletMap = L.map('map-domicilio', {
-                    scrollWheelZoom: false
-                }).setView([curLat, curLng], 15);
+                    scrollWheelZoom: false,
+                    maxZoom: 19
+                }).setView([curLat, curLng], zoomInicial);
 
                 // Capa Satelital ESRI World Imagery
                 capaSatelital = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
+                    maxNativeZoom: 18,
                     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
                 });
 
                 // Capa Callejero OpenStreetMap
                 capaCallejero = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
+                    maxNativeZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 });
 
@@ -1940,7 +1963,7 @@
                 capaSatelital.addTo(leafletMap);
 
                 leafletMap.on('click', function(e) {
-                    fijarCoordenadas(e.latlng.lat, e.latlng.lng);
+                    fijarCoordenadas(e.latlng.lat, e.latlng.lng, true);
                 });
 
                 // Interacción CTRL + Scroll para Zoom
@@ -1969,7 +1992,8 @@
 
             } else {
                 leafletMap.invalidateSize();
-                leafletMap.setView([curLat, curLng], leafletMap.getZoom() || 15);
+                const z = leafletMap.getZoom() < 18 ? 18 : leafletMap.getZoom();
+                leafletMap.setView([curLat, curLng], z);
             }
 
             actualizarMarcadorMapa(curLat, curLng);
@@ -1986,12 +2010,12 @@
                 leafletMarker = L.marker([numLat, numLng], { draggable: true }).addTo(leafletMap);
                 leafletMarker.on('dragend', function(e) {
                     const pos = e.target.getLatLng();
-                    fijarCoordenadas(pos.lat, pos.lng);
+                    fijarCoordenadas(pos.lat, pos.lng, true);
                 });
             }
         }
 
-        async function fijarCoordenadas(lat, lng) {
+        async function fijarCoordenadas(lat, lng, aplicarMaxZoom = true) {
             const latFixed = parseFloat(lat).toFixed(6);
             const lngFixed = parseFloat(lng).toFixed(6);
 
@@ -1999,7 +2023,13 @@
             document.getElementById('p-longitud').textContent = lngFixed;
 
             actualizarMarcadorMapa(latFixed, lngFixed);
-            if (leafletMap) leafletMap.panTo([latFixed, lngFixed]);
+            if (leafletMap) {
+                if (aplicarMaxZoom) {
+                    leafletMap.setView([latFixed, lngFixed], 18, { animate: true });
+                } else {
+                    leafletMap.panTo([latFixed, lngFixed]);
+                }
+            }
 
             try {
                 localStorage.setItem('centuria_latitud', latFixed);
@@ -2011,7 +2041,7 @@
                 localStorage.setItem('centuria_user', JSON.stringify(u));
 
                 await CenturiaAPI.auth.updateProfile({ latitud: latFixed, longitud: lngFixed });
-                showToast('Ubicación fijada en el mapa: ' + latFixed + ', ' + lngFixed, 'success');
+                showToast('Ubicación fijada en el mapa con zoom máximo: ' + latFixed + ', ' + lngFixed, 'success');
             } catch(e) {}
         }
 
@@ -2023,8 +2053,7 @@
             showToast('Obteniendo tu ubicación GPS...', 'info');
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
-                    fijarCoordenadas(pos.coords.latitude, pos.coords.longitude);
-                    if (leafletMap) leafletMap.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                    fijarCoordenadas(pos.coords.latitude, pos.coords.longitude, true);
                 },
                 function(err) {
                     showToast('No se pudo obtener el GPS: ' + err.message, 'error');
@@ -2094,6 +2123,54 @@
 
         document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { cerrarFoto(); cerrarModalPassword(); } });
         document.addEventListener('DOMContentLoaded', cargarDashboard);
+
+        // ── Mensaje flotante de cumpleaños (solo alumnos). El servidor decide con la cédula de la sesión. ──
+        async function mostrarCumple() {
+            try {
+                var rol = (window.CenturiaSession && CenturiaSession.getRole()) || '';
+                if (rol !== 'alumno') return;
+                var ced = (window.CenturiaSession && CenturiaSession.getCedula()) || '';
+                var hoy = new Date(), clave = 'cv_cumple_' + ced + '_' + hoy.getFullYear() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getDate();
+                try { if (localStorage.getItem(clave)) return; } catch (e) {}
+                var d = await CenturiaAPI.cumple.mio();
+                if (!d || !d.ok || !d.cumple) return;
+                if (document.getElementById('cumple-flotante')) return;
+
+                var el = function (tag, cls, txt) { var x = document.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
+                var box = el('div', 'cumple-flotante');
+                box.id = 'cumple-flotante';
+                box.setAttribute('role', 'status');
+                box.setAttribute('aria-live', 'polite');
+                var cerrar = function () { try { localStorage.setItem(clave, '1'); } catch (e) {} box.remove(); };
+
+                var x = el('button', 'cumple-x'); x.type = 'button'; x.setAttribute('aria-label', 'Cerrar'); x.appendChild(el('i', 'bi bi-x-lg')); x.onclick = cerrar;
+                var ic = el('div', 'cumple-icono'); ic.appendChild(el('i', 'bi bi-cake2-fill'));
+                var primero = String(d.nombre || '').trim().split(/\s+/)[0] || '';
+                box.appendChild(x);
+                box.appendChild(ic);
+                box.appendChild(el('h2', '', '¡Feliz cumpleaños' + (primero ? ', ' + primero : '') + '!'));
+                box.appendChild(el('p', '', d.edad ? 'Hoy cumples ' + d.edad + ' años. Todo el Instituto Superior Centuria te desea un día lleno de alegría y muchos éxitos en tu camino de estudio.' : 'Todo el Instituto Superior Centuria te desea un día lleno de alegría y muchos éxitos.'));
+
+                if (d.beneficios && d.beneficios.length) {
+                    var bb = el('div', 'cumple-beneficios');
+                    bb.appendChild(el('b', '', 'Tu regalo de cumpleaños'));
+                    d.beneficios.forEach(function (b) {
+                        var fila = el('div', '', (b.tipo === 'Descuento' && b.porcentaje ? 'Descuento ' + b.porcentaje + '%' : b.tipo) + (b.detalle ? ' — ' + b.detalle : ''));
+                        if (b.vence) {
+                            var m = String(b.vence).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (m) fila.appendChild(el('small', '', '  (válido hasta ' + m[3] + '/' + m[2] + '/' + m[1] + ')'));
+                        }
+                        bb.appendChild(fila);
+                    });
+                    bb.appendChild(el('small', '', 'Preséntate en Asistencia al Estudiante para canjearlo.'));
+                    box.appendChild(bb);
+                }
+                var ok = el('button', 'cumple-cerrar', '¡Gracias!'); ok.type = 'button'; ok.onclick = cerrar;
+                box.appendChild(ok);
+                document.body.appendChild(box);
+            } catch (e) { /* el saludo es opcional: nunca debe romper el dashboard */ }
+        }
+        document.addEventListener('DOMContentLoaded', mostrarCumple);
     </script>
 </body>
 </html>

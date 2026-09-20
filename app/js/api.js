@@ -1,4 +1,8 @@
-// api.js - Centuria Portal API Client (v14)
+// api.js - Centuria Portal API Client (v19)
+// v19 (2026-09-20): API.cursos.mios (mis_cursos: cursos y asignaturas reales del alumno). Materiales, libreta y dashboard la usan.
+// v19b (2026-09-20): GAS_URL apunta al nuevo despliegue (backend con 04 a 10: consultas, mensajes, facturas, mis_cursos).
+// v16 (2026-09-20): API.eventos (módulo de eventos con asistencia por QR). API.credencial.generar devuelve un lote de códigos.
+// v15 (2026-09-20): API.credencial (QR dinámico: generar / verificar). GAS_URL apunta al despliegue ...Wd7wA8B (backend con 04_ y 05_).
 // v14 (2026-09-20): rol Asistencia al Estudiante (API.asistente: ficha, cumpleaños, beneficios, quejas) y API.cumple.mio() para el mensaje de cumpleaños del alumno.
 // v13 (2026-09-20): GAS_URL apunta al despliegue con backend v08.4.1 (catálogos tolerantes, secciones desde la planilla).
 // Cliente unificado para Servidor Cloud + Base de Datos / Almacenamiento Cloud
@@ -10,7 +14,7 @@ const ROLE_ES = {student:'alumno',teacher:'docente',admin:'admin',academic:'acad
 const ROLE_EN = {alumno:'student',docente:'docente',admin:'admin',academico:'academic',inactivo:'inactive',student:'student',teacher:'docente',academic:'academic',inactive:'inactive'};
 
 // Servidor Cloud URL (planilla BasedeDatosCampus = única base en la nube).
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbymm5cpXSVOEBl6ayUQVMk59TfecOZqpErZ9zRLkD4kPAvXUBnYuf14UDf8Bk5w4-EP/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwE5Mk0xeReN8Fcwj7rabSwLqyF5y7NUFgxspPcytGjskoKvLKsfj3AmrVxi-xpf5p8/exec';
 
 // Configuración central institucional
 window.CENTURIA_CONFIG = {
@@ -773,6 +777,73 @@ API.asistente = {
 // Mensaje de cumpleaños del alumno: el servidor usa la cédula de SU sesión, nunca un parámetro.
 API.cumple = {
     mio: () => callGas('cumple_mio', { token: API.getToken() }, 'POST')
+};
+
+// Credencial con QR dinámico: el alumno pide un código de vida corta (su cédula sale de la sesión) y el personal lo verifica (un solo uso).
+API.credencial = {
+    generar: () => callGas('qr_credencial', { token: API.getToken() }, 'POST'),
+    verificar: (codigo) => callGas('qr_verificar', { token: API.getToken(), codigo }, 'POST')
+};
+
+// Atención al Alumno: consultas con expediente (el alumno escribe; atención/académico responden; se puede sumar gente o derivar a un área).
+// Todo por POST con token de sesión.
+API.consultas = {
+    _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
+    crear: (categoria, asunto, mensaje) => API.consultas._p('con_crear', { categoria, asunto, mensaje }),
+    listar: (filtros) => API.consultas._p('con_listar', filtros),                       // { mias, atender, conteo, sin_leer, es_personal }
+    ver: (id) => API.consultas._p('con_ver', { id }),                                    // expediente completo
+    responder: (id, texto, interna) => API.consultas._p('con_responder', { id, texto, interna: !!interna }),
+    estado: (id, estado) => API.consultas._p('con_estado', { id, estado }),              // abierta | en_proceso | resuelta
+    compartir: (id, cedula) => API.consultas._p('con_compartir', { id, cedula }),
+    quitar: (id, cedula) => API.consultas._p('con_quitar', { id, cedula }),
+    derivar: (id, area, quitar) => API.consultas._p('con_derivar', { id, area, quitar: !!quitar }),
+    pendientes: () => API.consultas._p('con_pendientes')                                 // { sin_leer, por_atender, es_personal }
+};
+
+// Facturas del alumno: fecha, número, concepto y foto. Las ve el personal habilitado (foto privada: se pide aparte con foto()).
+API.facturas = {
+    _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
+    crear: (datos) => API.facturas._p('fac_crear', datos),               // { fecha, numero, concepto, monto?, foto (dataURL) }
+    mias: () => API.facturas._p('fac_mias'),
+    editar: (id, datos) => API.facturas._p('fac_editar', Object.assign({ id }, datos)),
+    anular: (id) => API.facturas._p('fac_anular', { id }),
+    foto: (id) => API.facturas._p('fac_foto', { id }),                   // { imagen: dataURL }
+    permisos: () => API.facturas._p('fac_permisos'),                     // { puede_ver, puede_accesos }
+    listar: (filtros) => API.facturas._p('fac_listar', filtros),
+    revisar: (id, estado, observacion) => API.facturas._p('fac_revisar', { id, estado, observacion }),
+    accesos: () => API.facturas._p('fac_accesos'),
+    habilitar: (cedula) => API.facturas._p('fac_habilitar', { cedula }),
+    quitarAcceso: (cedula) => API.facturas._p('fac_quitar_acceso', { cedula })
+};
+
+// Mensajes de la plataforma a los alumnos (los envía el personal; el alumno los ve en su dashboard). Todo por POST con token.
+API.mensajes = {
+    _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
+    mios: () => API.mensajes._p('msg_mios'),                             // { mensajes:[{id,titulo,texto,tono,emisor,rol,fecha}] } vigentes y sin descartar
+    leer: (id) => API.mensajes._p('msg_leer', { id }),                   // «Entendido»: lo descarta para este alumno
+    destinos: () => API.mensajes._p('msg_destinos'),                     // { grados, carreras, secciones }
+    enviar: (datos) => API.mensajes._p('msg_enviar', datos),             // { titulo, texto, tono, grado, carrera, seccion, cedulas, dias | desde, hasta }
+    listar: () => API.mensajes._p('msg_listar'),
+    retirar: (id) => API.mensajes._p('msg_retirar', { id })
+};
+
+// Eventos ligados al calendario: gestión (admin, filial, académico) u organizador con código de activación.
+// Todo por POST con token; el código de activación viaja en el cuerpo, nunca en la URL.
+API.eventos = {
+    _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
+    listar: (filtros) => API.eventos._p('evt_listar', filtros),
+    info: (id) => API.eventos._p('evt_info', { evento_id: id }),
+    guardar: (datos) => API.eventos._p('evt_guardar', datos),
+    estado: (id, accion, codigo) => API.eventos._p('evt_estado', { evento_id: id, accion, codigo_activacion: codigo || '' }),   // activar | cerrar | cancelar | reprogramar
+    codigoNuevo: (id) => API.eventos._p('evt_codigo_nuevo', { evento_id: id }),
+    panel: (id, codigo) => API.eventos._p('evt_panel', { evento_id: id, codigo_activacion: codigo || '' }),
+    asistentes: (id, codigo) => API.eventos._p('evt_asistentes', { evento_id: id, codigo_activacion: codigo || '' }),
+    marcar: (id, datos, codigo) => API.eventos._p('evt_marcar', Object.assign({ evento_id: id, codigo_activacion: codigo || '' }, datos))   // datos: { qr:[…] } o { cedula, nombre? }
+};
+
+// Cursos y asignaturas reales del alumno según la hoja Cursos (Activo · Pendiente · Desarrollado).
+API.cursos = {
+    mios: () => callGas('mis_cursos', { token: API.getToken() }, 'POST')   // { alumno, ficha, cursos:[{estado, materiales, asignatura}], materiales:[codigos], resumen, diagnostico }
 };
 
 API.filiales = {

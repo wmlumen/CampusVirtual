@@ -6,44 +6,335 @@
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glosario Técnico - TIC</title>
+    <title>Glosario Técnico TIC — Instituto Superior Centuria</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Estilos personalizados -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <!-- Estilos base -->
     <link rel="stylesheet" href="../css/estilos.css">
     <link rel="stylesheet" href="../css/accesibilidad.css">
-    <link rel="stylesheet" href="../css/portal-layout.css">
+    <link rel="stylesheet" href="../css/portal-layout.css?v=3">
     <link rel="stylesheet" href="../css/paleta-oficial.css">
+    <script defer src="../js/portal-layout.js?v=3"></script>
+
+    <style>
+        :root {
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #e8f5ec;
+            --verde-hover: #1ebb4d;
+            --dorado: #d4a843;
+            --dorado-claro: #e8c676;
+            --blanco: #ffffff;
+            --gris-bg: #f8fafc;
+            --gris-borde: #e2e8f0;
+            --txt-principal: #1e293b;
+            --txt-secundario: #64748b;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--gris-bg);
+            color: var(--txt-principal);
+        }
+
+        .portal-layout > .content {
+            padding: 24px 36px !important;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* ── Header de Página ── */
+        .glosario-header {
+            background: linear-gradient(135deg, #0d2c16 0%, #16813D 60%, #1ebb4d 100%);
+            border-radius: 18px;
+            padding: 24px 32px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(13,44,22,.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .glosario-header::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(212,168,67,.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .glosario-header h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .glosario-header p {
+            font-size: .78rem;
+            color: rgba(255,255,255,.85);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        /* ── Barra de Control y Búsqueda en PC ── */
+        .control-bar {
+            background: #fff;
+            border: 1px solid var(--gris-borde);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-box-wrap {
+            position: relative;
+            flex: 1 1 320px;
+            max-width: 440px;
+        }
+        .search-box-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--txt-secundario);
+            font-size: .9rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border-radius: 12px;
+            border: 1px solid var(--gris-borde);
+            background: #f8fafc;
+            font-size: .8rem;
+            font-family: 'Montserrat', sans-serif;
+            outline: none;
+            transition: .2s;
+        }
+        .search-input:focus {
+            border-color: var(--verde-medio);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(22,129,61,.15);
+        }
+
+        /* ── Filtros por Categoría ── */
+        .cat-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .cat-pill {
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: .7rem;
+            font-weight: 700;
+            border: 1px solid var(--gris-borde);
+            background: #fff;
+            color: var(--txt-secundario);
+            cursor: pointer;
+            transition: .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cat-pill:hover {
+            background: var(--verde-claro);
+            color: var(--verde-oscuro);
+            border-color: var(--verde-medio);
+        }
+        .cat-pill.active {
+            background: #0d2c16;
+            color: #fff;
+            border-color: #0d2c16;
+            box-shadow: 0 2px 8px rgba(13,44,22,.25);
+        }
+
+        /* ── Switcher de Vista (Grid / Tabla) ── */
+        .view-switch {
+            display: flex;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 10px;
+            gap: 2px;
+        }
+        .view-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: .8rem;
+            color: var(--txt-secundario);
+            cursor: pointer;
+            transition: .15s;
+        }
+        .view-btn.active {
+            background: #fff;
+            color: var(--verde-oscuro);
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(0,0,0,.08);
+        }
+
+        /* ── Grid Layout para PC (2 o 3 Columnas) ── */
+        .glosario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .term-card {
+            background: #fff;
+            border: 1px solid var(--gris-borde);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            transition: transform .2s, box-shadow .2s, border-color .2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .term-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--verde-medio);
+        }
+        .term-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,.06);
+            border-color: #cbd5e1;
+        }
+        .term-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .term-acronym {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--verde-oscuro);
+            letter-spacing: .5px;
+        }
+        .term-category-badge {
+            font-size: .58rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--verde-claro);
+            color: var(--verde-oscuro);
+        }
+        .term-names {
+            margin-bottom: 10px;
+        }
+        .term-es {
+            font-size: .84rem;
+            font-weight: 700;
+            color: var(--txt-principal);
+            line-height: 1.3;
+        }
+        .term-en {
+            font-size: .72rem;
+            color: var(--txt-secundario);
+            font-style: italic;
+            margin-top: 2px;
+        }
+        .term-desc {
+            font-size: .78rem;
+            color: #475569;
+            line-height: 1.5;
+            background: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-top: auto;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* ── Vista Tabla para PC ── */
+        .glosario-table-wrap {
+            display: none;
+            background: #fff;
+            border: 1px solid var(--gris-borde);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.03);
+            margin-bottom: 24px;
+        }
+        .glosario-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem;
+        }
+        .glosario-table thead th {
+            background: #0d2c16;
+            color: var(--dorado);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: .65rem;
+            letter-spacing: .8px;
+            padding: 12px 18px;
+            border: none;
+        }
+        .glosario-table tbody td {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .glosario-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* ── Contador de resultados ── */
+        .results-count {
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--txt-secundario);
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 992px) {
+            .portal-layout > .content { padding: 16px !important; }
+            .glosario-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
+<script>if(!sessionStorage.getItem('current_cedula')){location.replace('../index.html');}</script>
 <div class="container-fluid">
     <div class="row portal-layout">
 
-<div id="top-user-bar" class="container my-3 d-flex justify-content-end align-items-center gap-3">
-    <div class="text-end">
-        <div id="sidebar-user-name" class="fw-bold small" style="color: #007A33;"></div>
-        <small id="sidebar-user-id" class="text-muted" style="font-size: 0.75rem;"></small>
-    </div>
-    <button id="btn-logout" class="btn btn-sm btn-outline-secondary" onclick="sessionStorage.clear(); localStorage.removeItem('centuria_remember'); localStorage.removeItem('centuria_token'); window.location.replace('index.html')"><i class="bi bi-box-arrow-right"></i> Salir</button>
-</div>
-<script>
-if(!sessionStorage.getItem('current_cedula')){location.replace('index.html');}
-document.addEventListener('DOMContentLoaded',()=>{
-  const n=sessionStorage.getItem('current_nombre'); const c=sessionStorage.getItem('current_cedula');
-  if(n){ const el=document.getElementById('sidebar-user-name'); if(el) el.textContent=n; }
-  if(c){ const el=document.getElementById('sidebar-user-id'); if(el) el.textContent='C.I: '+c; }
-});
-</script>
-
-        <nav id="portal-menu" aria-label="Navegación del curso" class="col-md-3 col-lg-2 sidebar px-0" style="position:sticky; top:0; height:100vh; overflow-y:auto; background:#007A33;">
+        <!-- ═══ Sidebar de Navegación del Curso ═══ -->
+        <nav id="portal-menu" aria-label="Navegación del curso" class="col-md-3 col-lg-2 sidebar px-0">
             <div class="p-2">
-                <a href="../Materiales_Clases/programa.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-file-earmark-text me-2"></i>Programa Oficial</a>
-                <a href="glosario.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-journal-text me-2"></i>Glosario Técnico</a>
-                <a href="asistencia_presencial.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-person-raised-hand me-2"></i>Asistencia Presencial</a>
-                <a href="../Materiales_Clases/planilla.html" class="d-block text-white text-decoration-none p-2 rounded"><i class="bi bi-graph-up me-2"></i>Planilla de Progreso</a>
+                <a class="d-block text-white text-decoration-none p-2 rounded" style="background:rgba(255,255,255,.15);border-left:3px solid var(--dorado)" href="glosario.html"><i class="bi bi-journal-text me-2"></i>Glosario Técnico</a>
+                <a class="d-block text-white text-decoration-none p-2 rounded" href="asistencia_presencial.html"><i class="bi bi-person-raised-hand me-2"></i>Asistencia Presencial</a>
+                <a class="d-block text-white text-decoration-none p-2 rounded" href="../Materiales_Clases/planilla.html"><i class="bi bi-graph-up me-2"></i>Planilla de Progreso</a>
+                <a class="d-block text-white text-decoration-none p-2 rounded" href="../dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Ir al Dashboard</a>
             </div>
             <div class="px-3 pt-3 pb-2 text-uppercase small fw-bold text-white-50" style="letter-spacing:1px;">Unidades (10)</div>
             <div class="px-2">
@@ -59,273 +350,284 @@ document.addEventListener('DOMContentLoaded',()=>{
                 <a href="../Materiales_Clases/Unidad_10.html" class="menu-clase d-block text-white text-decoration-none p-2 rounded">Unidad 10</a>
             </div>
         </nav>
-        <main class="col-md-9 col-lg-10 content p-4" style="background:#f8f9fa; min-height:100vh;">
+
+        <!-- ═══ Contenido Principal (Optimizado para PC) ═══ -->
+        <main class="col-md-9 col-lg-10 content">
             <button type="button" class="portal-menu-toggle" aria-controls="portal-menu" aria-expanded="true">Ocultar menú</button>
-            <div class="container">
-    
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Volver al material donde estaba -->
-            <div id="volver-material" class="alert alert-success border-2 d-none d-flex justify-content-between align-items-center shadow-sm mb-3">
-                <span><i class="bi bi-arrow-left-circle me-2"></i>Volver a tu material: <strong id="volver-origen">Unidad</strong></span>
-                <button class="btn btn-success btn-sm" onclick="volverAlMaterial()"><i class="bi bi-box-arrow-in-left me-1"></i> Volver donde quedé</button>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary btn-sm" onclick="history.back()"><i class="bi bi-arrow-left me-1"></i> Volver atrás</button>
-                <div class="input-group" style="max-width: 320px;">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" id="filtro-glosario" class="form-control" placeholder="Buscar acrónimo (ej. WiFi, LAN, DNS)...">
-                </div>
-            </div>
-            
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-header text-white p-4 text-center rounded-top-4" style="background-color: #007A33;">
-                    <h1 class="mb-0 fw-bold"><img src="logo_centuria_blanco.png" alt="Centuria" style="height: 32px; vertical-align: middle; margin-right: 10px; background: white; border-radius: 4px; padding: 2px;"><i class="bi bi-journal-text text-white"></i> Glosario de Términos TIC</h1>
-                    <p class="mb-0 mt-2 opacity-75">Diccionario interactivo de acrónimos y siglas técnicas - Redes, WiFi y Dispositivos</p>
-                </div>
-                
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle mb-0">
-                            <thead class="table-secondary">
-                                <tr>
-                                    <th scope="col" class="py-3 px-4" style="width: 15%;">Acrónimo</th>
-                                    <th scope="col" class="py-3 px-4" style="width: 25%;">Inglés</th>
-                                    <th scope="col" class="py-3 px-4" style="width: 25%;">Español</th>
-                                    <th scope="col" class="py-3 px-4" style="width: 35%;">¿Qué es?</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- A -->
-                                <tr>
-                                    <td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">AP</span></td>
-                                    <td class="px-4 text-muted"><em>Access Point</em></td>
-                                    <td class="px-4 fw-bold">Punto de Acceso</td>
-                                    <td class="px-4 text-secondary">Dispositivo que crea una red WiFi y permite que dispositivos se conecten a la red cableada.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">API</span></td>
-                                    <td class="px-4 text-muted"><em>Application Programming Interface</em></td>
-                                    <td class="px-4 fw-bold">Interfaz de Programación de Aplicaciones</td>
-                                    <td class="px-4 text-secondary">Conjunto de reglas que permite que dos aplicaciones se comuniquen entre sí.</td>
-                                </tr>
-                                <!-- C -->
-                                <tr>
-                                    <td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">CASE</span></td>
-                                    <td class="px-4 text-muted"><em>Computer Aided Software Engineering</em></td>
-                                    <td class="px-4 fw-bold">Ingeniería de Software Asistida por Computadora</td>
-                                    <td class="px-4 text-secondary">Herramientas de software utilizadas para automatizar y apoyar las distintas fases del ciclo de vida del desarrollo de sistemas.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">CPU</span></td>
-                                    <td class="px-4 text-muted"><em>Central Processing Unit</em></td>
-                                    <td class="px-4 fw-bold">Unidad Central de Procesamiento</td>
-                                    <td class="px-4 text-secondary">El "cerebro" de la computadora. Hardware encargado de interpretar y ejecutar instrucciones y procesar datos.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">CRM</span></td>
-                                    <td class="px-4 text-muted"><em>Customer Relationship Management</em></td>
-                                    <td class="px-4 fw-bold">Gestión de Relaciones con Clientes</td>
-                                    <td class="px-4 text-secondary">Estrategia y software utilizado para administrar y analizar las interacciones de una empresa con sus clientes.</td>
-                                </tr>
-                                <!-- D -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">DFD</span></td>
-                                    <td class="px-4 text-muted"><em>Data Flow Diagram</em></td>
-                                    <td class="px-4 fw-bold">Diagrama de Flujo de Datos</td>
-                                    <td class="px-4 text-secondary">Representación gráfica que muestra cómo se mueve la información a través de un sistema o proceso empresarial.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">DSS</span></td>
-                                    <td class="px-4 text-muted"><em>Decision Support System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Apoyo a la Toma de Decisiones</td>
-                                    <td class="px-4 text-secondary">Sistema de información gerencial interactivo que ayuda a los directivos a tomar decisiones analizando escenarios semiestructurados.</td>
-                                </tr>
-                                <!-- E -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">EIS</span></td>
-                                    <td class="px-4 text-muted"><em>Executive Information System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Información Ejecutiva</td>
-                                    <td class="px-4 text-secondary">Herramienta para la alta dirección que consolida métricas clave e información estratégica en paneles o tableros de control.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">ER</span></td>
-                                    <td class="px-4 text-muted"><em>Entity-Relationship</em></td>
-                                    <td class="px-4 fw-bold">Entidad-Relación</td>
-                                    <td class="px-4 text-secondary">Modelo conceptual que ilustra cómo las entidades (personas, objetos, conceptos) se relacionan entre sí en una base de datos.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">ERP</span></td>
-                                    <td class="px-4 text-muted"><em>Enterprise Resource Planning</em></td>
-                                    <td class="px-4 fw-bold">Planificación de Recursos Empresariales</td>
-                                    <td class="px-4 text-secondary">Software de gestión integral que unifica finanzas, RRHH, manufactura y ventas en una base de datos centralizada.</td>
-                                </tr>
-                                <!-- H -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">HDD</span></td>
-                                    <td class="px-4 text-muted"><em>Hard Disk Drive</em></td>
-                                    <td class="px-4 fw-bold">Unidad de Disco Duro</td>
-                                    <td class="px-4 text-secondary">Dispositivo de almacenamiento magnético tradicional utilizado para guardar información de forma permanente.</td>
-                                </tr>
-                                <!-- I -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">IT / TI</span></td>
-                                    <td class="px-4 text-muted"><em>Information Technology</em></td>
-                                    <td class="px-4 fw-bold">Tecnología de la Información</td>
-                                    <td class="px-4 text-secondary">Uso de computadoras, redes y almacenamiento para procesar y gestionar datos electrónicos en organizaciones.</td>
-                                </tr>
-                                <!-- L -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">LMS</span></td>
-                                    <td class="px-4 text-muted"><em>Learning Management System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Gestión de Aprendizaje</td>
-                                    <td class="px-4 text-secondary">Plataforma de software educativo utilizada para administrar, distribuir y evaluar educación virtual (e-learning).</td>
-                                </tr>
-                                <!-- M -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">MIS</span></td>
-                                    <td class="px-4 text-muted"><em>Management Information System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Información Gerencial</td>
-                                    <td class="px-4 text-secondary">Sistema enfocado en procesar datos operativos para generar informes estandarizados para gerentes de nivel medio.</td>
-                                </tr>
-                                <!-- R -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">RAM</span></td>
-                                    <td class="px-4 text-muted"><em>Random Access Memory</em></td>
-                                    <td class="px-4 fw-bold">Memoria de Acceso Aleatorio</td>
-                                    <td class="px-4 text-secondary">Memoria principal temporal de la computadora, extremadamente rápida pero volátil (se borra al apagar el equipo).</td>
-                                </tr>
-                                <!-- S -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">SaaS</span></td>
-                                    <td class="px-4 text-muted"><em>Software as a Service</em></td>
-                                    <td class="px-4 fw-bold">Software como Servicio</td>
-                                    <td class="px-4 text-secondary">Modelo en la nube donde una empresa aloja un software y el cliente lo utiliza a través de internet pagando una suscripción.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">SI</span></td>
-                                    <td class="px-4 text-muted"><em>Information System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Información</td>
-                                    <td class="px-4 text-secondary">Conjunto interrelacionado de hardware, software, personas y datos que procesa información para alcanzar un objetivo.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">SSD</span></td>
-                                    <td class="px-4 text-muted"><em>Solid State Drive</em></td>
-                                    <td class="px-4 fw-bold">Unidad de Estado Sólido</td>
-                                    <td class="px-4 text-secondary">Dispositivo moderno de almacenamiento sin partes móviles, significativamente más rápido y resistente que un HDD tradicional.</td>
-                                </tr>
-                                <!-- T -->
-                                <tr>
-                                    <td class="px-4"><span class="badge bg-primary fs-6">TPS</span></td>
-                                    <td class="px-4 text-muted"><em>Transaction Processing System</em></td>
-                                    <td class="px-4 fw-bold">Sistema de Procesamiento de Transacciones</td>
-                                    <td class="px-4 text-secondary">Sistemas operativos básicos que registran las operaciones rutinarias del día a día (ej. cajero de supermercado).</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">TQM</span></td>
-                                    <td class="px-4 text-muted"><em>Total Quality Management</em></td>
-                                    <td class="px-4 fw-bold">Aseguramiento de la Calidad Total</td>
-                                    <td class="px-4 text-secondary">Enfoque de gestión integral que busca la mejora continua y la excelencia en todas las fases de un producto o servicio.</td>
-                                </tr>
-                                <!-- Redes / WiFi -->
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">LAN</span></td><td class="px-4 text-muted"><em>Local Area Network</em></td><td class="px-4 fw-bold">Red de Área Local</td><td class="px-4 text-secondary">Red que conecta dispositivos en un área pequeña como casa, oficina o aula.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">WAN</span></td><td class="px-4 text-muted"><em>Wide Area Network</em></td><td class="px-4 fw-bold">Red de Área Amplia</td><td class="px-4 text-secondary">Red que cubre grandes distancias, como Internet que conecta ciudades y países.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">WLAN</span></td><td class="px-4 text-muted"><em>Wireless LAN</em></td><td class="px-4 fw-bold">Red Inalámbrica Local</td><td class="px-4 text-secondary">LAN sin cables, usando WiFi para conectar dispositivos.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">WiFi</span></td><td class="px-4 text-muted"><em>Wireless Fidelity</em></td><td class="px-4 fw-bold">Fidelidad Inalámbrica</td><td class="px-4 text-secondary">Tecnología que permite conexión a internet sin cables mediante ondas de radio.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">SSID</span></td><td class="px-4 text-muted"><em>Service Set Identifier</em></td><td class="px-4 fw-bold">Identificador de Red</td><td class="px-4 text-secondary">Nombre que identifica tu red WiFi (ej. "Centuria_Alumnos").</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">Router</span></td><td class="px-4 text-muted"><em>Router</em></td><td class="px-4 fw-bold">Enrutador</td><td class="px-4 text-secondary">Dispositivo que dirige el tráfico entre tu red local e Internet.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">Switch</span></td><td class="px-4 text-muted"><em>Switch</em></td><td class="px-4 fw-bold">Conmutador</td><td class="px-4 text-secondary">Conecta varios dispositivos cableados dentro de una LAN.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">DNS</span></td><td class="px-4 text-muted"><em>Domain Name System</em></td><td class="px-4 fw-bold">Sistema de Nombres de Dominio</td><td class="px-4 text-secondary">Traduce nombres (centuria.edu.py) a direcciones IP.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">DHCP</span></td><td class="px-4 text-muted"><em>Dynamic Host Configuration Protocol</em></td><td class="px-4 fw-bold">Protocolo de Configuración Dinámica</td><td class="px-4 text-secondary">Asigna automáticamente direcciones IP a los dispositivos.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">IP</span></td><td class="px-4 text-muted"><em>Internet Protocol</em></td><td class="px-4 fw-bold">Protocolo de Internet</td><td class="px-4 text-secondary">Dirección única de cada dispositivo en la red (ej. 192.168.1.10).</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">TCP/IP</span></td><td class="px-4 text-muted"><em>Transmission Control Protocol / Internet Protocol</em></td><td class="px-4 fw-bold">Conjunto de Protocolos de Internet</td><td class="px-4 text-secondary">Base de la comunicación en Internet.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">HTTP/HTTPS</span></td><td class="px-4 text-muted"><em>HyperText Transfer Protocol (Secure)</em></td><td class="px-4 fw-bold">Protocolo Web</td><td class="px-4 text-secondary">HTTP es web sin cifrar, HTTPS es versión segura con candado.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">VPN</span></td><td class="px-4 text-muted"><em>Virtual Private Network</em></td><td class="px-4 fw-bold">Red Privada Virtual</td><td class="px-4 text-secondary">Túnel seguro para acceder a la red desde fuera.</td></tr>
-                                <!-- Dispositivos -->
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">IoT</span></td><td class="px-4 text-muted"><em>Internet of Things</em></td><td class="px-4 fw-bold">Internet de las Cosas</td><td class="px-4 text-secondary">Objetos cotidianos conectados (focos, aires, sensores) que envían datos por internet.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">Bluetooth</span></td><td class="px-4 text-muted"><em>Bluetooth</em></td><td class="px-4 fw-bold">Bluetooth</td><td class="px-4 text-secondary">Conexión inalámbrica de corto alcance para audio y datos.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">NFC</span></td><td class="px-4 text-muted"><em>Near Field Communication</em></td><td class="px-4 fw-bold">Comunicación de Campo Cercano</td><td class="px-4 text-secondary">Conexión por contacto (pagos con celular).</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">USB</span></td><td class="px-4 text-muted"><em>Universal Serial Bus</em></td><td class="px-4 fw-bold">Bus Universal en Serie</td><td class="px-4 text-secondary">Puerto estándar para conectar pendrives, celulares y periféricos.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">GPU</span></td><td class="px-4 text-muted"><em>Graphics Processing Unit</em></td><td class="px-4 fw-bold">Unidad de Procesamiento Gráfico</td><td class="px-4 text-secondary">Chip para gráficos y video, clave para juegos e IA.</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">URL</span></td><td class="px-4 text-muted"><em>Uniform Resource Locator</em></td><td class="px-4 fw-bold">Localizador de Recurso</td><td class="px-4 text-secondary">Dirección web completa (ej. https://centuria.edu.py).</td></tr>
-                                <tr><td class="px-4"><span class="badge fs-6" style="background-color:#007A33;">4G/5G</span></td><td class="px-4 text-muted"><em>Fourth/Fifth Generation</em></td><td class="px-4 fw-bold">Red Móvil 4ª/5ª Gen.</td><td class="px-4 text-secondary">Tecnologías móviles; 5G es 10x más rápida que 4G.</td></tr>
-                            </tbody>
-                        </table>
+
+            <!-- Topbar Usuario -->
+            <div class="d-flex justify-content-between align-items-center gap-2 py-2 px-3 mb-4 bg-white rounded-3 shadow-sm border" id="top-user-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <img alt="Centuria" height="34" src="../logo_centuria.png" onerror="this.src='../favicon.ico'"/>
+                    <div>
+                        <div class="fw-bold small" style="color:var(--verde-oscuro)">INSTITUTO SUPERIOR CENTURIA</div>
+                        <small class="text-muted" style="font-size:0.7rem">Materia: <strong>Tecnología de la Información y Comunicación (TIC)</strong></small>
                     </div>
                 </div>
-                <div class="card-footer bg-white p-3 text-center border-top">
-                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Haz clic en cualquier sigla con <span class="badge bg-primary" style="background-color:#007A33 !important;">tooltip</span> en tu material para venir aquí. Usa el buscador arriba para filtrar por Redes/WiFi/Dispositivos.</small>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end d-none d-sm-block">
+                        <div class="fw-bold small" id="sidebar-user-name">Usuario</div>
+                        <div class="text-muted" id="sidebar-user-id" style="font-size:0.7rem">C.I: -</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="sessionStorage.clear(); localStorage.removeItem('centuria_auth_token'); window.location.replace('../index.html')">
+                        <i class="bi bi-box-arrow-right"></i> Salir
+                    </button>
                 </div>
             </div>
-            
-        </div>
+
+            <!-- Banner Origen Material si viene de una clase -->
+            <div id="volver-material" class="alert alert-success border-2 d-none d-flex justify-content-between align-items-center shadow-sm mb-3">
+                <span><i class="bi bi-arrow-left-circle me-2"></i>Volver a tu lectura: <strong id="volver-origen">Unidad</strong></span>
+                <button class="btn btn-success btn-sm fw-bold" onclick="volverAlMaterial()"><i class="bi bi-box-arrow-in-left me-1"></i> Volver donde quedé</button>
+            </div>
+
+            <!-- Encabezado de Glosario -->
+            <div class="glosario-header">
+                <div>
+                    <h1><i class="bi bi-book-half text-warning"></i> Glosario Técnico de Siglas y Acrónimos</h1>
+                    <p>Diccionario estructurado de términos, arquitecturas, redes, telecomunicaciones y sistemas de información</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-light fw-bold" onclick="window.print()"><i class="bi bi-printer me-1"></i> Imprimir</button>
+                    <button class="btn btn-sm btn-outline-light" onclick="history.back()"><i class="bi bi-arrow-left me-1"></i> Volver</button>
+                </div>
+            </div>
+
+            <!-- Barra de Controles y Búsqueda para PC -->
+            <div class="control-bar">
+                <div class="search-box-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="filtro-glosario" class="search-input" placeholder="Buscar por sigla, nombre en español o inglés...">
+                </div>
+
+                <div class="cat-pills">
+                    <button class="cat-pill active" data-cat="todas" onclick="filtrarCategoria('todas', this)"><i class="bi bi-grid-fill"></i> Todos</button>
+                    <button class="cat-pill" data-cat="sistemas" onclick="filtrarCategoria('sistemas', this)"><i class="bi bi-cpu"></i> Sistemas & Software</button>
+                    <button class="cat-pill" data-cat="redes" onclick="filtrarCategoria('redes', this)"><i class="bi bi-diagram-3"></i> Redes & Telecom</button>
+                    <button class="cat-pill" data-cat="hardware" onclick="filtrarCategoria('hardware', this)"><i class="bi bi-motherboard"></i> Hardware & Dispositivos</button>
+                </div>
+
+                <div class="view-switch">
+                    <button class="view-btn active" id="btn-view-cards" onclick="cambiarVista('cards')" title="Vista Tarjetas"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                    <button class="view-btn" id="btn-view-table" onclick="cambiarVista('table')" title="Vista Tabla"><i class="bi bi-table"></i></button>
+                </div>
+            </div>
+
+            <div class="results-count" id="results-count">Mostrando 30 términos técnicos</div>
+
+            <!-- ═══ VISTA EN TARJETAS (GRID PC) ═══ -->
+            <div class="glosario-grid" id="glosario-cards-container">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+
+            <!-- ═══ VISTA EN TABLA (TABULAR PC) ═══ -->
+            <div class="glosario-table-wrap" id="glosario-table-container">
+                <table class="glosario-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Sigla</th>
+                            <th style="width: 14%;">Categoría</th>
+                            <th style="width: 22%;">Término en Español</th>
+                            <th style="width: 20%;">Nombre en Inglés</th>
+                            <th style="width: 32%;">Definición Conceptual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="glosario-table-body">
+                        <!-- Se inyecta dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Volver donde quedé - guarda origen y filtra
-(function(){
-  // 1. Detectar origen
-  const ref = document.referrer;
-  const stored = sessionStorage.getItem('glosario_origen');
-  let origen = stored || (ref.includes('clase_') ? ref : '');
-  // Si viene de una clase, guardarlo
-  if(ref.includes('clase_') || ref.includes('Materiales_Clases')){
-    origen = ref;
-    sessionStorage.setItem('glosario_origen', ref);
-    // Extraer hash si tenía #def-xxx
-    try{ const u=new URL(ref); if(u.hash) sessionStorage.setItem('glosario_hash', u.hash); }catch(e){}
-  }
-  if(origen){
-    const banner=document.getElementById('volver-material');
-    const label=document.getElementById('volver-origen');
-    if(banner){
-      banner.classList.remove('d-none');
-      // Mostrar nombre amigable
-      let nombre='tu material';
-      try{ const u=new URL(origen); const f=u.pathname.split('/').pop(); const h=u.hash; nombre=f.replace('.html','').replace('clase_','Unidad ') + (h? ' '+h.replace('#def-','') : ''); }catch(e){ nombre=origen; }
-      if(label) label.textContent=nombre;
+    // Base de datos de términos normalizada
+    const glosarioData = [
+        { sigla: "AP", en: "Access Point", es: "Punto de Acceso", desc: "Dispositivo que crea una red WiFi y permite que dispositivos inalámbricos se conecten a la red cableada.", cat: "redes" },
+        { sigla: "API", en: "Application Programming Interface", es: "Interfaz de Programación de Aplicaciones", desc: "Conjunto de protocolos y reglas que permite la comunicación e intercambio de datos seguro entre sistemas distintos.", cat: "sistemas" },
+        { sigla: "CASE", en: "Computer Aided Software Engineering", es: "Ingeniería de Software Asistida por Computadora", desc: "Herramientas de software utilizadas para automatizar el diseño, codificación y análisis en el ciclo de desarrollo de software.", cat: "sistemas" },
+        { sigla: "CPU", en: "Central Processing Unit", es: "Unidad Central de Procesamiento", desc: "El componente central de cómputo (cerebro) que interpreta, procesa y ejecuta las instrucciones de los programas.", cat: "hardware" },
+        { sigla: "CRM", en: "Customer Relationship Management", es: "Gestión de Relaciones con Clientes", desc: "Software corporativo enfocado en administrar, organizar y rastrear todas las interacciones de la empresa con clientes.", cat: "sistemas" },
+        { sigla: "DFD", en: "Data Flow Diagram", es: "Diagrama de Flujo de Datos", desc: "Representación visual estructurada que ilustra cómo los datos entran, se procesan, se almacenan y salen de un sistema.", cat: "sistemas" },
+        { sigla: "DSS", en: "Decision Support System", es: "Sistema de Apoyo a la Toma de Decisiones", desc: "Sistema interactivo que analiza múltiples variables y datos para asistir a directivos en decisiones semiestructuradas.", cat: "sistemas" },
+        { sigla: "EIS", en: "Executive Information System", es: "Sistema de Información Ejecutiva", desc: "Plataforma de alta dirección que consolida métricas clave, KPIs y gráficos de resumen operativo de la empresa.", cat: "sistemas" },
+        { sigla: "ER", en: "Entity-Relationship", es: "Entidad-Relación", desc: "Modelo lógico conceptual que define entidades y sus relaciones estructurales en el diseño de bases de datos relacionales.", cat: "sistemas" },
+        { sigla: "ERP", en: "Enterprise Resource Planning", es: "Planificación de Recursos Empresariales", desc: "Sistema integral de gestión que centraliza módulos de contabilidad, inventario, ventas, compras y RRHH en una sola BD.", cat: "sistemas" },
+        { sigla: "HDD", en: "Hard Disk Drive", es: "Unidad de Disco Duro", desc: "Dispositivo tradicional de almacenamiento magnético masivo permanente con platos y cabezales móviles mecánicos.", cat: "hardware" },
+        { sigla: "IT / TI", en: "Information Technology", es: "Tecnología de la Información", desc: "Disciplina y ecosistema tecnológico dedicado al procesamiento, protección, almacenamiento y transmisión de datos.", cat: "sistemas" },
+        { sigla: "LMS", en: "Learning Management System", es: "Sistema de Gestión de Aprendizaje", desc: "Plataforma virtual utilizada para administrar cursos, materiales pedagógicos, evaluaciones y progreso de estudiantes.", cat: "sistemas" },
+        { sigla: "MIS", en: "Management Information System", es: "Sistema de Información Gerencial", desc: "Sistemas orientados a procesar datos operacionales para producir informes gerenciales periódicos y de control.", cat: "sistemas" },
+        { sigla: "RAM", en: "Random Access Memory", es: "Memoria de Acceso Aleatorio", desc: "Memoria de trabajo temporal ultrarrápida del procesador. Es volátil: pierde toda información al cortar la energía.", cat: "hardware" },
+        { sigla: "SaaS", en: "Software as a Service", es: "Software como Servicio", desc: "Modelo en la nube donde el software está alojado por el proveedor y el usuario accede vía navegador bajo suscripción.", cat: "sistemas" },
+        { sigla: "SI", en: "Information System", es: "Sistema de Información", desc: "Conjunto interconectado de personas, hardware, software, datos y redes que recopilan y procesan información para la empresa.", cat: "sistemas" },
+        { sigla: "SSD", en: "Solid State Drive", es: "Unidad de Estado Sólido", desc: "Unidad moderna de almacenamiento digital en chips de memoria flash sin partes mecánicas, veloz y confiable.", cat: "hardware" },
+        { sigla: "TPS", en: "Transaction Processing System", es: "Sistema de Procesamiento de Transacciones", desc: "Sistema de nivel operativo que registra las transacciones transaccionales diarias inmediatas (facturas, cobros, ventas).", cat: "sistemas" },
+        { sigla: "TQM", en: "Total Quality Management", es: "Gestión de la Calidad Total", desc: "Metodología orientada a la optimización continua de procesos y satisfacción integral del usuario final.", cat: "sistemas" },
+        { sigla: "LAN", en: "Local Area Network", es: "Red de Área Local", desc: "Red que interconecta equipos y servidores en una delimitación física cercana (oficina, edificio, aula).", cat: "redes" },
+        { sigla: "WAN", en: "Wide Area Network", es: "Red de Área Amplia", desc: "Red informática que enlaza múltiples regiones geográficas distantes, ciudades o países (ejemplo: Internet).", cat: "redes" },
+        { sigla: "WLAN", en: "Wireless Local Area Network", es: "Red Inalámbrica de Área Local", desc: "Variante de red LAN sin cableado físico que utiliza radiofrecuencias WiFi para la comunicación de nodos.", cat: "redes" },
+        { sigla: "WiFi", en: "Wireless Fidelity", es: "Fidelidad Inalámbrica", desc: "Estándar de comunicación de ondas de radio (IEEE 802.11) para transmisión de datos de alta velocidad en distancias cortas.", cat: "redes" },
+        { sigla: "SSID", en: "Service Set Identifier", es: "Identificador de Red Inalámbrica", desc: "Nombre público o privado que distingue de forma única a una red WiFi accesible en el entorno.", cat: "redes" },
+        { sigla: "Router", en: "Router / Gateway", es: "Enrutador", desc: "Dispositivo de red que interconecta redes distintas y determina la ruta óptima de enrutamiento de paquetes IP.", cat: "redes" },
+        { sigla: "Switch", en: "Network Switch", es: "Conmutador de Red", desc: "Dispositivo de capa de enlace que interconecta múltiples equipos cableados dentro de un mismo segmento LAN.", cat: "redes" },
+        { sigla: "DNS", en: "Domain Name System", es: "Sistema de Nombres de Dominio", desc: "Servicio esencial que traduce nombres de dominio alfanuméricos legibles (ej: centuria.edu.py) en direcciones IP.", cat: "redes" },
+        { sigla: "DHCP", en: "Dynamic Host Configuration Protocol", es: "Protocolo de Configuración Dinámica", desc: "Protocolo que asigna automáticamente direcciones IP, máscaras y puertas de enlace a los dispositivos de red.", cat: "redes" },
+        { sigla: "IP", en: "Internet Protocol", es: "Protocolo de Internet", desc: "Dirección numérica única asignada a cada interfaz de red para su identificación y ruteo en redes IP.", cat: "redes" },
+        { sigla: "TCP/IP", en: "Transmission Control Protocol / IP", es: "Conjunto de Protocolos de Internet", desc: "Arquitectura fundamental de capas y protocolos sobre la que opera toda la comunicación de Internet.", cat: "redes" },
+        { sigla: "HTTP/HTTPS", en: "HyperText Transfer Protocol (Secure)", es: "Protocolo de Transferencia de Hipertexto", desc: "Protocolo base de la Web. HTTPS incorpora cifrado TLS/SSL para garantizar confidencialidad e integridad.", cat: "redes" },
+        { sigla: "VPN", en: "Virtual Private Network", es: "Red Privada Virtual", desc: "Túnel virtual cifrado que permite conectar un dispositivo remoto a una red privada empresarial con total seguridad.", cat: "redes" },
+        { sigla: "IoT", en: "Internet of Things", es: "Internet de las Cosas", desc: "Red de objetos físicos equipados con sensores, software y conectividad que recopilan e intercambian datos en la nube.", cat: "redes" },
+        { sigla: "Bluetooth", en: "Bluetooth SIG", es: "Bluetooth", desc: "Protocolo inalámbrico de corto alcance (WPAN) para transferencia ágil de datos y audio entre dispositivos cercanos.", cat: "redes" },
+        { sigla: "NFC", en: "Near Field Communication", es: "Comunicación de Campo Cercano", desc: "Tecnología inalámbrica de muy corto alcance (<10 cm) empleada para validación y pagos móviles por proximidad.", cat: "redes" },
+        { sigla: "USB", en: "Universal Serial Bus", es: "Bus Universal en Serie", desc: "Estándar industrial de conexión cableada para suministro eléctrico y transferencia de datos entre periféricos y computadoras.", cat: "hardware" },
+        { sigla: "GPU", en: "Graphics Processing Unit", es: "Unidad de Procesamiento Gráfico", desc: "Procesador especializado altamente paralelizado para renderizado 3D, procesamiento masivo de datos e inteligencia artificial.", cat: "hardware" },
+        { sigla: "URL", en: "Uniform Resource Locator", es: "Localizador Uniforme de Recursos", desc: "Cadena de caracteres estructurada que identifica la ubicación exacta de un recurso digital en la Web.", cat: "sistemas" },
+        { sigla: "4G/5G", en: "Fourth / Fifth Generation Mobile", es: "Red Móvil 4ª y 5ª Generación", desc: "Estándares celulares de telecomunicaciones móviles; 5G ofrece ultra baja latencia y velocidad hasta 10 Gbps.", cat: "redes" }
+    ];
+
+    let categoriaActual = 'todas';
+    let terminoBusqueda = '';
+
+    function renderGlosario() {
+        const cardsCont = document.getElementById('glosario-cards-container');
+        const tableBody = document.getElementById('glosario-table-body');
+        const countEl = document.getElementById('results-count');
+
+        const filtrados = glosarioData.filter(item => {
+            const matchesCat = categoriaActual === 'todas' || item.cat === categoriaActual;
+            const q = terminoBusqueda.toLowerCase().trim();
+            const matchesQuery = !q || 
+                item.sigla.toLowerCase().includes(q) || 
+                item.es.toLowerCase().includes(q) || 
+                item.en.toLowerCase().includes(q) || 
+                item.desc.toLowerCase().includes(q);
+            return matchesCat && matchesQuery;
+        });
+
+        countEl.textContent = `Mostrando ${filtrados.length} de ${glosarioData.length} términos técnicos`;
+
+        // Render Cards
+        cardsCont.innerHTML = filtrados.map(item => `
+            <div class="term-card" id="def-${item.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}">
+                <div class="term-card-header">
+                    <div class="term-acronym">${item.sigla}</div>
+                    <span class="term-category-badge">${getCatLabel(item.cat)}</span>
+                </div>
+                <div class="term-names">
+                    <div class="term-es">${item.es}</div>
+                    <div class="term-en"><i class="bi bi-translate me-1"></i>${item.en}</div>
+                </div>
+                <div class="term-desc">${item.desc}</div>
+            </div>
+        `).join('');
+
+        // Render Table
+        tableBody.innerHTML = filtrados.map(item => `
+            <tr id="tab-def-${item.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}">
+                <td><strong style="color:var(--verde-oscuro);font-size:.9rem">${item.sigla}</strong></td>
+                <td><span class="term-category-badge">${getCatLabel(item.cat)}</span></td>
+                <td><strong>${item.es}</strong></td>
+                <td class="text-muted"><em>${item.en}</em></td>
+                <td style="color:#475569">${item.desc}</td>
+            </tr>
+        `).join('');
+
+        if (filtrados.length === 0) {
+            cardsCont.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8"><i class="bi bi-search" style="font-size:2rem"></i><p class="mt-2">No se encontraron términos que coincidan con la búsqueda.</p></div>`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No se encontraron resultados</td></tr>`;
+        }
     }
-  }
-  window.volverAlMaterial=function(){
-    const dest=sessionStorage.getItem('glosario_origen') || document.referrer || 'Materiales_Clases/Unidad_01.html';
-    const hash=sessionStorage.getItem('glosario_hash') || '';
-    // Si el destino tenía hash, volver exactamente a esa definición
-    if(dest.includes('#')) location.href=dest;
-    else if(hash) location.href=dest.split('#')[0]+hash;
-    else location.href=dest;
-  };
-  // 2. Filtro en vivo
-  const input=document.getElementById('filtro-glosario');
-  if(input){
-    input.addEventListener('input',()=>{
-      const q=input.value.toLowerCase().trim();
-      document.querySelectorAll('tbody tr').forEach(tr=>{
-        const txt=tr.innerText.toLowerCase();
-        tr.style.display = (!q || txt.includes(q)) ? '' : 'none';
-      });
+
+    function getCatLabel(cat) {
+        if (cat === 'sistemas') return 'Sistemas';
+        if (cat === 'redes') return 'Redes & Telecom';
+        if (cat === 'hardware') return 'Hardware';
+        return 'General';
+    }
+
+    function filtrarCategoria(cat, btn) {
+        categoriaActual = cat;
+        document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        renderGlosario();
+    }
+
+    function cambiarVista(vista) {
+        const cardsCont = document.getElementById('glosario-cards-container');
+        const tableWrap = document.getElementById('glosario-table-container');
+        const btnCards = document.getElementById('btn-view-cards');
+        const btnTable = document.getElementById('btn-view-table');
+
+        if (vista === 'cards') {
+            cardsCont.style.display = 'grid';
+            tableWrap.style.display = 'none';
+            btnCards.classList.add('active');
+            btnTable.classList.remove('active');
+        } else {
+            cardsCont.style.display = 'none';
+            tableWrap.style.display = 'block';
+            btnCards.classList.remove('active');
+            btnTable.classList.add('active');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Cargar datos de usuario
+        const n = sessionStorage.getItem('current_nombre') || localStorage.getItem('centuria_nombre');
+        const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+        if (n) document.getElementById('sidebar-user-name').textContent = n;
+        if (c) document.getElementById('sidebar-user-id').textContent = 'C.I: ' + c;
+
+        // Buscador
+        const input = document.getElementById('filtro-glosario');
+        if (input) {
+            input.addEventListener('input', () => {
+                terminoBusqueda = input.value;
+                renderGlosario();
+            });
+        }
+
+        renderGlosario();
+
+        // Detectar si venía de un material
+        const ref = document.referrer;
+        const stored = sessionStorage.getItem('glosario_origen');
+        let origen = stored || (ref.includes('clase_') || ref.includes('Unidad_') ? ref : '');
+        if (ref.includes('clase_') || ref.includes('Unidad_')) {
+            origen = ref;
+            sessionStorage.setItem('glosario_origen', ref);
+        }
+        if (origen) {
+            const banner = document.getElementById('volver-material');
+            const label = document.getElementById('volver-origen');
+            if (banner) {
+                banner.classList.remove('d-none');
+                try {
+                    const u = new URL(origen);
+                    const f = u.pathname.split('/').pop().replace('.html','');
+                    if (label) label.textContent = f.replace('_', ' ');
+                } catch(e) {}
+            }
+        }
+
+        // Resaltar si tiene hash #def-xxx
+        if (location.hash) {
+            const el = document.querySelector(location.hash);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.style.borderColor = 'var(--dorado)';
+                el.style.boxShadow = '0 0 0 3px rgba(212,168,67,.3)';
+            }
+        }
     });
-  }
-  // 3. Si viene con #def-xxx, resaltar
-  if(location.hash){
-    const el=document.querySelector(location.hash);
-    if(el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='#fff3cd'; setTimeout(()=>el.style.background='',2000); }
-  }
-})();
-// Guardar origen también cuando se hace clic en enlaces del glosario dentro del material (por si el material no lo hizo)
-document.addEventListener('click',e=>{
-  const a=e.target.closest('a[href*="glosario.html"]');
-  if(a){
-    try{ sessionStorage.setItem('glosario_origen', location.href); if(a.hash) sessionStorage.setItem('glosario_hash', a.hash); }catch(e){}
-  }
-});
+
+    window.volverAlMaterial = function() {
+        const dest = sessionStorage.getItem('glosario_origen') || document.referrer || '../Materiales_Clases/Unidad_01.html';
+        location.href = dest;
+    };
 </script>
-<script src="../js/portal-layout.js"></script>
-<script src="../js/accesibilidad.js"></script>
-<script src="../js/session-guard.js?v=2"></script>
-    </div>
-</div>
-</div>
 </body>
 </html>

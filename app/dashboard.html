@@ -250,6 +250,20 @@
         .course-card-meta span { display: inline-flex; align-items: center; gap: 4px; }
         .course-card-meta i { color: var(--dorado); }
 
+        /* ── Mis Cursos y Materias por grado (v08.5.5) ── */
+        .grado-block { margin-bottom: 16px; }
+        .grado-block:last-child { margin-bottom: 0; }
+        .grado-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font-size: .72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--blanco); }
+        .grado-head i { color: var(--dorado); font-size: 1rem; }
+        .grado-count { font-size: .58rem; font-weight: 600; letter-spacing: .3px; text-transform: none; color: rgba(255,255,255,.55); }
+        .grado-badge { margin-left: auto; font-size: .55rem; padding: 3px 10px; border-radius: 20px; letter-spacing: .5px; font-weight: 700; }
+        .grado-activo .grado-head { border-color: rgba(212,168,67,.55); background: linear-gradient(135deg, rgba(212,168,67,.14), rgba(22,129,61,.18)); }
+        .grado-activo .grado-badge { background: rgba(30,187,77,.15); color: var(--verde-hover); border: 1px solid rgba(30,187,77,.4); }
+        .grado-inactivo { opacity: .45; }
+        .grado-inactivo .grado-head { border-style: dashed; margin-bottom: 0; }
+        .grado-inactivo .grado-badge { background: rgba(255,255,255,.06); color: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.15); }
+        .grado-vacio { font-size: .68rem; color: rgba(255,255,255,.6); padding: 14px; border: 1px dashed rgba(255,255,255,.18); border-radius: 12px; text-align: center; }
+
         /* ── Tables ── */
         .dash-table {
             width: 100%;
@@ -801,83 +815,132 @@
             } catch(e) {}
         }
 
+        // ── Mis Cursos y Materias (v08.5.5) ─────────────────────────────────────────────
+        // Organizado por Grado (Grado, Especialización, Maestría, Doctorado). Solo se activa el grado en el que
+        // está inscripto el alumno y debajo van las asignaturas habilitadas para su Carrera y Sección, sin repetir.
+        const GRADOS_ORDEN = ['GRADO', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'];
+        const GRADOS_ETIQUETA = { GRADO: 'Grado', ESPECIALIZACION: 'Especialización', MAESTRIA: 'Maestría', DOCTORADO: 'Doctorado' };
+
+        function normTxt(v) {
+            return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase().replace(/\s+/g, ' ');
+        }
+        function escHtml(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        // La planilla devuelve columnas con mayúscula inicial (Nombre, Codigo, Carrera...); se aceptan ambas formas.
+        function normAsignatura(s) {
+            const sec = s.seccion || s.Seccion || s.secciones || s.Secciones || '';
+            return {
+                nombre: s.nombre || s.Nombre || s.nombre_completo || s.asignatura || '',
+                codigo: s.codigo || s.Codigo || '',
+                carrera: s.carrera || s.Carrera || '',
+                grado: s.grado || s.Grado || '',
+                seccion: Array.isArray(sec) ? sec.join(', ') : String(sec),
+                secciones: (Array.isArray(sec) ? sec : String(sec).split(/[,;\/]/)).map(normTxt).filter(Boolean),
+                estado: s.estado || s.Estado || '',
+                semestre: s.semestre || s.Semestre || '',
+                horas: s.carga_horaria || s.CargaHoraria || '',
+                icono: s.icono || s.Icono || 'bi-laptop'
+            };
+        }
+        function habilitadaPara(a, user) {
+            if (['INACTIVO', 'INACTIVA', 'FALSE', 'NO', '0', 'BAJA'].includes(normTxt(a.estado))) return false;
+            const g = normTxt(user.grado);
+            if (a.grado && g && normTxt(a.grado) !== g) return false;
+            const c = normTxt(user.carrera), ac = normTxt(a.carrera);
+            if (ac && c && !['GENERAL', 'TODAS', 'TODOS', 'TODAS LAS CARRERAS'].includes(ac) && ac !== c) return false;
+            const sec = normTxt(user.seccion);
+            if (a.secciones.length && sec && !a.secciones.includes(sec)) return false;
+            return true;
+        }
+        function tarjetaCurso(a, user, esDocente) {
+            const codigo = a.codigo || 'ADE18';
+            const sec = esDocente ? a.seccion : (user.seccion || '');
+            return `
+                <div class="course-card">
+                    <div>
+                        <div class="course-card-title">
+                            <i class="bi ${escHtml(a.icono)}" style="color:var(--dorado);margin-right:6px"></i>
+                            ${escHtml(a.nombre || 'TIC - Tecnología de la Información y Comunicación')}
+                        </div>
+                        <div class="course-card-meta">
+                            <span><i class="bi bi-tag"></i> ${escHtml(codigo)}</span>
+                            <span><i class="bi bi-building"></i> ${escHtml(a.carrera || user.carrera || 'General')}</span>
+                            ${sec ? `<span><i class="bi bi-people"></i> Sec: ${escHtml(sec)}</span>` : ''}
+                            ${a.semestre ? `<span><i class="bi bi-calendar3"></i> ${escHtml(a.semestre)}</span>` : ''}
+                            ${a.horas ? `<span><i class="bi bi-clock"></i> ${escHtml(a.horas)} hs</span>` : ''}
+                        </div>
+                    </div>
+                    <a href="Materiales_Clases/programa.html?curso=${encodeURIComponent(codigo)}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
+                        <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
+                    </a>
+                </div>`;
+        }
+        function renderCursosPorGrado(container, lista, user, esDocente) {
+            const miGrado = normTxt(user.grado);
+            const porGrado = {};
+            const vistos = new Set();
+            lista.forEach(a => {
+                const g = normTxt(a.grado) || (esDocente ? 'GRADO' : miGrado);
+                // Una asignatura no se repite; al docente se le permite la misma asignatura en otra carrera/sección.
+                const clave = [g, normTxt(a.codigo || a.nombre), esDocente ? normTxt(a.carrera) + '|' + normTxt(a.seccion) : ''].join('|');
+                if (vistos.has(clave)) return;
+                vistos.add(clave);
+                (porGrado[g] = porGrado[g] || []).push(a);
+            });
+            const total = Object.values(porGrado).reduce((n, arr) => n + arr.length, 0);
+            const extra = Object.keys(porGrado).filter(g => !GRADOS_ORDEN.includes(g));
+            const orden = GRADOS_ORDEN.concat(extra);
+
+            let html = '';
+            if (!esDocente && !GRADOS_ORDEN.includes(miGrado)) {
+                html += '<div class="grado-vacio" style="margin-bottom:12px">Completa tu inscripción (grado, carrera y sección) para ver tus asignaturas.</div>';
+            }
+            orden.forEach(g => {
+                const items = porGrado[g] || [];
+                const activo = esDocente ? items.length > 0 : g === miGrado;
+                const etiqueta = GRADOS_ETIQUETA[g] || g;
+                if (!activo) {
+                    html += `<section class="grado-block grado-inactivo" aria-disabled="true">
+                        <div class="grado-head"><i class="bi bi-lock"></i> ${escHtml(etiqueta)}<span class="grado-badge">${esDocente ? 'Sin asignaturas' : 'No inscripto'}</span></div>
+                    </section>`;
+                    return;
+                }
+                html += `<section class="grado-block grado-activo">
+                    <div class="grado-head"><i class="bi bi-mortarboard"></i> ${escHtml(etiqueta)}
+                        <span class="grado-count">${items.length} ${items.length === 1 ? 'asignatura' : 'asignaturas'}</span>
+                        <span class="grado-badge">${esDocente ? 'Con asignaturas' : 'Inscripto'}</span></div>
+                    ${items.length
+                        ? `<div class="courses-grid">${items.map(a => tarjetaCurso(a, user, esDocente)).join('')}</div>`
+                        : '<div class="grado-vacio">Todavía no hay asignaturas habilitadas para tu carrera y sección. Consulta con Acceso Académico.</div>'}
+                </section>`;
+            });
+            container.className = '';
+            container.innerHTML = html;
+            return total;
+        }
+
         async function cargarAsignaturas(user, cedula) {
             const container = document.getElementById('dash-courses-container');
+            const esDocente = currentUserRole === 'docente';
             try {
                 let subjects = [];
-                if (currentUserRole === 'docente') {
+                if (esDocente) {
                     const d = await CenturiaAPI.docente.getMySubjects(cedula);
                     subjects = d.subjects || [];
                 } else {
                     const dKit = await CenturiaAPI.kit.getHabilitadas();
                     subjects = dKit.asignaturas || [];
                 }
-
-                // Si no hay asignaturas registradas dinámicamente, asegurar el curso oficial TIC
-                if (!subjects || subjects.length === 0) {
-                    subjects = [
-                        {
-                            codigo: 'ADE18',
-                            nombre: 'TIC - Tecnología de la Información y Comunicación',
-                            carrera: user.carrera || 'Administración / General',
-                            icono: 'bi-laptop',
-                            color: '#007A33'
-                        }
-                    ];
-                }
-
-                if (currentUserRole !== 'docente') {
-                    document.getElementById('stat-courses').textContent = subjects.length;
-                }
-
-                container.innerHTML = subjects.map(s => `
-                    <div class="course-card">
-                        <div>
-                            <div class="course-card-title">
-                                <i class="bi ${s.icono || 'bi-laptop'}" style="color:var(--dorado);margin-right:6px"></i>
-                                ${s.nombre || s.nombre_completo || 'TIC - Tecnología de la Información y Comunicación'}
-                            </div>
-                            <div class="course-card-meta">
-                                <span><i class="bi bi-tag"></i> ${s.codigo || 'ADE18'}</span>
-                                <span><i class="bi bi-building"></i> ${s.carrera || user.carrera || 'General'}</span>
-                                ${user.seccion ? `<span><i class="bi bi-people"></i> Sec: ${user.seccion}</span>` : ''}
-                            </div>
-                        </div>
-                        <a href="Materiales_Clases/programa.html?curso=${s.codigo || 'ADE18'}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
-                            <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
-                        </a>
-                    </div>
-                `).join('');
-
-            } catch(e) {
-                // Fallback de resiliencia con el curso activo
-                const fallbackSubjects = [
-                    {
-                        codigo: 'ADE18',
-                        nombre: 'TIC - Tecnología de la Información y Comunicación',
-                        carrera: user.carrera || 'General',
-                        icono: 'bi-laptop'
-                    }
-                ];
-                document.getElementById('stat-courses').textContent = fallbackSubjects.length;
-                container.innerHTML = fallbackSubjects.map(s => `
-                    <div class="course-card">
-                        <div>
-                            <div class="course-card-title">
-                                <i class="bi bi-laptop" style="color:var(--dorado);margin-right:6px"></i>
-                                ${s.nombre}
-                            </div>
-                            <div class="course-card-meta">
-                                <span><i class="bi bi-tag"></i> ${s.codigo}</span>
-                                <span><i class="bi bi-building"></i> ${s.carrera}</span>
-                                ${user.seccion ? `<span><i class="bi bi-people"></i> Sec: ${user.seccion}</span>` : ''}
-                            </div>
-                        </div>
-                        <a href="Materiales_Clases/programa.html?curso=${s.codigo}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
-                            <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
-                        </a>
-                    </div>
-                `).join('');
+                let lista = subjects.map(normAsignatura);
+                if (!esDocente) lista = lista.filter(a => habilitadaPara(a, user));
+                const total = renderCursosPorGrado(container, lista, user, esDocente);
+                if (!esDocente) document.getElementById('stat-courses').textContent = total;
+            } catch (e) {
+                // Si falla la carga, se muestra solo el curso oficial TIC dentro de su grado (sin duplicados)
+                const respaldo = [normAsignatura({ codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', carrera: user.carrera || 'General', grado: user.grado || 'GRADO', icono: 'bi-laptop' })];
+                const total = renderCursosPorGrado(container, respaldo, user, esDocente);
+                document.getElementById('stat-courses').textContent = total;
             }
         }
 

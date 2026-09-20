@@ -73,6 +73,46 @@
             .form-body{padding:16px}
             .topbar{flex-direction:column;gap:6px}
         }
+
+        /* ── Verde y dorado del dashboard (v08.5.4) ──────────────────────────────────
+           Paleta y acabados de dashboard.html. Los fondos blancos y el color de las letras no cambian. */
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado-claro:#e8c676;--dorado-suave:rgba(212,168,67,.35)}
+        .topbar{background:linear-gradient(135deg,var(--verde-oscuro) 0%,var(--verde-medio) 100%);border-bottom:2px solid var(--dorado);box-shadow:0 4px 18px rgba(13,44,22,.35)}
+        .topbar-brand{letter-spacing:1.2px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+        .topbar-nav a{border:1px solid transparent;border-radius:8px}
+        .topbar-nav a:hover{background:rgba(255,255,255,.12);border-color:var(--dorado-suave);color:#fff}
+        .topbar-nav a.active{background:rgba(212,168,67,.2);border-color:var(--dorado);color:#fff}
+        .breadcrumb a{color:var(--verde-medio);font-weight:600}
+        .form-card{border:1px solid var(--dorado-suave);border-radius:20px;box-shadow:0 10px 36px rgba(13,44,22,.16),0 2px 6px rgba(13,44,22,.08)}
+        .form-header{position:relative;border-top:4px solid var(--dorado);background:radial-gradient(ellipse at 85% 0%,rgba(212,168,67,.22) 0%,transparent 55%),linear-gradient(135deg,var(--verde-oscuro) 0%,var(--verde-medio) 100%)}
+        .form-header h1{letter-spacing:.2px}
+        .form-header h1 i{color:var(--dorado-claro)}
+        .form-header p{opacity:.9}
+        .form-header .codigo{background:rgba(212,168,67,.18);border:1px solid var(--dorado);letter-spacing:.8px}
+        .sec-title{color:var(--verde-oscuro);border-bottom:0;padding-bottom:8px;background:linear-gradient(90deg,var(--dorado) 0,var(--verde-medio) 45%,transparent 100%) left bottom/100% 2px no-repeat}
+        .sec-title i{color:var(--dorado)}
+        .field-group input,.field-group select,.field-group textarea{border-color:#cfe6d5;transition:border-color .2s,box-shadow .2s}
+        .field-group input:hover,.field-group select:hover,.field-group textarea:hover{border-color:var(--verde-medio)}
+        .field-group input:focus,.field-group select:focus,.field-group textarea:focus{border-color:var(--verde-medio);box-shadow:0 0 0 3px rgba(212,168,67,.28)}
+        .checkbox-row{border:1px solid var(--dorado-suave);border-left:4px solid var(--dorado)}
+        .checkbox-row input[type=checkbox]{accent-color:var(--verde-medio)}
+        .declaration{border:1px solid #f0d98a;border-left:4px solid var(--dorado)}
+        .signature-zone{border:2px dashed var(--dorado);background:var(--verde-card)}
+        .signature-zone .sig-line{border-bottom-color:var(--verde-oscuro)}
+        .btn{border-radius:12px;letter-spacing:.3px}
+        .btn-primary{background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));border:1px solid var(--dorado-suave);box-shadow:0 4px 12px rgba(13,44,22,.25)}
+        .btn-primary:hover{background:linear-gradient(135deg,var(--verde-oscuro),var(--verde-medio));border-color:var(--dorado);box-shadow:0 6px 16px rgba(13,44,22,.32)}
+        .btn-secondary{border:1px solid var(--dorado);color:var(--verde-oscuro)}
+        .btn-secondary:hover{background:#fff8e1}
+        .status-completado{background:#e8f5ec;color:#0d2c16;border:1px solid var(--verde-medio)}
+        .status-pendiente{background:#fff8e1;color:#7a5a12;border:1px solid var(--dorado)}
+        .loader-spinner{border-top-color:var(--dorado)}
+        .footer{background:linear-gradient(135deg,var(--verde-oscuro) 0%,var(--verde-medio) 100%);border-top:2px solid var(--dorado)}
+        @media print{
+            .form-card{border:none}
+            .form-header{border-top:0;background:var(--verde-oscuro)!important}
+            .sec-title{background:none;border-bottom:2px solid var(--dorado)}
+        }
     </style>
 </head>
 <body>

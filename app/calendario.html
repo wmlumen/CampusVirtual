@@ -640,7 +640,10 @@
                     </div>
                     <div>
                         <h1>Calendario Académico 2026</h1>
-                        <p>Instituto Superior Centuria • Sede Oficial y Feriados Nacionales</p>
+                        <p id="cal-course-subtitle">Instituto Superior Centuria • Sede Oficial y Feriados Nacionales</p>
+                        <div class="active-course-badge" id="active-course-badge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,177,64,.2);border:1px solid rgba(74,222,128,.35);color:#4ade80;padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700;margin-top:4px">
+                            <i class="bi bi-mortarboard-fill"></i> <span id="badge-course-name">Cargando curso habilitado...</span>
+                        </div>
                     </div>
                 </div>
 
@@ -829,7 +832,8 @@
         let allEvents = [];
         let selectedDate = null;
         let userRole = 'alumno';
-        let userId = '';
+        let userCarrera = '';
+        let userHabilitados = []; // Cursos habilitados para el usuario
 
         const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
         const DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
@@ -838,24 +842,71 @@
             const user = CenturiaAPI.getCurrentUser() || {};
             userRole = (user.role || user.rol || sessionStorage.getItem('rol') || 'alumno').toLowerCase();
             userId = user.username || user.cedula || '';
+            userCarrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
 
             if (['teacher','docente','admin','academico','administrador_plataforma'].includes(userRole)) {
                 document.getElementById('btn-create').style.display = 'flex';
             }
 
+            await loadHabilitados(user);
             await loadCareers();
             await loadEvents();
         });
 
+        async function loadHabilitados(user) {
+            try {
+                if (userRole === 'docente') {
+                    const d = await CenturiaAPI.docente.getMySubjects(userId);
+                    userHabilitados = d.subjects || [];
+                } else {
+                    const dKit = await CenturiaAPI.kit.getHabilitadas();
+                    userHabilitados = dKit.asignaturas || [];
+                }
+            } catch(e) {
+                userHabilitados = [];
+            }
+
+            // Fallback para garantizar la materia habilitada TIC
+            if (!userHabilitados || userHabilitados.length === 0) {
+                userHabilitados = [
+                    {
+                        codigo: 'ADE18',
+                        nombre: 'TIC - Tecnología de la Información y Comunicación',
+                        carrera: userCarrera || 'ADMINISTRACIÓN DE LA GESTIÓN PÚBLICA'
+                    }
+                ];
+            }
+
+            // Actualizar badge superior
+            const primaryCourse = userHabilitados[0];
+            const badgeEl = document.getElementById('badge-course-name');
+            if (badgeEl && primaryCourse) {
+                badgeEl.textContent = (primaryCourse.nombre || 'TIC') + ' (' + (primaryCourse.codigo || 'ADE18') + ')';
+            }
+            if (userCarrera) {
+                document.getElementById('cal-course-subtitle').textContent = 'Carrera: ' + userCarrera + ' • Sede Oficial';
+            }
+        }
+
         async function loadCareers() {
             try {
-                const d = await CenturiaAPI.calendar.carreras();
                 const sel = document.getElementById('filter-career');
                 const fSel = document.getElementById('f-career');
-                (d.carreras || []).forEach(c => {
-                    sel.innerHTML += `<option value="${c}">${c}</option>`;
-                    fSel.innerHTML += `<option value="${c}">${c}</option>`;
+                
+                sel.innerHTML = '<option value="">Todos mis cursos habilitados</option>';
+                fSel.innerHTML = '';
+
+                userHabilitados.forEach(h => {
+                    const label = h.nombre ? h.nombre + ' (' + (h.codigo || '') + ')' : (h.codigo || h);
+                    const val = h.codigo || h.carrera || h.nombre || h;
+                    sel.innerHTML += '<option value="' + val + '">' + label + '</option>';
+                    fSel.innerHTML += '<option value="' + val + '">' + label + '</option>';
                 });
+
+                if (userCarrera && !userHabilitados.some(h => h.carrera === userCarrera)) {
+                    sel.innerHTML += '<option value="' + userCarrera + '">' + userCarrera + '</option>';
+                    fSel.innerHTML += '<option value="' + userCarrera + '">' + userCarrera + '</option>';
+                }
             } catch(e) {}
         }
 
@@ -894,14 +945,51 @@
 
         function getFilteredEvents() {
             const type = document.getElementById('filter-type').value;
-            const career = document.getElementById('filter-career').value;
+            const careerFilter = document.getElementById('filter-career').value;
+
+            // Conjunto de identificadores válidos para los cursos habilitados
+            const allowedCodes = userHabilitados.map(h => (h.codigo || '').toLowerCase()).filter(Boolean);
+            const allowedNames = userHabilitados.map(h => (h.nombre || '').toLowerCase()).filter(Boolean);
+            const allowedCareers = userHabilitados.map(h => (h.carrera || '').toLowerCase()).filter(Boolean);
+            if (userCarrera) allowedCareers.push(userCarrera.toLowerCase());
 
             return allEvents.filter(e => {
-                const eType = e.event_type || e.tipo || '';
-                const eCareer = e.career || e.carrera || '';
-                
+                const eType = (e.event_type || e.tipo || '').toLowerCase();
+                const eCareer = (e.career || e.carrera || '').toLowerCase();
+                const eTitle = (e.title || e.titulo || '').toLowerCase();
+                const eSubject = (e.asignatura || e.subject || e.codigo || '').toLowerCase();
+
+                // Feriados nacionales siempre se muestran
+                if (eType === 'feriado') {
+                    if (type && type !== 'feriado') return false;
+                    return true;
+                }
+
+                // Filtrar por tipo seleccionado
                 if (type && eType !== type) return false;
-                if (career && eCareer && eCareer !== career) return false;
+
+                // Si es administrador/académico, puede ver todo
+                if (['admin','academico','administrador_plataforma'].includes(userRole)) {
+                    if (careerFilter && eCareer !== careerFilter.toLowerCase() && eSubject !== careerFilter.toLowerCase()) return false;
+                    return true;
+                }
+
+                // Para alumno/docente: sólo mostrar si pertenece al curso habilitado o es general institucional
+                const isGeneral = !eCareer && !eSubject;
+                const matchesCareer = allowedCareers.some(c => eCareer.includes(c) || c.includes(eCareer));
+                const matchesSubject = allowedCodes.some(c => eSubject.includes(c) || eTitle.includes(c)) ||
+                                       allowedNames.some(n => eSubject.includes(n) || eTitle.includes(n));
+
+                if (!isGeneral && !matchesCareer && !matchesSubject) {
+                    return false;
+                }
+
+                // Filtro select manual
+                if (careerFilter) {
+                    const cf = careerFilter.toLowerCase();
+                    if (!eCareer.includes(cf) && !eSubject.includes(cf) && !eTitle.includes(cf)) return false;
+                }
+
                 return true;
             });
         }

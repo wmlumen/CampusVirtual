@@ -71,10 +71,19 @@ document.addEventListener('alpine:init', () => {
         viewRolColor: '',
         viewRolUrl: '',
         vistasDisponibles: [
-            { id: 'alumno',    label: 'Alumno',           icon: 'bi-mortarboard-fill', color: '#10b981', url: '../dashboard.html', desc: 'Dashboard del alumno: asignaturas, progreso, eventos' },
-            { id: 'docente',   label: 'Docente',          icon: 'bi-person-badge-fill', color: '#3b82f6', url: '../docente.html', desc: 'Panel docente: asignaturas, calificaciones, planificación' },
-            { id: 'academico', label: 'Acceso Académico', icon: 'bi-building', color: '#8b5cf6', url: '../dashboard.html', desc: 'Coordinación académica: indicadores, reportes' },
-            { id: 'admin',     label: 'Administrador',    icon: 'bi-shield-fill-check', color: '#f43f5e', url: 'index.html', desc: 'Panel administrativo central' },
+            { id: 'dash_admin', label: 'Dashboard General Admin', icon: 'bi-speedometer2', color: '#d4a843', url: '../dashboard-admin.html', desc: 'Panel centralizado con KPIs, aprobaciones directas y accesos' },
+            { id: 'alumno',    label: 'Panel Alumno',       icon: 'bi-mortarboard-fill', color: '#10b981', url: '../dashboard.html', desc: 'Dashboard del alumno: asignaturas, notas, asistencia, eventos' },
+            { id: 'docente',   label: 'Panel Docente',      icon: 'bi-person-badge-fill', color: '#3b82f6', url: '../docente.html', desc: 'Calificaciones, exámenes, asistencia, planificación' },
+            { id: 'academico', label: 'Panel Académico',    icon: 'bi-building', color: '#8b5cf6', url: '../academic/index.html', desc: 'Indicadores, criterios, glosario, seguimiento' },
+            { id: 'admin',     label: 'Panel Administrador', icon: 'bi-shield-fill-check', color: '#f43f5e', url: 'index.html', desc: 'Gestión central: usuarios, catálogos, reportes' },
+            { id: 'asistencia', label: 'Asistencia Estudiante', icon: 'bi-person-heart', color: '#f59e0b', url: '../atencion-estudiante.html', desc: 'Ficha del estudiante, cumpleaños, beneficios, quejas' },
+            { id: 'calendario', label: 'Calendario',        icon: 'bi-calendar3', color: '#06b6d4', url: '../calendario.html', desc: 'Eventos académicos, fechas de exámenes, actividades' },
+            { id: 'tesoreria',  label: 'Tesorería',         icon: 'bi-cash-stack', color: '#84cc16', url: '../tesoreria.html', desc: 'Pagos, facturas, exoneraciones, cobranzas' },
+            { id: 'consultas',  label: 'Consultas',         icon: 'bi-chat-dots-fill', color: '#a855f7', url: '../consultas.html', desc: 'Soporte académico y administrativo' },
+            { id: 'mensajes',   label: 'Mensajes Alumnos',  icon: 'bi-envelope-fill', color: '#ec4899', url: '../mensajes-alumnos.html', desc: 'Comunicación directa con alumnos' },
+            { id: 'constructor', label: 'Constructor Académico', icon: 'bi-tools', color: '#14b8a6', url: '../constructor/index.html', desc: 'Crear y editar asignaturas, unidades, evaluaciones' },
+            { id: 'libreta',    label: 'Libreta Virtual',   icon: 'bi-journal-bookmark-fill', color: '#f97316', url: '../libreta.html', desc: 'Notas y progreso del alumno' },
+            { id: 'formulario', label: 'Formulario Matrícula', icon: 'bi-file-earmark-medical-fill', color: '#6366f1', url: '../formulario-matricula.html', desc: 'Formulario de inscripción' },
         ],
 
         // ═══ CATÁLOGOS ═══
@@ -113,6 +122,7 @@ document.addEventListener('alpine:init', () => {
                 'admin': 'Administrador General',
                 'academico': 'Acceso Académico',
                 'admin_filial': 'Administrador de Filial',
+                'asistencia_estudiante': 'Asistencia al Estudiante',
                 'administrador_plataforma': 'Administrador de Plataforma'
             };
             this.rolLabel = rolLabels[this.userRole] || this.userRole;
@@ -393,7 +403,7 @@ document.addEventListener('alpine:init', () => {
         // Grupos: sistema (admin/académico), docente, alumno
         get gruposRoles() {
             return {
-                sistema: ['admin', 'administrador_plataforma', 'academico', 'academic'],
+                sistema: ['admin', 'administrador_plataforma', 'academico', 'academic', 'asistencia_estudiante'],
                 docente: ['docente', 'teacher'],
                 alumno: ['alumno', 'student']
             };
@@ -401,7 +411,7 @@ document.addEventListener('alpine:init', () => {
 
         // Roles personalizados del catálogo (para asignar)
         get rolesPersonalizados() {
-            const base = ['alumno', 'docente', 'academico', 'admin'];
+            const base = ['alumno', 'docente', 'academico', 'admin', 'asistencia_estudiante'];
             return (this.rolesConfig || []).filter(r => !base.includes((r.nombre || '').toLowerCase()));
         },
 
@@ -412,6 +422,7 @@ document.addEventListener('alpine:init', () => {
             if (n === 'docente' || n === 'teacher') return 'bg-blue-100 text-blue-700';
             if (n === 'academico' || n === 'academic') return 'bg-purple-100 text-purple-700';
             if (n === 'admin' || n === 'administrador_plataforma') return 'bg-rose-100 text-rose-700';
+            if (n === 'asistencia_estudiante') return 'bg-amber-100 text-amber-700';
             return 'bg-slate-200 text-slate-600';
         },
 

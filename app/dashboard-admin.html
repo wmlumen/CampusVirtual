@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v10.0: Dashboard Admin Integral Centuria -->
+    <script src="./js/session-guard.js?v=3"></script>
+    <script>
+        CenturiaSession.protect({
+            allowedRoles: ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'],
+            currentRolePage: 'admin'
+        });
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrador — Campus Virtual Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/accesibilidad.css">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    
+    <style>
+        :root {
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #e8f5ec;
+            --verde-hover: #1ebb4d;
+            --dorado: #d4a843;
+            --dorado-claro: #e8c676;
+            --blanco: #ffffff;
+            --rosa: #D94172;
+            --azul: #2563EB;
+            --naranja: #D97706;
+            --rojo: #ef5350;
+            --fondo-card: rgba(255, 255, 255, 0.06);
+            --border-card: rgba(255, 255, 255, 0.12);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            color: var(--blanco);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #060f09;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 40%, rgba(22,129,61,.22) 0%, transparent 60%),
+                radial-gradient(ellipse at 85% 15%, rgba(212,168,67,.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 85%, rgba(13,44,22,.4) 0%, transparent 70%),
+                linear-gradient(160deg, #060f09 0%, #0d2c16 35%, #0f3820 65%, #060f09 100%);
+            z-index: -2;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
+            z-index: -1;
+        }
+        .dash-wrapper {
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 60px;
+            animation: fadeInUp .7s cubic-bezier(.16,1,.3,1);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Header ── */
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            background: rgba(255,255,255,.07);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .dash-header-left { display: flex; align-items: center; gap: 16px; }
+        .dash-avatar {
+            width: 58px; height: 58px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 800; color: var(--blanco);
+            border: 2px solid var(--dorado);
+            box-shadow: 0 4px 14px rgba(0,0,0,.35);
+            flex-shrink: 0;
+        }
+        .admin-badge {
+            background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05));
+            border: 1px solid var(--dorado);
+            color: var(--dorado-claro);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-header {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-header:hover {
+            background: rgba(255,255,255,0.16);
+            color: var(--dorado-claro);
+            transform: translateY(-2px);
+        }
+
+        /* ── KPIs Bar ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--fondo-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 16px 20px;
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212,168,67,0.4);
+        }
+        .kpi-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        /* ── Tabs Navigation ── */
+        .nav-tabs-admin {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.75);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            border-color: var(--dorado);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(22,129,61,0.35);
+        }
+
+        /* ── Cards and Modules ── */
+        .admin-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(18px);
+            margin-bottom: 24px;
+        }
+        .admin-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        /* ── App Grid (Ecosistema) ── */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .app-tile {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .app-tile:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-3px);
+            border-color: var(--dorado);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .app-tile-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Custom Tables ── */
+        .table-admin-wrap {
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .table-admin {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 0;
+        }
+        .table-admin th {
+            background: rgba(13, 44, 22, 0.7);
+            color: var(--dorado-claro);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+        .table-admin td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            vertical-align: middle;
+        }
+        .table-admin tr:hover td {
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* ── Search and Filter Inputs ── */
+        .search-inp {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: #fff;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-inp:focus {
+            border-color: var(--dorado);
+            box-shadow: 0 0 0 3px rgba(212,168,67,0.2);
+        }
+        .search-inp option {
+            background: #0d2c16;
+            color: #fff;
+        }
+
+        /* ── Action Buttons ── */
+        .btn-act {
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+        .btn-act-success { background: #10B981; color: #fff; }
+        .btn-act-success:hover { background: #059669; }
+        .btn-act-warning { background: #F59E0B; color: #000; }
+        .btn-act-warning:hover { background: #D97706; }
+        .btn-act-primary { background: var(--verde-medio); color: #fff; }
+        .btn-act-primary:hover { background: var(--verde-hover); }
+        .btn-act-danger { background: #EF4444; color: #fff; }
+        .btn-act-danger:hover { background: #DC2626; }
+
+        /* Modal custom */
+        .modal-centuria-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-centuria-box {
+            background: #0a1f11;
+            border: 1px solid var(--dorado);
+            border-radius: 20px;
+            max-width: 650px;
+            width: 100%;
+            padding: 26px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            color: #fff;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .badge-role {
+            font-size: 0.68rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-role-admin { background: rgba(239,68,68,0.25); color: #fca5a5; border: 1px solid #ef4444; }
+        .badge-role-docente { background: rgba(59,130,246,0.25); color: #93c5fd; border: 1px solid #3b82f6; }
+        .badge-role-alumno { background: rgba(16,185,129,0.25); color: #6ee7b7; border: 1px solid #10b981; }
+        .badge-role-academico { background: rgba(139,92,246,0.25); color: #c4b5fd; border: 1px solid #8b5cf6; }
+
+        .spinner-custom {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <script src="./js/api.js?v=19"></script>
+    <script src="./js/logout.js?v=2"></script>
+</head>
+<body>
+
+    <div class="dash-wrapper">
+
+        <!-- ═══ HEADER ═══ -->
+        <header class="dash-header">
+            <div class="dash-header-left">
+                <div class="dash-avatar" id="admin-avatar">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h1 class="h5 mb-0 fw-bold text-white" id="admin-nombre">Administrador Central</h1>
+                        <span class="admin-badge"><i class="bi bi-shield-check"></i> Super Admin</span>
+                    </div>
+                    <p class="small text-white-50 mb-0 mt-1">
+                        C.I: <span id="admin-cedula" class="text-white fw-bold">---</span> • Campus Virtual Centuria
+                    </p>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Selector Vista Previa -->
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-header dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-eye-fill text-warning"></i> Vista de Rol
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><h6 class="dropdown-header text-warning small">Cambiar Modo de Vista</h6></li>
+                        <li><a class="dropdown-item small" href="dashboard.html"><i class="bi bi-mortarboard me-2 text-success"></i>Vista Alumno</a></li>
+                        <li><a class="dropdown-item small" href="docente.html"><i class="bi bi-person-badge me-2 text-primary"></i>Vista Docente</a></li>
+                        <li><a class="dropdown-item small" href="academic/index.html"><i class="bi bi-building me-2 text-info"></i>Vista Académica</a></li>
+                        <li><a class="dropdown-item small" href="tesoreria.html"><i class="bi bi-cash-stack me-2 text-success"></i>Vista Tesorería</a></li>
+                        <li><a class="dropdown-item small" href="admin/index.html"><i class="bi bi-sliders me-2 text-danger"></i>Admin Avanzado (Alpine)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Botón Refrescar Datos -->
+                <button onclick="cargarTodoElDashboard(true)" class="btn btn-sm btn-header" title="Actualizar datos desde la nube">
+                    <i class="bi bi-arrow-clockwise"></i> Sincronizar
+                </button>
+
+                <!-- Botón Salir -->
+                <button onclick="CenturiaLogout.salir()" class="btn btn-sm btn-danger px-3 py-2 rounded-3 fw-bold">
+                    <i class="bi bi-box-arrow-right me-1"></i> Salir
+                </button>
+            </div>
+        </header>
+
+        <!-- ═══ KPI STATS ═══ -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div>
+                    <p class="small text-white-50 mb-1 fw-bold">USUARIOS TOTALES</p>
+                    <h3 class="h4 fw-bold text-white mb-0" id="kpi-total-usuarios">--</h3>
+                </div>
+                <div class="kpi-icon" style="background: rgba(37,99,235,0.2); color: #60a5fa;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div>
+                    <p class="small text-white-50 mb-1 fw-bold">ALUMNOS ACTIVOS</p>
+                    <h3 class="h4 fw-bold text-success mb-0" id="kpi-alumnos">--</h3>
+                </div>
+                <div class="kpi-icon" style="background: rgba(16,185,129,0.2); color: #34d399;">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div>
+                    <p class="small text-white-50 mb-1 fw-bold">CUERPO DOCENTE</p>
+                    <h3 class="h4 fw-bold text-info mb-0" id="kpi-docentes">--</h3>
+                </div>
+                <div class="kpi-icon" style="background: rgba(6,182,212,0.2); color: #22d3ee;">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+            </div>
+
+            <div class="kpi-card" style="border-color: rgba(245,158,11,0.3);">
+                <div>
+                    <p class="small text-warning mb-1 fw-bold">PENDIENTES APROBACIÓN</p>
+                    <h3 class="h4 fw-bold text-warning mb-0" id="kpi-pendientes">--</h3>
+                </div>
+                <div class="kpi-icon" style="background: rgba(245,158,11,0.2); color: #fbbf24;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div>
+                    <p class="small text-white-50 mb-1 fw-bold">ESTADO SISTEMA</p>
+                    <h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-check-circle-fill me-1"></i> Operativo</h3>
+                </div>
+                <div class="kpi-icon" style="background: rgba(212,168,67,0.2); color: var(--dorado);">
+                    <i class="bi bi-hdd-network-fill"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ NAV TABS ═══ -->
+        <div class="nav-tabs-admin">
+            <button class="tab-btn active" onclick="cambiarSeccion('tab-ecosistema', this)">
+                <i class="bi bi-grid-fill"></i> Áreas del Ecosistema
+            </button>
+            <button class="tab-btn" onclick="cambiarSeccion('tab-pendientes', this)">
+                <i class="bi bi-person-check-fill"></i> Aprobación de Usuarios <span id="badge-pendientes-tab" class="badge bg-danger ms-1" style="display:none">0</span>
+            </button>
+            <button class="tab-btn" onclick="cambiarSeccion('tab-usuarios', this)">
+                <i class="bi bi-people-fill"></i> Directorio de Usuarios
+            </button>
+            <button class="tab-btn" onclick="cambiarSeccion('tab-asignaturas', this)">
+                <i class="bi bi-book-half"></i> Asignaciones y Materias
+            </button>
+            <button class="tab-btn" onclick="cambiarSeccion('tab-tesoreria', this)">
+                <i class="bi bi-cash-stack"></i> Tesorería y Cobranzas
+            </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN 1: ECOSISTEMA Y HERRAMIENTAS DIRECTAS              -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <div id="tab-ecosistema" class="admin-section">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Módulos de Gestión Institucional</h2>
+                        <p class="small text-white-50 mb-0">Accesos directos con privilegios elevados para toda la plataforma</p>
+                    </div>
+                </div>
+
+                <div class="apps-grid">
+                    <!-- 1. Tesorería -->
+                    <a href="tesoreria.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(16,185,129,0.2); color: #34d399;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Módulo Tesorería</div>
+                            <div class="text-white-50 text-[10px]" style="font-size:0.7rem">Cobranzas, aranceles y exoneraciones</div>
+                        </div>
+                    </a>
+
+                    <!-- 2. Facturas -->
+                    <a href="facturas.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(59,130,246,0.2); color: #60a5fa;">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Facturación & Recibos</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Comprobantes y pagos registrados</div>
+                        </div>
+                    </a>
+
+                    <!-- 3. Constructor de Materias -->
+                    <a href="constructor/index.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(20,184,166,0.2); color: #2dd4bf;">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Constructor de Materias</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Estructura curricular y unidades</div>
+                        </div>
+                    </a>
+
+                    <!-- 4. Asistencia General -->
+                    <a href="attendance.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(245,158,11,0.2); color: #fbbf24;">
+                            <i class="bi bi-clipboard-check"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Control de Asistencia</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Registro presencial y por QR</div>
+                        </div>
+                    </a>
+
+                    <!-- 5. Atención al Estudiante -->
+                    <a href="atencion-estudiante.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(236,72,153,0.2); color: #f472b6;">
+                            <i class="bi bi-person-heart"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Atención al Estudiante</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Fichas, quejas, beneficios y cumpleaños</div>
+                        </div>
+                    </a>
+
+                    <!-- 6. Calendario Institucional -->
+                    <a href="calendario.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(6,182,212,0.2); color: #22d3ee;">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Calendario Global</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Exámenes, feriados y eventos</div>
+                        </div>
+                    </a>
+
+                    <!-- 7. Panel Académico Directivo -->
+                    <a href="academic/index.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(139,92,246,0.2); color: #a78bfa;">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Dirección Académica</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Indicadores, actas y seguimiento</div>
+                        </div>
+                    </a>
+
+                    <!-- 8. Consultas y Tickets -->
+                    <a href="consultas.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(168,85,247,0.2); color: #c084fc;">
+                            <i class="bi bi-chat-dots-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Mesa de Consultas</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Soporte académico y administrativo</div>
+                        </div>
+                    </a>
+
+                    <!-- 9. Mensajes Masivos -->
+                    <a href="mensajes-alumnos.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(244,63,94,0.2); color: #fb7185;">
+                            <i class="bi bi-broadcast"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Comunicados Masivos</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Envío de avisos y notificaciones</div>
+                        </div>
+                    </a>
+
+                    <!-- 10. Formulario Matrícula -->
+                    <a href="formulario-matricula.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(99,102,241,0.2); color: #818cf8;">
+                            <i class="bi bi-file-earmark-medical"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Formulario de Matrícula</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Inscripción y admisión digital</div>
+                        </div>
+                    </a>
+
+                    <!-- 11. Libreta Virtual -->
+                    <a href="libreta.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(249,115,22,0.2); color: #fb923c;">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Libreta de Calificaciones</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Visualizador general de notas</div>
+                        </div>
+                    </a>
+
+                    <!-- 12. Panel Admin Alpine -->
+                    <a href="admin/index.html" class="app-tile">
+                        <div class="app-tile-icon" style="background: rgba(239,68,68,0.2); color: #f87171;">
+                            <i class="bi bi-gear-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small">Configuración Avanzada</div>
+                            <div class="text-white-50" style="font-size:0.7rem">Catálogos, filiales y permisos</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN 2: SOLICITUDES PENDIENTES DE APROBACIÓN           -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <div id="tab-pendientes" class="admin-section" style="display:none">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-person-check-fill text-warning me-2"></i>Solicitudes de Registro Pendientes</h2>
+                        <p class="small text-white-50 mb-0">Usuarios que crearon su cuenta y esperan habilitación institucional</p>
+                    </div>
+                    <button onclick="cargarPendientes()" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Lista
+                    </button>
+                </div>
+
+                <div class="table-admin-wrap">
+                    <table class="table-admin">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombre Completo</th>
+                                <th>Email / Contacto</th>
+                                <th>Rol Solicitado</th>
+                                <th>Carrera / Sección</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-pendientes-body">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-white-50">
+                                    <span class="spinner-custom me-2"></span> Cargando solicitudes pendientes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN 3: GESTIÓN Y DIRECTORIO DE USUARIOS                -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <div id="tab-usuarios" class="admin-section" style="display:none">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-people-fill text-success me-2"></i>Directorio Central de Usuarios</h2>
+                        <p class="small text-white-50 mb-0">Consulte, filtre o modifique roles de usuarios en el campus</p>
+                    </div>
+                    
+                    <!-- Filtros -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <input type="text" id="filtro-user-busqueda" class="search-inp" placeholder="Buscar cédula, nombre..." oninput="filtrarUsuarios()">
+                        <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()">
+                            <option value="">Todos los Roles</option>
+                            <option value="alumno">Alumnos</option>
+                            <option value="docente">Docentes</option>
+                            <option value="admin">Administradores</option>
+                            <option value="academico">Académicos</option>
+                        </select>
+                        <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()">
+                            <option value="">Todos los Estados</option>
+                            <option value="activo">Activos</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="inactivo">Inactivos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-admin-wrap">
+                    <table class="table-admin">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombre y Apellido</th>
+                                <th>Rol Principal</th>
+                                <th>Carrera</th>
+                                <th>Sección</th>
+                                <th>Estado</th>
+                                <th class="text-end">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-usuarios-body">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-white-50">
+                                    <span class="spinner-custom me-2"></span> Cargando base de usuarios...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN 4: ASIGNATURAS Y CÁTEDRAS                          -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <div id="tab-asignaturas" class="admin-section" style="display:none">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Cátedras Habilitadas</h2>
+                        <p class="small text-white-50 mb-0">Asignación de docentes y materias del plan curricular</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none">
+                            <i class="bi bi-plus-circle me-1"></i> Abrir Constructor
+                        </a>
+                        <button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-admin-wrap">
+                    <table class="table-admin">
+                        <thead>
+                            <tr>
+                                <th>Código / Materia</th>
+                                <th>Carrera</th>
+                                <th>Docente Asignado</th>
+                                <th>Sección / Grado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-asignaturas-body">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-white-50">
+                                    <span class="spinner-custom me-2"></span> Cargando catálogo de asignaturas...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN 5: RESUMEN DE TESORERÍA                            -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <div id="tab-tesoreria" class="admin-section" style="display:none">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-cash-coin text-success me-2"></i>Estado Financiero y Recaudación</h2>
+                        <p class="small text-white-50 mb-0">Resumen ejecutivo del estado de pagos del campus</p>
+                    </div>
+                    <a href="tesoreria.html" class="btn btn-sm btn-success text-decoration-none fw-bold">
+                        <i class="bi bi-arrow-up-right-square me-1"></i> Abrir Panel de Tesorería Completo
+                    </a>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3)">
+                            <div class="small text-success fw-bold">TOTAL PAGADO (CONFIRMADO)</div>
+                            <div class="h4 text-white fw-bold mt-1" id="teso-total-pagado">Gs. --</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3)">
+                            <div class="small text-warning fw-bold">TOTAL PENDIENTE DE COBRO</div>
+                            <div class="h4 text-white fw-bold mt-1" id="teso-total-pendiente">Gs. --</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3)">
+                            <div class="small text-danger fw-bold">PAGOS VENCIDOS / MORA</div>
+                            <div class="h4 text-white fw-bold mt-1" id="teso-total-vencido">Gs. --</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center py-3">
+                    <p class="small text-white-50 mb-3">Para registrar cobros de aranceles, emitir facturas o gestionar exoneraciones de cuotas:</p>
+                    <a href="tesoreria.html" class="btn btn-act-primary px-4 py-2 me-2 text-decoration-none">
+                        <i class="bi bi-wallet2 me-1"></i> Ir a Tesorería
+                    </a>
+                    <a href="facturas.html" class="btn btn-outline-light px-4 py-2 text-decoration-none">
+                        <i class="bi bi-receipt me-1"></i> Ver Facturas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══ MODAL PARA EDITAR ROL O ASIGNAR USUARIO ═══ -->
+    <div id="modal-editar-usuario" class="modal-centuria-backdrop" style="display:none">
+        <div class="modal-centuria-box">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h6 fw-bold text-warning mb-0"><i class="bi bi-person-gear me-2"></i>Editar Rol y Acceso</h3>
+                <button type="button" class="btn-close btn-close-white" onclick="cerrarModalUsuario()"></button>
+            </div>
+
+            <div class="mb-3">
+                <label class="small text-white-50 mb-1">Nombre Completo</label>
+                <input type="text" id="modal-user-nombre" class="form-control form-control-sm search-inp w-100" readonly>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="small text-white-50 mb-1">Cédula de Identidad</label>
+                    <input type="text" id="modal-user-cedula" class="form-control form-control-sm search-inp w-100" readonly>
+                </div>
+                <div class="col-6">
+                    <label class="small text-white-50 mb-1">Rol Asignado</label>
+                    <select id="modal-user-rol" class="form-select form-select-sm search-inp w-100">
+                        <option value="alumno">Alumno / Estudiante</option>
+                        <option value="docente">Docente / Profesor</option>
+                        <option value="academico">Directivo Académico</option>
+                        <option value="admin">Administrador General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="small text-white-50 mb-1">Carrera</label>
+                    <input type="text" id="modal-user-carrera" class="form-control form-control-sm search-inp w-100" placeholder="Ej: MEDICINA, DERECHO">
+                </div>
+                <div class="col-6">
+                    <label class="small text-white-50 mb-1">Sección</label>
+                    <input type="text" id="modal-user-seccion" class="form-control form-control-sm search-inp w-100" placeholder="Ej: 1RA, 2DA, A">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="small text-white-50 mb-1">Estado de Cuenta</label>
+                <select id="modal-user-estado" class="form-select form-select-sm search-inp w-100">
+                    <option value="activo">Activo (Habilitado)</option>
+                    <option value="pendiente">Pendiente de Aprobación</option>
+                    <option value="inactivo">Inactivo / Suspendido</option>
+                </select>
+            </div>
+
+            <div id="modal-user-msg" class="small mb-3" style="display:none"></div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalUsuario()">Cancelar</button>
+                <button type="button" id="btn-guardar-usuario" class="btn btn-sm btn-act-primary px-4" onclick="guardarEdicionUsuario()">
+                    <i class="bi bi-check-lg me-1"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script de Lógica del Dashboard Admin -->
+    <script>
+        let LISTA_USUARIOS_CACHE = [];
+        let LISTA_PENDIENTES_CACHE = [];
+        let LISTA_ASIGNATURAS_CACHE = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarHeader();
+            cargarTodoElDashboard();
+        });
+
+        function inicializarHeader() {
+            const nombre = sessionStorage.getItem('current_nombre') || localStorage.getItem('centuria_nombre') || 'Administrador';
+            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || 'ADMIN';
+            
+            document.getElementById('admin-nombre').textContent = nombre;
+            document.getElementById('admin-cedula').textContent = cedula;
+        }
+
+        function cambiarSeccion(tabId, btn) {
+            document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            const target = document.getElementById(tabId);
+            if (target) target.style.display = 'block';
+            if (btn) btn.classList.add('active');
+
+            if (tabId === 'tab-pendientes' && LISTA_PENDIENTES_CACHE.length === 0) {
+                cargarPendientes();
+            } else if (tabId === 'tab-usuarios' && LISTA_USUARIOS_CACHE.length === 0) {
+                cargarUsuarios();
+            } else if (tabId === 'tab-asignaturas' && LISTA_ASIGNATURAS_CACHE.length === 0) {
+                cargarAsignaturas();
+            }
+        }
+
+        async function cargarTodoElDashboard(forzar = false) {
+            await Promise.allSettled([
+                cargarPendientes(),
+                cargarUsuarios(),
+                cargarAsignaturas(),
+                cargarStatsTesoreria()
+            ]);
+        }
+
+        // ── 1. Pendientes ──
+        async function cargarPendientes() {
+            const tbody = document.getElementById('tabla-pendientes-body');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-white-50"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';
+            
+            try {
+                const res = await CenturiaAPI.usuarios.pendientes();
+                const list = (res && res.pendientes) ? res.pendientes : (Array.isArray(res) ? res : []);
+                LISTA_PENDIENTES_CACHE = list;
+
+                // KPI
+                const kpi = document.getElementById('kpi-pendientes');
+                if (kpi) kpi.textContent = list.length;
+
+                const badgeTab = document.getElementById('badge-pendientes-tab');
+                if (badgeTab) {
+                    if (list.length > 0) {
+                        badgeTab.textContent = list.length;
+                        badgeTab.style.display = 'inline-block';
+                    } else {
+                        badgeTab.style.display = 'none';
+                    }
+                }
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-white-50"><i class="bi bi-check-circle text-success me-2"></i>No hay usuarios pendientes de aprobación.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(u => {
+                    const rol = (u.rol || 'alumno').toLowerCase();
+                    const badgeClass = rol === 'docente' ? 'badge-role-docente' : (rol === 'admin' ? 'badge-role-admin' : 'badge-role-alumno');
+                    return `
+                        <tr>
+                            <td class="fw-bold text-warning">${u.cedula || '---'}</td>
+                            <td class="fw-bold">${u.nombre || ''} ${u.apellido || ''}</td>
+                            <td>
+                                <div>${u.email || '<span class="text-white-50">Sin email</span>'}</div>
+                                <div class="text-white-50 text-[10px]">${u.telefono || ''}</div>
+                            </td>
+                            <td><span class="badge-role ${badgeClass}">${rol}</span></td>
+                            <td>${u.carrera || '---'} / ${u.seccion || '---'}</td>
+                            <td class="text-end">
+                                <button onclick="aprobarUsuarioRapido('${u.cedula}')" class="btn-act btn-act-success me-1" title="Aprobar de inmediato">
+                                    <i class="bi bi-check-lg"></i> Aprobar
+                                </button>
+                                <button onclick="abrirModalEditar('${u.cedula}', '${((u.nombre||'')+' '+(u.apellido||'')).replace(/'/g, "\\'")}', '${rol}', '${u.carrera||''}', '${u.seccion||''}', 'pendiente')" class="btn-act btn-act-warning" title="Editar y asignar">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error cargando pendientes:', err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar pendientes en el servidor.</td></tr>';
+            }
+        }
+
+        async function aprobarUsuarioRapido(cedula) {
+            if (!confirm(`¿Aprobar y habilitar inmediatamente al usuario con C.I. ${cedula}?`)) return;
+            
+            try {
+                const res = await CenturiaAPI.usuarios.aprobar(cedula);
+                if (res && res.ok) {
+                    alert(`Usuario ${cedula} aprobado con éxito.`);
+                    cargarPendientes();
+                    cargarUsuarios();
+                } else {
+                    alert((res && res.error) || 'No se pudo aprobar el usuario.');
+                }
+            } catch (err) {
+                alert('Error al procesar la aprobación.');
+            }
+        }
+
+        // ── 2. Usuarios ──
+        async function cargarUsuarios() {
+            const tbody = document.getElementById('tabla-usuarios-body');
+            try {
+                const res = await CenturiaAPI.usuarios.list();
+                const list = (res && res.usuarios) ? res.usuarios : (Array.isArray(res) ? res : []);
+                LISTA_USUARIOS_CACHE = list;
+
+                // Actualizar KPIs
+                const total = list.length;
+                const alumnos = list.filter(u => (u.rol||'').toLowerCase() === 'alumno').length;
+                const docentes = list.filter(u => (u.rol||'').toLowerCase() === 'docente').length;
+
+                document.getElementById('kpi-total-usuarios').textContent = total;
+                document.getElementById('kpi-alumnos').textContent = alumnos;
+                document.getElementById('kpi-docentes').textContent = docentes;
+
+                renderTablaUsuarios(list);
+            } catch (err) {
+                console.error('Error cargando usuarios:', err);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar usuarios.</td></tr>';
+            }
+        }
+
+        function renderTablaUsuarios(list) {
+            const tbody = document.getElementById('tabla-usuarios-body');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-white-50">No se encontraron usuarios con los filtros aplicados.</td></tr>';
+                return;
+            }
+
+            // Limitar a los primeros 100 para fluidez
+            const displayList = list.slice(0, 100);
+
+            tbody.innerHTML = displayList.map(u => {
+                const rol = (u.rol || 'alumno').toLowerCase();
+                const estado = (u.estado || 'activo').toLowerCase();
+                const badgeClass = rol === 'docente' ? 'badge-role-docente' : (rol === 'admin' ? 'badge-role-admin' : (rol === 'academico' ? 'badge-role-academico' : 'badge-role-alumno'));
+                const estadoColor = estado === 'activo' ? 'text-success' : (estado === 'pendiente' ? 'text-warning' : 'text-danger');
+
+                const nombreCompleto = `${u.nombre || u.firstname || ''} ${u.apellido || u.lastname || ''}`.trim() || '---';
+
+                return `
+                    <tr>
+                        <td class="fw-bold text-warning">${u.cedula || '---'}</td>
+                        <td class="fw-bold">${nombreCompleto}</td>
+                        <td><span class="badge-role ${badgeClass}">${rol}</span></td>
+                        <td>${u.carrera || '---'}</td>
+                        <td>${u.seccion || '---'}</td>
+                        <td class="${estadoColor} fw-bold text-uppercase" style="font-size:0.75rem">${estado}</td>
+                        <td class="text-end">
+                            <button onclick="abrirModalEditar('${u.cedula}', '${nombreCompleto.replace(/'/g, "\\'")}', '${rol}', '${u.carrera||''}', '${u.seccion||''}', '${estado}')" class="btn-act btn-act-primary">
+                                <i class="bi bi-sliders"></i> Gestionar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filtrarUsuarios() {
+            const txt = (document.getElementById('filtro-user-busqueda').value || '').toLowerCase().trim();
+            const rol = (document.getElementById('filtro-user-rol').value || '').toLowerCase();
+            const estado = (document.getElementById('filtro-user-estado').value || '').toLowerCase();
+
+            const filtrados = LISTA_USUARIOS_CACHE.filter(u => {
+                const nom = `${u.nombre || u.firstname || ''} ${u.apellido || u.lastname || ''}`.toLowerCase();
+                const ced = String(u.cedula || '').toLowerCase();
+                const matchTxt = !txt || nom.includes(txt) || ced.includes(txt);
+                const matchRol = !rol || (u.rol || '').toLowerCase() === rol;
+                const matchEstado = !estado || (u.estado || 'activo').toLowerCase() === estado;
+                return matchTxt && matchRol && matchEstado;
+            });
+
+            renderTablaUsuarios(filtrados);
+        }
+
+        // ── 3. Asignaturas ──
+        async function cargarAsignaturas() {
+            const tbody = document.getElementById('tabla-asignaturas-body');
+            try {
+                const res = await CenturiaAPI.materias.listar();
+                const list = (res && res.materias) ? res.materias : (Array.isArray(res) ? res : []);
+                LISTA_ASIGNATURAS_CACHE = list;
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-white-50">No hay asignaturas registradas. Puede crearlas desde el Constructor.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(m => {
+                    return `
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-white">${m.nombre || m.asignatura || 'Sin nombre'}</div>
+                                <div class="text-white-50 small">${m.codigo || '---'}</div>
+                            </td>
+                            <td>${m.carrera || 'General'}</td>
+                            <td class="text-info fw-bold">${m.docente || m.profesor || 'Sin asignar'}</td>
+                            <td>${m.seccion || '---'} / ${m.grado || '---'}</td>
+                            <td class="text-end">
+                                <a href="constructor/index.html?asignatura=${encodeURIComponent(m.codigo || m.nombre || '')}" class="btn-act btn-act-primary text-decoration-none">
+                                    <i class="bi bi-pencil"></i> Estructura
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error cargando asignaturas:', err);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar catálogo de asignaturas.</td></tr>';
+            }
+        }
+
+        // ── 4. Stats Tesorería ──
+        async function cargarStatsTesoreria() {
+            try {
+                const res = await CenturiaAPI.pagos.stats();
+                if (res && res.ok) {
+                    const fmt = (n) => 'Gs. ' + Number(n || 0).toLocaleString('es-PY');
+                    document.getElementById('teso-total-pagado').textContent = fmt(res.total_cobrado || res.total_pagado || 0);
+                    document.getElementById('teso-total-pendiente').textContent = fmt(res.total_pendiente || 0);
+                    document.getElementById('teso-total-vencido').textContent = fmt(res.total_vencido || 0);
+                }
+            } catch (e) {
+                console.warn('Stats tesorería:', e);
+            }
+        }
+
+        // ── 5. Modal Editar Usuario ──
+        function abrirModalEditar(cedula, nombre, rol, carrera, seccion, estado) {
+            document.getElementById('modal-user-cedula').value = cedula || '';
+            document.getElementById('modal-user-nombre').value = nombre || '';
+            document.getElementById('modal-user-rol').value = rol || 'alumno';
+            document.getElementById('modal-user-carrera').value = carrera || '';
+            document.getElementById('modal-user-seccion').value = seccion || '';
+            document.getElementById('modal-user-estado').value = estado || 'activo';
+            
+            const msgBox = document.getElementById('modal-user-msg');
+            msgBox.style.display = 'none';
+
+            document.getElementById('modal-editar-usuario').style.display = 'flex';
+        }
+
+        function cerrarModalUsuario() {
+            document.getElementById('modal-editar-usuario').style.display = 'none';
+        }
+
+        async function guardarEdicionUsuario() {
+            const cedula = document.getElementById('modal-user-cedula').value;
+            const rol = document.getElementById('modal-user-rol').value;
+            const carrera = document.getElementById('modal-user-carrera').value.trim();
+            const seccion = document.getElementById('modal-user-seccion').value.trim();
+            const estado = document.getElementById('modal-user-estado').value;
+            
+            const btn = document.getElementById('btn-guardar-usuario');
+            const msgBox = document.getElementById('modal-user-msg');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-custom me-1"></span> Guardando...';
+
+            try {
+                const res = await CenturiaAPI.usuarios.actualizar(cedula, {
+                    rol: rol,
+                    carrera: carrera,
+                    seccion: seccion,
+                    estado: estado
+                });
+
+                if (res && res.ok) {
+                    msgBox.className = 'small mb-3 text-success';
+                    msgBox.innerHTML = '<i class="bi bi-check-circle me-1"></i> Usuario actualizado correctamente.';
+                    msgBox.style.display = 'block';
+
+                    setTimeout(() => {
+                        cerrarModalUsuario();
+                        cargarUsuarios();
+                        cargarPendientes();
+                    }, 1000);
+                } else {
+                    throw new Error((res && res.error) || 'No se pudo guardar la actualización.');
+                }
+            } catch (err) {
+                msgBox.className = 'small mb-3 text-danger';
+                msgBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${err.message || 'Error de conexión.'}`;
+                msgBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Guardar Cambios';
+            }
+        }
+    </script>
+</body>
+</html>

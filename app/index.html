@@ -781,7 +781,7 @@
                         <i class="bi bi-exclamation-triangle me-1"></i>Complete sus datos <strong>una única vez</strong> para acceder.
                     </div>
 
-                    <!-- 2A: Datos Personales -->
+                    <!-- 2A: Parte 1 - Datos Personales -->
                     <div id="reg-paso-1">
                         <div class="sec-wrap">
                             <div class="sec-head"><span class="num">1</span> Datos Personales</div>
@@ -794,6 +794,17 @@
                             </div>
                             <div class="mb-2"><label class="lbl" for="reg-email">Correo electrónico</label><input type="email" class="inp" id="reg-email" placeholder="ejemplo@gmail.com" style="font-size:0.82rem"></div>
                             <div class="mb-2"><label class="lbl" for="reg-telefono">Teléfono</label><input type="text" class="inp" id="reg-telefono" placeholder="0981 123456" style="font-size:0.82rem"></div>
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn-ghost" onclick="volverPaso1()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Volver</button>
+                            <button class="btn-main" onclick="regPaso1b()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Siguiente</button>
+                        </div>
+                    </div>
+
+                    <!-- 2B: Parte 2 - Contraseña y Foto -->
+                    <div id="reg-paso-1b" style="display:none">
+                        <div class="sec-wrap">
+                            <div class="sec-head"><span class="num">2</span> Seguridad y Foto de Perfil</div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
                                     <label class="lbl" for="reg-password">Contraseña <span style="color:#DC2626">*</span></label>
@@ -818,7 +829,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="reg-pwd-hint" style="color:#64748b;font-size:0.68rem;margin-bottom:8px">
+                            <div id="reg-pwd-hint" style="color:#64748b;font-size:0.68rem;margin-bottom:12px">
                                 <i class="bi bi-shield-check me-1"></i>Defina una contraseña segura de al menos 6 caracteres.
                             </div>
                             <div class="mb-2">
@@ -840,25 +851,27 @@
                             </div>
                             <button type="button" class="btn-ghost" onclick="mostrarQR()" style="font-size:0.68rem;padding:8px 12px;width:100%"><i class="bi bi-qr-code me-2"></i>Mostrar QR para celular</button>
                         </div>
-                        <button class="btn-main mt-2" onclick="regPaso2()"><i class="bi bi-arrow-right me-2"></i>Siguiente</button>
-                        <button class="btn-ghost mt-2" onclick="volverPaso1()"><i class="bi bi-arrow-left me-1"></i>Volver</button>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn-ghost" onclick="regPaso1()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button>
+                            <button class="btn-main" onclick="regPaso2()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Siguiente</button>
+                        </div>
                     </div>
 
-                    <!-- 2B: Datos Académicos -->
+                    <!-- 2C: Datos Académicos -->
                     <div id="reg-paso-2" style="display:none">
                         <div class="sec-wrap">
-                            <div class="sec-head"><span class="num">2</span> Datos Académicos</div>
+                            <div class="sec-head"><span class="num">3</span> Datos Académicos</div>
                             <div class="mb-2"><label class="lbl" for="reg-grado">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
                             <div class="mb-2"><label class="lbl" for="reg-carrera">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled onchange="cargarSecciones()"><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
                             <div class="mb-2"><label class="lbl" for="reg-seccion">Sección</label><select class="inp-select" id="reg-seccion"><option value="" selected disabled>Cargando secciones...</option></select></div>
                         </div>
-                        <div class="d-flex gap-2 mt-2"><button class="btn-ghost" onclick="regPaso1()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button><button class="btn-main" onclick="regPaso3()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Revisar</button></div>
+                        <div class="d-flex gap-2 mt-2"><button class="btn-ghost" onclick="regPaso1b()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button><button class="btn-main" onclick="regPaso3()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Revisar</button></div>
                     </div>
 
-                    <!-- 2C: Confirmación -->
+                    <!-- 2D: Confirmación -->
                     <div id="reg-paso-3" style="display:none">
                         <div class="sec-wrap">
-                            <div class="sec-head"><span class="num">3</span> Confirmar Registro</div>
+                            <div class="sec-head"><span class="num">4</span> Confirmar Registro</div>
                             <div id="reg-resumen" style="font-size:0.75rem;color:#475569;line-height:1.8"></div>
                             <div id="reg-clave-alumno-aviso" style="background:#F0FDF4;border:1px solid #BBF7D0;border-left:3px solid var(--verde-medio);border-radius:10px;color:#166534;font-size:0.68rem;padding:8px 10px;margin-top:10px">
                                 <i class="bi bi-check-circle me-1"></i>Ingresará con su número de cédula y la contraseña personalizada que definió.
@@ -950,7 +963,7 @@
 
 <!-- Overlay de carga: avisa que hay que esperar al servidor -->
 <div id="global-loading" role="status" aria-live="polite"><div class="spin"></div><p id="global-loading-text">Conectando con el servidor... espera</p></div>
-<script src="js/api.js?v=13"></script>
+<script src="js/api.js?v=15"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -1098,6 +1111,7 @@ async function verificarCedula(){
         sessionStorage.setItem('rol',role);
         if(role==='academico'){window.location.href='academic/index.html';return}
         if(role==='admin'||role==='administrador_plataforma'){window.location.href='admin/index.html';return}
+        if(role==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}
         if(role==='docente'){window.location.href='docente.html';return}
         window.location.href='dashboard.html';
     }catch(e){
@@ -1225,24 +1239,34 @@ function retomarFoto(){document.getElementById('reg-foto').value='';document.get
 function eliminarFoto(){document.getElementById('reg-foto').value='';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-placeholder').style.display='flex';document.getElementById('btn-retomar-foto').style.display='none';document.getElementById('btn-eliminar-foto').style.display='none';document.getElementById('btn-cambiar-camara').style.display='none'}
 
 // ═══ NAVEGACIÓN ═══
-function volverPaso1(){document.getElementById('step-2-register').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none';if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=document.getElementById('foto-video');if(v)v.style.display='none'}
+function volverPaso1(){document.getElementById('step-2-register').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-1b').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none';if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=document.getElementById('foto-video');if(v)v.style.display='none'}
 function mostrarRegistro(){document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='block';regPaso1();cargarSecciones();if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
-function regPaso1(){document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none'}
-function regPaso2(){
+function regPaso1(){document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-1b').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none'}
+function regPaso1b(){
     const c=document.getElementById('reg-cedula').value.trim().replace(/\./g,'');
     const n=document.getElementById('reg-nombre').value.trim();
     const a=document.getElementById('reg-apellido').value.trim();
+    if(!c){alert('Ingresa tu número de CÉDULA.');document.getElementById('reg-cedula').focus();return}
+    if(!n){alert('Ingresa tu NOMBRE.');document.getElementById('reg-nombre').focus();return}
+    if(!a){alert('Ingresa tu APELLIDO.');document.getElementById('reg-apellido').focus();return}
+    document.getElementById('reg-paso-1').style.display='none';
+    document.getElementById('reg-paso-1b').style.display='block';
+    document.getElementById('reg-paso-2').style.display='none';
+    document.getElementById('reg-paso-3').style.display='none';
+}
+function regPaso2(){
     const p1=document.getElementById('reg-password').value.trim();
     const p2=document.getElementById('reg-password-confirm').value.trim();
-    if(!c||!n||!a){alert('Completa CÉDULA, NOMBRE y APELLIDO.');return}
     if(!p1||p1.length<6){alert('La contraseña debe tener al menos 6 caracteres.');document.getElementById('reg-password').focus();return}
     if(p1!==p2){alert('Las contraseñas no coinciden.');document.getElementById('reg-password-confirm').focus();return}
     document.getElementById('reg-paso-1').style.display='none';
+    document.getElementById('reg-paso-1b').style.display='none';
     document.getElementById('reg-paso-2').style.display='block';
     document.getElementById('reg-paso-3').style.display='none';
 }
 function regPaso3(){
     document.getElementById('reg-paso-1').style.display='none';
+    document.getElementById('reg-paso-1b').style.display='none';
     document.getElementById('reg-paso-2').style.display='none';
     document.getElementById('reg-paso-3').style.display='block';
     document.getElementById('reg-volver-login').style.display='block';
@@ -1282,7 +1306,7 @@ function mostrarSelectorRoles(roles){
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
     btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'){window.location.href='admin/index.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
+function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'){window.location.href='admin/index.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══
@@ -1339,6 +1363,7 @@ window.addEventListener('load',()=>{
         const user = (typeof CenturiaAPI !== 'undefined' && CenturiaAPI.getCurrentUser && CenturiaAPI.getCurrentUser());
         if(token && user){
             const role = String(user.rol || user.role || 'alumno').toLowerCase();
+            if(role === 'asistencia_estudiante'){ location.replace('atencion-estudiante.html'); return; }
             if(role === 'docente'){ location.replace('docente.html'); return; }
             if(role === 'academico'){ location.replace('academic/index.html'); return; }
             if(role === 'admin'){ location.replace('admin/index.html'); return; }

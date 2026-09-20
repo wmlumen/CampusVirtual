@@ -211,7 +211,18 @@
 
     <!-- Tabla principal: Lista de Alumnos -->
     <div class="sec">
-        <div class="sec-title"><i class="bi bi-people"></i> <span id="sec-title-text">Lista de Alumnos</span></div>
+        <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div><i class="bi bi-people"></i> <span id="sec-title-text">Lista de Alumnos</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input type="text" id="filtro-doc-alumno" placeholder="Buscar por nombre o cédula..." oninput="renderTabla()" style="padding:5px 10px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';min-width:180px;">
+                <select id="filtro-doc-estado" onchange="renderTabla()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';">
+                    <option value="">Todos los Estados</option>
+                    <option value="Aprobado">Aprobados (≥70)</option>
+                    <option value="Reprobado">Reprobados (<70)</option>
+                    <option value="En Proceso">En Proceso / Pendientes</option>
+                </select>
+            </div>
+        </div>
         <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
             <table class="tbl" id="tblAlumnos">
                 <thead>
@@ -473,11 +484,15 @@ function renderTabla() {
         return;
     }
 
+    const txtBusq = ((document.getElementById('filtro-doc-alumno') || {}).value || '').toLowerCase().trim();
+    const estBusq = ((document.getElementById('filtro-doc-estado') || {}).value || '').toLowerCase().trim();
+
     let html = '';
     let totalP1 = 0, totalP2 = 0, totalFin = 0, totalProm = 0;
     let cntP1 = 0, cntP2 = 0, cntFin = 0, cntProm = 0;
     let aprobados = 0, reprobados = 0;
     let todasAsist = [];
+    let filasMostradas = 0;
 
     alumnosData.forEach((alumno, idx) => {
         const nom = alumno.nombre || alumno.nombre_completo || '';
@@ -532,8 +547,18 @@ function renderTabla() {
         const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'En Proceso';
         const estClass = prom !== '-' ? (parseFloat(prom) >= 70 ? 'est-ap' : 'est-re') : 'est-pen';
 
+        // Filtro en vivo
+        if (txtBusq) {
+            const matchTexto = nomCompleto.toLowerCase().includes(txtBusq) || String(cedula).toLowerCase().includes(txtBusq);
+            if (!matchTexto) return;
+        }
+        if (estBusq && estado.toLowerCase() !== estBusq) {
+            return;
+        }
+
+        filasMostradas++;
         html += `<tr>
-            <td style="text-align:center;color:var(--txt2)">${idx+1}</td>
+            <td style="text-align:center;color:var(--txt2)">${filasMostradas}</td>
             <td>
                 <strong style="color:#fff;font-size:.72rem">${nomCompleto}</strong>
                 <div style="font-size:.56rem;color:var(--txt2)">${alumno.carrera || asigActual.carrera || 'General'} • Sec: ${alumno.seccion || asigActual.seccion || 'A'}</div>
@@ -553,7 +578,11 @@ function renderTabla() {
         </tr>`;
     });
 
-    tbody.innerHTML = html;
+    if (filasMostradas === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="bi bi-search"></i><p>No hay alumnos que coincidan con la búsqueda o filtro aplicado.</p></td></tr>';
+    } else {
+        tbody.innerHTML = html;
+    }
 
     // Actualizar contadores en tabs
     const countEl = document.getElementById('count-' + (asigActual._i != null ? asigActual._i : asigActual.codigo));

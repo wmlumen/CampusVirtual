@@ -451,10 +451,13 @@
                     <div class="result-badge mb-3" id="gradeBadge"></div>
                     <h6 style="color:var(--dorado);font-weight:700;margin-top:10px;">Desglose:</h6>
                     <div id="sectionBreakdown" style="font-size:.85rem;color:rgba(255,255,255,.8);"></div>
-                    <div class="d-flex gap-2 justify-content-center mt-4">
+                    <div class="d-flex gap-2 justify-content-center mt-4 flex-wrap">
                         <button onclick="reintentarExamen()" class="btn-exam-choice btn-exam-parcial1" style="padding:10px 22px;">
                             <i class="bi bi-arrow-repeat"></i> Reintentar
                         </button>
+                        <a href="../dashboard.html" class="lib-btn lib-btn-print" style="padding:10px 22px;text-decoration:none;">
+                            <i class="bi bi-grid-3x3-gap"></i> Ir al Dashboard
+                        </a>
                         <button onclick="cerrarResultados()" class="lib-btn lib-btn-home" style="padding:10px 22px;">
                             <i class="bi bi-x-lg"></i> Cerrar
                         </button>
@@ -473,7 +476,7 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=16"></script>
+    <script src="../js/api.js?v=18"></script>
     <script>
     // ═══ SESSION GUARD ═══
     if (!sessionStorage.getItem('current_cedula')) { location.replace('../index.html'); }

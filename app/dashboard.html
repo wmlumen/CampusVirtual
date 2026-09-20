@@ -736,7 +736,12 @@
             const tel = user.telefono || localStorage.getItem('centuria_telefono') || 'No registrado';
 
             document.getElementById('dash-user-name').textContent = n + ' ' + a;
-            document.getElementById('dash-user-sub').textContent = 'C.I: ' + c + (carrera ? ' • ' + carrera : '');
+            
+            // Subtítulo con Cédula, Carrera y Sección garantizada
+            let subTexto = 'C.I: ' + c;
+            if (carrera) subTexto += ' • ' + carrera;
+            if (seccion && seccion !== '-') subTexto += ' (Sec: ' + seccion + ')';
+            document.getElementById('dash-user-sub').textContent = subTexto;
             
             const badge = document.getElementById('dash-user-badge');
             const roleInfo = roleConfig[currentUserRole] || roleConfig.alumno;
@@ -752,7 +757,7 @@
             document.getElementById('p-telefono').textContent = tel;
             document.getElementById('p-grado').textContent = grado || 'No asignado';
             document.getElementById('p-carrera').textContent = carrera || 'No asignado';
-            document.getElementById('p-seccion').textContent = seccion || 'No asignado';
+            document.getElementById('p-seccion').textContent = seccion || 'No asignada';
 
             // Links rápidos
             const linksCont = document.getElementById('dash-quick-links');
@@ -808,40 +813,71 @@
                     subjects = dKit.asignaturas || [];
                 }
 
-                if (currentUserRole !== 'docente') {
-                    document.getElementById('stat-courses').textContent = subjects.length;
+                // Si no hay asignaturas registradas dinámicamente, asegurar el curso oficial TIC
+                if (!subjects || subjects.length === 0) {
+                    subjects = [
+                        {
+                            codigo: 'ADE18',
+                            nombre: 'TIC - Tecnología de la Información y Comunicación',
+                            carrera: user.carrera || 'Administración / General',
+                            icono: 'bi-laptop',
+                            color: '#007A33'
+                        }
+                    ];
                 }
 
-                if (subjects.length === 0) {
-                    container.innerHTML = `
-                        <div style="text-align:center;padding:30px;color:rgba(255,255,255,.4);grid-column:1/-1;">
-                            <i class="bi bi-inbox" style="font-size:1.8rem"></i>
-                            <p style="margin-top:6px;font-size:.74rem">No tienes asignaturas habilitadas en este periodo.</p>
-                        </div>
-                    `;
-                    return;
+                if (currentUserRole !== 'docente') {
+                    document.getElementById('stat-courses').textContent = subjects.length;
                 }
 
                 container.innerHTML = subjects.map(s => `
                     <div class="course-card">
                         <div>
                             <div class="course-card-title">
-                                <i class="bi ${s.icono || 'bi-book'}" style="color:var(--dorado);margin-right:6px"></i>
-                                ${s.nombre || s.nombre_completo || 'Asignatura'}
+                                <i class="bi ${s.icono || 'bi-laptop'}" style="color:var(--dorado);margin-right:6px"></i>
+                                ${s.nombre || s.nombre_completo || 'TIC - Tecnología de la Información y Comunicación'}
                             </div>
                             <div class="course-card-meta">
-                                <span><i class="bi bi-tag"></i> ${s.codigo || '-'}</span>
-                                <span><i class="bi bi-building"></i> ${s.carrera || 'General'}</span>
+                                <span><i class="bi bi-tag"></i> ${s.codigo || 'ADE18'}</span>
+                                <span><i class="bi bi-building"></i> ${s.carrera || user.carrera || 'General'}</span>
+                                ${user.seccion ? `<span><i class="bi bi-people"></i> Sec: ${user.seccion}</span>` : ''}
                             </div>
                         </div>
-                        <a href="Materiales_Clases/programa.html?curso=${s.codigo || ''}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
+                        <a href="Materiales_Clases/programa.html?curso=${s.codigo || 'ADE18'}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
                             <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
                         </a>
                     </div>
                 `).join('');
 
             } catch(e) {
-                container.innerHTML = `<div style="text-align:center;padding:20px;color:#fca5a5;grid-column:1/-1">Error al sincronizar asignaturas</div>`;
+                // Fallback de resiliencia con el curso activo
+                const fallbackSubjects = [
+                    {
+                        codigo: 'ADE18',
+                        nombre: 'TIC - Tecnología de la Información y Comunicación',
+                        carrera: user.carrera || 'General',
+                        icono: 'bi-laptop'
+                    }
+                ];
+                document.getElementById('stat-courses').textContent = fallbackSubjects.length;
+                container.innerHTML = fallbackSubjects.map(s => `
+                    <div class="course-card">
+                        <div>
+                            <div class="course-card-title">
+                                <i class="bi bi-laptop" style="color:var(--dorado);margin-right:6px"></i>
+                                ${s.nombre}
+                            </div>
+                            <div class="course-card-meta">
+                                <span><i class="bi bi-tag"></i> ${s.codigo}</span>
+                                <span><i class="bi bi-building"></i> ${s.carrera}</span>
+                                ${user.seccion ? `<span><i class="bi bi-people"></i> Sec: ${user.seccion}</span>` : ''}
+                            </div>
+                        </div>
+                        <a href="Materiales_Clases/programa.html?curso=${s.codigo}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
+                            <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
+                        </a>
+                    </div>
+                `).join('');
             }
         }
 

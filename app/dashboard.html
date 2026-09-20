@@ -685,6 +685,19 @@
                         <div class="profile-data-row"><span class="profile-data-label">Becas Solicitadas / Otorgadas</span><span class="profile-data-value editable" id="p-becas" data-field="becas" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Beneficios Institucionales</span><span class="profile-data-value editable" id="p-beneficios" data-field="beneficios_institucionales" onclick="editarCampo(this)">-</span></div>
                     </div>
+
+                    <!-- 💾 Botón Guardar Todos los Datos -->
+                    <div class="dash-section text-center" style="background:linear-gradient(135deg, rgba(0,177,64,.12), rgba(212,168,67,.12));border-color:rgba(0,177,64,.35);">
+                        <div style="font-size:.78rem;font-weight:700;color:var(--blanco);margin-bottom:6px;">
+                            <i class="bi bi-cloud-check text-success me-1"></i> Sincronización Integral de Expediente
+                        </div>
+                        <div style="font-size:.65rem;color:rgba(255,255,255,.7);margin-bottom:14px;">
+                            Guarda y sincroniza todos tus datos personales, académicos, de contacto, salud y beneficios en la base de datos central.
+                        </div>
+                        <button type="button" class="dash-btn dash-btn-primary" id="btn-guardar-todo-perfil" onclick="guardarTodosLosDatosPerfil()" style="padding:10px 24px;font-size:.78rem;">
+                            <i class="bi bi-save2 me-1"></i> Guardar Todos los Datos
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1617,6 +1630,88 @@
                 }
             } catch(e) { 
                 showToast('Error de conexión con el servidor', 'error'); 
+            }
+        }
+
+        // Función para guardar todos los datos del perfil en bloque
+        async function guardarTodosLosDatosPerfil() {
+            const btn = document.getElementById('btn-guardar-todo-perfil');
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+            }
+
+            try {
+                const u = CenturiaAPI.getCurrentUser() || {};
+                const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+
+                // Obtener texto limpio de cada campo DOM
+                function valDe(id) {
+                    const el = document.getElementById(id);
+                    if (!el) return '';
+                    const t = el.textContent.trim();
+                    return ['-', 'No registrado', 'No asignado', 'No asignada'].includes(t) ? '' : t;
+                }
+
+                const datos = {
+                    cedula: ced,
+                    firstname: valDe('p-nombre') || u.firstname || u.nombre || '',
+                    lastname: valDe('p-apellido') || u.lastname || u.apellido || '',
+                    nombre: valDe('p-nombre') || u.firstname || u.nombre || '',
+                    apellido: valDe('p-apellido') || u.lastname || u.apellido || '',
+                    email: valDe('p-email') || u.email || '',
+                    telefono: valDe('p-telefono') || u.telefono || '',
+                    telefono_alternativo: valDe('p-tel-alt') || u.telefono_alternativo || '',
+                    telefono_fijo: valDe('p-tel-alt') || u.telefono_fijo || '',
+                    contacto_emergencia: valDe('p-contacto-emergencia') || u.contacto_emergencia || '',
+                    fecha_nacimiento: valDe('p-fecha-nacimiento') || u.fecha_nacimiento || '',
+                    lugar_nacimiento: valDe('p-lugar-nacimiento') || u.lugar_nacimiento || '',
+                    nacionalidad: valDe('p-nacionalidad') || u.nacionalidad || '',
+                    direccion_calle: valDe('p-direccion-calle') || u.direccion_calle || '',
+                    barrio: valDe('p-direccion-barrio') || u.barrio || '',
+                    ciudad: valDe('p-direccion-ciudad') || u.ciudad || '',
+                    departamento: valDe('p-direccion-departamento') || u.departamento || '',
+                    estado_civil: valDe('p-estado-civil') || u.estado_civil || '',
+                    grado: valDe('p-grado') || u.grado || '',
+                    carrera: valDe('p-carrera') || u.carrera || '',
+                    seccion: valDe('p-seccion') || u.seccion || '',
+                    estado: valDe('p-estado') || u.estado || 'ACTIVO',
+                    legajo_numero: valDe('p-legajo') || u.legajo_numero || '',
+                    fecha_inscripcion: valDe('p-fecha-inscripcion') || u.fecha_inscripcion || '',
+                    matricula: valDe('p-matricula') || u.matricula || '',
+                    estado_pago: valDe('p-estado-pago') || u.estado_pago || '',
+                    grupo_sanguineo: valDe('p-grupo-sanguineo') || u.grupo_sanguineo || '',
+                    alergias: valDe('p-alergias') || u.alergias || '',
+                    seguro_medico: valDe('p-seguro-medico') || u.seguro_medico || '',
+                    becas: valDe('p-becas') || u.becas || '',
+                    beneficios_institucionales: valDe('p-beneficios') || u.beneficios_institucionales || ''
+                };
+
+                // Guardar en Storage
+                Object.keys(datos).forEach(k => {
+                    if (datos[k]) localStorage.setItem('centuria_' + k, datos[k]);
+                });
+
+                const res = await CenturiaAPI.auth.updateProfile(datos);
+                if (res && res.ok) {
+                    showToast('¡Todos tus datos fueron guardados exitosamente!', 'success');
+                    const updatedUser = Object.assign({}, u, datos, (res.user || {}));
+                    sessionStorage.setItem('centuria_user', JSON.stringify(updatedUser));
+                    localStorage.setItem('centuria_user', JSON.stringify(updatedUser));
+                    renderUsuario(updatedUser, ced);
+                    generarQR(updatedUser, ced);
+                } else {
+                    showToast((res && res.error) || 'Se guardaron localmente. Hubo un detalle al sincronizar con la nube.', 'warning');
+                }
+            } catch (err) {
+                console.error('Error guardando perfil:', err);
+                showToast('Error de conexión al guardar los datos.', 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
             }
         }
 

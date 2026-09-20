@@ -532,9 +532,6 @@ function generarActa() {
     const fecha = new Date().toLocaleDateString('es-ES');
     let contenido = `
         <html><head><title>Acta - ${asigActual.nombre}</title>
-    <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js"></script>
-    <script>CenturiaSession.protect();</script>
         <style>body{font-family:Arial;padding:30px}h1{font-size:16px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #333;padding:6px 8px;font-size:12px;text-align:left}th{background:#007A33;color:white}</style>
         </head><body>
         <h1>INSTITUTO SUPERIOR CENTURIA</h1>

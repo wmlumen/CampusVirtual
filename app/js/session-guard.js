@@ -23,8 +23,28 @@
         }
     }
 
+    // Raíz de la app deducida del propio <script src=".../js/session-guard.js">.
+    // Este script se carga ANTES que api.js, así que no se puede depender de CENTURIA_CONFIG/appUrl:
+    // desde academic/ o admin/ el src es "../js/session-guard.js" y la raíz resulta "../".
+    const SCRIPT_ROOT = (function () {
+        try {
+            let src = document.currentScript && document.currentScript.getAttribute('src');
+            if (!src) {
+                const list = document.getElementsByTagName('script');
+                for (let i = 0; i < list.length; i++) {
+                    const s = list[i].getAttribute('src') || '';
+                    if (/(^|\/)js\/session-guard\.js/.test(s)) { src = s; break; }
+                }
+            }
+            const m = src && src.match(/^(.*?)js\/session-guard\.js/);
+            if (m) return new URL(m[1] || './', document.baseURI).href;
+        } catch (e) {}
+        return null;
+    })();
+
     function getAppRoot() {
         try {
+            if (SCRIPT_ROOT) return SCRIPT_ROOT;
             if (typeof appUrl === 'function') return appUrl('');
             if (window.CENTURIA_CONFIG && window.CENTURIA_CONFIG.appBasePath) {
                 return window.CENTURIA_CONFIG.appBasePath;
@@ -36,24 +56,32 @@
         }
     }
 
+    // Une la raíz de la app con una ruta relativa, siempre como URL absoluta resuelta.
+    function rootUrl(rel) {
+        try { return new URL(rel, new URL(getAppRoot(), document.baseURI)).href; }
+        catch (e) { return getAppRoot() + rel; }
+    }
+
+    // ¿La URL destino es la página actual (ignorando query/hash)? Evita bucles de redirección.
+    function isCurrentPage(url) {
+        try {
+            const u = new URL(url, document.baseURI);
+            return u.origin === location.origin && u.pathname === location.pathname;
+        } catch (e) { return false; }
+    }
+
     function getLoginUrl(reason) {
-        const root = getAppRoot();
-        const dest = (typeof appUrl === 'function') ? appUrl('index.html') : (root + 'index.html');
+        const dest = rootUrl('index.html');
         return reason ? (dest + (dest.includes('?') ? '&' : '?') + 'reason=' + encodeURIComponent(reason)) : dest;
     }
 
     function getRolePanelUrl(role) {
-        const root = getAppRoot();
         switch (role) {
-            case 'docente':
-                return (typeof appUrl === 'function') ? appUrl('docente.html') : (root + 'docente.html');
-            case 'academico':
-                return (typeof appUrl === 'function') ? appUrl('academic/index.html') : (root + 'academic/index.html');
-            case 'admin':
-                return (typeof appUrl === 'function') ? appUrl('admin/index.html') : (root + 'admin/index.html');
+            case 'docente':   return rootUrl('docente.html');
+            case 'academico': return rootUrl('academic/index.html');
+            case 'admin':     return rootUrl('admin/index.html');
             case 'alumno':
-            default:
-                return (typeof appUrl === 'function') ? appUrl('dashboard.html') : (root + 'dashboard.html');
+            default:          return rootUrl('dashboard.html');
         }
     }
 
@@ -120,7 +148,7 @@
         },
 
         logout: function (reason) {
-            if (typeof centuriaLogout === 'function') {
+            if (typeof centuriaLogout === 'function' && !isCurrentPage(rootUrl('index.html'))) {
                 centuriaLogout(false);
                 return;
             }
@@ -130,7 +158,9 @@
                 localStorage.removeItem('centuria_token');
                 localStorage.removeItem('centuria_user');
             } catch (e) {}
-            window.location.replace(getLoginUrl(reason));
+            const loginUrl = getLoginUrl(reason);
+            if (isCurrentPage(loginUrl)) return; // ya estamos en el login: no recargar en bucle
+            window.location.replace(loginUrl);
         },
 
         protect: function (options) {

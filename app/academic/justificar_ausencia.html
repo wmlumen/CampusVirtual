@@ -249,45 +249,120 @@
             color: rgba(255,255,255,.85);
         }
 
-        /* ── Upload Area ── */
+        /* ── Upload Area & Preview ── */
         .file-upload-box {
-            border: 2px dashed rgba(255,255,255,.2);
-            border-radius: 14px;
-            padding: 22px;
+            border: 2px dashed rgba(212,168,67,.4);
+            border-radius: 16px;
+            padding: 24px 20px;
             text-align: center;
             cursor: pointer;
             background: rgba(255,255,255,.02);
-            transition: .2s;
+            transition: all .25s ease;
             margin-bottom: 18px;
+            position: relative;
         }
-        .file-upload-box:hover {
-            border-color: var(--verde-medio);
-            background: rgba(0,177,64,.05);
+        .file-upload-box:hover, .file-upload-box.dragover {
+            border-color: #4ade80;
+            background: rgba(0,177,64,.08);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,177,64,.15);
         }
-        .file-upload-box i {
-            font-size: 2rem;
+        .file-upload-box i.upload-icon {
+            font-size: 2.2rem;
             color: var(--dorado-claro);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            display: inline-block;
+            transition: transform .2s ease;
+        }
+        .file-upload-box:hover i.upload-icon {
+            transform: scale(1.1);
+            color: #4ade80;
         }
         .file-upload-box p {
             margin: 0;
-            font-size: .74rem;
-            color: rgba(255,255,255,.7);
+            font-size: .8rem;
+            font-weight: 600;
+            color: rgba(255,255,255,.9);
         }
         .file-upload-box small {
-            font-size: .62rem;
-            color: rgba(255,255,255,.4);
+            font-size: .66rem;
+            color: rgba(255,255,255,.5);
         }
 
         .file-preview-box {
             display: none;
-            background: rgba(255,255,255,.05);
-            border: 1px solid rgba(255,255,255,.15);
-            border-radius: 12px;
-            padding: 10px 14px;
+            background: rgba(0,30,15,.45);
+            border: 1px solid rgba(74,222,128,.4);
+            box-shadow: 0 4px 18px rgba(0,0,0,.3);
+            border-radius: 14px;
+            padding: 14px 16px;
             margin-bottom: 18px;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeIn .3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-preview-header {
+            display: flex;
             align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .file-preview-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: .78rem;
+            min-width: 0;
+        }
+
+        .file-preview-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,.1);
+        }
+
+        .file-preview-thumb {
+            width: 100%;
+            max-height: 220px;
+            border-radius: 10px;
+            object-fit: contain;
+            background: rgba(0,0,0,.4);
+            border: 1px solid rgba(255,255,255,.1);
+            display: none;
+            margin-top: 4px;
+        }
+
+        .btn-remove-file {
+            background: rgba(239,83,80,.2);
+            border: 1px solid rgba(239,83,80,.4);
+            color: #fca5a5;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: .72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-remove-file:hover {
+            background: rgba(239,83,80,.4);
+            color: #fff;
+            border-color: #ef5350;
         }
 
         .btn-just-submit {
@@ -461,21 +536,28 @@
                 <div class="text-start">
                     <label class="just-label">Comprobante o Certificado (Opcional)</label>
                     <div class="file-upload-box" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-                        <i class="bi bi-cloud-arrow-up-fill"></i>
-                        <p>Haz clic o arrastra aquí tu certificado (PDF, JPG, PNG)</p>
-                        <small>Máximo 4MB</small>
+                        <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+                        <p>Haz clic o arrastra aquí tu comprobante</p>
+                        <small>Formatos admitidos: PDF, JPG, PNG, WEBP (Máx. 4MB)</small>
                     </div>
                     <input type="file" id="fileInput" accept=".pdf,image/*" style="display:none" onchange="handleFileSelect(event)">
                     
                     <div class="file-preview-box" id="filePreview">
-                        <div style="display:flex;align-items:center;gap:10px;font-size:.75rem">
-                            <i class="bi bi-file-earmark-check-fill text-success fs-5"></i>
-                            <div>
-                                <div id="fileName" style="font-weight:700">documento.pdf</div>
-                                <div id="fileSize" style="font-size:.6rem;color:rgba(255,255,255,.5)">120 KB</div>
+                        <div class="file-preview-header">
+                            <div class="file-preview-info">
+                                <div class="file-preview-icon-wrapper" id="fileIconWrapper">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4" id="fileIcon"></i>
+                                </div>
+                                <div style="overflow:hidden">
+                                    <div id="fileName" style="font-weight:700;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:320px">documento.pdf</div>
+                                    <div id="fileSize" style="font-size:.65rem;color:rgba(255,255,255,.6)">120 KB</div>
+                                </div>
                             </div>
+                            <button type="button" class="btn-remove-file" onclick="removeFile()">
+                                <i class="bi bi-trash3-fill"></i> Quitar
+                            </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()"><i class="bi bi-trash"></i></button>
+                        <img id="fileThumbPreview" class="file-preview-thumb" alt="Vista previa del comprobante">
                     </div>
                 </div>
 
@@ -541,6 +623,32 @@
             // Fecha por defecto: hoy
             document.getElementById('absenceDate').valueAsDate = new Date();
 
+            // Configurar Drag & Drop
+            const uploadArea = document.getElementById('uploadArea');
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadArea.classList.remove('dragover');
+                }, false);
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files && files.length > 0) {
+                    processFile(files[0]);
+                }
+            }, false);
+
             loadHistory(cedula);
         });
 
@@ -553,17 +661,44 @@
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
+            if (file) processFile(file);
+        }
+
+        function processFile(file) {
             if (!file) return;
 
             if (file.size > 4 * 1024 * 1024) {
                 alert('El archivo no debe exceder 4MB');
-                e.target.value = '';
+                document.getElementById('fileInput').value = '';
                 return;
             }
 
             selectedFile = file;
             document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+            const sizeInKb = (file.size / 1024).toFixed(1);
+            document.getElementById('fileSize').textContent = sizeInKb > 1024 ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : sizeInKb + ' KB';
+
+            const iconEl = document.getElementById('fileIcon');
+            const thumbEl = document.getElementById('fileThumbPreview');
+
+            if (file.type.startsWith('image/')) {
+                iconEl.className = 'bi bi-file-earmark-image-fill text-success fs-4';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    thumbEl.src = e.target.result;
+                    thumbEl.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                iconEl.className = 'bi bi-file-earmark-pdf-fill text-danger fs-4';
+                thumbEl.style.display = 'none';
+                thumbEl.src = '';
+            } else {
+                iconEl.className = 'bi bi-file-earmark-check-fill text-info fs-4';
+                thumbEl.style.display = 'none';
+                thumbEl.src = '';
+            }
+
             document.getElementById('filePreview').style.display = 'flex';
             document.getElementById('uploadArea').style.display = 'none';
         }
@@ -571,6 +706,9 @@
         function removeFile() {
             selectedFile = null;
             document.getElementById('fileInput').value = '';
+            const thumbEl = document.getElementById('fileThumbPreview');
+            thumbEl.style.display = 'none';
+            thumbEl.src = '';
             document.getElementById('filePreview').style.display = 'none';
             document.getElementById('uploadArea').style.display = 'block';
         }

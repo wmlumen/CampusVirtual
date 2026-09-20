@@ -683,15 +683,21 @@
             <!-- Controles y Leyenda -->
             <div class="controls-row">
                 <div class="filters-group">
+                    <select id="filter-grado" class="cal-select" onchange="filterEvents()">
+                        <option value="">Todos los Grados</option>
+                    </select>
+                    <select id="filter-career" class="cal-select" onchange="filterEvents()">
+                        <option value="">Todas las Carreras</option>
+                    </select>
+                    <select id="filter-seccion" class="cal-select" onchange="filterEvents()">
+                        <option value="">Todas las Secciones</option>
+                    </select>
                     <select id="filter-type" class="cal-select" onchange="filterEvents()">
                         <option value="">Todos los Eventos</option>
                         <option value="clase">Clases</option>
                         <option value="examen">Exámenes</option>
                         <option value="feriado">Feriados Nacionales</option>
                         <option value="actividad">Actividades Institucionales</option>
-                    </select>
-                    <select id="filter-career" class="cal-select" onchange="filterEvents()">
-                        <option value="">Todas las Carreras</option>
                     </select>
                 </div>
 
@@ -832,7 +838,9 @@
         let allEvents = [];
         let selectedDate = null;
         let userRole = 'alumno';
+        let userGrado = '';
         let userCarrera = '';
+        let userSeccion = '';
         let userHabilitados = []; // Cursos habilitados para el usuario
 
         const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -842,14 +850,16 @@
             const user = CenturiaAPI.getCurrentUser() || {};
             userRole = (user.role || user.rol || sessionStorage.getItem('rol') || 'alumno').toLowerCase();
             userId = user.username || user.cedula || '';
+            userGrado = user.grado || localStorage.getItem('centuria_grado') || '';
             userCarrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
+            userSeccion = user.seccion || localStorage.getItem('centuria_seccion') || '';
 
             if (['teacher','docente','admin','academico','administrador_plataforma'].includes(userRole)) {
                 document.getElementById('btn-create').style.display = 'flex';
             }
 
             await loadHabilitados(user);
-            await loadCareers();
+            await loadCatalogFilters();
             await loadEvents();
         });
 
@@ -872,7 +882,9 @@
                     {
                         codigo: 'ADE18',
                         nombre: 'TIC - Tecnología de la Información y Comunicación',
-                        carrera: userCarrera || 'ADMINISTRACIÓN DE LA GESTIÓN PÚBLICA'
+                        grado: userGrado || 'GRADO',
+                        carrera: userCarrera || 'ADMINISTRACIÓN DE LA GESTIÓN PÚBLICA',
+                        seccion: userSeccion || 'A'
                     }
                 ];
             }
@@ -883,31 +895,76 @@
             if (badgeEl && primaryCourse) {
                 badgeEl.textContent = (primaryCourse.nombre || 'TIC') + ' (' + (primaryCourse.codigo || 'ADE18') + ')';
             }
-            if (userCarrera) {
-                document.getElementById('cal-course-subtitle').textContent = 'Carrera: ' + userCarrera + ' • Sede Oficial';
+            let subInfo = [];
+            if (userGrado) subInfo.push(userGrado);
+            if (userCarrera) subInfo.push(userCarrera);
+            if (userSeccion && userSeccion !== '-') subInfo.push('Sec: ' + userSeccion);
+            if (subInfo.length > 0) {
+                document.getElementById('cal-course-subtitle').textContent = subInfo.join(' • ') + ' — Sede Oficial';
             }
         }
 
-        async function loadCareers() {
+        async function loadCatalogFilters() {
             try {
-                const sel = document.getElementById('filter-career');
-                const fSel = document.getElementById('f-career');
-                
-                sel.innerHTML = '<option value="">Todos mis cursos habilitados</option>';
-                fSel.innerHTML = '';
+                const selGrado = document.getElementById('filter-grado');
+                const selCareer = document.getElementById('filter-career');
+                const selSeccion = document.getElementById('filter-seccion');
+                const fSelCareer = document.getElementById('f-career');
 
-                userHabilitados.forEach(h => {
-                    const label = h.nombre ? h.nombre + ' (' + (h.codigo || '') + ')' : (h.codigo || h);
-                    const val = h.codigo || h.carrera || h.nombre || h;
-                    sel.innerHTML += '<option value="' + val + '">' + label + '</option>';
-                    fSel.innerHTML += '<option value="' + val + '">' + label + '</option>';
+                // 1. Cargar Grados
+                let grados = ['GRADO', 'ESPECIALIZACIÓN', 'MAESTRÍA', 'DOCTORADO'];
+                try {
+                    const dg = await CenturiaAPI.catalogos.getGrados();
+                    const gList = (dg.grados || dg.items || []).map(g => g.nombre || g);
+                    if (gList.length > 0) grados = [...new Set(grados.concat(gList))];
+                } catch(e) {}
+                
+                selGrado.innerHTML = '<option value="">Todos los Grados</option>';
+                grados.forEach(g => {
+                    const sel = (userGrado && g.toUpperCase() === userGrado.toUpperCase()) ? 'selected' : '';
+                    selGrado.innerHTML += `<option value="${g}" ${sel}>${g}</option>`;
                 });
 
-                if (userCarrera && !userHabilitados.some(h => h.carrera === userCarrera)) {
-                    sel.innerHTML += '<option value="' + userCarrera + '">' + userCarrera + '</option>';
-                    fSel.innerHTML += '<option value="' + userCarrera + '">' + userCarrera + '</option>';
-                }
-            } catch(e) {}
+                // 2. Cargar Carreras / Cursos habilitados
+                selCareer.innerHTML = '<option value="">Todas las Carreras</option>';
+                if (fSelCareer) fSelCareer.innerHTML = '<option value="">Todas las Carreras</option>';
+
+                const carrerasSet = new Set();
+                userHabilitados.forEach(h => {
+                    const nom = h.carrera || h.nombre || '';
+                    if (nom) carrerasSet.add(nom);
+                });
+                if (userCarrera) carrerasSet.add(userCarrera);
+
+                try {
+                    const dc = await CenturiaAPI.catalogos.getCarreras();
+                    (dc.carreras || dc.items || []).forEach(c => carrerasSet.add(c.nombre || c));
+                } catch(e) {}
+
+                carrerasSet.forEach(c => {
+                    const sel = (userCarrera && c.toUpperCase() === userCarrera.toUpperCase()) ? 'selected' : '';
+                    selCareer.innerHTML += `<option value="${c}" ${sel}>${c}</option>`;
+                    if (fSelCareer) fSelCareer.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+
+                // 3. Cargar Secciones
+                let secciones = ['A', 'B', 'C', 'D', 'ÚNICA', 'S026'];
+                if (userSeccion && !secciones.includes(userSeccion)) secciones.push(userSeccion);
+                try {
+                    const ds = await CenturiaAPI.catalogos.getSecciones();
+                    const sList = (ds.secciones || ds.items || []).map(s => s.codigo || s.nombre || s);
+                    if (sList.length > 0) secciones = [...new Set(secciones.concat(sList))];
+                } catch(e) {}
+
+                selSeccion.innerHTML = '<option value="">Todas las Secciones</option>';
+                secciones.forEach(s => {
+                    const sel = (userSeccion && s.toUpperCase() === userSeccion.toUpperCase()) ? 'selected' : '';
+                    selSeccion.innerHTML += `<option value="${s}" ${sel}>Sección ${s}</option>`;
+                });
+
+            } catch(e) {
+                console.error('Error cargando catálogos de filtros:', e);
+            }
         }
 
         async function loadEvents() {
@@ -945,7 +1002,9 @@
 
         function getFilteredEvents() {
             const type = document.getElementById('filter-type').value;
-            const careerFilter = document.getElementById('filter-career').value;
+            const gradoFilter = (document.getElementById('filter-grado')?.value || '').toLowerCase().trim();
+            const careerFilter = (document.getElementById('filter-career')?.value || '').toLowerCase().trim();
+            const seccionFilter = (document.getElementById('filter-seccion')?.value || '').toLowerCase().trim();
 
             // Conjunto de identificadores válidos para los cursos habilitados
             const allowedCodes = userHabilitados.map(h => (h.codigo || '').toLowerCase()).filter(Boolean);
@@ -955,11 +1014,13 @@
 
             return allEvents.filter(e => {
                 const eType = (e.event_type || e.tipo || '').toLowerCase();
+                const eGrado = (e.grado || '').toLowerCase();
                 const eCareer = (e.career || e.carrera || '').toLowerCase();
+                const eSeccion = (e.seccion || e.section || '').toLowerCase();
                 const eTitle = (e.title || e.titulo || '').toLowerCase();
                 const eSubject = (e.asignatura || e.subject || e.codigo || '').toLowerCase();
 
-                // Feriados nacionales siempre se muestran
+                // Feriados nacionales siempre se muestran a menos que se filtre explícitamente por otro tipo de evento
                 if (eType === 'feriado') {
                     if (type && type !== 'feriado') return false;
                     return true;
@@ -968,26 +1029,36 @@
                 // Filtrar por tipo seleccionado
                 if (type && eType !== type) return false;
 
-                // Si es administrador/académico, puede ver todo
+                // Filtro por Grado
+                if (gradoFilter && eGrado && !eGrado.includes(gradoFilter) && !gradoFilter.includes(eGrado)) {
+                    return false;
+                }
+
+                // Filtro por Carrera
+                if (careerFilter) {
+                    if (!eCareer.includes(careerFilter) && !careerFilter.includes(eCareer) && !eSubject.includes(careerFilter) && !eTitle.includes(careerFilter)) {
+                        return false;
+                    }
+                }
+
+                // Filtro por Sección
+                if (seccionFilter && eSeccion && !eSeccion.includes(seccionFilter) && !seccionFilter.includes(eSeccion)) {
+                    return false;
+                }
+
+                // Si es administrador/académico, pasa el resto
                 if (['admin','academico','administrador_plataforma'].includes(userRole)) {
-                    if (careerFilter && eCareer !== careerFilter.toLowerCase() && eSubject !== careerFilter.toLowerCase()) return false;
                     return true;
                 }
 
                 // Para alumno/docente: sólo mostrar si pertenece al curso habilitado o es general institucional
-                const isGeneral = !eCareer && !eSubject;
+                const isGeneral = !eCareer && !eSubject && !eGrado;
                 const matchesCareer = allowedCareers.some(c => eCareer.includes(c) || c.includes(eCareer));
                 const matchesSubject = allowedCodes.some(c => eSubject.includes(c) || eTitle.includes(c)) ||
                                        allowedNames.some(n => eSubject.includes(n) || eTitle.includes(n));
 
                 if (!isGeneral && !matchesCareer && !matchesSubject) {
                     return false;
-                }
-
-                // Filtro select manual
-                if (careerFilter) {
-                    const cf = careerFilter.toLowerCase();
-                    if (!eCareer.includes(cf) && !eSubject.includes(cf) && !eTitle.includes(cf)) return false;
                 }
 
                 return true;

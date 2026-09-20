@@ -317,6 +317,14 @@
             color: #fff; padding: 4px 8px; font-size: .72rem; outline: none; font-family: 'Montserrat', sans-serif;
             text-align: right;
         }
+        .profile-data-select {
+            background: #060f09; border: 1px solid var(--dorado); border-radius: 6px;
+            color: #fff; padding: 4px 8px; font-size: .72rem; outline: none; font-family: 'Montserrat', sans-serif;
+            max-width: 100%; cursor: pointer;
+        }
+        .profile-data-select:focus { box-shadow: 0 0 0 3px rgba(212,168,67,.28); }
+        .profile-data-select option { background: #0d2c16; color: #fff; }
+        .profile-data-select option:disabled { color: rgba(255,255,255,.45); }
 
         /* ── Events List ── */
         .event-item {
@@ -1180,11 +1188,87 @@
         }
 
         // === EDICIÓN DE CAMPOS ===
+        // Grado, Carrera y Sección NO se escriben a mano: se eligen de la base de datos (planilla: Grados, Carreras, Secciones).
+        const CAMPOS_CATALOGO = ['grado', 'carrera', 'seccion'];
+        const CACHE_CATALOGO = { grado: 'centuria_cache_grados', carrera: 'centuria_cache_carreras', seccion: 'centuria_cache_secciones' };
+
+        async function opcionesCatalogo(field, user) {
+            let lista = [];
+            try {
+                if (field === 'grado') {
+                    const d = await CenturiaAPI.catalogos.getGrados();
+                    lista = d.grados || d.items || [];
+                } else if (field === 'carrera') {
+                    const d = await CenturiaAPI.catalogos.getCarreras(user.grado || '');
+                    lista = d.carreras || d.items || [];
+                } else {
+                    const d = await CenturiaAPI.catalogos.getSecciones();
+                    lista = d.secciones || d.items || [];
+                }
+                if (!lista.length) throw new Error('catálogo vacío');
+                try { localStorage.setItem(CACHE_CATALOGO[field], JSON.stringify(lista)); } catch (x) {}
+            } catch (e) {
+                // Sin conexión: última lista descargada de la base de datos (nunca texto libre)
+                try { lista = JSON.parse(localStorage.getItem(CACHE_CATALOGO[field]) || '[]'); } catch (x) { lista = []; }
+            }
+            if (field === 'carrera') {
+                const g = normTxt(user.grado);
+                const delGrado = lista.filter(x => !x.grado || normTxt(x.grado) === g);
+                if (delGrado.length) lista = delGrado;
+            }
+            if (field === 'seccion') {
+                const c = normTxt(user.carrera);
+                const dela = lista.filter(x => !x.carrera || normTxt(x.carrera) === c);
+                if (dela.length) lista = dela;
+            }
+            const vistos = new Set();
+            const out = [];
+            lista.forEach(x => {
+                const valor = String((field === 'seccion' ? (x.codigo || x.nombre) : x.nombre) || '').trim();
+                if (valor && !vistos.has(normTxt(valor))) { vistos.add(normTxt(valor)); out.push(valor); }
+            });
+            return out;
+        }
+
+        async function editarCampoCatalogo(el, field) {
+            const userAct = CenturiaAPI.getCurrentUser() || {};
+            if (field === 'carrera' && !String(userAct.grado || '').trim()) {
+                showToast('Primero elige tu grado para ver las carreras.', 'error');
+                return;
+            }
+            editando = el;
+            const actual = el.textContent.trim();
+            const actualVacio = ['-', 'No registrado', 'No asignado', 'No asignada'].includes(actual);
+            el.textContent = 'Cargando…';
+            const user = CenturiaAPI.getCurrentUser() || {};
+            const opciones = await opcionesCatalogo(field, user);
+            if (editando !== el) return;
+            if (!opciones.length) {
+                el.textContent = actualVacio ? '-' : actual;
+                editando = null;
+                showToast('No se pudo cargar la lista desde la base de datos. Intenta de nuevo.', 'error');
+                return;
+            }
+            const etiqueta = { grado: 'grado', carrera: 'carrera', seccion: 'sección' }[field];
+            const enLista = opciones.some(o => normTxt(o) === normTxt(actual));
+            let html = `<select class="profile-data-select" data-original="${escHtml(actualVacio ? '' : actual)}" data-texto="${escHtml(actual)}" aria-label="Elegir ${etiqueta}">`;
+            if (!enLista) html += `<option value="" selected disabled>${actualVacio ? 'Elige tu ' + etiqueta + '…' : escHtml(actual) + ' (no está en la base de datos)'}</option>`;
+            html += opciones.map(o => `<option value="${escHtml(o)}"${normTxt(o) === normTxt(actual) ? ' selected' : ''}>${escHtml(o)}</option>`).join('');
+            html += '</select>';
+            el.innerHTML = html;
+            const sel = el.querySelector('select');
+            sel.addEventListener('change', () => { if (sel.value && sel.value !== sel.dataset.original) guardarCampo(sel, field); else cancelarEdicion(sel, field); });
+            sel.addEventListener('blur', () => { if (editando === el) cancelarEdicion(sel, field); });
+            sel.addEventListener('keydown', e => { if (e.key === 'Escape') cancelarEdicion(sel, field); });
+            sel.focus();
+        }
+
         function editarCampo(el) {
             if (editando) return;
+            const field = el.dataset.field;
+            if (CAMPOS_CATALOGO.includes(field)) { editarCampoCatalogo(el, field); return; }
             editando = el;
             const valor = el.textContent.trim();
-            const field = el.dataset.field;
             el.innerHTML = `<input class="profile-data-input" type="${field==='email'?'email':'text'}" value="${valor==='No registrado'?'':valor}" onblur="guardarCampo(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this, '${field}')}">`;
             const inp = el.querySelector('input');
             inp.focus(); inp.select();
@@ -1192,7 +1276,9 @@
 
         function cancelarEdicion(input, field) {
             const el = input.parentElement;
-            el.textContent = input.defaultValue || '-';
+            if (!el) { editando = null; return; }
+            const original = input.tagName === 'SELECT' ? (input.dataset.texto || input.dataset.original) : input.defaultValue;
+            el.textContent = original || '-';
             editando = null;
         }
 
@@ -1226,12 +1312,24 @@
                     const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
                     renderUsuario(u, ced);
                     generarQR(u, ced);
+                    if (field === 'grado') avisarCarreraDelGrado(u);
                 } else { 
                     showToast((res && res.error) || 'Error al guardar cambios', 'error'); 
                 }
             } catch(e) { 
                 showToast('Error de conexión con el servidor', 'error'); 
             }
+        }
+
+        // Al cambiar el grado, avisa si la carrera actual no corresponde a ese grado en la base de datos.
+        async function avisarCarreraDelGrado(u) {
+            try {
+                const d = await CenturiaAPI.catalogos.getCarreras(u.grado || '');
+                const del = (d.carreras || d.items || []).filter(x => !x.grado || normTxt(x.grado) === normTxt(u.grado));
+                if (del.length && u.carrera && !del.some(x => normTxt(x.nombre) === normTxt(u.carrera))) {
+                    showToast('Cambiaste de grado: elige ahora la carrera que corresponde a este grado.', 'error');
+                }
+            } catch (e) {}
         }
 
         // === CONTRASEÑA ===

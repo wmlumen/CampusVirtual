@@ -383,11 +383,33 @@
                     <input type="text" id="searchInput" placeholder="Nombre o cédula...">
                 </div>
                 <div class="filter-group">
+                    <label>Grado</label>
+                    <select id="filterGrado">
+                        <option value="">Todos los Grados</option>
+                        <option value="GRADO">Grado</option>
+                        <option value="ESPECIALIZACIÓN">Especialización</option>
+                        <option value="MAESTRÍA">Maestría</option>
+                        <option value="DOCTORADO">Doctorado</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label>Carrera</label>
                     <select id="filterCareer">
-                        <option value="">Todas</option>
+                        <option value="">Todas las Carreras</option>
+                        <option value="ADMINISTRACIÓN DE LA GESTIÓN PÚBLICA">Administración de la Gestión Pública</option>
                         <option value="Administración de Empresas">Administración de Empresas</option>
                         <option value="Administración y Gestión">Administración y Gestión</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sección</label>
+                    <select id="filterSeccion">
+                        <option value="">Todas las Secciones</option>
+                        <option value="A">Sección A</option>
+                        <option value="B">Sección B</option>
+                        <option value="C">Sección C</option>
+                        <option value="D">Sección D</option>
+                        <option value="S026">Sección S026</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -484,6 +506,7 @@
 
                 // Calcular estadísticas y renderizar
                 filteredStudents = [...allStudents];
+                populateFilterOptions();
                 updateKPIs();
                 renderTable();
 
@@ -617,11 +640,43 @@
         }
 
         // ═══════════════════════════════════════════════════════
+        // POBLAR FILTROS DINÁMICAMENTE
+        // ═══════════════════════════════════════════════════════
+        function populateFilterOptions() {
+            const grados = [...new Set(allStudents.map(s => s.grado).filter(Boolean))].sort();
+            const carreras = [...new Set(allStudents.map(s => s.carrera).filter(Boolean))].sort();
+            const secciones = [...new Set(allStudents.map(s => s.seccion).filter(Boolean))].sort();
+
+            const gradoSelect = document.getElementById('filterGrado');
+            if (gradoSelect) {
+                const currentVal = gradoSelect.value;
+                gradoSelect.innerHTML = '<option value="">Todos los grados</option>' + grados.map(g => `<option value="${g}">${g}</option>`).join('');
+                gradoSelect.value = currentVal;
+            }
+
+            const careerSelect = document.getElementById('filterCareer');
+            if (careerSelect) {
+                const currentVal = careerSelect.value;
+                careerSelect.innerHTML = '<option value="">Todas las carreras</option>' + carreras.map(c => `<option value="${c}">${c}</option>`).join('');
+                careerSelect.value = currentVal;
+            }
+
+            const seccionSelect = document.getElementById('filterSeccion');
+            if (seccionSelect) {
+                const currentVal = seccionSelect.value;
+                seccionSelect.innerHTML = '<option value="">Todas las secciones</option>' + secciones.map(s => `<option value="${s}">${s}</option>`).join('');
+                seccionSelect.value = currentVal;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
         // FILTROS
         // ═══════════════════════════════════════════════════════
         function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const careerFilter = document.getElementById('filterCareer').value;
+            const searchTerm = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            const gradoFilter = (document.getElementById('filterGrado')?.value || '').toLowerCase().trim();
+            const careerFilter = (document.getElementById('filterCareer')?.value || '').toLowerCase().trim();
+            const seccionFilter = (document.getElementById('filterSeccion')?.value || '').toLowerCase().trim();
             const statusFilter = document.getElementById('filterStatus').value;
             
             filteredStudents = allStudents.filter(student => {

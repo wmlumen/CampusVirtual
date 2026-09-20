@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
-        :root { --verde:#16813D; --verde-d:#0d2c16; --dorado:#d4a843; --azul:#2563EB; --rosa:#D94172; --naranja:#D97706; --txt:#ffffff; --txt2:#c8e6d0; --bg:#0d2c16; --card:#fff; --bdr:#e2e8f0; }
+        :root { --verde:#16813D; --verde-d:#0d2c16; --dorado:#d4a843; --azul:#2563EB; --rosa:#D94172; --naranja:#D97706; --txt:#1e293b; --txt2:#64748b; --bg:#f1f5f9; --card:#fff; --bdr:#e2e8f0; }
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
         .wrap{max-width:1200px;margin:0 auto;padding:12px 16px 50px}
@@ -141,6 +141,24 @@
 
     </div>
 
+    <!-- HABILITACIÓN DE EXÁMENES: fecha/hora de inicio y cierre, intentos y solicitudes por factura -->
+    <div class="sec" id="sec-exam-hab" style="display:none">
+        <div class="sec-title"><i class="bi bi-calendar-check"></i> Habilitar Exámenes: fecha, hora e intentos</div>
+        <p style="font-size:.7rem;color:#64748b;margin-bottom:12px">
+            <i class="bi bi-info-circle"></i> Definí cuándo se puede rendir cada examen y cuántos intentos tiene cada alumno. El alumno carga su N° de factura y recibe por mail el enlace con su clave:
+            si la factura figura como pagada se envía automáticamente; si no, la revisás vos con sus 4 últimos pagos.
+        </p>
+        <div id="hab-list"></div>
+    </div>
+
+    <style>
+        .hab-chip{display:inline-block;font-size:.55rem;font-weight:600;border-radius:5px;padding:2px 6px;margin:1px 2px 1px 0;white-space:nowrap}
+        .hab-chip.pagado{background:#D1FAE5;color:#065F46}.hab-chip.pendiente{background:#FEF3C7;color:#92400E}
+        .hab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px}
+        .hab-grid label{font-size:.55rem;font-weight:700;text-transform:uppercase;color:var(--txt2);display:block;margin-bottom:2px}
+        .hab-grid input{width:100%;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;font-family:'Montserrat'}
+    </style>
+
     <!-- Stats de la asignatura seleccionada -->
     <div class="stats" id="statsRow">
         <div class="stat"><div class="stat-val" style="color:var(--azul)" id="st-alumnos">0</div><div class="stat-lbl">Alumnos</div></div>
@@ -240,6 +258,7 @@ async function cargarMisAsignaturas(cedula) {
         const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo'));
 
         misAsignaturas = docenteAsig;
+        misAsignaturas.forEach((a, i) => { a._i = i; });
 
         if (docenteAsig.length === 0) {
             tabsEl.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p><strong>Sin asignaturas asignadas</strong></p><p style="font-size:.55rem;color:#94a3b8;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';
@@ -249,15 +268,15 @@ async function cargarMisAsignaturas(cedula) {
 
         // Renderizar tabs
         tabsEl.innerHTML = docenteAsig.map((s, i) => `
-            <div class="asig-tab ${i===0?'active':''}" onclick="seleccionarAsig('${s.codigo}', this)" data-cod="${s.codigo}">
+            <div class="asig-tab ${i===0?'active':''}" onclick="seleccionarAsig('${s.codigo}', this, ${i})" data-cod="${s.codigo}">
                 <i class="bi ${s.icono||'bi-book'}"></i>
-                ${s.nombre||s.codigo}
-                <span class="count" id="count-${s.codigo}">—</span>
+                ${s.nombre||s.codigo}${s.seccion ? ' · ' + s.seccion : ''}
+                <span class="count" id="count-${i}">—</span>
             </div>
         `).join('');
 
         // Seleccionar la primera
-        seleccionarAsig(docenteAsig[0].codigo, tabsEl.querySelector('.asig-tab'));
+        seleccionarAsig(docenteAsig[0].codigo, tabsEl.querySelector('.asig-tab'), 0);
 
     } catch(e) {
         console.error('Error:', e);
@@ -266,17 +285,18 @@ async function cargarMisAsignaturas(cedula) {
 }
 
 // ═══ SELECCIONAR ASIGNATURA ═══
-async function seleccionarAsig(codigo, tabEl) {
+async function seleccionarAsig(codigo, tabEl, idx) {
     // Activar tab
     document.querySelectorAll('.asig-tab').forEach(t => t.classList.remove('active'));
     if (tabEl) tabEl.classList.add('active');
 
-    asigActual = misAsignaturas.find(s => s.codigo === codigo);
+    asigActual = (idx != null && misAsignaturas[idx]) || misAsignaturas.find(s => s.codigo === codigo);
     if (!asigActual) return;
 
     document.getElementById('sec-title-text').textContent = `Alumnos — ${asigActual.nombre || asigActual.codigo}`;
     document.getElementById('sec-exam-codes').style.display = 'block';
     await cargarCodigosExamenes(codigo);
+    await cargarHabilitacion(codigo);
     document.getElementById('statsRow').style.display = 'grid';
     document.getElementById('sumRow').style.display = 'grid';
 
@@ -290,7 +310,7 @@ async function cargarDatosAsignatura(codigo) {
 
     // Alcance de la asignación: el sistema estira los nombres de esa carrera + sección
     let carA = (asigActual && (asigActual.carrera_asignada || asigActual.carrera)) || '';
-    let secA = (asigActual && asigActual.seccion_asignada) || '';
+    let secA = (asigActual && (asigActual.seccion_asignada || asigActual.seccion)) || '';
     try {
         // Cargar todos los usuarios
         const dUsers = await CenturiaAPI.usuarios.list();
@@ -417,7 +437,7 @@ function renderTabla() {
     tbody.innerHTML = html;
 
     // Actualizar contadores en tabs
-    const countEl = document.getElementById('count-' + asigActual.codigo);
+    const countEl = document.getElementById('count-' + (asigActual._i != null ? asigActual._i : asigActual.codigo));
     if (countEl) countEl.textContent = alumnosData.length;
 
     // Actualizar stats
@@ -726,6 +746,143 @@ function resetCodigoExamen(examId) {
     inpEl.focus();
 }
 
+
+// ═══ HABILITACIÓN DE EXÁMENES: ventana horaria, intentos y solicitudes por factura ═══
+function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function cedulaDocente() {
+    const u = CenturiaAPI.getCurrentUser();
+    return (u && (u.cedula || u.username)) || sessionStorage.getItem('current_cedula') || '';
+}
+function fmtGs(n) { return 'Gs. ' + Number(n || 0).toLocaleString('es-PY'); }
+function fmtVentana(c) {
+    const f = (d, h) => { const p = String(d || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + ' ' + h : '—'; };
+    return f(c.fecha_inicio, c.hora_inicio) + ' → ' + f(c.fecha_cierre, c.hora_cierre);
+}
+let habDatos = { configs: [], solicitudes: [], pagos: {} };
+
+async function cargarHabilitacion(codigoAsignatura) {
+    const list = document.getElementById('hab-list');
+    const sec = document.getElementById('sec-exam-hab');
+    if (!codigoAsignatura) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    const abiertos = Array.from(list.querySelectorAll('.accordion-header.active')).map(h => h.parentElement.dataset.hab);
+    if (!list.children.length) list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
+    try {
+        const [rc, rs] = await Promise.all([
+            CenturiaAPI.exams.getExamConfigs(codigoAsignatura),
+            CenturiaAPI.exams.getExamRequests(codigoAsignatura)
+        ]);
+        if (rc && rc.ok === false) throw new Error(rc.error || 'No se pudo leer la configuración');
+        habDatos = { configs: (rc && rc.configs) || [], solicitudes: (rs && rs.solicitudes) || [], pagos: (rs && rs.pagos) || {} };
+    } catch (e) {
+        list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#dc2626">No se pudo cargar la habilitación de exámenes: ' + escHtml(e.message) + '</div>';
+        return;
+    }
+    list.innerHTML = '';
+    for (const [examId, examNombre] of Object.entries(examesMapa)) {
+        const cfg = habDatos.configs.find(c => c.examen_id === examId) || null;
+        const sols = habDatos.solicitudes.filter(s => s.examen_id === examId);
+        const porRevisar = sols.filter(s => s.estado === 'solicitado').length;
+        const item = document.createElement('div');
+        item.className = 'accordion-item';
+        item.dataset.hab = examId;
+        const estadoTxt = cfg && cfg.habilitado ? '✓ ' + fmtVentana(cfg) + ' · ' + cfg.intentos + (cfg.intentos === 1 ? ' intento' : ' intentos') : 'Sin habilitar';
+        item.innerHTML = `
+            <div class="accordion-header${abiertos.includes(examId) ? ' active' : ''}" onclick="toggleAccordion(this)">
+                <div>
+                    <div style="font-size:.75rem;font-weight:700;color:inherit">${escHtml(examNombre)}</div>
+                    <div style="font-size:.6rem;opacity:.75;margin-top:2px">${sols.length} solicitud(es)${porRevisar ? ' · <strong>' + porRevisar + ' por revisar</strong>' : ''}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:.62rem;font-weight:600;background:${cfg && cfg.habilitado ? '#D1FAE5' : '#F1F5F9'};color:${cfg && cfg.habilitado ? '#065F46' : '#64748b'};padding:3px 10px;border-radius:6px">${escHtml(estadoTxt)}</span>
+                    <span class="accordion-toggle" style="color:#94a3b8">▼</span>
+                </div>
+            </div>
+            <div class="accordion-body${abiertos.includes(examId) ? ' active' : ''}">
+                <div class="hab-grid">
+                    <div><label>Fecha de inicio</label><input type="date" data-f="fecha_inicio" value="${escHtml(cfg ? cfg.fecha_inicio : '')}"></div>
+                    <div><label>Hora de inicio</label><input type="time" data-f="hora_inicio" value="${escHtml(cfg ? cfg.hora_inicio : '')}"></div>
+                    <div><label>Fecha de cierre</label><input type="date" data-f="fecha_cierre" value="${escHtml(cfg ? cfg.fecha_cierre : '')}"></div>
+                    <div><label>Hora de cierre</label><input type="time" data-f="hora_cierre" value="${escHtml(cfg ? cfg.hora_cierre : '')}"></div>
+                    <div><label>Intentos</label><input type="number" data-f="intentos" min="1" max="99" value="${escHtml(cfg ? cfg.intentos : 1)}"></div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                    <button class="btn btn-p" onclick="guardarConfigExamen('${examId}', true)"><i class="bi bi-check2-circle"></i> Guardar y habilitar</button>
+                    ${cfg && cfg.habilitado ? `<button class="btn btn-r" onclick="guardarConfigExamen('${examId}', false)"><i class="bi bi-slash-circle"></i> Deshabilitar</button>` : ''}
+                </div>
+                <div class="msg-hab" style="font-size:.68rem;min-height:14px;margin-bottom:8px"></div>
+                ${renderSolicitudes(sols)}
+            </div>`;
+        list.appendChild(item);
+    }
+}
+
+function renderSolicitudes(sols) {
+    if (!sols.length) return '<div style="text-align:center;padding:12px;color:#94a3b8;font-size:.68rem">Ningún alumno cargó su factura para este examen todavía.</div>';
+    const factBadge = v => v === 'Sí' ? '<span class="hab-chip pagado">✓ pagada</span>' : v === 'Pendiente' ? '<span class="hab-chip pendiente">pago pendiente</span>' : '<span class="hab-chip" style="background:#FEE2E2;color:#991B1B">no figura</span>';
+    const estBadge = e => e === 'habilitado' ? '<span class="est est-ap">Habilitado</span>' : e === 'rechazado' ? '<span class="est est-re">Rechazado</span>' : '<span class="est est-pen">Por revisar</span>';
+    const rows = sols.map(s => {
+        const pg = (habDatos.pagos[s.cedula] || {}).pagos || [];
+        const chips = pg.length ? pg.map(p => `<span class="hab-chip ${p.estado === 'pagado' ? 'pagado' : 'pendiente'}" title="${escHtml(p.concepto)} · Factura ${escHtml(p.factura || 's/f')} · ${escHtml(p.fecha)}">${escHtml(p.factura || 's/f')} · ${fmtGs(p.monto)} · ${escHtml(p.fecha)} · ${escHtml(p.estado)}</span>`).join('<br>') : '<span style="color:#94a3b8">Sin pagos registrados</span>';
+        const acciones = s.estado === 'habilitado'
+            ? `<button class="btn btn-s" style="padding:3px 8px" onclick="resolverSolicitud('${s.examen_id}','${s.cedula}','habilitar')" title="Genera una clave nueva y la reenvía por mail"><i class="bi bi-envelope"></i> Reenviar</button>
+               <button class="btn btn-r" style="padding:3px 8px" title="Rechazar" aria-label="Rechazar" onclick="resolverSolicitud('${s.examen_id}','${s.cedula}','rechazar')"><i class="bi bi-x-lg"></i></button>`
+            : `<button class="btn btn-g" style="padding:3px 8px" onclick="resolverSolicitud('${s.examen_id}','${s.cedula}','habilitar')"><i class="bi bi-envelope-check"></i> Habilitar y enviar</button>
+               ${s.estado !== 'rechazado' ? `<button class="btn btn-r" style="padding:3px 8px" title="Rechazar" aria-label="Rechazar" onclick="resolverSolicitud('${s.examen_id}','${s.cedula}','rechazar')"><i class="bi bi-x-lg"></i></button>` : ''}`;
+        return `<tr>
+            <td><strong>${escHtml(s.nombre)}</strong><br><span style="color:var(--txt2)">${escHtml(s.cedula)}</span></td>
+            <td>${escHtml(s.factura)}<br>${factBadge(s.factura_verificada)}</td>
+            <td>${chips}</td>
+            <td style="text-align:center">${estBadge(s.estado)}<br><span style="font-size:.55rem;color:var(--txt2)">${s.intentos_usados} intento(s) usado(s)</span></td>
+            <td style="text-align:center;white-space:nowrap">${acciones}</td>
+        </tr>`;
+    }).join('');
+    return `<div style="overflow-x:auto"><table class="tbl">
+        <thead><tr><th>Alumno</th><th>Factura cargada</th><th>Últimos 4 pagos</th><th style="text-align:center">Estado</th><th style="text-align:center">Acción</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+}
+
+async function guardarConfigExamen(examId, habilitado) {
+    const item = document.querySelector(`.accordion-item[data-hab="${examId}"]`);
+    const msg = item.querySelector('.msg-hab');
+    const v = f => (item.querySelector(`[data-f="${f}"]`) || {}).value || '';
+    msg.style.color = '#64748b'; msg.textContent = 'Guardando...';
+    try {
+        const r = await CenturiaAPI.exams.saveExamConfig({
+            docente_cedula: cedulaDocente(), examen_id: examId, asignatura: asigActual.codigo, habilitado,
+            fecha_inicio: v('fecha_inicio'), hora_inicio: v('hora_inicio'), fecha_cierre: v('fecha_cierre'), hora_cierre: v('hora_cierre'), intentos: v('intentos')
+        });
+        if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo guardar');
+        await cargarHabilitacion(asigActual.codigo);
+        const m2 = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
+        if (m2) { m2.style.color = '#065F46'; m2.textContent = '✓ ' + r.mensaje; }
+    } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
+}
+
+async function resolverSolicitud(examId, cedula, decision) {
+    const s = habDatos.solicitudes.find(x => x.examen_id === examId && x.cedula === cedula);
+    if (!s) return;
+    const pg = (habDatos.pagos[cedula] || {});
+    let obs = '';
+    if (decision === 'habilitar') {
+        const aviso = pg.pendientes ? `\n\nOJO: tiene ${pg.pendientes} pago(s) pendiente(s) entre sus últimos ${pg.total}.` : '';
+        if (!confirm(`¿Habilitar a ${s.nombre} y enviarle el enlace con la clave a su mail?${aviso}`)) return;
+        if (pg.pendientes || s.factura_verificada !== 'Sí') obs = prompt('Observación para el registro (opcional):', '') || '';
+    } else {
+        obs = prompt(`Motivo del rechazo para ${s.nombre} (opcional):`, '');
+        if (obs === null) return;
+    }
+    const msg = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
+    try {
+        const r = await CenturiaAPI.exams.resolveExamRequest({ docente_cedula: cedulaDocente(), cedula, examen_id: examId, asignatura: s.asignatura, decision, observacion: obs });
+        if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo completar la acción');
+        await cargarHabilitacion(asigActual.codigo);
+        const m2 = document.querySelector(`.accordion-item[data-hab="${examId}"] .msg-hab`);
+        if (m2) { m2.style.color = '#065F46'; m2.textContent = '✓ ' + r.mensaje; }
+    } catch (e) { if (msg) { msg.style.color = '#dc2626'; msg.textContent = e.message; } else alert(e.message); }
+}
 
 // ═══ INIT ═══
 document.addEventListener('DOMContentLoaded', cargarPanel);

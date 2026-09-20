@@ -47,8 +47,9 @@
         switch (role) {
             case 'docente':
                 return (typeof appUrl === 'function') ? appUrl('docente.html') : (root + 'docente.html');
-            case 'admin':
             case 'academico':
+                return (typeof appUrl === 'function') ? appUrl('academic/index.html') : (root + 'academic/index.html');
+            case 'admin':
                 return (typeof appUrl === 'function') ? appUrl('admin/index.html') : (root + 'admin/index.html');
             case 'alumno':
             default:

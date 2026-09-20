@@ -62,6 +62,40 @@
         .option-btn.incorrect{border-color:var(--danger);background:var(--danger-light)}
 
         .attempt-info{background:var(--primary-light);padding:15px;border-radius:var(--radius);margin:15px 0}
+        .alumno-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;font-size:.85rem}
+        .alumno-datos .dl{font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--text-secondary);display:block}
+        .alumno-datos .dv{font-weight:700;color:var(--primary-dark)}
+        .pre-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,20,10,.85);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+        .pre-box{background:#fff;border-radius:16px;max-width:560px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+        .pre-box h4{color:var(--primary-dark);font-weight:800;margin:0 0 4px}
+        /* Navegador de preguntas: columna vertical al lado del examen, siempre visible */
+        .wrap.wide{max-width:1180px}
+        .exam-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
+        .q-side{position:sticky;top:56px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-height:calc(100vh - 100px);display:flex;flex-direction:column;box-sizing:border-box}
+        .q-side-title{font-size:.72rem;font-weight:800;color:var(--primary-dark);margin-bottom:6px}
+        .q-nav-bar{height:6px;border-radius:4px;background:#e5e7eb;overflow:hidden;margin:6px 0}
+        .q-nav-bar>i{display:block;height:100%;width:0;background:var(--primary);transition:width .25s}
+        .q-summary{font-size:.66rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.35}
+        .q-summary b{color:var(--primary-dark)}
+        .q-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;padding-right:2px;min-height:0;flex:1 1 auto}
+        .q-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:2px solid #fbbf24;background:#fffbeb;border-radius:8px;padding:3px 8px;cursor:pointer;font-family:'Montserrat';font-size:.68rem;font-weight:600;color:#92400e;transition:.15s}
+        .q-row .n{min-width:22px;height:22px;border-radius:6px;background:#fff;border:2px solid #fbbf24;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem}
+        .q-row:hover{filter:brightness(.97)}
+        .q-row.resuelta{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
+        .q-row.resuelta .n{background:var(--primary);border-color:var(--primary);color:#fff}
+        .q-row.faltante{border-color:#dc2626;background:#fee2e2;color:#991b1b;animation:qpulse .8s 3}
+        .q-row.faltante .n{border-color:#dc2626}
+        @keyframes qpulse{50%{transform:scale(1.04)}}
+        @media(max-width:900px){
+            .exam-layout{grid-template-columns:1fr}
+            .q-side{position:sticky;top:44px;z-index:90;max-height:none;order:-1;padding:8px}
+            .q-list{flex-direction:row;flex-wrap:wrap;gap:5px}
+            .q-row{width:auto;padding:3px}
+            .q-row .st{display:none}
+            .q-summary{display:none}
+        }
+        .question-card{scroll-margin-top:170px}
+        .question-card.resuelta{border-left:4px solid var(--primary)}
         .grade-breakdown{background:var(--card-bg);padding:20px;border-radius:var(--radius);margin:20px 0;border-left:4px solid var(--primary)}
         .grade-item{margin:10px 0;font-size:.9rem}
         .grade-item strong{color:var(--primary-dark)}
@@ -172,12 +206,36 @@
 
     <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
 
+    <script src="../js/api.js?v=12"></script>
     <script>
     // ═══ SESSION GUARD ═══
     if (!sessionStorage.getItem('current_cedula')) { location.replace('../index.html'); }
 
     const ALUMNO_CI = sessionStorage.getItem('current_cedula');
     const ALUMNO_NOMBRE = sessionStorage.getItem('current_nombre') || 'Estudiante';
+
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    // Datos que se muestran antes de iniciar: nombre, grado, carrera, sección y fecha
+    function datosAlumno() {
+        let u = {};
+        try { u = JSON.parse(sessionStorage.getItem('centuria_user') || localStorage.getItem('centuria_user') || '{}') || {}; } catch (e) {}
+        const ss = k => sessionStorage.getItem(k) || '';
+        const ahora = new Date();
+        const tz = { timeZone: 'America/Asuncion' };
+        return {
+            nombre: ALUMNO_NOMBRE !== 'Estudiante' ? ALUMNO_NOMBRE : (((u.nombre || '') + ' ' + (u.apellido || '')).trim() || 'Estudiante'),
+            cedula: ALUMNO_CI,
+            grado: ss('current_grado') || u.grado || '—',
+            carrera: ss('current_carrera') || u.carrera || '—',
+            seccion: ss('current_seccion') || u.seccion || '—',
+            fecha: ahora.toLocaleDateString('es-PY', { ...tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+            hora: ahora.toLocaleTimeString('es-PY', { ...tz, hour: '2-digit', minute: '2-digit' })
+        };
+    }
+    function bloqueDatos(d) {
+        const it = (l, v) => `<div><span class="dl">${l}</span><span class="dv">${esc(v)}</span></div>`;
+        return `<div class="alumno-datos">${it('Nombre y apellido', d.nombre)}${it('Cédula', d.cedula)}${it('Grado', d.grado)}${it('Carrera', d.carrera)}${it('Sección', d.seccion)}${it('Fecha', d.fecha + ' · ' + d.hora)}</div>`;
+    }
 
     // ═══ BANCO DE PREGUNTAS EMbebido (10 unidades × 10 preguntas) ═══
     const preguntasPorUnidad = {
@@ -375,12 +433,39 @@
             return;
         }
 
-        // Mostrar confirmación
-        if (!confirm('Generar ' + nombre + ' con ' + preguntas.length + ' preguntas aleatorias?')) return;
+        // Pantalla previa: datos del alumno + fecha; el examen empieza recién al pulsar "Iniciar"
+        window._examenPendiente = { tipo, nombre, preguntas, respuestas: new Array(preguntas.length).fill(-1) };
+        mostrarPreInicio();
+    }
 
-        // Iniciar examen
-        window._examen = { tipo, preguntas, respuestas: new Array(preguntas.length).fill(-1) };
+    function mostrarPreInicio() {
+        const ex = window._examenPendiente;
+        const d = datosAlumno();
+        const maxPts = ex.tipo === 'final' ? configExamen.finalPuntos : configExamen.parcialPuntos;
+        const ov = document.createElement('div');
+        ov.className = 'pre-overlay'; ov.id = 'preInicio';
+        ov.innerHTML = `<div class="pre-box">
+            <h4><i class="bi bi-person-badge me-2"></i>Antes de iniciar</h4>
+            <p style="font-size:.78rem;color:var(--text-secondary);margin-bottom:14px">Verificá que tus datos sean correctos. El examen comienza cuando pulses “Iniciar examen”.</p>
+            <div class="attempt-info" style="margin-top:0">${bloqueDatos(d)}</div>
+            <div style="font-size:.85rem;margin:12px 0"><strong>${esc(ex.nombre)}</strong> · ${ex.preguntas.length} preguntas · ${maxPts} puntos · Intento ${intentos[ex.tipo] + 1} de ${intentos.maxIntentos}</div>
+            <div style="display:flex;gap:8px">
+                <button onclick="cancelarPreInicio()" class="btn" style="flex:1;background:#f1f5f9;padding:12px;border-radius:10px;font-weight:700">Cancelar</button>
+                <button onclick="iniciarExamen()" class="btn" style="flex:2;background:var(--primary);color:#fff;padding:12px;border-radius:10px;font-weight:700"><i class="bi bi-play-fill me-1"></i>Iniciar examen</button>
+            </div></div>`;
+        document.body.appendChild(ov);
+    }
+    function cancelarPreInicio() {
+        const ov = document.getElementById('preInicio'); if (ov) ov.remove();
+        window._examenPendiente = null;
+    }
+    function iniciarExamen() {
+        const ex = window._examenPendiente; if (!ex) return;
+        const ov = document.getElementById('preInicio'); if (ov) ov.remove();
+        window._examen = ex; window._examenPendiente = null;
+        window._examen.inicio = Date.now();
         renderExamen();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function seleccionarPreguntas(unidades, max) {
@@ -403,18 +488,18 @@
         const maxPts = tipo === 'final' ? configExamen.finalPuntos : configExamen.parcialPuntos;
         const ptsPregunta = Math.round(maxPts / ex.preguntas.length);
 
-        let html = `<div class="card"><div class="card-header">
+        let html = `<div class="exam-layout"><div class="exam-main"><div class="card"><div class="card-header">
             <h5><i class="bi bi-pencil-square me-2"></i>${tipo === 'final' ? 'EXAMEN FINAL' : 'EXAMEN PARCIAL'}</h5>
             <small style="opacity:.8">${ex.preguntas.length} preguntas • ${maxPts} puntos máximos • Pts/pregunta: ${ptsPregunta}</small>
         </div><div class="card-body">
         <div class="attempt-info">
-            <p><strong>Alumno:</strong> ${ALUMNO_NOMBRE} (CI: ${ALUMNO_CI})</p>
-            <p><strong>Puntos máximos:</strong> ${maxPts}</p>
+            ${bloqueDatos(datosAlumno())}
+            <p style="margin-top:10px"><strong>Puntos máximos:</strong> ${maxPts}</p>
             <p style="color:var(--text-secondary);font-size:.8rem"><i class="bi bi-info-circle me-1"></i>Selecciona una respuesta por pregunta y luego presiona "Terminar Examen"</p>
         </div>`;
 
         ex.preguntas.forEach((p, idx) => {
-            html += `<div class="question-card">
+            html += `<div class="question-card" id="q-${idx}">
                 <h5>Pregunta ${idx + 1} de ${ex.preguntas.length} <span style="font-size:.7rem;color:var(--text-secondary)">(Unidad ${p.unidad})</span></h5>
                 <p style="font-weight:600">${p.pregunta}</p>`;
             p.opciones.forEach((op, oi) => {
@@ -428,12 +513,55 @@
         html += `</div></div>
         <button class="btn w-100" style="background:var(--primary);color:#fff;padding:14px;border-radius:10px;font-weight:700;font-size:.9rem;margin-top:10px" onclick="submitExamen()">
             <i class="bi bi-check-all me-2"></i>Terminar Examen
-        </button>`;
+        </button></div>
+        <aside class="q-side" id="qNav">
+            <div class="q-side-title"><i class="bi bi-list-check me-1"></i>Navegador de preguntas</div>
+            <div class="q-nav-bar"><i id="qnBar"></i></div>
+            <div class="q-summary" id="qnSummary"></div>
+            <div class="q-list">${ex.preguntas.map((_, i) => `<button type="button" class="q-row" id="qc-${i}" onclick="irAPregunta(${i})"><span class="n">${i + 1}</span><span class="st">Sin responder</span></button>`).join('')}</div>
+        </aside></div>`;
 
         document.getElementById('examArea').innerHTML = html;
         document.getElementById('examArea').style.display = 'block';
+        document.querySelector('.wrap').classList.add('wide');
         document.getElementById('examButtons').style.display = 'none';
         document.getElementById('resultArea').style.display = 'none';
+        ajustarNavegador();
+        if (!window._qnResize) { window._qnResize = true; window.addEventListener('resize', ajustarNavegador); }
+        actualizarNavegador();
+    }
+
+    // Marca en el navegador qué preguntas ya fueron resueltas
+    function ajustarNavegador() {
+        const nav = document.getElementById('qNav'), tb = document.querySelector('.topbar');
+        if (!nav || !tb) return;
+        const h = tb.offsetHeight, ancho = window.innerWidth > 900;
+        nav.style.top = (ancho ? h + 12 : h + 4) + 'px';
+        nav.style.maxHeight = ancho ? 'calc(100vh - ' + (h + 56) + 'px)' : '';
+    }
+    function actualizarNavegador() {
+        const ex = window._examen; if (!ex) return;
+        let hechas = 0; const faltan = [];
+        ex.respuestas.forEach((r, i) => {
+            const ok = r !== -1;
+            if (ok) hechas++; else faltan.push(i + 1);
+            const row = document.getElementById('qc-' + i), card = document.getElementById('q-' + i);
+            if (row) {
+                row.classList.toggle('resuelta', ok);
+                if (ok) row.classList.remove('faltante');
+                const st = row.querySelector('.st'); if (st) st.textContent = ok ? '✓ Resuelta' : 'Sin responder';
+                row.title = 'Pregunta ' + (i + 1) + (ok ? ' — resuelta' : ' — sin responder');
+            }
+            if (card) card.classList.toggle('resuelta', ok);
+        });
+        const b = document.getElementById('qnBar'), sm = document.getElementById('qnSummary');
+        if (b) b.style.width = Math.round(hechas / ex.preguntas.length * 100) + '%';
+        if (sm) sm.innerHTML = 'Resueltas: <b>' + hechas + '</b> de ' + ex.preguntas.length + '<br>' +
+            (faltan.length ? 'Faltan: <b>' + faltan.join(', ') + '</b>' : '<b>¡Todas resueltas!</b> Podés entregar.');
+    }
+    function irAPregunta(i) {
+        const card = document.getElementById('q-' + i);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function seleccionar(qi, oi) {
@@ -444,13 +572,16 @@
         });
         const btn = document.querySelector(`[data-q="${qi}"][data-o="${oi}"]`);
         if (btn) btn.classList.add('selected');
+        actualizarNavegador();
     }
 
     function submitExamen() {
         const ex = window._examen;
         const sinRespuesta = ex.respuestas.filter(r => r === -1).length;
         if (sinRespuesta > 0) {
-            if (!confirm('Tienes ' + sinRespuesta + ' pregunta(s) sin responder. ¿Deseas continuar?')) return;
+            const faltan = [];
+            ex.respuestas.forEach((r, i) => { if (r === -1) { faltan.push(i + 1); const c = document.getElementById('qc-' + i); if (c) { c.classList.remove('faltante'); void c.offsetWidth; c.classList.add('faltante'); } } });
+            if (!confirm('Tienes ' + sinRespuesta + ' pregunta(s) sin responder (N° ' + faltan.join(', ') + '). ¿Deseas entregar igual?\n\nAceptar = entregar  ·  Cancelar = volver a revisar')) { irAPregunta(faltan[0] - 1); return; }
         }
 
         const maxPts = ex.tipo === 'final' ? configExamen.finalPuntos : configExamen.parcialPuntos;
@@ -472,6 +603,7 @@
     }
 
     function mostrarResultados(tipo, puntos, maxPts, porcentaje, correctas, total) {
+        document.querySelector('.wrap').classList.remove('wide');
         document.getElementById('examArea').style.display = 'none';
         document.getElementById('examButtons').style.display = 'none';
         document.getElementById('resultArea').style.display = 'block';

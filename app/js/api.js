@@ -124,7 +124,9 @@ function gasRegister(userData) {
         grado: userData.grado || '',
         carrera: userData.carrera || '',
         seccion: userData.seccion || '',
-        foto: userData.foto || userData.foto_url || ''
+        asignatura: userData.asignatura || '',
+        foto: userData.foto || userData.foto_url || '',
+        requiere_aprobacion: userData.requiere_aprobacion || false
     }, 'POST');
 }
 
@@ -524,6 +526,17 @@ API.docente = {
     requestSubject: (cedula, asignatura) => callGas('docente_solicitud', { cedula, asignatura }, 'POST')
 };
 
+// Acceso Académico: asignación de docentes a grupos (asignatura + carrera + sección)
+API.academico = {
+    listTeachers: (academico_cedula) => callGas('asignaciones_docentes', { academico_cedula: academico_cedula }, 'GET'),
+    // d: { academico_cedula, docente_cedula, asignatura, grupos: [{ grado, carrera, seccion }], aprobar }
+    saveAssignment: (d) => callGas('asignacion_guardar', d, 'POST'),
+    // d: { academico_cedula, docente_cedula, fila }
+    revokeAssignment: (d) => callGas('asignacion_revocar', d, 'POST'),
+    // d: { academico_cedula, docente_cedula, decision: 'aprobar' | 'rechazar' }
+    decideTeacher: (d) => callGas('asignacion_docente_decidir', d, 'POST')
+};
+
 API.grades = {
     list: (params) => callGas('listar_notas', params || {}, 'GET'),
     save: (data) => callGas('guardar_nota', data, 'POST'),
@@ -532,6 +545,20 @@ API.grades = {
 
 API.exams = {
     saveAnswers: (data) => callGas('guardar_respuestas_examen', data, 'POST'),
+
+    // ── Exámenes por factura (v08.1): ventana horaria, intentos, clave por mail ──
+    // Últimos 4 pagos de uno o varios alumnos: { ok, resultados: { cedula: { pagos:[...], pendientes, al_dia } } }
+    getLastPayments: (cedulas) => callGas('pagos_ultimos', { cedulas: [].concat(cedulas).join(',') }, 'GET'),
+    // Docente: configuración por examen y asignatura
+    getExamConfigs: (asignatura) => callGas('examen_config_listar', { asignatura: asignatura || '' }, 'GET'),
+    saveExamConfig: (d) => callGas('examen_config_guardar', d, 'POST'),
+    // Docente: solicitudes de alumnos (con sus últimos 4 pagos) y decisión
+    getExamRequests: (asignatura, examenId) => callGas('examen_solicitudes', { asignatura: asignatura || '', examen_id: examenId || '' }, 'GET'),
+    resolveExamRequest: (d) => callGas('examen_resolver', d, 'POST'),
+    // Alumno: ventana vigente, carga de factura y validación de mail + clave
+    getPublicExamConfig: (examenId) => callGas('examen_config_publica', { examen_id: examenId }, 'GET'),
+    requestExamAccess: (d) => callGas('examen_solicitar', d, 'POST'),
+    validateExamAccess: (d) => callGas('examen_acceso_validar', d, 'POST'),
     
     // Códigos de acceso a exámenes — Docente configura, Alumno valida
     setAccessCode: (examenId, codigo, docente_cedula) => callGas('examen_codigo_guardar', {
@@ -601,7 +628,7 @@ API.exams = {
     }, 'POST').then(r => ({
         ok: r.ok !== false,
         pdf_url: r.pdf_url || null
-    }),
+    })),
     
     // ═══ APROBACIÓN DE EXÁMENES POR ACADÉMICO ═══
     approveExam: (examenId, academico_cedula) => callGas('examen_aprobar', {
@@ -619,11 +646,18 @@ API.exams = {
         fecha_rechazo: new Date().toISOString()
     }, 'POST'),
     
-    getExamsForApproval: () => callGas('examen_listar_pendientes_aprobacion', {}, 'GET').then(r => ({
+    getExamsForApproval: (academico_cedula) => callGas('examen_listar_pendientes_aprobacion', { academico_cedula: academico_cedula || '' }, 'GET').then(r => ({
         ok: r.ok !== false,
+        error: r.error || null,
         examenes: r.examenes || [],
         pendientes_count: r.pendientes_count || 0
     })),
+
+    // Devuelve un examen aprobado a "pendiente"
+    revokeExamApproval: (examenId, academico_cedula) => callGas('examen_revocar_aprobacion', {
+        examen_id: examenId,
+        academico_cedula: academico_cedula
+    }, 'POST'),
     
     getExamApprovalStatus: (examenId) => callGas('examen_estado_aprobacion', {
         examen_id: examenId
@@ -633,8 +667,7 @@ API.exams = {
         aprobado: r.aprobado === true,
         fecha_aprobacion: r.fecha_aprobacion || null,
         academico_cedula: r.academico_cedula || null
-    }))
-    }))
+    })),
 };
 
 API.attendance = {
@@ -941,7 +974,8 @@ API.gestionEstudiantes = {
     }))
 };
 
-    // ARQUEÓ DE CAJA
+// Arqueo de caja (métodos de API.tesoreria; usa CenturiaAPI.tesoreria.arqueoCaja en admin/sections/arqueo-caja.html)
+Object.assign(API.tesoreria, {
     arqueoCaja: async function(fechaDesde, fechaHasta, segmentarPor = 'general') {
         /**
          * Arqueo de caja con segmentación flexible
@@ -1003,3 +1037,4 @@ API.gestionEstudiantes = {
             .withSuccessHandler(data => data)
             .arqueoDiscrepancias(fechaDesde, fechaHasta);
     }
+});

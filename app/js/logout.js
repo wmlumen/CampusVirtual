@@ -34,9 +34,19 @@ function centuriaLogout(confirmar) {
         if (typeof appUrl === 'function') {
             dest = appUrl('index.html');
         } else {
-            const i = location.pathname.indexOf('/app/');
-            const base = i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
-            dest = base + 'index.html';
+            // Sin api.js (p. ej. falló al cargar): la ruta a la raíz se deduce de este mismo <script src="../js/logout.js">,
+            // igual que hace api.js; así "Salir" vuelve al inicio desde cualquier subcarpeta (academic/, admin/...).
+            let prefix = null;
+            const scripts = document.getElementsByTagName('script');
+            for (let k = 0; k < scripts.length; k++) {
+                const m = (scripts[k].getAttribute('src') || '').match(/^((?:\.\.\/)*)js\/logout\.js/);
+                if (m) { prefix = m[1] || './'; break; }
+            }
+            if (prefix === null) {
+                const i = location.pathname.indexOf('/app/');
+                prefix = i >= 0 ? location.pathname.slice(0, i) + '/app/' : './';
+            }
+            dest = new URL(prefix + 'index.html', document.baseURI).href;
         }
     } catch (e) {}
 

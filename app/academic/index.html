@@ -55,6 +55,49 @@
         .stat-val { font-size: 1.2rem; font-weight: 800; }
         .stat-lbl { font-size: .5rem; color: var(--texto-sec); text-transform: uppercase; letter-spacing: .5px; }
 
+        /* ── Acceso Académico v08.2: docentes, asignaciones y aprobación de exámenes ── */
+        .sec-h { font-size: .65rem; font-weight: 700; color: var(--texto-sec); text-transform: uppercase; letter-spacing: .5px; margin: 18px 0 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .sec-h .sec-note { font-weight: 500; text-transform: none; letter-spacing: 0; font-size: .58rem; }
+        .stat.warn { background: #FEF3C7; border-color: #FCD34D; }
+        .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); margin-bottom: 16px; }
+        .tabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+        .tab { padding: 5px 11px; border-radius: 20px; border: 1px solid var(--border); background: #fff; font: 600 .6rem 'Montserrat'; color: var(--texto-sec); cursor: pointer; }
+        .tab.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+        .tab .n { opacity: .8; margin-left: 4px; }
+        .buscar { margin-left: auto; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; font: .62rem 'Montserrat'; min-width: 180px; }
+        .tbl-wrap { overflow-x: auto; }
+        table.t { width: 100%; border-collapse: collapse; font-size: .66rem; min-width: 760px; }
+        table.t th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); font-weight: 700; white-space: nowrap; }
+        table.t td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .muted { color: var(--texto-sec); font-size: .58rem; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .56rem; font-weight: 700; text-transform: uppercase; }
+        .pill.pendiente { background: #FEF3C7; color: #92400E; }
+        .pill.activo, .pill.aprobado { background: #D1FAE5; color: #065F46; }
+        .pill.inactivo, .pill.rechazado { background: #FEE2E2; color: #991B1B; }
+        .chip { display: inline-flex; align-items: center; gap: 4px; background: #EDE9FE; color: #5b21b6; border-radius: 6px; padding: 2px 4px 2px 7px; font-size: .56rem; font-weight: 600; margin: 0 4px 4px 0; }
+        .chip.off { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+        .chip button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: .7rem; line-height: 1; padding: 0 3px; }
+        .b { padding: 4px 9px; border-radius: 6px; border: none; font: 600 .58rem 'Montserrat'; cursor: pointer; margin: 0 4px 4px 0; }
+        .b.p { background: #7c3aed; color: #fff; }
+        .b.g { background: #059669; color: #fff; }
+        .b.r { background: #dc2626; color: #fff; }
+        .b.n { background: #e2e8f0; color: #334155; }
+        .b:disabled { opacity: .5; cursor: default; }
+        .vacio { padding: 22px; text-align: center; color: var(--texto-sec); font-size: .68rem; }
+        .modal-bg { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.5); align-items: center; justify-content: center; padding: 16px; }
+        .modal-bg.on { display: flex; }
+        .modal-box { background: var(--card-bg); border-radius: 14px; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; padding: 18px; }
+        .modal-box h3 { font-size: .9rem; font-weight: 700; margin-bottom: 4px; }
+        .modal-box label { display: block; font-size: .58rem; font-weight: 700; color: var(--texto-sec); margin: 10px 0 3px; text-transform: uppercase; letter-spacing: .4px; }
+        .modal-box select, .modal-box input[type=text], .modal-box textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font: .68rem 'Montserrat'; background: #fff; }
+        .grupo-fila { display: grid; grid-template-columns: 1fr 110px auto; gap: 6px; align-items: center; }
+        .decl { background: #F5F3FF; border-radius: 8px; padding: 7px 9px; font-size: .6rem; margin-top: 8px; }
+        .acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 9px 16px; border-radius: 10px; font-size: .68rem; z-index: 10000; max-width: 92vw; opacity: 0; transition: .25s; pointer-events: none; }
+        .toast.on { opacity: 1; }
+        .toast.err { background: #b91c1c; }
+        @media (max-width: 640px) { .grupo-fila { grid-template-columns: 1fr; } .buscar { margin-left: 0; width: 100%; } }
+
         /* Footer */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 4px 16px; background: var(--card-bg); border-top: 1px solid var(--border); font-size: .45rem; color: var(--texto-sec); }
         @media print { .footer, .btn-out { display: none; } }
@@ -78,16 +121,45 @@
             </div>
         </div>
 
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat"><div class="stat-val" style="color:#7c3aed;">11</div><div class="stat-lbl">Módulos</div></div>
-            <div class="stat"><div class="stat-val" style="color:#059669;">3</div><div class="stat-lbl">Evaluaciones</div></div>
-            <div class="stat"><div class="stat-val" style="color:#D97706;">10</div><div class="stat-lbl">Unidades</div></div>
-            <div class="stat"><div class="stat-val" style="color:#DB2777;">1</div><div class="stat-lbl">Glosario</div></div>
-        </div>
-
         <!-- Title -->
         <div class="page-title"><i class="bi bi-building"></i> Panel de Acceso Académico</div>
+
+        <!-- Resumen (datos reales) -->
+        <div class="stats">
+            <div class="stat warn"><div class="stat-val" style="color:#D97706;" id="st-pend-doc">–</div><div class="stat-lbl">Docentes por aprobar</div></div>
+            <div class="stat"><div class="stat-val" style="color:#7c3aed;" id="st-sin-asig">–</div><div class="stat-lbl">Docentes sin grupos</div></div>
+            <div class="stat"><div class="stat-val" style="color:#059669;" id="st-asig-act">–</div><div class="stat-lbl">Asignaciones activas</div></div>
+            <div class="stat warn"><div class="stat-val" style="color:#D97706;" id="st-exam-pend">–</div><div class="stat-lbl">Exámenes por aprobar</div></div>
+        </div>
+
+        <!-- DOCENTES Y ASIGNACIONES -->
+        <div class="sec-h" id="sec-docentes"><i class="bi bi-people"></i> Docentes y asignaciones <span class="sec-note">Asigná asignatura, carrera y sección. Un docente puede tener varios grupos (por ejemplo S026 con varias carreras).</span></div>
+        <div class="panel">
+            <div class="tabs" id="tabsDoc">
+                <button class="tab on" data-f="todos">Todos<span class="n" id="n-todos"></span></button>
+                <button class="tab" data-f="pendientes">Por aprobar<span class="n" id="n-pendientes"></span></button>
+                <button class="tab" data-f="sin">Sin grupos<span class="n" id="n-sin"></span></button>
+                <button class="tab" data-f="con">Con grupos<span class="n" id="n-con"></span></button>
+                <input class="buscar" id="buscarDoc" type="text" placeholder="Buscar por nombre o cédula">
+            </div>
+            <div class="tbl-wrap">
+                <table class="t">
+                    <thead><tr><th>Docente</th><th>Cuenta</th><th>Declaró al registrarse</th><th>Grupos asignados</th><th>Acciones</th></tr></thead>
+                    <tbody id="tbodyDoc"><tr><td colspan="5" class="vacio"><i class="bi bi-hourglass-split"></i> Cargando docentes...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- EXÁMENES A APROBAR -->
+        <div class="sec-h" id="sec-examenes"><i class="bi bi-check-circle"></i> Aprobación de exámenes <span class="sec-note">Los alumnos solo pueden rendir un examen aprobado por Acceso Académico.</span></div>
+        <div class="panel">
+            <div class="tbl-wrap">
+                <table class="t" style="min-width:680px">
+                    <thead><tr><th>Examen</th><th>Docente / asignatura</th><th style="text-align:center">Intentos</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody id="tbodyExam"><tr><td colspan="5" class="vacio"><i class="bi bi-hourglass-split"></i> Cargando exámenes...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- Evaluación -->
         <h6 style="font-size:.65rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;"><i class="bi bi-clipboard-check me-1"></i> Evaluación</h6>
@@ -157,6 +229,11 @@
                 <div class="card-title">Monografía</div>
                 <div class="card-desc">Formato y guía</div>
             </a>
+            <a href="../admin/index.html" class="card-link">
+                <div class="card-icon purple"><i class="bi bi-gear"></i></div>
+                <div class="card-title">Panel Admin</div>
+                <div class="card-desc">Usuarios y tesorería</div>
+            </a>
             <a href="../dashboard.html" class="card-link">
                 <div class="card-icon teal"><i class="bi bi-speedometer2"></i></div>
                 <div class="card-title">Dashboard</div>
@@ -165,139 +242,287 @@
         </div>
     </div>
 
-        <!-- APROBACIÓN DE EXÁMENES -->
-        <h6 style="font-size:.65rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;margin-top:16px;"><i class="bi bi-check-circle me-1"></i> Aprobación de Exámenes</h6>
-        <div id="stat-pendientes" class="stat" style="grid-column:1;background:#FEF3C7;border-color:#FCD34D">
-            <div class="stat-val" style="color:#D97706;" id="count-pendientes">0</div>
-            <div class="stat-lbl">Pendientes</div>
-        </div>
-        
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow-x:auto;margin-bottom:16px">
-            <table style="width:100%;border-collapse:collapse;font-size:.68rem;min-width:800px">
-                <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:8px;text-align:left;font-weight:700">Examen</th><th style="padding:8px;text-align:left;font-weight:700">Docente</th><th style="padding:8px;text-align:center;font-weight:700">Intentos</th><th style="padding:8px;text-align:left;font-weight:700">Estado</th><th style="padding:8px;text-align:center;font-weight:700">Acciones</th></tr></thead>
-                <tbody id="tbody-examen-aprobacion"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--texto-sec)"><i class="bi bi-hourglass-split"></i> Cargando exámenes...</td></tr></tbody>
-            </table>
-        </div>
 
-        <!-- Modal de confirmación -->
-        <div id="modal-aprobacion-examen" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
-            <div style="background:var(--card-bg);border-radius:14px;width:100%;max-width:500px;padding:20px">
-                <h3 style="margin:0 0 12px;font-size:.9rem;font-weight:700" id="modal-titulo">Confirmar acción</h3>
-                <p style="font-size:.75rem;color:var(--texto-sec);margin:0 0 16px" id="modal-mensaje">¿Está seguro?</p>
-                <div style="display:flex;gap:8px;justify-content:flex-end">
-                    <button onclick="cerrarModalAprobacion()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:var(--border);border:none;cursor:pointer">Cancelar</button>
-                    <button id="btn-confirmar-aprobacion" onclick="confirmarAprobacion()" style="padding:6px 14px;border-radius:8px;font-size:.65rem;background:#059669;color:#fff;border:none;cursor:pointer;font-weight:700">Confirmar</button>
-                </div>
+    <!-- Modal: asignar grupos a un docente -->
+    <div class="modal-bg" id="mdAsig">
+        <div class="modal-box">
+            <h3 id="mdAsigTitulo">Asignar grupos</h3>
+            <div class="muted" id="mdAsigSub"></div>
+            <div class="decl" id="mdAsigDecl" style="display:none"></div>
+            <label for="asigAsignatura">Asignatura</label>
+            <div id="asigAsignaturaBox"></div>
+            <label>Grupos (carrera + sección)</label>
+            <div class="grupo-fila">
+                <div id="asigCarreraBox"></div>
+                <div id="asigSeccionBox"></div>
+                <button class="b p" id="btnAddGrupo" type="button">Agregar</button>
+            </div>
+            <div id="asigGrupos" style="margin-top:8px"></div>
+            <label id="lblAprobar" style="display:none;text-transform:none;letter-spacing:0;font-size:.62rem;color:#92400E"><input type="checkbox" id="asigAprobar" checked> Aprobar también la cuenta del docente (está pendiente)</label>
+            <div class="acciones">
+                <button class="b n" id="mdAsigCancelar" type="button">Cancelar</button>
+                <button class="b g" id="mdAsigGuardar" type="button">Guardar asignación</button>
             </div>
         </div>
+    </div>
+
+    <!-- Modal: confirmar decisión (con motivo opcional) -->
+    <div class="modal-bg" id="mdConf">
+        <div class="modal-box" style="max-width:460px">
+            <h3 id="mdConfTitulo">Confirmar</h3>
+            <p class="muted" id="mdConfMsg" style="margin:6px 0"></p>
+            <div id="mdConfMotivoBox" style="display:none"><label for="mdConfMotivo">Motivo (opcional)</label><textarea id="mdConfMotivo" rows="2"></textarea></div>
+            <div class="acciones">
+                <button class="b n" id="mdConfCancelar" type="button">Cancelar</button>
+                <button class="b p" id="mdConfOk" type="button">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <div class="footer">Instituto Superior Centuria © 2026 — Acceso Académico</div>
 
     <script src="../js/api.js?v=12"></script>
+    <script src="../js/session-guard.js"></script>
     <script src="../js/logout.js?v=2"></script>
     <script>
+        // ═══ ACCESO ACADÉMICO v08.2 ═══
+        // Docentes: cola de cuentas pendientes + asignación de asignatura y grupos.  Exámenes: aprobación previa.
+        var AC = { cedula: '', docentes: [], filtro: 'todos', busca: '', cat: { asignaturas: [], carreras: [], secciones: [] }, grupos: [], docente: null, onOk: null };
 
+        function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+        function $(id) { return document.getElementById(id); }
+        function toast(msg, err) {
+            var t = $('toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : '');
+            clearTimeout(toast._t); toast._t = setTimeout(function () { t.className = 'toast'; }, err ? 5000 : 2800);
+        }
+        function chk(r) { if (!r || r.ok === false) throw new Error((r && (r.error || r.mensaje)) || 'No se pudo completar la acción.'); return r; }
 
-        // ═══ APROBACIÓN DE EXÁMENES ═══
-        let examenActualAprobacion = null;
-        let accionAprobacion = null; // 'aprobar' o 'rechazar'
-        
-        async function cargarExamenesParaAprobacion() {
-            const tbody = document.getElementById('tbody-examen-aprobacion');
+        function datosUsuario() {
+            var u = (window.CenturiaAPI && CenturiaAPI.getCurrentUser && CenturiaAPI.getCurrentUser()) || {};
+            var nombre = ((u.nombre || u.firstname || '') + ' ' + (u.apellido || u.lastname || '')).trim() || sessionStorage.getItem('current_nombre') || 'Académico';
+            var ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+            return { nombre: nombre, cedula: String(ced) };
+        }
+
+        // ── Catálogos (asignaturas, carreras, secciones); si alguno falla se escribe a mano ──
+        function selectOTexto(id, items, ph) {
+            if (items.length) {
+                return '<select id="' + id + '"><option value="">' + esc(ph) + '</option>' + items.map(function (i) { return '<option value="' + esc(i.v) + '">' + esc(i.t) + '</option>'; }).join('') + '</select>';
+            }
+            return '<input type="text" id="' + id + '" placeholder="' + esc(ph) + '">';
+        }
+        async function cargarCatalogos() {
+            var pedir = async function (fn, claves) {
+                try { var r = await fn(); for (var i = 0; i < claves.length; i++) if (r && r[claves[i]]) return r[claves[i]]; } catch (e) {}
+                return [];
+            };
+            var res = await Promise.all([
+                pedir(function () { return CenturiaAPI.catalogos.getAsignaturas(); }, ['asignaturas', 'items', 'data']),
+                pedir(function () { return CenturiaAPI.catalogos.getCarreras(''); }, ['carreras', 'items']),
+                pedir(function () { return CenturiaAPI.catalogos.getSecciones(); }, ['secciones', 'items'])
+            ]);
+            AC.cat.asignaturas = res[0].map(function (a) { return { v: a.codigo || a.id, t: (a.codigo || a.id) + (a.nombre ? ' — ' + a.nombre : ''), carrera: a.carrera || '' }; }).filter(function (a) { return a.v; });
+            var vc = {};
+            AC.cat.carreras = res[1].map(function (c) { return { v: c.nombre, t: c.nombre, grado: c.grado || '' }; }).filter(function (c) { if (!c.v || vc[c.v]) return false; vc[c.v] = 1; return true; });
+            var vs = {};
+            AC.cat.secciones = res[2].map(function (s) { return { v: s.codigo, t: s.codigo + (s.nombre && s.nombre !== s.codigo ? ' — ' + s.nombre : '') }; }).filter(function (s) { if (!s.v || vs[s.v]) return false; vs[s.v] = 1; return true; });
+        }
+
+        // ── Cola de docentes ──
+        async function cargarDocentes() {
+            var tb = $('tbodyDoc');
             try {
-                const res = await CenturiaAPI.exams.getExamsForApproval();
-                const examenes = res.examenes || [];
-                
-                // Actualizar contador
-                document.getElementById('count-pendientes').textContent = res.pendientes_count || examenes.length;
-                
-                if (!examenes.length) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--texto-sec)">✓ Todos los exámenes están aprobados</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = examenes.map(ex => `
-                    <tr style="border-bottom:1px solid var(--border)">
-                        <td style="padding:8px;font-weight:600">${ex.examen_nombre || ex.examen_id || 'N/A'}</td>
-                        <td style="padding:8px">${ex.docente_nombre || 'N/A'}</td>
-                        <td style="padding:8px;text-align:center">${ex.num_intentos || 2}</td>
-                        <td style="padding:8px">
-                            <span style="padding:3px 8px;border-radius:6px;font-size:.6rem;font-weight:600;background:${
-                                ex.estado === 'aprobado' ? '#D1FAE5;color:#065F46' : 
-                                ex.estado === 'rechazado' ? '#FEE2E2;color:#991B1B' :
-                                '#FEF3C7;color:#92400E'
-                            }">
-                                ${ex.estado ? ex.estado.toUpperCase() : 'PENDIENTE'}
-                            </span>
-                        </td>
-                        <td style="padding:8px;text-align:center">
-                            <button onclick="abrirModalAprobacion('${ex.examen_id}', 'aprobar')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#059669;color:#fff;border:none;cursor:pointer;margin-right:4px;font-weight:600">✓ Aprobar</button>
-                            <button onclick="abrirModalAprobacion('${ex.examen_id}', 'rechazar')" style="padding:4px 8px;border-radius:6px;font-size:.6rem;background:#dc2626;color:#fff;border:none;cursor:pointer;font-weight:600">✕ Rechazar</button>
-                        </td>
-                    </tr>
-                `).join('');
+                var r = chk(await CenturiaAPI.academico.listTeachers(AC.cedula));
+                AC.docentes = r.docentes || [];
+                $('st-pend-doc').textContent = r.pendientes || 0;
+                $('st-sin-asig').textContent = r.sin_asignar || 0;
+                $('st-asig-act').textContent = AC.docentes.reduce(function (n, d) { return n + (d.activas || 0); }, 0);
+                pintarDocentes();
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#dc2626">Error cargando exámenes</td></tr>';
-                console.error(e);
+                tb.innerHTML = '<tr><td colspan="5" class="vacio">No se pudo cargar la lista de docentes: ' + esc(e.message) + '</td></tr>';
+                ['st-pend-doc', 'st-sin-asig', 'st-asig-act'].forEach(function (id) { $(id).textContent = '–'; });
             }
         }
-        
-        function abrirModalAprobacion(examId, accion) {
-            examenActualAprobacion = examId;
-            accionAprobacion = accion;
-            
-            const titulo = accion === 'aprobar' ? '✓ Aprobar Examen' : '✕ Rechazar Examen';
-            const mensaje = accion === 'aprobar' 
-                ? `¿Estás seguro que querés aprobar este examen? Los estudiantes podrán acceder una vez aprobado.`
-                : `¿Estás seguro que querés rechazar este examen? Se notificará al docente.`;
-            const btnColor = accion === 'aprobar' ? '#059669' : '#dc2626';
-            
-            document.getElementById('modal-titulo').textContent = titulo;
-            document.getElementById('modal-mensaje').textContent = mensaje;
-            document.getElementById('btn-confirmar-aprobacion').style.background = btnColor;
-            document.getElementById('modal-aprobacion-examen').style.display = 'flex';
+        function pintarDocentes() {
+            var L = AC.docentes, q = AC.busca.toLowerCase();
+            var cuenta = { todos: L.length, pendientes: L.filter(function (d) { return d.pendiente; }).length, sin: L.filter(function (d) { return !d.pendiente && !d.activas; }).length, con: L.filter(function (d) { return d.activas > 0; }).length };
+            Object.keys(cuenta).forEach(function (k) { $('n-' + k).textContent = ' ' + cuenta[k]; });
+            var vis = L.filter(function (d) {
+                if (AC.filtro === 'pendientes' && !d.pendiente) return false;
+                if (AC.filtro === 'sin' && (d.pendiente || d.activas)) return false;
+                if (AC.filtro === 'con' && !d.activas) return false;
+                return !q || (d.nombre + ' ' + d.cedula + ' ' + d.email).toLowerCase().indexOf(q) >= 0;
+            });
+            var tb = $('tbodyDoc');
+            if (!vis.length) { tb.innerHTML = '<tr><td colspan="5" class="vacio">' + (L.length ? 'Ningún docente coincide con el filtro.' : 'Todavía no hay docentes registrados.') + '</td></tr>'; return; }
+            tb.innerHTML = vis.map(function (d) {
+                var decl = [d.declarado.carrera, d.declarado.seccion].filter(Boolean).join(' · ') || '—';
+                var chips = d.asignaciones.map(function (a) {
+                    var off = a.estado === 'inactivo';
+                    return '<span class="chip' + (off ? ' off' : '') + '" title="' + (off ? 'Revocada' : 'Asignada por ' + esc(a.asignado_por)) + '">' + esc(a.asignatura) + ' · ' + esc(a.carrera) + ' · ' + esc(a.seccion) +
+                        (off ? '' : '<button type="button" data-act="revocar" data-ced="' + esc(d.cedula) + '" data-fila="' + a.fila + '" title="Quitar este grupo" aria-label="Quitar grupo">&times;</button>') + '</span>';
+                }).join('') || '<span class="muted">Sin grupos</span>';
+                var acc = d.pendiente
+                    ? '<button class="b g" data-act="asignar" data-ced="' + esc(d.cedula) + '">Aprobar y asignar</button><button class="b r" data-act="rechazar" data-ced="' + esc(d.cedula) + '">Rechazar</button>'
+                    : (d.estado === 'inactivo' ? '<span class="muted">Cuenta inactiva</span>' : '<button class="b p" data-act="asignar" data-ced="' + esc(d.cedula) + '">Asignar grupos</button>');
+                return '<tr><td><strong>' + esc(d.nombre || d.cedula) + '</strong><div class="muted">C.I. ' + esc(d.cedula) + (d.email ? ' · ' + esc(d.email) : '') + '</div></td>' +
+                    '<td><span class="pill ' + esc(d.estado) + '">' + esc(d.estado) + '</span></td><td class="muted">' + esc(decl) + '</td><td>' + chips + '</td><td>' + acc + '</td></tr>';
+            }).join('');
         }
-        
-        function cerrarModalAprobacion() {
-            document.getElementById('modal-aprobacion-examen').style.display = 'none';
-            examenActualAprobacion = null;
-            accionAprobacion = null;
+
+        // ── Modal de asignación ──
+        function abrirAsignar(ced) {
+            var d = AC.docentes.filter(function (x) { return x.cedula === ced; })[0]; if (!d) return;
+            AC.docente = d; AC.grupos = [];
+            $('mdAsigTitulo').textContent = (d.pendiente ? 'Aprobar y asignar · ' : 'Asignar grupos · ') + (d.nombre || d.cedula);
+            $('mdAsigSub').textContent = 'C.I. ' + d.cedula;
+            var dc = d.declarado, txt = [dc.grado, dc.carrera, dc.seccion].filter(Boolean).join(' · ');
+            $('mdAsigDecl').style.display = txt ? 'block' : 'none';
+            $('mdAsigDecl').innerHTML = txt ? 'El docente indicó al registrarse: <b>' + esc(txt) + '</b> <button class="b n" type="button" id="btnUsarDecl">Usar como grupo</button>' : '';
+            $('asigAsignaturaBox').innerHTML = selectOTexto('asigAsignatura', AC.cat.asignaturas, 'Elegí la asignatura...');
+            $('asigCarreraBox').innerHTML = selectOTexto('asigCarrera', AC.cat.carreras, 'Carrera...');
+            $('asigSeccionBox').innerHTML = selectOTexto('asigSeccion', AC.cat.secciones, 'Sección');
+            $('lblAprobar').style.display = d.pendiente ? 'block' : 'none';
+            $('asigAprobar').checked = true; $('asigAprobar').disabled = d.pendiente;
+            pintarGrupos();
+            $('mdAsig').classList.add('on');
+            var bu = $('btnUsarDecl'); if (bu) bu.onclick = function () { agregarGrupo(dc.grado, dc.carrera, dc.seccion); };
         }
-        
-        async function confirmarAprobacion() {
-            if (!examenActualAprobacion) return;
-            
-            const academicoCedula = sessionStorage.getItem('current_cedula');
-            
+        function agregarGrupo(grado, carrera, seccion) {
+            carrera = String(carrera || '').trim(); seccion = String(seccion || '').trim().toUpperCase();
+            if (!carrera || !seccion) { toast('Elegí carrera y sección para el grupo.', true); return; }
+            if (AC.grupos.some(function (g) { return g.carrera.toLowerCase() === carrera.toLowerCase() && g.seccion === seccion; })) return;
+            if (!grado) { var c = AC.cat.carreras.filter(function (x) { return x.v === carrera; })[0]; grado = c ? c.grado : ''; }
+            AC.grupos.push({ grado: grado || '', carrera: carrera, seccion: seccion });
+            pintarGrupos();
+        }
+        function pintarGrupos() {
+            $('asigGrupos').innerHTML = AC.grupos.length
+                ? AC.grupos.map(function (g, i) { return '<span class="chip">' + esc(g.carrera) + ' · ' + esc(g.seccion) + '<button type="button" data-quitar="' + i + '" aria-label="Quitar grupo">&times;</button></span>'; }).join('')
+                : '<span class="muted">Todavía no agregaste grupos.</span>';
+        }
+        async function guardarAsignacion() {
+            var d = AC.docente, asig = ($('asigAsignatura').value || '').trim();
+            // si quedó una carrera/sección elegida sin apretar "Agregar", se suma
+            var c = ($('asigCarrera').value || '').trim(), s = ($('asigSeccion').value || '').trim();
+            if (c && s) agregarGrupo('', c, s);
+            if (!asig) { toast('Elegí la asignatura.', true); return; }
+            if (!AC.grupos.length) { toast('Agregá al menos un grupo (carrera y sección).', true); return; }
+            var btn = $('mdAsigGuardar'); btn.disabled = true;
             try {
-                if (accionAprobacion === 'aprobar') {
-                    await CenturiaAPI.exams.approveExam(examenActualAprobacion, academicoCedula);
-                    alert('✓ Examen aprobado exitosamente');
-                } else {
-                    await CenturiaAPI.exams.rejectExam(examenActualAprobacion, academicoCedula, 'Rechazado por académico');
-                    alert('✕ Examen rechazado');
-                }
-                cerrarModalAprobacion();
-                await cargarExamenesParaAprobacion();
+                var r = chk(await CenturiaAPI.academico.saveAssignment({ academico_cedula: AC.cedula, docente_cedula: d.cedula, asignatura: asig, grupos: AC.grupos, aprobar: d.pendiente ? true : $('asigAprobar').checked }));
+                $('mdAsig').classList.remove('on'); toast(r.mensaje || 'Asignación guardada.');
+                await cargarDocentes();
+            } catch (e) { toast(e.message, true); }
+            btn.disabled = false;
+        }
+
+        // ── Confirmaciones ──
+        function confirmar(titulo, msg, conMotivo, textoOk, claseOk, fn) {
+            $('mdConfTitulo').textContent = titulo; $('mdConfMsg').textContent = msg;
+            $('mdConfMotivoBox').style.display = conMotivo ? 'block' : 'none'; $('mdConfMotivo').value = '';
+            var ok = $('mdConfOk'); ok.textContent = textoOk || 'Confirmar'; ok.className = 'b ' + (claseOk || 'p'); ok.disabled = false;
+            AC.onOk = fn; $('mdConf').classList.add('on');
+        }
+        async function ejecutarConfirmacion() {
+            var fn = AC.onOk, motivo = $('mdConfMotivo').value.trim(), ok = $('mdConfOk'); if (!fn) return;
+            ok.disabled = true;
+            try { var r = await fn(motivo); toast((r && r.mensaje) || 'Listo.'); $('mdConf').classList.remove('on'); }
+            catch (e) { toast(e.message, true); ok.disabled = false; }
+        }
+
+        // ── Exámenes ──
+        async function cargarExamenes() {
+            var tb = $('tbodyExam');
+            try {
+                var r = chk(await CenturiaAPI.exams.getExamsForApproval(AC.cedula));
+                $('st-exam-pend').textContent = r.pendientes_count || 0;
+                tb.innerHTML = (r.examenes || []).map(function (ex) {
+                    var quien = ex.configurado ? esc(ex.docente_nombre || '—') + '<div class="muted">' + esc((ex.asignaturas || []).join(', ')) + '</div>' : '<span class="muted">Aún sin configurar por el docente</span>';
+                    var id = esc(ex.examen_id), acc;
+                    if (ex.estado === 'aprobado') acc = '<button class="b n" data-ex="revocar" data-id="' + id + '">Quitar aprobación</button>';
+                    else if (ex.estado === 'rechazado') acc = '<button class="b g" data-ex="aprobar" data-id="' + id + '">Aprobar</button>';
+                    else acc = '<button class="b g" data-ex="aprobar" data-id="' + id + '">Aprobar</button><button class="b r" data-ex="rechazar" data-id="' + id + '">Rechazar</button>';
+                    return '<tr><td><strong>' + esc(ex.examen_nombre) + '</strong></td><td>' + quien + '</td><td style="text-align:center">' + (ex.num_intentos || '—') + '</td>' +
+                        '<td><span class="pill ' + esc(ex.estado) + '">' + esc(ex.estado) + '</span>' + (ex.motivo && ex.estado === 'rechazado' ? '<div class="muted">' + esc(ex.motivo) + '</div>' : '') + '</td><td>' + acc + '</td></tr>';
+                }).join('') || '<tr><td colspan="5" class="vacio">No hay exámenes para mostrar.</td></tr>';
             } catch (e) {
-                alert('Error: ' + (e.message || 'No se pudo procesar la acción'));
-                console.error(e);
+                tb.innerHTML = '<tr><td colspan="5" class="vacio">No se pudo cargar la lista de exámenes: ' + esc(e.message) + '</td></tr>';
+                $('st-exam-pend').textContent = '–';
             }
         }
-        
-        // Cargar exámenes al abrir panel
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', cargarExamenesParaAprobacion);
-        } else {
-            cargarExamenesParaAprobacion();
+
+        // ── Eventos ──
+        function iniciar() {
+            var u = datosUsuario(); AC.cedula = u.cedula;
+            $('userName').textContent = u.nombre;
+
+            $('tabsDoc').addEventListener('click', function (ev) {
+                var t = ev.target.closest('.tab'); if (!t) return;
+                AC.filtro = t.getAttribute('data-f');
+                Array.prototype.forEach.call(document.querySelectorAll('#tabsDoc .tab'), function (x) { x.classList.toggle('on', x === t); });
+                pintarDocentes();
+            });
+            $('buscarDoc').addEventListener('input', function () { AC.busca = this.value.trim(); pintarDocentes(); });
+
+            $('tbodyDoc').addEventListener('click', function (ev) {
+                var b = ev.target.closest('[data-act]'); if (!b) return;
+                var ced = b.getAttribute('data-ced'), act = b.getAttribute('data-act');
+                var d = AC.docentes.filter(function (x) { return x.cedula === ced; })[0]; if (!d) return;
+                if (act === 'asignar') abrirAsignar(ced);
+                if (act === 'rechazar') confirmar('Rechazar docente', 'Se rechaza la solicitud de ' + (d.nombre || ced) + '. No podrá ingresar como docente.', false, 'Rechazar', 'r', async function () {
+                    var r = chk(await CenturiaAPI.academico.decideTeacher({ academico_cedula: AC.cedula, docente_cedula: ced, decision: 'rechazar' })); await cargarDocentes(); return r;
+                });
+                if (act === 'revocar') {
+                    var fila = b.getAttribute('data-fila');
+                    confirmar('Quitar grupo', 'El docente dejará de ver este grupo. Podés volver a asignarlo cuando quieras.', false, 'Quitar', 'r', async function () {
+                        var r = chk(await CenturiaAPI.academico.revokeAssignment({ academico_cedula: AC.cedula, docente_cedula: ced, fila: fila })); await cargarDocentes(); return r;
+                    });
+                }
+            });
+
+            $('tbodyExam').addEventListener('click', function (ev) {
+                var b = ev.target.closest('[data-ex]'); if (!b) return;
+                var id = b.getAttribute('data-id'), act = b.getAttribute('data-ex');
+                var nombre = b.closest('tr').querySelector('strong').textContent;
+                var api = CenturiaAPI.exams;
+                if (act === 'aprobar') confirmar('Aprobar examen', 'Los alumnos podrán rendir «' + nombre + '» cuando el docente habilite la ventana.', false, 'Aprobar', 'g', async function () {
+                    var r = chk(await api.approveExam(id, AC.cedula)); await cargarExamenes(); return r;
+                });
+                if (act === 'rechazar') confirmar('Rechazar examen', '«' + nombre + '» quedará bloqueado para los alumnos.', true, 'Rechazar', 'r', async function (motivo) {
+                    var r = chk(await api.rejectExam(id, AC.cedula, motivo)); await cargarExamenes(); return r;
+                });
+                if (act === 'revocar') confirmar('Quitar aprobación', '«' + nombre + '» vuelve a pendiente y se bloquea hasta una nueva aprobación.', false, 'Quitar aprobación', 'r', async function () {
+                    var r = chk(await api.revokeExamApproval(id, AC.cedula)); await cargarExamenes(); return r;
+                });
+            });
+
+            $('btnAddGrupo').addEventListener('click', function () {
+                agregarGrupo('', $('asigCarrera').value, $('asigSeccion').value);
+                $('asigSeccion').value = '';
+            });
+            $('asigGrupos').addEventListener('click', function (ev) {
+                var b = ev.target.closest('[data-quitar]'); if (!b) return;
+                AC.grupos.splice(parseInt(b.getAttribute('data-quitar'), 10), 1); pintarGrupos();
+            });
+            $('mdAsigGuardar').addEventListener('click', guardarAsignacion);
+            $('mdAsigCancelar').addEventListener('click', function () { $('mdAsig').classList.remove('on'); });
+            $('mdConfCancelar').addEventListener('click', function () { $('mdConf').classList.remove('on'); });
+            $('mdConfOk').addEventListener('click', ejecutarConfirmacion);
+            document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { $('mdAsig').classList.remove('on'); $('mdConf').classList.remove('on'); } });
+
+            cargarExamenes();
+            cargarDocentes();
+            cargarCatalogos();
         }
 
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const user = CenturiaAPI.getCurrentUser();
-            const nombre = user ? (user.firstname + ' ' + user.lastname) : (sessionStorage.getItem('current_nombre') || 'Académico');
-            document.getElementById('userName').textContent = nombre;
+        document.addEventListener('DOMContentLoaded', function () {
+            // Solo Acceso Académico (o administración) puede estar acá; si no, se lo manda a su panel o al inicio
+            if (window.CenturiaSession && !CenturiaSession.protect({ allowedRoles: ['academico', 'admin', 'administrador_plataforma'], currentRolePage: 'academic' })) return;
+            iniciar();
         });
+
     </script>
 </body>
 </html>

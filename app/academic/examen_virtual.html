@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="../js/session-guard.js?v=2"></script>
+    <script src="../js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
 <script src="../js/exam-lock.js"></script>
@@ -14,145 +14,402 @@
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         :root {
-            --primary: #00B140;
-            --primary-dark: #007A33;
-            --primary-light: #E6F4EA;
-            --success: #00B140;
-            --success-light: #E6F4EA;
-            --warning: #d4a843;
-            --warning-light: #FEF3C7;
-            --danger: #dc3545;
-            --danger-light: #f8d7da;
-            --bg: #007A33;
-            --card-bg: #ffffff;
-            --text: #2D2D2D;
-            --text-secondary: #64748b;
-            --border: #C8E6C9;
-            --radius: 12px;
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #e8f5ec;
+            --dorado: #d4a843;
+            --dorado-claro: #f5d77f;
+            --blanco: #ffffff;
+            --rosa: #D94172;
+            --azul: #2563EB;
+            --naranja: #D97706;
+            --rojo: #ef5350;
+            --primary: #16813D;
+            --primary-dark: #0d2c16;
+            --primary-light: rgba(22,129,61,.2);
+            --border: rgba(255,255,255,.12);
+            --card-bg: rgba(255,255,255,.07);
+            --radius: 18px;
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Montserrat', sans-serif;
-            background: var(--bg);
-            color: var(--text);
             min-height: 100vh;
-            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,.04) 0%, transparent 50%);
+            color: var(--blanco);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(22,129,61,.12) 0%, transparent 60%),
+                linear-gradient(160deg, #060f09 0%, #0d2c16 35%, #0f3820 65%, #060f09 100%);
+            z-index: -2;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
+            z-index: -1;
         }
 
-        /* Topbar */
-        .topbar{position:sticky;top:0;z-index:100;background:#004D20;border-bottom:2px solid var(--primary);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-        .topbar-brand{font-size:.85rem;font-weight:700;color:#fff;letter-spacing:1px}
-        .topbar-nav{display:flex;gap:6px}
-        .topbar-nav a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.6rem;font-weight:600;padding:5px 10px;border-radius:6px;transition:.2s}
-        .topbar-nav a:hover,.topbar-nav a.active{background:var(--primary);color:#fff}
-
-        .wrap{max-width:900px;margin:0 auto;padding:12px 16px 60px}
-        .breadcrumb-bar{font-size:.55rem;color:rgba(255,255,255,.5);margin-bottom:8px}
-        .breadcrumb-bar a{color:rgba(255,255,255,.7);text-decoration:none}
-        .breadcrumb-bar a:hover{color:#fff}
-
-        .card{border:none;border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,.15);margin-bottom:20px;background:var(--card-bg)}
-        .card-header{background:var(--primary-dark);color:white;border-radius:var(--radius) var(--radius) 0 0 !important;padding:15px 20px}
-        .card-header h4,.card-header h5{margin:0;font-weight:700}
-
-        .score-display{font-size:2.5rem;font-weight:800;color:var(--primary-dark)}
-        .progress-bar{height:25px;background:var(--primary);border-radius:8px;width:0%;transition:width 1s;color:white;line-height:25px;font-weight:700}
-        .question-card{border:1px solid var(--border);border-radius:8px;padding:20px;margin:10px 0;background:#f8fafc}
-        .question-card h5{color:var(--primary-dark);margin-bottom:15px;font-weight:700}
-        .option-btn{width:100%;text-align:left;padding:12px;margin:5px 0;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;transition:.2s;font-family:'Montserrat';font-weight:500;font-size:.85rem}
-        .option-btn:hover{border-color:var(--primary);background:var(--primary-light)}
-        .option-btn.selected{border-color:var(--primary);background:var(--primary-light);font-weight:700}
-        .option-btn.correct{border-color:var(--success);background:var(--success-light)}
-        .option-btn.incorrect{border-color:var(--danger);background:var(--danger-light)}
-
-        .attempt-info{background:var(--primary-light);padding:15px;border-radius:var(--radius);margin:15px 0}
-        .alumno-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;font-size:.85rem}
-        .alumno-datos .dl{font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--text-secondary);display:block}
-        .alumno-datos .dv{font-weight:700;color:var(--primary-dark)}
-        .pre-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,20,10,.85);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
-        .pre-box{background:#fff;border-radius:16px;max-width:560px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
-        .pre-box h4{color:var(--primary-dark);font-weight:800;margin:0 0 4px}
-        /* Navegador de preguntas: columna vertical al lado del examen, siempre visible */
-        .wrap.wide{max-width:1180px}
-        .exam-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
-        .q-side{position:sticky;top:56px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-height:calc(100vh - 100px);display:flex;flex-direction:column;box-sizing:border-box}
-        .q-side-title{font-size:.72rem;font-weight:800;color:var(--primary-dark);margin-bottom:6px}
-        .q-nav-bar{height:6px;border-radius:4px;background:#e5e7eb;overflow:hidden;margin:6px 0}
-        .q-nav-bar>i{display:block;height:100%;width:0;background:var(--primary);transition:width .25s}
-        .q-summary{font-size:.66rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.35}
-        .q-summary b{color:var(--primary-dark)}
-        .q-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;padding-right:2px;min-height:0;flex:1 1 auto}
-        .q-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:2px solid #fbbf24;background:#fffbeb;border-radius:8px;padding:3px 8px;cursor:pointer;font-family:'Montserrat';font-size:.68rem;font-weight:600;color:#92400e;transition:.15s}
-        .q-row .n{min-width:22px;height:22px;border-radius:6px;background:#fff;border:2px solid #fbbf24;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem}
-        .q-row:hover{filter:brightness(.97)}
-        .q-row.resuelta{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
-        .q-row.resuelta .n{background:var(--primary);border-color:var(--primary);color:#fff}
-        .q-row.faltante{border-color:#dc2626;background:#fee2e2;color:#991b1b;animation:qpulse .8s 3}
-        .q-row.faltante .n{border-color:#dc2626}
-        @keyframes qpulse{50%{transform:scale(1.04)}}
-        @media(max-width:900px){
-            .exam-layout{grid-template-columns:1fr}
-            .q-side{position:sticky;top:44px;z-index:90;max-height:none;order:-1;padding:8px}
-            .q-list{flex-direction:row;flex-wrap:wrap;gap:5px}
-            .q-row{width:auto;padding:3px}
-            .q-row .st{display:none}
-            .q-summary{display:none}
+        /* ── Wrapper & Animation ── */
+        .wrap {
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 20px 20px 60px;
+            animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
         }
-        .question-card{scroll-margin-top:170px}
-        .question-card.resuelta{border-left:4px solid var(--primary)}
-        .grade-breakdown{background:var(--card-bg);padding:20px;border-radius:var(--radius);margin:20px 0;border-left:4px solid var(--primary)}
-        .grade-item{margin:10px 0;font-size:.9rem}
-        .grade-item strong{color:var(--primary-dark)}
+        .wrap.wide { max-width: 1200px; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        .result-badge{padding:10px 20px;border-radius:20px;font-size:.9rem;font-weight:700}
-        .badge-excelente{background:var(--success);color:#fff}
-        .badge-bueno{background:var(--warning);color:#fff}
-        .badge-mejorar{background:var(--danger);color:#fff}
+        /* ── Header Estilo Libreta ── */
+        .lib-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.3);
+        }
+        .lib-header-left { display: flex; align-items: center; gap: 16px; }
+        .lib-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: 700; color: var(--blanco);
+            border: 2px solid var(--dorado);
+        }
+        .lib-header-name { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .lib-header-sub { font-size: .7rem; color: var(--dorado); letter-spacing: 1px; }
+        .lib-btn {
+            padding: 8px 16px; border-radius: 12px; font-size: .7rem;
+            font-family: 'Montserrat'; font-weight: 600; cursor: pointer;
+            border: none; transition: .2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .lib-btn-home { background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.15); }
+        .lib-btn-home:hover { background: rgba(255,255,255,.15); color: var(--blanco); }
+        .lib-btn-print { background: rgba(197,165,90,.2); color: var(--dorado); border: 1px solid rgba(197,165,90,.3); }
+        .lib-btn-print:hover { background: rgba(197,165,90,.3); }
 
-        .unidad-completada{background:var(--success-light);padding:10px;border-radius:var(--radius);margin:5px 0;border-left:3px solid var(--success)}
-        .unidad-pendiente{background:#f1f5f9;padding:10px;border-radius:var(--radius);margin:5px 0;border-left:3px solid #94a3b8}
+        .breadcrumb-bar { font-size: .65rem; color: rgba(255,255,255,.5); margin-bottom: 12px; }
+        .breadcrumb-bar a { color: var(--dorado); text-decoration: none; }
+        .breadcrumb-bar a:hover { color: #fff; text-decoration: underline; }
 
-        .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px 16px;background:#004D20;border-top:2px solid var(--primary);font-size:.5rem;font-weight:500;color:rgba(255,255,255,.6)}
+        /* ── Cards Glassmorphism ── */
+        .card {
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0,0,0,.25);
+            margin-bottom: 20px;
+            background: rgba(255,255,255,.06);
+            backdrop-filter: blur(20px);
+            color: var(--blanco);
+            overflow: hidden;
+        }
+        .card-header {
+            background: rgba(0,122,51,.3);
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            color: var(--dorado);
+            padding: 16px 20px;
+            font-weight: 700;
+        }
+        .card-header h4, .card-header h5 { margin: 0; font-weight: 700; color: #fff; }
+        .card-header small { color: var(--dorado-claro); }
+        .card-body { padding: 22px; }
 
-        @media print{.footer,.topbar{display:none!important}body{background:#fff}}
-        @media(max-width:768px){.wrap{padding:10px 10px 60px}.topbar{flex-direction:column;gap:6px}}
+        /* ── Grade Breakdown & Items ── */
+        .grade-breakdown {
+            background: rgba(0,0,0,.25);
+            border: 1px solid rgba(255,255,255,.08);
+            border-left: 4px solid var(--dorado);
+            padding: 18px;
+            border-radius: 14px;
+            margin: 10px 0;
+            color: rgba(255,255,255,.9);
+        }
+        .grade-item { margin: 8px 0; font-size: .85rem; }
+        .grade-item strong { color: var(--dorado); }
+
+        /* ── Unidades de Progreso ── */
+        .unidad-completada {
+            background: rgba(22,129,61,.2);
+            border: 1px solid rgba(74,222,128,.3);
+            border-left: 4px solid #4ade80;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin: 6px 0;
+            font-size: .82rem;
+            color: #fff;
+        }
+        .unidad-pendiente {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-left: 4px solid rgba(255,255,255,.3);
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin: 6px 0;
+            font-size: .82rem;
+            color: rgba(255,255,255,.6);
+        }
+
+        /* ── Question Card & Options ── */
+        .question-card {
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 14px 0;
+            background: rgba(0,0,0,.25);
+            backdrop-filter: blur(10px);
+            scroll-margin-top: 100px;
+            transition: .2s;
+        }
+        .question-card h5 { color: var(--dorado); margin-bottom: 12px; font-weight: 700; font-size: .95rem; }
+        .question-card.resuelta { border-left: 4px solid var(--verde-medio); }
+
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            margin: 6px 0;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 12px;
+            background: rgba(255,255,255,.04);
+            color: rgba(255,255,255,.9);
+            cursor: pointer;
+            transition: .2s;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            font-size: .85rem;
+        }
+        .option-btn:hover {
+            border-color: var(--dorado);
+            background: rgba(212,168,67,.15);
+            color: #fff;
+        }
+        .option-btn.selected {
+            border-color: var(--dorado);
+            background: rgba(212,168,67,.25);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 0 12px rgba(212,168,67,.2);
+        }
+        .option-btn.correct {
+            border-color: var(--verde-medio);
+            background: rgba(22,129,61,.35);
+            color: #fff;
+        }
+        .option-btn.incorrect {
+            border-color: var(--rojo);
+            background: rgba(239,83,80,.35);
+            color: #fff;
+        }
+
+        .attempt-info {
+            background: rgba(0,0,0,.25);
+            border: 1px solid rgba(255,255,255,.08);
+            padding: 16px;
+            border-radius: 14px;
+            margin: 15px 0;
+        }
+        .alumno-datos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px 16px;
+            font-size: .82rem;
+        }
+        .alumno-datos .dl {
+            font-size: .6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.5);
+            letter-spacing: .5px;
+            display: block;
+        }
+        .alumno-datos .dv { font-weight: 700; color: var(--dorado); }
+
+        /* ── Modal Pre-Inicio ── */
+        .pre-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(6,15,9,.85); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px; overflow: auto;
+        }
+        .pre-box {
+            background: #0d2c16;
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 20px;
+            max-width: 560px; width: 100%; padding: 26px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.6);
+            color: #fff;
+        }
+        .pre-box h4 { color: var(--dorado); font-weight: 800; margin: 0 0 6px; }
+
+        /* ── Navegador Lateral de Preguntas ── */
+        .exam-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 18px; align-items: start; }
+        .q-side {
+            position: sticky; top: 20px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            padding: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.3);
+            max-height: calc(100vh - 40px);
+            display: flex; flex-direction: column;
+            box-sizing: border-box;
+        }
+        .q-side-title { font-size: .75rem; font-weight: 800; color: var(--dorado); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+        .q-nav-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; margin: 6px 0; }
+        .q-nav-bar > i { display: block; height: 100%; width: 0; background: var(--verde-medio); transition: width .25s; }
+        .q-summary { font-size: .68rem; color: rgba(255,255,255,.7); margin-bottom: 10px; line-height: 1.4; }
+        .q-summary b { color: var(--dorado); }
+        .q-list { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; padding-right: 4px; min-height: 0; flex: 1 1 auto; }
+        .q-row {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            text-align: left; border: 1px solid rgba(212,168,67,.3);
+            background: rgba(212,168,67,.08);
+            border-radius: 10px; padding: 4px 10px; cursor: pointer;
+            font-family: 'Montserrat'; font-size: .7rem; font-weight: 600;
+            color: var(--dorado-claro); transition: .15s;
+        }
+        .q-row .n {
+            min-width: 22px; height: 22px; border-radius: 6px;
+            background: rgba(0,0,0,.3); border: 1px solid rgba(212,168,67,.5);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: .7rem; color: #fff;
+        }
+        .q-row:hover { background: rgba(212,168,67,.2); }
+        .q-row.resuelta { border-color: rgba(74,222,128,.4); background: rgba(22,129,61,.2); color: #4ade80; }
+        .q-row.resuelta .n { background: var(--verde-medio); border-color: #4ade80; color: #fff; }
+        .q-row.faltante { border-color: var(--rojo); background: rgba(239,83,80,.2); color: #fca5a5; animation: qpulse .8s 3; }
+        .q-row.faltante .n { border-color: var(--rojo); }
+        @keyframes qpulse { 50% { transform: scale(1.04); } }
+
+        /* ── Resultados ── */
+        .score-display { font-size: 2.8rem; font-weight: 800; color: var(--dorado); text-shadow: 0 0 20px rgba(212,168,67,.3); }
+        .result-badge { padding: 10px 24px; border-radius: 20px; font-size: .88rem; font-weight: 700; display: inline-block; }
+        .badge-excelente { background: rgba(22,129,61,.3); border: 1px solid rgba(74,222,128,.5); color: #4ade80; }
+        .badge-bueno { background: rgba(212,168,67,.3); border: 1px solid rgba(212,168,67,.5); color: var(--dorado); }
+        .badge-mejorar { background: rgba(239,83,80,.3); border: 1px solid rgba(239,83,80,.5); color: #f87171; }
+
+        /* ── Botones Genéricos de Acción ── */
+        .btn-exam-choice {
+            padding: 14px 28px; border-radius: 14px; font-weight: 700; font-size: .85rem;
+            font-family: 'Montserrat', sans-serif; cursor: pointer; transition: .2s; border: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-exam-parcial1 {
+            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
+            color: #fff; border: 1px solid rgba(74,222,128,.4);
+        }
+        .btn-exam-parcial1:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,129,61,.4); color: #fff; }
+        .btn-exam-parcial2 {
+            background: linear-gradient(135deg, #b45309, #78350f);
+            color: #fff; border: 1px solid rgba(212,168,67,.4);
+        }
+        .btn-exam-parcial2:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,168,67,.4); color: #fff; }
+        .btn-exam-final {
+            background: linear-gradient(135deg, var(--dorado), #92400e);
+            color: #fff; border: 1px solid rgba(212,168,67,.6);
+        }
+        .btn-exam-final:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,168,67,.6); color: #fff; }
+
+        /* ── Footer Estilo Libreta ── */
+        .premium-footer-wrapper {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            text-align: center; padding: 6px 20px; z-index: 10;
+            background: rgba(0,61,25,.9); backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255,255,255,.08); height: 36px;
+        }
+        .premium-footer-wrapper .premium-footer { margin-top: 0; padding: 0; line-height: 1.4; }
+        .premium-footer-wrapper .premium-footer .institution { font-size: .55rem; margin-bottom: 0; color: #fff; font-weight: 600; }
+        .premium-footer-wrapper .premium-footer .motto { font-size: .5rem; color: var(--dorado); }
+        .premium-footer-wrapper .premium-footer .year { font-size: .45rem; margin-top: 0; color: rgba(255,255,255,.4); }
+
+        @media print {
+            .premium-footer-wrapper, .lib-btn, .topbar { display: none !important; }
+            body { background: #fff !important; color: #000 !important; }
+            body::before, body::after { display: none; }
+            .card, .lib-header { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+            .card-header { background: #007A33 !important; color: #fff !important; }
+        }
+        @media (max-width: 900px) {
+            .exam-layout { grid-template-columns: 1fr; }
+            .q-side { position: sticky; top: 12px; z-index: 90; max-height: none; order: -1; padding: 8px; }
+            .q-list { flex-direction: row; flex-wrap: wrap; gap: 5px; }
+            .q-row { width: auto; padding: 3px 6px; }
+            .q-row .st { display: none; }
+            .q-summary { display: none; }
+        }
+        @media (max-width: 768px) {
+            .wrap { padding: 12px 12px 60px; }
+            .lib-header { flex-direction: column; gap: 12px; text-align: center; }
+            .lib-header-left { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
-        <div class="topbar-nav">
-            <a href="../dashboard.html">Dashboard</a>
-            <a href="examen_virtual.html" class="active">Exámenes</a>
-            <a href="../libreta.html">Libreta</a>
-        </div>
-    </div>
-
     <div class="wrap">
+        <!-- ═══ Header Estilo Libreta ═══ -->
+        <div class="lib-header">
+            <div class="lib-header-left">
+                <div class="lib-avatar" id="lib-avatar"><i class="bi bi-mortarboard-fill"></i></div>
+                <div>
+                    <div class="lib-header-name">Examen Virtual — TIC</div>
+                    <div class="lib-header-sub">INSTITUTO SUPERIOR CENTURIA • PLAN ADE18</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="../libreta.html" class="lib-btn lib-btn-print">
+                    <i class="bi bi-card-checklist"></i> Libreta
+                </a>
+                <a href="../dashboard.html" class="lib-btn lib-btn-home">
+                    <i class="bi bi-grid-3x3-gap"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
         <div class="breadcrumb-bar">
-            <a href="../dashboard.html">Inicio</a> / Exámenes / Examen Virtual
+            <a href="../dashboard.html">Inicio</a> / <a href="../cursos/ver.html?curso=ADE18">Académico</a> / Exámenes Virtuales
         </div>
 
         <!-- Info del programa -->
         <div class="card">
             <div class="card-header">
-                <h4><i class="bi bi-clipboard-check me-2"></i> Examen Virtual — Evaluación TIC</h4>
-                <small style="opacity:.8">Instituto Superior Centuria — Plan de Estudios ADE18</small>
+                <h4><i class="bi bi-clipboard-check me-2"></i> Evaluación TIC — Sistema de Calificación</h4>
+                <small>Plan de Estudios ADE18 • Rúbrica Institucional</small>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <h5 style="color:var(--primary-dark);font-weight:700"><i class="bi bi-bar-chart me-2"></i>Escala de Calificación</h5>
+                        <h5 style="color:var(--dorado);font-weight:700;margin-bottom:12px;"><i class="bi bi-bar-chart me-2"></i>Escala de Calificación</h5>
                         <div class="grade-breakdown">
                             <div class="grade-item"><strong>Examen Parcial 1:</strong> 20% (Unidades I-III)</div>
                             <div class="grade-item"><strong>Examen Parcial 2:</strong> 20% (Unidades IV-VI)</div>
                             <div class="grade-item"><strong>Asistencia/Participación:</strong> 10%</div>
                             <div class="grade-item"><strong>Examen Final:</strong> 50% (Todas las unidades)</div>
-                            <hr>
+                            <hr style="border-color:rgba(255,255,255,.15);margin:10px 0;">
                             <div class="grade-item"><strong>Total:</strong> 100% de la nota final</div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h5 style="color:var(--primary-dark);font-weight:700"><i class="bi bi-graph-up me-2"></i>Progreso de Unidades</h5>
+                        <h5 style="color:var(--dorado);font-weight:700;margin-bottom:12px;"><i class="bi bi-graph-up me-2"></i>Progreso de Unidades</h5>
                         <div id="progressContainer"></div>
                     </div>
                 </div>
@@ -162,19 +419,19 @@
         <!-- Botones de examen -->
         <div class="card" id="examButtons">
             <div class="card-body text-center">
-                <h5 style="color:var(--primary-dark);margin-bottom:16px"><i class="bi bi-journal-check me-2"></i>Selecciona un Examen</h5>
+                <h5 style="color:var(--dorado);margin-bottom:18px;font-weight:700;"><i class="bi bi-journal-check me-2"></i>Selecciona una Evaluación</h5>
                 <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <button onclick="generarExamen('parcial1')" class="btn" style="background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700">
-                        <i class="bi bi-file-earmark-text me-2"></i>Parcial 1
+                    <button onclick="generarExamen('parcial1')" class="btn-exam-choice btn-exam-parcial1">
+                        <i class="bi bi-file-earmark-text"></i> Parcial 1
                     </button>
-                    <button onclick="generarExamen('parcial2')" class="btn" style="background:var(--warning);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700">
-                        <i class="bi bi-file-earmark-text me-2"></i>Parcial 2
+                    <button onclick="generarExamen('parcial2')" class="btn-exam-choice btn-exam-parcial2">
+                        <i class="bi bi-file-earmark-text"></i> Parcial 2
                     </button>
-                    <button onclick="generarExamen('final')" class="btn" style="background:var(--primary-dark);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700">
-                        <i class="bi bi-trophy me-2"></i>Examen Final
+                    <button onclick="generarExamen('final')" class="btn-exam-choice btn-exam-final">
+                        <i class="bi bi-trophy"></i> Examen Final
                     </button>
                 </div>
-                <p id="examWarning" style="color:#dc3545;font-size:.75rem;margin-top:10px;display:none"></p>
+                <p id="examWarning" style="color:var(--rojo);font-size:.78rem;margin-top:14px;display:none;font-weight:600;"></p>
             </div>
         </div>
 
@@ -189,17 +446,17 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="score-display" id="finalScore">0</div>
-                    <h4 id="scorePercentage"></h4>
-                    <p id="resultMessage" class="mt-3" style="font-size:.85rem"></p>
+                    <h4 id="scorePercentage" style="color:#fff;margin-top:6px;"></h4>
+                    <p id="resultMessage" class="mt-3" style="font-size:.9rem;color:rgba(255,255,255,.85);"></p>
                     <div class="result-badge mb-3" id="gradeBadge"></div>
-                    <h6 style="color:var(--primary-dark)">Desglose:</h6>
-                    <div id="sectionBreakdown" style="font-size:.85rem"></div>
-                    <div class="d-flex gap-2 justify-content-center mt-3">
-                        <button onclick="reintentarExamen()" class="btn" style="background:var(--primary);color:#fff;padding:10px 20px;border-radius:10px;font-weight:700">
-                            <i class="bi bi-arrow-repeat me-1"></i>Reintentar
+                    <h6 style="color:var(--dorado);font-weight:700;margin-top:10px;">Desglose:</h6>
+                    <div id="sectionBreakdown" style="font-size:.85rem;color:rgba(255,255,255,.8);"></div>
+                    <div class="d-flex gap-2 justify-content-center mt-4">
+                        <button onclick="reintentarExamen()" class="btn-exam-choice btn-exam-parcial1" style="padding:10px 22px;">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar
                         </button>
-                        <button onclick="cerrarResultados()" class="btn" style="background:#f1f5f9;color:var(--text);padding:10px 20px;border-radius:10px;font-weight:700">
-                            <i class="bi bi-x-lg me-1"></i>Cerrar
+                        <button onclick="cerrarResultados()" class="lib-btn lib-btn-home" style="padding:10px 22px;">
+                            <i class="bi bi-x-lg"></i> Cerrar
                         </button>
                     </div>
                 </div>
@@ -207,9 +464,16 @@
         </div>
     </div>
 
-    <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
+    <!-- ═══ Footer Estilo Libreta ═══ -->
+    <div class="premium-footer-wrapper">
+        <div class="premium-footer">
+            <p class="institution">INSTITUTO SUPERIOR CENTURIA</p>
+            <p class="motto">"Formando líderes con tecnología y excelencia"</p>
+            <p class="year">© 2026 Campus Virtual</p>
+        </div>
+    </div>
 
-    <script src="../js/api.js?v=13"></script>
+    <script src="../js/api.js?v=16"></script>
     <script>
     // ═══ SESSION GUARD ═══
     if (!sessionStorage.getItem('current_cedula')) { location.replace('../index.html'); }
@@ -452,9 +716,9 @@
             <p style="font-size:.78rem;color:var(--text-secondary);margin-bottom:14px">Verificá que tus datos sean correctos. El examen comienza cuando pulses “Iniciar examen”.</p>
             <div class="attempt-info" style="margin-top:0">${bloqueDatos(d)}</div>
             <div style="font-size:.85rem;margin:12px 0"><strong>${esc(ex.nombre)}</strong> · ${ex.preguntas.length} preguntas · ${maxPts} puntos · Intento ${intentos[ex.tipo] + 1} de ${intentos.maxIntentos}</div>
-            <div style="display:flex;gap:8px">
-                <button onclick="cancelarPreInicio()" class="btn" style="flex:1;background:#f1f5f9;padding:12px;border-radius:10px;font-weight:700">Cancelar</button>
-                <button onclick="iniciarExamen()" class="btn" style="flex:2;background:var(--primary);color:#fff;padding:12px;border-radius:10px;font-weight:700"><i class="bi bi-play-fill me-1"></i>Iniciar examen</button>
+            <div style="display:flex;gap:10px;margin-top:16px;">
+                <button onclick="cancelarPreInicio()" class="lib-btn lib-btn-home" style="flex:1;justify-content:center;padding:12px;font-size:.8rem;">Cancelar</button>
+                <button onclick="iniciarExamen()" class="btn-exam-choice btn-exam-parcial1" style="flex:2;justify-content:center;padding:12px;font-size:.85rem;"><i class="bi bi-play-fill me-1"></i>Iniciar examen</button>
             </div></div>`;
         document.body.appendChild(ov);
     }
@@ -514,7 +778,7 @@
         });
 
         html += `</div></div>
-        <button class="btn w-100" style="background:var(--primary);color:#fff;padding:14px;border-radius:10px;font-weight:700;font-size:.9rem;margin-top:10px" onclick="submitExamen()">
+        <button class="btn-exam-choice w-100" style="background:linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));color:#fff;border:1px solid rgba(74,222,128,.4);padding:14px;border-radius:14px;font-weight:700;font-size:.95rem;margin-top:14px;box-shadow:0 8px 24px rgba(22,129,61,.3);" onclick="submitExamen()">
             <i class="bi bi-check-all me-2"></i>Terminar Examen
         </button></div>
         <aside class="q-side" id="qNav">

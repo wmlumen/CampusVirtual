@@ -11,7 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --verde-oscuro: #0d2c16;
@@ -663,7 +663,6 @@
             alumno: { label: 'Alumno', links: [
                 { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
                 { href: 'academic/examen_virtual.html', icon: 'bi-pencil-square', label: 'Exámenes' },
                 { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
@@ -681,6 +680,7 @@
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
                 { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
                 { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' }
             ]},
@@ -688,8 +688,14 @@
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
                 { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'academic/indicadores_por_unidad.html', icon: 'bi-graph-up', label: 'Indicadores' },
                 { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' }
+            ]},
+            admin_filial: { label: 'Filial', links: [
+                { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Filial' },
+                { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' }
             ]}
         };
 
@@ -709,6 +715,12 @@
             document.getElementById('tab-btn-dash').classList.toggle('active', tab === 'dash');
             document.getElementById('tab-btn-perfil').classList.toggle('active', tab === 'perfil');
             document.getElementById('tab-btn-qr').classList.toggle('active', tab === 'qr');
+
+            if (tab === 'qr') {
+                const user = CenturiaAPI.getCurrentUser() || {};
+                const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+                generarQR(user, cedula);
+            }
         }
 
         async function cargarDashboard() {
@@ -1151,40 +1163,126 @@
         }
 
         // === QR CODE ===
+        let qrCodeInstance = null;
+
         function generarQR(user, cedula) {
             try {
-                const u = user || {};
+                const u = user || CenturiaAPI.getCurrentUser() || {};
+                const c = cedula || u.username || u.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
                 const datos = {
+                    tipo: 'credencial_asistencia',
+                    institucion: 'CENTURIA',
                     nombre: u.firstname || u.nombre || localStorage.getItem('centuria_nombre') || 'Alumno',
                     apellido: u.lastname || u.apellido || localStorage.getItem('centuria_apellido') || '',
-                    cedula: cedula || u.username || u.cedula || '',
+                    cedula: c,
                     grado: u.grado || localStorage.getItem('centuria_grado') || '-',
                     carrera: u.carrera || localStorage.getItem('centuria_carrera') || '-',
                     seccion: u.seccion || localStorage.getItem('centuria_seccion') || '-',
                     timestamp: new Date().toISOString()
                 };
+                
+                const qrText = JSON.stringify(datos);
                 const container = document.getElementById('qr-container');
+                if (!container) return;
                 container.innerHTML = '';
+
+                // Método 1: Librería QRCode (qrcodejs / qrcode.js)
                 if (typeof QRCode !== 'undefined') {
-                    new QRCode(container, {
-                        text: JSON.stringify(datos),
-                        width: 200, height: 200,
-                        colorDark: '#0d2c16', colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
+                    try {
+                        qrCodeInstance = new QRCode(container, {
+                            text: qrText,
+                            width: 200,
+                            height: 200,
+                            colorDark: '#0d2c16',
+                            colorLight: '#ffffff',
+                            correctLevel: (typeof QRCode.CorrectLevel !== 'undefined') ? QRCode.CorrectLevel.M : 2
+                        });
+                        return;
+                    } catch (errQ) {
+                        console.warn('Fallo render inicial QRCode, aplicando fallback...', errQ);
+                    }
                 }
-            } catch(e) {}
+
+                // Método 2 Fallback API QR de alta confiabilidad
+                const encodedData = encodeURIComponent(qrText);
+                const qrImg = document.createElement('img');
+                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0d2c16&bgcolor=ffffff&data=${encodedData}`;
+                qrImg.alt = 'Código QR de Asistencia';
+                qrImg.style.width = '200px';
+                qrImg.style.height = '200px';
+                qrImg.style.borderRadius = '8px';
+                qrImg.crossOrigin = 'anonymous';
+                container.appendChild(qrImg);
+
+            } catch(e) {
+                console.error('Error generando QR:', e);
+                const container = document.getElementById('qr-container');
+                if (container) {
+                    container.innerHTML = '<div style="color:#ef4444;font-size:.7rem;padding:20px"><i class="bi bi-exclamation-triangle"></i> Error al generar QR</div>';
+                }
+            }
         }
 
-        function descargarQR() {
+        async function descargarQR() {
             try {
-                const canvas = document.querySelector('#qr-container canvas');
-                if (!canvas) { showToast('Generando QR...', 'error'); return; }
-                const a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = 'Credencial_QR_' + (sessionStorage.getItem('current_cedula') || 'Centuria') + '.png';
-                a.click();
-            } catch(e) { showToast('Error al descargar código QR', 'error'); }
+                const container = document.getElementById('qr-container');
+                if (!container) return;
+
+                const canvas = container.querySelector('canvas');
+                const img = container.querySelector('img');
+                const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || 'Estudiante';
+                const filename = `Credencial_QR_${ced}.png`;
+
+                if (canvas) {
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/png');
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showToast('QR descargado exitosamente', 'success');
+                    return;
+                }
+
+                if (img && img.src) {
+                    if (img.src.startsWith('data:')) {
+                        const a = document.createElement('a');
+                        a.href = img.src;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        showToast('QR descargado exitosamente', 'success');
+                        return;
+                    }
+
+                    // Descargar imagen remota convirtiéndola a blob canvas
+                    try {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = 200;
+                        tempCanvas.height = 200;
+                        const ctx = tempCanvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, 200, 200);
+                        const a = document.createElement('a');
+                        a.href = tempCanvas.toDataURL('image/png');
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        showToast('QR descargado exitosamente', 'success');
+                        return;
+                    } catch (eBlob) {
+                        window.open(img.src, '_blank');
+                        showToast('QR abierto para descargar', 'success');
+                        return;
+                    }
+                }
+
+                showToast('Generando QR...', 'error');
+            } catch(e) {
+                console.error('Error al descargar QR:', e);
+                showToast('Error al descargar código QR', 'error');
+            }
         }
 
         // === EDICIÓN DE CAMPOS ===

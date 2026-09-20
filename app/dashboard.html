@@ -1227,12 +1227,13 @@
                 { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             admin: { label: 'Administrador', links: [
+                { href: 'dashboard-admin.html', icon: 'bi-shield-shaded', label: 'Gestión Usuarios & Roles' },
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
                 { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
                 { href: 'eventos.html', icon: 'bi-qr-code-scan', label: 'Eventos' },
                 { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
-                { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
+                { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios y Roles' },
                 { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' },
                 { href: 'facturas.html', icon: 'bi-receipt', label: 'Facturas' },
                 { href: 'mensajes-alumnos.html', icon: 'bi-megaphone', label: 'Mensajes a alumnos' },
@@ -1305,6 +1306,8 @@
                 let roleFromStorage = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || 'alumno').toLowerCase();
                 
                 // Sincronizar roles desde el servidor y detectar si posee rol administrativo o carrera ADMIN
+                const esAdminPorCedulaOTexto = String(cedula).replace(/[\.\s]/g, '') === '1340130' || String(user.carrera || '').toUpperCase() === 'ADMIN' || String(user.seccion || '').toUpperCase() === 'ADMIN' || ['admin', 'administrador', 'administrador_plataforma'].includes(roleFromStorage);
+
                 try {
                     const rolesData = await CenturiaAPI.getRoles(cedula);
                     const rolesList = (rolesData && rolesData.roles) ? rolesData.roles.filter(r => r.estado === 'activo') : [];
@@ -1317,14 +1320,22 @@
                         roleFromStorage = higherRole;
                         sessionStorage.setItem('rol', higherRole);
                         localStorage.setItem('centuria_rol', higherRole);
-                    } else if (String(user.carrera || '').toUpperCase() === 'ADMIN' || String(user.seccion || '').toUpperCase() === 'ADMIN') {
+                    } else if (esAdminPorCedulaOTexto) {
                         user.rol = 'admin';
                         user.role = 'admin';
                         roleFromStorage = 'admin';
                         sessionStorage.setItem('rol', 'admin');
                         localStorage.setItem('centuria_rol', 'admin');
                     }
-                } catch(eRol) {}
+                } catch(eRol) {
+                    if (esAdminPorCedulaOTexto) {
+                        user.rol = 'admin';
+                        user.role = 'admin';
+                        roleFromStorage = 'admin';
+                        sessionStorage.setItem('rol', 'admin');
+                        localStorage.setItem('centuria_rol', 'admin');
+                    }
+                }
 
                 currentUserRole = roleFromStorage;
                 currentUserData = user;

@@ -1414,8 +1414,11 @@ function cvAuthRegister(ss, data) {
     }
 
     var rol = String(data.rol || 'alumno').toLowerCase().trim();
-    if (['alumno', 'docente', 'admin', 'academico'].indexOf(rol) < 0) rol = 'alumno';
-    var estado = (rol === 'docente' && data.requiere_aprobacion) ? 'pendiente' : 'activo';
+    if (rol === 'docente' || rol === 'admin' || rol === 'academico') {
+      throw new Error('El registro de docentes y personal académico no está habilitado públicamente. Debe ser dado de alta por Secretaría General / Administración.');
+    }
+    rol = 'alumno';
+    var estado = 'activo';
 
     var uuid = 'USR-' + Utilities.getUuid();
     var salt = Utilities.getUuid().replace(/-/g, '');

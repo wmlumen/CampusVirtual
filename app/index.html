@@ -788,9 +788,11 @@
                     <!-- 2A: Parte 1 - Datos Personales -->
                     <div id="reg-paso-1">
                         <div class="sec-wrap">
-                            <div class="sec-head"><span class="num">1</span> Datos Personales</div>
-                            <div class="mb-2"><label class="lbl" for="reg-rol">Tipo de registro</label><select class="inp-select" id="reg-rol" onchange="cambiarTipoRegistro()"><option value="alumno">Alumno</option><option value="docente">Docente — solicitar aprobación</option></select></div>
-                            <p id="reg-docente-aviso" style="display:none;font-size:0.75rem;color:#475569">Tu solicitud será revisada por administración. Podrás ingresar después de su aprobación. Si ya tienes cuenta, solicita agregar el rol docente.</p>
+                            <div class="sec-head"><span class="num">1</span> Datos Personales (Estudiante)</div>
+                            <input type="hidden" id="reg-rol" value="alumno">
+                            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:0.75rem;color:#166534">
+                                <i class="bi bi-mortarboard me-1"></i> Formulario de registro exclusivo para <strong>Estudiantes</strong>. (Los Docentes son habilitados directamente por Administración).
+                            </div>
                             <div class="mb-2"><label class="lbl" for="reg-cedula">Cédula <span style="color:#DC2626">*</span></label><input type="text" class="inp text-center" id="reg-cedula" placeholder="SIN PUNTOS" style="font-size:0.92rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="lbl" for="reg-nombre">Nombre <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-nombre" placeholder="Ej: JUAN" style="text-transform:uppercase;font-size:0.82rem" required></div>

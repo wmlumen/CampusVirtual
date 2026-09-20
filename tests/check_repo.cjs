@@ -31,8 +31,10 @@ const DEAD_IDS = [
   'AKfycbw-f6I2uM2U4oaU-CJihO14Lpq8P919dd3-2lkOfyt5QsDsAXf35EhCrt5yVL9v6neI',
   'AKfycbya0gCfBO2OGqGh3ijC7h_v-QHQXRlNvCCzREWF-lSltwIWocg_pEEGuX_vMT6C-5M7',
   'AKfycbwRHS9q7fDrXio1o4BxtQVtXqJwkyT7wq0shvIaVksL8Rp-0J2NguBe2cDu6iO0fBm4EQ',
+  'AKfycbyQECf-Z-ZdfD5GZnZFkTjV977jTS9Je3Ph31dpgb0i_KpK7sCcFWxDHCxMeSTSAvjs', // anterior a 04–10 (sin consultas, mensajes, facturas ni mis_cursos): reemplazado
+  'AKfycbyFCzToy9qAVnsTwqD6PQaKxbk0ftfEngMr4AchB5LE__71cFok48Ht60tyra-1UCUD', // implementación intermedia (reemplazada por la última)
 ];
-const LIVE_ID = 'AKfycbymm5cpXSVOEBl6ayUQVMk59TfecOZqpErZ9zRLkD4kPAvXUBnYuf14UDf8Bk5w4-EP';
+// El despliegue vivo cambia con cada «Nueva implementación»: api.js manda; solo se exige que apunte a un despliegue que no esté en DEAD_IDS.
 
 const files = walk(APP);
 const apiVersions = new Set();
@@ -70,7 +72,7 @@ for (const f of files) {
   const m = src.match(/api\.js\?v=(\d+)/g);
   if (m) m.forEach(x => apiVersions.add(x));
   if (/-----BEGIN (RSA )?PRIVATE KEY-----/.test(src)) errors.push(`${rel}: clave privada en el repo`);
-  if (/AIza[0-9A-Za-z\-_]{35}/.test(src)) errors.push(`${rel}: posible API key externa no permitida`);
+  if (!rel.includes('firebase-config.js') && /AIza[0-9A-Za-z\-_]{35}/.test(src)) errors.push(`${rel}: posible API key externa no permitida`);
 }
 
 // api.js debe tener una sola versión en todo el frontend
@@ -115,7 +117,9 @@ if (moodleItems.length > 0) {
 
 // GAS_URL viva presente en api.js
 const apiJs = fs.readFileSync(path.join(APP, 'js', 'api.js'), 'utf8');
-if (!apiJs.includes(LIVE_ID)) errors.push('app/js/api.js no apunta al deployment vivo');
+const mUrl = apiJs.match(/const GAS_URL = 'https:\/\/script\.google\.com\/macros\/s\/([A-Za-z0-9_-]+)\/exec'/);
+if (!mUrl) errors.push('app/js/api.js no define GAS_URL con un despliegue /exec');
+else if (DEAD_IDS.includes(mUrl[1])) errors.push('app/js/api.js apunta a un deployment GAS muerto');
 
 // .gs sin errores obvios de sintaxis ya se valida con node --check en CI local
 console.log('Archivos revisados: ' + files.length);

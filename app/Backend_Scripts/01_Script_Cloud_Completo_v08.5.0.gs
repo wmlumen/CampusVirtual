@@ -1,5 +1,5 @@
 /**
- * SCRIPT BACKEND CENTURIA - VERSIÓN v08.4.1
+ * SCRIPT BACKEND CENTURIA - VERSIÓN v08.5.0
  * Cursos activos (grado + carrera + sección) + nómina de alumnos + asignación de docentes
  * Sistema multi-rol + matrícula + asistencia con código + calendario + formularios + filiales + fotos en Drive
  *
@@ -35,6 +35,24 @@
  * v06.9 (2026-09-16): Pagos con Factura + Tipo (columnas al final, sin romper lecturas)
  * v06.10 (2026-09-16): ?action=health para el panel de salud
  *         + cursos y catálogo leídos de la hoja Asignaturas (mapaAsignaturas)
+ * v08.5.8 (2026-09-20): ruta mis_cursos (10_Mis_Cursos_v08.5.gs): cursos y asignaturas del alumno según la hoja Cursos (Activo / Pendiente / Desarrollado), unidos a Asignaturas por UUID; libreta, dashboard y materiales la usan.
+ * v08.5.7 (2026-09-20): listar_asignaturas ya no descarta filas sin ID (basta Código o Nombre) y mapaAsignaturas acepta «Activo/ACTIVO».
+ * v08.5.6 (2026-09-20): FACTURAS DEL ALUMNO (09_Facturas_v08.5.gs): el alumno registra fecha, número, concepto y foto de cada factura; la ven Atención al Estudiante,
+ *         Administración, Filial, Tesorería y quien se habilite. Foto en carpeta privada de Drive. Rutas fac_* (POST con token). Hojas FacturasAlumno y FacturasAccesos.
+ * v08.5.5 (2026-09-20): MENSAJES A LOS ALUMNOS (08_Mensajes_Alumnos_v08.5.gs): cualquier rol de atención (y docentes a su sección) escribe a todos o a un grupo;
+ *         el alumno lo ve en su dashboard. Rutas msg_* (POST con token). Hojas MensajesAlumnos y MensajesLeidos.
+ * v08.5.4 (2026-09-20): ATENCIÓN AL ALUMNO (07_Consultas_v08.5.gs): el alumno escribe consultas que ve directo el personal de atención/académico;
+ *         se puede sumar personas o derivar a áreas; respuestas y notas internas forman el expediente. Rutas con_* (POST con token). Hojas Consultas y ConsultaMensajes.
+ * v08.5.3 (2026-09-20): Módulo de EVENTOS (06_Eventos_v08.5.gs): eventos ligados al calendario con mapa, contactos, código de activación
+ *         y asistencia leyendo varios QR a la vez; panel por grado/carrera/sección. Rutas evt_* (POST con token). Hojas Eventos y EventoAsistencias.
+ * v08.5.2 (2026-09-20): Credencial con QR DINÁMICO (05_Credencial_QR_v08.5.gs): rutas qr_credencial y qr_verificar (POST con token).
+ *         Lotes de 6 códigos (uno por ventana de QR_PASO segundos, 20 por defecto): de un solo uso, sin datos personales,
+ *         y el celular los rota sin pedir nada al servidor en cada cambio.
+ * v08.5.0 (2026-09-20): Rol "Asistencia al Estudiante" (asistencia_estudiante): ficha del estudiante, cumpleaños con beneficios,
+ *         quejas derivables por mail; mensaje de cumpleaños del alumno (cumple_mio). Lógica en 04_Asistencia_Estudiante_v08.5.gs
+ *         (hojas BeneficiosCumple y Quejas; rutas asist_* y cumple_mio, todas por POST con token de sesión).
+ *         Incluye lo de v08.4.2: ruta guardar_matricula (la matrícula del formulario no se guardaba) y columnas Nacionalidad,
+ *         EstadoCivil, DepartamentoCodigo, CiudadCodigo y BarrioCodigo al final de Matriculaciones.
  * v08.4.1 (2026-09-20): Catálogos (Grados/Carreras/Secciones) tolerantes: encabezados sin distinguir mayúsculas/tildes,
  *         Nombre<->Codigo de respaldo, pestaña por nombre aproximado y respaldo por gid para Secciones;
  *         listar_secciones vacío devuelve _diag (pestañas y encabezados). Sin cambios en 02 ni 03.
@@ -681,6 +699,89 @@ function doPost(e) {
     } catch (error) { return responderJSON({ ok: false, error: error.message }); }
   }
 
+  // ── CREDENCIAL QR DINÁMICO v08.5.2 (lógica en 05_Credencial_QR_v08.5.gs) — por POST: el token no viaja en la URL ──
+  if (data.action === 'qr_credencial' || data.action === 'qr_verificar') {
+    try {
+      return responderJSON(data.action === 'qr_credencial' ? cvQrGenerar(ss, data) : cvQrVerificar(ss, data));
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── EVENTOS v08.5.3 (lógica en 06_Eventos_v08.5.gs) — por POST con token de sesión ──
+  if (String(data.action || '').indexOf('evt_') === 0) {
+    try {
+      switch (data.action) {
+        case 'evt_listar': return responderJSON(cvEvtListar(ss, data));
+        case 'evt_info': return responderJSON(cvEvtInfo(ss, data));
+        case 'evt_guardar': return responderJSON(cvEvtGuardar(ss, data));
+        case 'evt_estado': return responderJSON(cvEvtEstado(ss, data));
+        case 'evt_codigo_nuevo': return responderJSON(cvEvtCodigoNuevoRuta(ss, data));
+        case 'evt_marcar': return responderJSON(cvEvtMarcar(ss, data));
+        case 'evt_panel': return responderJSON(cvEvtPanel(ss, data));
+        case 'evt_asistentes': return responderJSON(cvEvtAsistentes(ss, data));
+      }
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── MIS CURSOS v08.5.8 (lógica en 10_Mis_Cursos_v08.5.gs): cursos y asignaturas reales del alumno según la hoja Cursos ──
+  if (data.action === 'mis_cursos') {
+    try {
+      return responderJSON(cvMcDespachar(ss, data));
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── FACTURAS DEL ALUMNO v08.5.6 (lógica en 09_Facturas_v08.5.gs) — por POST con token de sesión ──
+  if (String(data.action || '').indexOf('fac_') === 0) {
+    try {
+      return responderJSON(cvFacDespachar(ss, data));
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── MENSAJES A LOS ALUMNOS v08.5.5 (lógica en 08_Mensajes_Alumnos_v08.5.gs) — por POST con token de sesión ──
+  if (String(data.action || '').indexOf('msg_') === 0) {
+    try {
+      return responderJSON(cvMsgDespachar(ss, data));
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── ATENCIÓN AL ALUMNO v08.5.4 (consultas con expediente; lógica en 07_Consultas_v08.5.gs) — por POST con token de sesión ──
+  if (String(data.action || '').indexOf('con_') === 0) {
+    try {
+      return responderJSON(cvConDespachar(ss, data));
+    } catch (error) {
+      return responderJSON({ ok: false, error: error.message });
+    }
+  }
+
+  // ── ASISTENCIA AL ESTUDIANTE v08.5 (lógica en 04_Asistencia_Estudiante_v08.5.gs) — todo por POST: el token no viaja en la URL ──
+  if (String(data.action || '').indexOf('asist_') === 0 || data.action === 'cumple_mio') {
+    try {
+      switch (data.action) {
+        case 'asist_catalogos': return responderJSON(cvAsistCatalogos(ss, data));
+        case 'asist_buscar': return responderJSON(cvAsistBuscar(ss, data));
+        case 'asist_ficha': return responderJSON(cvAsistFicha(ss, data));
+        case 'asist_cumpleanos': return responderJSON(cvAsistCumpleanos(ss, data));
+        case 'asist_beneficio_otorgar': return responderJSON(cvAsistBeneficioOtorgar(ss, data));
+        case 'asist_beneficio_estado': return responderJSON(cvAsistBeneficioEstado(ss, data));
+        case 'asist_queja_registrar': return responderJSON(cvAsistQuejaRegistrar(ss, data));
+        case 'asist_queja_listar': return responderJSON(cvAsistQuejaListar(ss, data));
+        case 'asist_queja_enviar': return responderJSON(cvAsistQuejaEnviar(ss, data));
+        case 'asist_queja_cerrar': return responderJSON(cvAsistQuejaCerrar(ss, data));
+        case 'cumple_mio': return responderJSON(cvAsistCumpleMio(ss, data));
+      }
+      return responderJSON({ ok: false, error: 'Acción no reconocida.' });
+    } catch (error) { return responderJSON({ ok: false, error: error.message }); }
+  }
+
   // ── GUARDAR RESPUESTAS DE EXAMEN (detalle pregunta por pregunta) ──
   if (data.action === 'guardar_respuestas_examen') {
     try { return responderJSON(cvGuardarRespuestasExamen(ss, data)); }
@@ -816,7 +917,7 @@ function doPost(e) {
   // ════ v05: NUEVAS ACCIONES ════
 
   // ── 13. GUARDAR MATRÍCULA ──
-  if (data.action === 'matricular_alumno') {
+  if (data.action === 'matricular_alumno' || data.action === 'guardar_matricula') {
     var resultado = guardarMatricula(ss, data);
     return responderJSON(resultado);
   }
@@ -1193,29 +1294,6 @@ function cvAuthFindUser(ss, cedula) {
   for (var i = 0; i < users.length; i++) {
     if (cvAuthNormalizeCedula(users[i].cedula) === c) return users[i];
   }
-  // Búsqueda de respaldo en RegistroAlumnos
-  var sheetAl = ss.getSheetByName('RegistroAlumnos');
-  if (sheetAl) {
-    var alData = sheetAl.getDataRange().getValues();
-    for (var a = 1; a < alData.length; a++) {
-      if (cvAuthNormalizeCedula(alData[a][0]) === c) {
-        return {
-          id: 'LEG-' + c,
-          uuid: 'LEG-' + c,
-          cedula: c,
-          nombre: String(alData[a][1] || '').trim(),
-          apellido: String(alData[a][2] || '').trim(),
-          email: cvAuthNormalizeEmail(alData[a][3]),
-          grado: String(alData[a][4] || '').trim(),
-          carrera: String(alData[a][5] || '').trim(),
-          seccion: String(alData[a][6] || '').trim(),
-          rol: 'alumno',
-          estado: 'activo',
-          is_legacy: true
-        };
-      }
-    }
-  }
   // Búsqueda de respaldo en Roles (para cuentas admin/docentes sembradas)
   var sheetR = ss.getSheetByName('Roles');
   if (sheetR) {
@@ -1235,6 +1313,33 @@ function cvAuthFindUser(ss, cedula) {
           carrera: String(rData[k][3] || ''),
           seccion: String(rData[k][4] || ''),
           estado: String(rData[k][6] || 'activo').toLowerCase(),
+          is_legacy: true
+        };
+      }
+    }
+  }
+
+  // Búsqueda de respaldo en RegistroAlumnos
+  var sheetAl = ss.getSheetByName('RegistroAlumnos');
+  if (sheetAl) {
+    var alData = sheetAl.getDataRange().getValues();
+    for (var a = 1; a < alData.length; a++) {
+      if (cvAuthNormalizeCedula(alData[a][0]) === c) {
+        var carAl = String(alData[a][5] || '').trim();
+        var secAl = String(alData[a][6] || '').trim();
+        var rolCalculado = (carAl.toUpperCase() === 'ADMIN' || secAl.toUpperCase() === 'ADMIN') ? 'admin' : 'alumno';
+        return {
+          id: 'LEG-' + c,
+          uuid: 'LEG-' + c,
+          cedula: c,
+          nombre: String(alData[a][1] || '').trim(),
+          apellido: String(alData[a][2] || '').trim(),
+          email: cvAuthNormalizeEmail(alData[a][3]),
+          grado: String(alData[a][4] || '').trim(),
+          carrera: carAl,
+          seccion: secAl,
+          rol: rolCalculado,
+          estado: 'activo',
           is_legacy: true
         };
       }
@@ -2216,7 +2321,8 @@ function mapaAsignaturas(ss) {
     var cod = (data[i][idx['Codigo']] || '').toString().toUpperCase();
     if (!cod) continue;
     var est = (idx['Estado'] !== undefined ? data[i][idx['Estado']] : 'activo') || 'activo';
-    if (est !== 'activo') continue;
+    // v08.5.7: no distingue mayúsculas ("Activo", "ACTIVO"); solo se omiten las marcadas como inactivas
+    if (['inactivo', 'inactiva', 'baja', 'false', 'no', '0'].indexOf(String(est).toLowerCase().trim()) >= 0) continue;
     map[cod] = {
       nombre: data[i][idx['Nombre']] || cod,
       codigo: (data[i][idx['Codigo']] || '').toString(),
@@ -2511,8 +2617,16 @@ function guardarMatricula(ss, data) {
       'AnioPromocion', 'Semestre', 'Carrera', 'TipoAlumno', 'MatriculaGuaranies',
       'Mensualidad', 'PlanPago', 'AsignaturasPendientes', 'SemestresPendientes',
       'InformacionAdicional', 'AceptaDeclaracion', 'Firma', 'Estado', 'RegistradoPor',
-      'Observaciones', 'CreatedAt', 'UpdatedAt'
+      'Observaciones', 'CreatedAt', 'UpdatedAt', 'Nacionalidad', 'EstadoCivil',
+      'DepartamentoCodigo', 'CiudadCodigo', 'BarrioCodigo'
     ]);
+  } else {
+    // v08.4.2: hojas existentes reciben las columnas nuevas al final (no se mueve ninguna columna)
+    var _nuevas = ['Nacionalidad', 'EstadoCivil', 'DepartamentoCodigo', 'CiudadCodigo', 'BarrioCodigo'];
+    var _cabs = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    for (var n = 0; n < _nuevas.length; n++) {
+      if (_cabs.indexOf(_nuevas[n]) === -1) { sheet.getRange(1, 40 + n).setValue(_nuevas[n]); }
+    }
   }
 
   var ts = new Date().toISOString();
@@ -2544,7 +2658,9 @@ function guardarMatricula(ss, data) {
     data.asignaturas_pendientes || '', data.semestres_pendientes || '',
     data.informacion_adicional || '', data.acepta_declaracion ? 1 : 0,
     data.firma || '', data.estado || 'pendiente', data.registrado_por || '',
-    data.observaciones || '', ts, ts
+    data.observaciones || '', ts, ts,
+    data.nacionalidad || '', data.estado_civil || '',
+    data.departamento_codigo || '', data.ciudad_codigo || '', data.barrio_codigo || ''
   ];
 
   if (rowIndex > 0) {
@@ -3207,12 +3323,24 @@ function listarAsignaturas(ss) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var data = sheet.getDataRange().getValues();
   var asignaturas = [];
+  // v08.5.7: una fila vale si tiene ID, Código o Nombre (las filas cargadas a mano o por guardarAsignaturaDrive pueden no traer ID:
+  // antes se descartaban y el alumno veía «0 asignaturas»). Además de la clave tal cual, se entrega una en minúscula sin tildes
+  // ("Código" → "codigo") para que el frontend encuentre la columna aunque el encabezado varíe.
+  var iCod = -1, iNom = -1;
+  for (var h = 0; h < headers.length; h++) {
+    var kh = _catNorm(headers[h]);
+    if (kh === 'codigo' && iCod < 0) iCod = h;
+    if (kh === 'nombre' && iNom < 0) iNom = h;
+  }
 
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0]) {
+    var vacia = !data[i][0] && !(iCod >= 0 && data[i][iCod]) && !(iNom >= 0 && data[i][iNom]);
+    if (!vacia) {
       var asig = {};
       for (var j = 0; j < headers.length; j++) {
         asig[headers[j]] = data[i][j];
+        var kn = _catNorm(headers[j]);
+        if (kn && asig[kn] === undefined) asig[kn] = data[i][j];
       }
       asignaturas.push(asig);
     }
@@ -3598,7 +3726,7 @@ function inicializarBaseDatos() {
   asegurarHoja(ss, 'Modalidades', ['ID', 'UUID', 'Nombre', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);
 
   // 8. Matriculaciones
-  asegurarHoja(ss, 'Matriculaciones', ['ID', 'UUID', 'UserId', 'CodigoFormulario', 'LegajoNumero', 'FechaInscripcion', 'Nombres', 'Apellidos', 'Cedula', 'LugarNacimiento', 'FechaNacimiento', 'Pais', 'Direccion', 'Ciudad', 'Departamento', 'BarrioCompania', 'TelefonoFijo', 'TelefonoMovil', 'CorreoElectronico', 'TituloBachiller', 'InstitucionOrigen', 'CiudadPaisEstudio', 'AnioPromocion', 'Semestre', 'Carrera', 'TipoAlumno', 'MatriculaGuaranies', 'Mensualidad', 'PlanPago', 'AsignaturasPendientes', 'SemestresPendientes', 'InformacionAdicional', 'AceptaDeclaracion', 'Firma', 'Estado', 'RegistradoPor', 'Observaciones', 'CreatedAt', 'UpdatedAt'], creadas);
+  asegurarHoja(ss, 'Matriculaciones', ['ID', 'UUID', 'UserId', 'CodigoFormulario', 'LegajoNumero', 'FechaInscripcion', 'Nombres', 'Apellidos', 'Cedula', 'LugarNacimiento', 'FechaNacimiento', 'Pais', 'Direccion', 'Ciudad', 'Departamento', 'BarrioCompania', 'TelefonoFijo', 'TelefonoMovil', 'CorreoElectronico', 'TituloBachiller', 'InstitucionOrigen', 'CiudadPaisEstudio', 'AnioPromocion', 'Semestre', 'Carrera', 'TipoAlumno', 'MatriculaGuaranies', 'Mensualidad', 'PlanPago', 'AsignaturasPendientes', 'SemestresPendientes', 'InformacionAdicional', 'AceptaDeclaracion', 'Firma', 'Estado', 'RegistradoPor', 'Observaciones', 'CreatedAt', 'UpdatedAt', 'Nacionalidad', 'EstadoCivil', 'DepartamentoCodigo', 'CiudadCodigo', 'BarrioCodigo'], creadas);
 
   // 9. FormulariosCarrera
   asegurarHoja(ss, 'FormulariosCarrera', ['ID', 'UUID', 'Codigo', 'Nombre', 'Carrera', 'Tipo', 'CamposJson', 'Activo', 'CreatedAt', 'UpdatedAt'], creadas);

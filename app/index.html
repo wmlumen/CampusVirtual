@@ -457,7 +457,7 @@
         .curso-meta { font-size: 0.62rem; color: #64748b; margin-top: 1px; }
 
         /* Intro con video del logo (una vez por sesión) */
-        #intro-video{display:none;position:fixed;inset:0;z-index:10001;background:#091f0f;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+        #intro-video{display:none;position:fixed;inset:0;z-index:10001;background:#000000;align-items:center;justify-content:center;flex-direction:column;gap:16px}
         #intro-video video{width:min(88vw,420px);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
         #intro-video .skip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:8px 22px;font-size:.72rem;font-weight:700;font-family:'Montserrat';cursor:pointer}
         #intro-video .skip:hover{background:rgba(255,255,255,.22)}
@@ -685,19 +685,23 @@
     <button class="skip" onclick="cerrarIntro()">Entrar <i class="bi bi-arrow-right"></i></button>
 </div>
 <script>
-(function(){
-    try{
-        if(sessionStorage.getItem('intro_visto'))return;
-        var box=document.getElementById('intro-video');
-        var v=document.getElementById('intro-video-el');
-        var done=false;
-        window.cerrarIntro=function(){if(done)return;done=true;box.style.display='none';try{sessionStorage.setItem('intro_visto','1')}catch(e){}try{v.pause()}catch(e){}};
-        box.style.display='flex';
-        v.addEventListener('ended',cerrarIntro);
-        v.addEventListener('error',function(){setTimeout(cerrarIntro,1200)});
-        setTimeout(function(){if(!done&&v.readyState===0)cerrarIntro()},4000);
-    }catch(e){}
-})();
+    (function(){
+        try{
+            if(sessionStorage.getItem('intro_visto'))return;
+            var box=document.getElementById('intro-video');
+            var v=document.getElementById('intro-video-el');
+            var done=false;
+            var prevBodyBg=document.body.style.background;
+            var prevBodyBgVar=document.documentElement.style.getPropertyValue('--bg');
+            document.body.style.background='#000000';
+            document.documentElement.style.setPropertyValue('--bg','#000000');
+            window.cerrarIntro=function(){if(done)return;done=true;box.style.display='none';document.body.style.background=prevBodyBg;document.documentElement.style.setPropertyValue('--bg',prevBodyBgVar);try{sessionStorage.setItem('intro_visto','1')}catch(e){}try{v.pause()}catch(e){}};
+            box.style.display='flex';
+            v.addEventListener('ended',cerrarIntro);
+            v.addEventListener('error',function(){setTimeout(cerrarIntro,1200)});
+            setTimeout(function(){if(!done&&v.readyState===0)cerrarIntro()},4000);
+        }catch(e){}
+    })();
 </script>
 
 <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
@@ -963,7 +967,7 @@
 
 <!-- Overlay de carga: avisa que hay que esperar al servidor -->
 <div id="global-loading" role="status" aria-live="polite"><div class="spin"></div><p id="global-loading-text">Conectando con el servidor... espera</p></div>
-<script src="js/api.js?v=15"></script>
+<script src="js/api.js?v=19"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -1102,15 +1106,22 @@ async function verificarCedula(){
 
         // Roles múltiples
         const rolesResult=await CenturiaAPI.getRoles(cedula);
-        if(rolesResult&&rolesResult.roles&&rolesResult.roles.length>1){
-            const active=rolesResult.roles.filter(r=>r.estado==='activo');
-            if(active.length>1){mostrarSelectorRoles(active);return}
+        let activeRoles = [];
+        if(rolesResult&&rolesResult.roles){
+            activeRoles = rolesResult.roles.filter(r=>r.estado==='activo');
+            if(activeRoles.length>1){mostrarSelectorRoles(activeRoles);return}
         }
 
-        const role=(u.rol||u.role||'alumno').toLowerCase();
+        let role=(u.rol||u.role||'alumno').toLowerCase();
+        if(activeRoles.length===1){
+            role = String(activeRoles[0].rol||role).toLowerCase();
+        } else if(String(u.carrera||'').toUpperCase()==='ADMIN'||String(u.seccion||'').toUpperCase()==='ADMIN'){
+            role = 'admin';
+        }
         sessionStorage.setItem('rol',role);
+        localStorage.setItem('centuria_rol',role);
         if(role==='academico'){window.location.href='academic/index.html';return}
-        if(role==='admin'||role==='administrador_plataforma'){window.location.href='admin/index.html';return}
+        if(role==='admin'||role==='administrador_plataforma'||role==='administrador'){window.location.href='admin/index.html';return}
         if(role==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}
         if(role==='docente'){window.location.href='docente.html';return}
         window.location.href='dashboard.html';
@@ -1337,6 +1348,11 @@ async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
         if(subjects.length>0){const cm=subjects.map(c=>({id:c.codigo,nombre:c.nombre_completo||c.nombre,codigo:c.codigo,seccion:sec||c.seccion_asignada||'',color:c.color||'#2563EB',icono:c.icono||'bi-book',rol:rol,carrera:c.carrera||'',semestre:c.semestre||'',carga_horaria:c.carga_horaria||0,unidades:c.unidades||10}));
         renderCursos(cm);return}else{
         document.getElementById('lista-cursos').innerHTML='<div style="text-align:center;padding:20px;color:#64748b"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><p style="font-size:0.75rem"><strong>Sin asignaturas asignadas</strong></p><p style="font-size:0.65rem;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';return}}catch(e){}}
+
+    // ALUMNO: solo sus cursos autorizados (hoja Cursos) en estado Activo o Desarrollado
+    if(rol==='alumno'){try{const mc=await CenturiaAPI.cursos.mios();if(mc&&mc.ok!==false&&mc.alumno!==false){
+    const cm=(mc.cursos||[]).filter(c=>c.materiales).map(c=>{const a=c.asignatura||{};return{id:a.codigo||a.uuid,nombre:a.nombre||a.uuid,codigo:a.codigo||a.uuid,seccion:c.seccion||sec||'',color:a.color||'#16813D',icono:a.icono||'bi-book',rol:rol,carrera:c.carrera||'',semestre:a.semestre||'',carga_horaria:a.carga_horaria||0}});
+    renderCursos(cm);return}}catch(e){/* sin servidor: sigue con la lectura anterior */}}
 
     // ALUMNO/ADMIN: todas las asignaturas con kit completo
     let kitError=false;

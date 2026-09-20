@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/accesibilidad.css">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -110,6 +111,10 @@
             margin-top: 4px;
         }
 
+        .domicilio-grupo { margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .dash-link-item { position: relative; }
+        .dash-link-item .dash-badge-n { position: absolute; top: 6px; right: 8px; margin: 0; }
+        .dash-badge-n { display:inline-block; min-width:18px; padding:1px 6px; border-radius:10px; background:#ef4444; color:#fff; font-size:.58rem; font-weight:800; text-align:center; margin-left:4px; }
         .dash-btn {
             padding: 8px 16px; border-radius: 12px; font-size: .7rem;
             font-family: 'Montserrat', sans-serif; font-weight: 600; cursor: pointer;
@@ -253,6 +258,31 @@
         .course-card-meta i { color: var(--dorado); }
 
         /* ── Mis Cursos y Materias por grado (v08.5.5) ── */
+        /* Avance de ficha y mensajes al alumno */
+        .ficha-avance { background: rgba(212,168,67,.10); border: 1px solid rgba(212,168,67,.32); border-radius: 16px; padding: 14px 18px; margin-bottom: 14px; }
+        .ficha-avance .fa-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+        .ficha-avance .fa-tit { font-weight: 700; font-size: .78rem; color: var(--dorado); }
+        .ficha-avance .fa-pct { font-weight: 800; font-size: 1rem; color: var(--dorado); }
+        .ficha-avance .fa-barra { height: 7px; border-radius: 6px; background: rgba(255,255,255,.12); margin: 8px 0; overflow: hidden; }
+        .ficha-avance .fa-rell { height: 100%; background: linear-gradient(90deg, #d4a843, #4ade80); border-radius: 6px; transition: width .5s ease; }
+        .ficha-avance .fa-falta { font-size: .64rem; color: rgba(255,255,255,.65); line-height: 1.5; margin-bottom: 8px; }
+        .ficha-avance .fa-acc { display: flex; flex-wrap: wrap; gap: 8px; }
+        .dash-mensajes { --dm-bg: rgba(0,177,64,.10); --dm-bd: rgba(0,177,64,.28); --dm-fg: #4ade80; background: var(--dm-bg); border: 1px solid var(--dm-bd); border-radius: 16px; padding: 14px 18px; margin-bottom: 20px; transition: background .4s, border-color .4s; }
+        .dash-mensajes[data-tono="cumple"] { --dm-bg: rgba(212,168,67,.14); --dm-bd: rgba(212,168,67,.45); --dm-fg: #f0c869; }
+        .dash-mensajes[data-tono="info"] { --dm-bg: rgba(96,165,250,.10); --dm-bd: rgba(96,165,250,.32); --dm-fg: #93c5fd; }
+        .dash-mensajes[data-tono="aviso"] { --dm-bg: rgba(251,191,36,.10); --dm-bd: rgba(251,191,36,.35); --dm-fg: #fcd34d; }
+        .dash-mensajes[data-tono="urgente"] { --dm-bg: rgba(248,113,113,.12); --dm-bd: rgba(248,113,113,.42); --dm-fg: #fca5a5; }
+        .dash-mensajes[data-tono="felicitacion"] { --dm-bg: rgba(192,132,252,.12); --dm-bd: rgba(192,132,252,.38); --dm-fg: #d8b4fe; }
+        .dash-mensajes .dm-top { display: flex; align-items: center; gap: 8px; font-size: .62rem; color: var(--dm-fg); text-transform: uppercase; letter-spacing: .8px; font-weight: 800; }
+        .dash-mensajes .dm-meta { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: rgba(255,255,255,.5); }
+        .dash-mensajes .dm-titulo { font-weight: 700; font-size: .82rem; margin-top: 6px; color: var(--blanco); }
+        .dash-mensajes .dm-texto { font-size: .78rem; line-height: 1.55; margin-top: 6px; color: rgba(255,255,255,.88); }
+        .dash-mensajes .dm-extra { margin-top: 8px; font-size: .68rem; color: var(--dm-fg); }
+        .dash-mensajes .dm-acc { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .dash-mensajes .dm-btn { background: transparent; border: 1px solid var(--dm-bd); color: var(--dm-fg); border-radius: 10px; padding: 5px 12px; font-size: .64rem; font-weight: 700; cursor: pointer; }
+        .dash-mensajes .dm-btn:hover, .dash-mensajes .dm-btn:focus-visible { background: var(--dm-bg); outline: none; }
+        .dash-mensajes .dm-btn-suave { opacity: .75; }
+        @media (prefers-reduced-motion: reduce) { .dash-mensajes, .ficha-avance .fa-rell { transition: none; } }
         .grado-block { margin-bottom: 16px; }
         .grado-block:last-child { margin-bottom: 0; }
         .grado-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font-size: .72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--blanco); }
@@ -541,10 +571,87 @@
             background: rgba(6,15,9,.8); backdrop-filter: blur(8px);
             align-items: center; justify-content: center;
         }
+        .aj-bloque { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); margin-bottom: 12px; }
+        .aj-titulo { font-size: .62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--dorado); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .aj-fila { display: flex; align-items: center; gap: 8px; }
+        .aj-btn { flex: none; min-width: 48px; padding: 8px 14px; border-radius: 10px; font-weight: 800; font-size: .8rem; font-family: inherit; cursor: pointer; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); }
+        .aj-btn:hover { background: rgba(255,255,255,.16); }
+        .aj-btn.activo { background: rgba(0,177,64,.3); border-color: rgba(0,177,64,.6); color: #4ade80; }
+        .aj-ancho { flex: 1; font-size: .68rem; }
+        .aj-val { flex: 1; text-align: center; font-weight: 800; font-size: .9rem; }
         .modal-card-custom {
             background: #0d2c16; border: 1px solid rgba(255,255,255,.15);
             border-radius: 20px; padding: 24px; width: 90%; max-width: 420px;
             box-shadow: 0 12px 40px rgba(0,0,0,.5);
+        }
+        .modal-card-admin-suite {
+            background: #0d2c16;
+            border: 1px solid rgba(212,168,67,.35);
+            border-radius: 24px;
+            padding: 26px;
+            width: 92%;
+            max-width: 820px;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 30px rgba(212,168,67,.15);
+        }
+        .admin-suite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .admin-suite-card {
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            text-decoration: none;
+            transition: all .2s ease;
+        }
+        .admin-suite-card:hover {
+            background: rgba(212,168,67,.18);
+            border-color: rgba(212,168,67,.45);
+            transform: translateY(-2px);
+            color: #fff;
+        }
+        .admin-suite-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .admin-suite-title {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .admin-suite-desc {
+            font-size: .62rem;
+            color: rgba(255,255,255,.6);
+            line-height: 1.25;
+        }
+        .admin-mode-banner {
+            background: linear-gradient(90deg, rgba(212,168,67,.2), rgba(22,129,61,.2));
+            border: 1px solid rgba(212,168,67,.4);
+            border-radius: 12px;
+            padding: 8px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .7rem;
+            color: var(--dorado-claro);
+            font-weight: 600;
         }
 
         /* ── Footer ── */
@@ -615,10 +722,26 @@
                     <div class="dash-header-badge" id="dash-user-badge">ALUMNO</div>
                 </div>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="dash-btn dash-btn-primary" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Clave</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <!-- Botón Exclusivo Panel Administrador General -->
+                <button class="dash-btn dash-btn-gold" id="btn-admin-suite" onclick="abrirAdminSuiteModal()" style="display:none;background:linear-gradient(135deg, rgba(212,168,67,.35), rgba(212,168,67,.15));border-color:var(--dorado);" title="Áreas del Sistema General — Panel de Control Institucional">
+                    <i class="bi bi-grid-fill" style="color:var(--dorado-claro)"></i> Áreas del Sistema
+                </button>
+                <button class="dash-btn dash-btn-primary" id="btn-ajustes" onclick="abrirAjustes()" title="Clave y accesibilidad" aria-label="Clave y accesibilidad"><i class="bi bi-universal-access"></i></button>
                 <button class="dash-btn dash-btn-gold" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
                 <button class="dash-btn dash-btn-danger" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+            </div>
+        </div>
+
+        <!-- ═══ Banner Modo Administrador (Vista Previa de Alumno) ═══ -->
+        <div id="admin-mode-banner" class="admin-mode-banner" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <i class="bi bi-shield-check" style="color:var(--dorado);font-size:1.1rem;"></i>
+                <span id="admin-mode-label">Modo Administrador General: Vista de Estudiante/Alumno activa.</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button onclick="abrirAdminSuiteModal()" class="dash-btn dash-btn-gold" style="padding:4px 10px;font-size:.64rem;"><i class="bi bi-grid-fill"></i> Cambiar Área</button>
+                <a href="admin/index.html" class="dash-btn dash-btn-primary" style="padding:4px 10px;font-size:.64rem;text-decoration:none;"><i class="bi bi-gear-fill"></i> Panel Central</a>
             </div>
         </div>
 
@@ -667,13 +790,10 @@
                 <div class="dash-links-grid" id="dash-quick-links"></div>
             </div>
 
-            <!-- Matrícula Banner Callout -->
-            <div id="cta-matricula" style="display:none;background:rgba(0,177,64,.15);border:1px solid rgba(0,177,64,.35);border-radius:16px;padding:16px 20px;margin-bottom:20px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-                <div>
-                    <div style="font-weight:700;color:#4ade80;font-size:.8rem"><i class="bi bi-file-earmark-text me-1"></i> Formulario de Matrícula Oficial</div>
-                    <div style="font-size:.65rem;color:rgba(255,255,255,.7);margin-top:2px">Completa tu ficha institucional para formalizar tu expediente de grado.</div>
-                </div>
-                <a href="formulario-matricula.html" class="dash-btn dash-btn-primary"><i class="bi bi-pencil-square"></i> Completar</a>
+            <!-- Avance de la ficha + mensajes para el alumno (js/dash-mensajes.js) -->
+            <div id="ficha-avance" class="ficha-avance" hidden></div>
+            <div id="dash-mensajes" class="dash-mensajes" data-tono="superacion" hidden role="region" aria-label="Mensajes para ti" aria-live="polite">
+                <div id="dm-cuerpo"></div>
             </div>
 
             <!-- Mis Asignaturas -->
@@ -726,10 +846,15 @@
                 <div class="col-md-6">
                     <div class="dash-section h-100">
                         <div class="dash-section-title">
-                            <div class="dash-section-title-left"><i class="bi bi-file-earmark-text"></i> Mis Formularios</div>
+                            <div class="dash-section-title-left"><i class="bi bi-chat-dots"></i> Mis Consultas</div>
+                            <a href="consultas.html?nueva=1" class="dash-btn dash-btn-primary" style="padding:4px 10px;font-size:.62rem"><i class="bi bi-plus-lg"></i> Nueva consulta</a>
                         </div>
-                        <div id="dash-forms-list">
-                            <div style="text-align:center;padding:20px;color:rgba(255,255,255,.4);font-size:.7rem">No hay formularios pendientes</div>
+                        <div id="dash-consultas-list">
+                            <div style="text-align:center;padding:20px;color:rgba(255,255,255,.4);font-size:.7rem">Cargando consultas…</div>
+                        </div>
+                        <div id="dash-forms-wrap" style="display:none;margin-top:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px">
+                            <div style="font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dorado);margin-bottom:6px">Formularios pendientes</div>
+                            <div id="dash-forms-list"></div>
                         </div>
                     </div>
                 </div>
@@ -791,18 +916,13 @@
                         </div>
                         <div class="profile-data-row"><span class="profile-data-label">Fecha de Nacimiento</span><span class="profile-data-value editable" id="p-fecha-nacimiento" data-field="fecha_nacimiento" data-type="date" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Lugar de Nacimiento</span><span class="profile-data-value editable" id="p-lugar-nacimiento" data-field="lugar_nacimiento" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Nacionalidad / País</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Calle y Número</span><span class="profile-data-value editable" id="p-direccion-calle" data-field="direccion_calle" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Barrio / Localidad</span><span class="profile-data-value editable" id="p-direccion-barrio" data-field="barrio" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Ciudad</span><span class="profile-data-value editable" id="p-direccion-ciudad" data-field="ciudad" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Departamento / Provincia</span><span class="profile-data-value editable" id="p-direccion-departamento" data-field="departamento" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Estado Civil</span><span class="profile-data-value editable" id="p-estado-civil" data-field="estado_civil" onclick="editarCampo(this)">-</span></div>
                     </div>
 
                     <!-- 📍 Ubicación y Coordenadas en Mapa -->
                     <div class="dash-section">
                         <div class="dash-section-title">
-                            <div class="dash-section-title-left"><i class="bi bi-geo-alt-fill text-danger"></i> 📍 Coordenadas de Domicilio en Mapa</div>
+                            <div class="dash-section-title-left"><i class="bi bi-geo-alt-fill text-danger"></i> 📍 Domicilio y Ubicación</div>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <div class="map-layer-switch">
                                     <button type="button" class="map-layer-btn active" id="btn-layer-sat" onclick="cambiarCapaMapa('sat')"><i class="bi bi-globe"></i> Satélite</button>
@@ -812,6 +932,13 @@
                                     <i class="bi bi-crosshair"></i> Mi GPS
                                 </button>
                             </div>
+                        </div>
+                        <div class="domicilio-grupo">
+                        <div class="profile-data-row"><span class="profile-data-label">Nacionalidad / País</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Departamento / Provincia</span><span class="profile-data-value editable" id="p-direccion-departamento" data-field="departamento" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Ciudad</span><span class="profile-data-value editable" id="p-direccion-ciudad" data-field="ciudad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Barrio / Localidad</span><span class="profile-data-value editable" id="p-direccion-barrio" data-field="barrio" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Calle y Número</span><span class="profile-data-value editable" id="p-direccion-calle" data-field="direccion_calle" onclick="editarCampo(this)">-</span></div>
                         </div>
                         <p style="font-size:.66rem;color:rgba(255,255,255,.65);margin-bottom:12px;">
                             <i class="bi bi-info-circle text-warning me-1"></i> Mapa satelital en alta resolución. Haz clic en el mapa para marcar tu domicilio. Usa <kbd style="background:rgba(255,255,255,.15);padding:1px 5px;border-radius:4px;">CTRL</kbd> + rueda del ratón para hacer zoom.
@@ -936,7 +1063,7 @@
                 </p>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                     <button class="dash-btn dash-btn-primary" onclick="abrirQRModal()"><i class="bi bi-arrows-fullscreen"></i> Pantalla Completa</button>
-                    <button class="dash-btn dash-btn-gold" onclick="renovarQR(true)"><i class="bi bi-arrow-repeat"></i> Renovar código</button>
+                    <button class="dash-btn dash-btn-gold" onclick="renovarQR()"><i class="bi bi-arrow-repeat"></i> Renovar código</button>
                 </div>
             </div>
         </div>
@@ -973,15 +1100,82 @@
     <div id="modal-password" class="modal-backdrop-custom">
         <div class="modal-card-custom">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                <h3 style="margin:0;font-size:.92rem;color:var(--dorado);font-weight:800"><i class="bi bi-key"></i> Cambiar Contraseña</h3>
+                <h3 style="margin:0;font-size:.92rem;color:var(--dorado);font-weight:800"><i class="bi bi-universal-access"></i> Clave y accesibilidad</h3>
                 <button onclick="cerrarModalPassword()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.6)">✕</button>
             </div>
-            <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="aj-bloque">
+                <div class="aj-titulo"><i class="bi bi-type"></i> Tamaño del texto</div>
+                <div class="aj-fila">
+                    <button type="button" class="aj-btn" onclick="CenturiaAccesibilidad.reducir()" title="Reducir texto" aria-label="Reducir texto">A−</button>
+                    <span class="aj-val" id="aj-font-val" aria-live="polite">100%</span>
+                    <button type="button" class="aj-btn" onclick="CenturiaAccesibilidad.agrandar()" title="Aumentar texto" aria-label="Aumentar texto">A+</button>
+                </div>
+                <div class="aj-titulo" style="margin-top:12px"><i class="bi bi-circle-half"></i> Alto contraste</div>
+                <div class="aj-fila">
+                    <button type="button" class="aj-btn aj-ancho" id="aj-contraste" onclick="CenturiaAccesibilidad.contraste()" aria-pressed="false">OFF</button>
+                    <button type="button" class="aj-btn aj-ancho" onclick="CenturiaAccesibilidad.restaurar()"><i class="bi bi-arrow-counterclockwise"></i> Restaurar</button>
+                </div>
+            </div>
+            <details id="aj-clave" class="aj-clave">
+                <summary><i class="bi bi-key"></i> Cambiar contraseña</summary>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
                 <input id="pw-actual" type="password" placeholder="Contraseña actual" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;color:#fff;font-size:.76rem;outline:none;font-family:'Montserrat'">
                 <input id="pw-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;color:#fff;font-size:.76rem;outline:none;font-family:'Montserrat'">
                 <input id="pw-confirmar" type="password" placeholder="Confirmar nueva contraseña" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;color:#fff;font-size:.76rem;outline:none;font-family:'Montserrat'">
                 <div id="pw-error" style="color:#f87171;font-size:.68rem;display:none"></div>
                 <button class="dash-btn dash-btn-primary mt-2" onclick="cambiarPassword()" style="justify-content:center"><i class="bi bi-check-lg"></i> Guardar Contraseña</button>
+            </div>
+            </details>
+        </div>
+    <!-- ═══ Modal Panel Exclusivo Administrador General (Áreas del Sistema) ═══ -->
+    <div id="modal-admin-suite" class="modal-backdrop-custom" onclick="cerrarAdminSuiteModal()">
+        <div class="modal-card-admin-suite" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:14px;margin-bottom:14px;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--dorado),var(--dorado-claro));display:flex;align-items:center;justify-content:center;color:#060f09;font-size:1.2rem;font-weight:800;">
+                            <i class="bi bi-shield-shaded"></i>
+                        </span>
+                        <div>
+                            <h3 style="margin:0;font-size:1.05rem;color:var(--blanco);font-weight:800;">Áreas del Sistema General</h3>
+                            <p style="margin:0;font-size:.65rem;color:var(--dorado-claro);">Panel Exclusivo del Administrador General — Accesos y Módulos Institucionales</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="cerrarAdminSuiteModal()" style="background:rgba(255,255,255,.1);border:none;width:30px;height:30px;border-radius:8px;font-size:.9rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+
+            <!-- Selector de Vista Rápida -->
+            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;margin-bottom:14px;">
+                <div style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--dorado);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                    <i class="bi bi-eye-fill"></i> Conmutar Modo de Vista en Pantalla
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button onclick="conmutarVistaAdmin('alumno')" class="dash-btn" id="btn-switch-alumno" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-size:.65rem;">
+                        <i class="bi bi-mortarboard-fill"></i> Vista Estudiante / Alumno
+                    </button>
+                    <button onclick="conmutarVistaAdmin('docente')" class="dash-btn" id="btn-switch-docente" style="background:rgba(59,130,246,.2);border:1px solid rgba(59,130,246,.4);color:#93c5fd;font-size:.65rem;">
+                        <i class="bi bi-person-badge-fill"></i> Vista Docente
+                    </button>
+                    <button onclick="conmutarVistaAdmin('admin')" class="dash-btn" id="btn-switch-admin" style="background:rgba(212,168,67,.2);border:1px solid rgba(212,168,67,.4);color:var(--dorado-claro);font-size:.65rem;">
+                        <i class="bi bi-gear-fill"></i> Vista Administrador
+                    </button>
+                    <button onclick="conmutarVistaAdmin('academico')" class="dash-btn" id="btn-switch-academico" style="background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.4);color:#c4b5fd;font-size:.65rem;">
+                        <i class="bi bi-building"></i> Vista Académico
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grilla de Módulos y Áreas -->
+            <div style="font-size:.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--dorado);margin-top:6px;">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Todos los Módulos y Áreas del Ecosistema
+            </div>
+            <div class="admin-suite-grid" id="admin-suite-modules">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+            <div style="margin-top:16px;text-align:right;border-top:1px solid rgba(255,255,255,.08);padding-top:12px;">
+                <button class="dash-btn dash-btn-ghost" onclick="cerrarAdminSuiteModal()">Cerrar Ventana</button>
             </div>
         </div>
     </div>
@@ -996,7 +1190,10 @@
     </div>
 
     <!-- ═══ Scripts ═══ -->
-    <script src="js/api.js?v=15"></script>
+    <script src="js/accesibilidad.js"></script>
+    <script src="js/mensajes-superacion.js?v=1"></script>
+    <script src="js/dash-mensajes.js?v=1"></script>
+    <script src="js/api.js?v=19"></script>
     <script src="js/localidades-py.js?v=1"></script>
     <script src="js/catalogos-py.js?v=1"></script>
     <script src="js/session-guard.js?v=3"></script>
@@ -1015,7 +1212,9 @@
                 { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
                 { href: 'academic/examen_virtual.html', icon: 'bi-pencil-square', label: 'Exámenes' },
                 { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
-                { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' }
+                { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
+                { href: 'facturas.html', icon: 'bi-receipt', label: 'Mis Facturas' },
+                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             docente: { label: 'Docente', links: [
                 { href: 'docente.html', icon: 'bi-chalkboard', label: 'Panel Docente' },
@@ -1023,28 +1222,42 @@
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
                 { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'habilitar_asig.html', icon: 'bi-journal-check', label: 'Habilitar Asig.' },
-                { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' }
+                { href: 'Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
+                { href: 'mensajes-alumnos.html', icon: 'bi-megaphone', label: 'Mensajes a alumnos' },
+                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             admin: { label: 'Administrador', links: [
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
                 { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'eventos.html', icon: 'bi-qr-code-scan', label: 'Eventos' },
                 { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'admin/index.html#usuarios', icon: 'bi-people', label: 'Usuarios' },
-                { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' }
+                { href: 'admin/index.html#asignaturas', icon: 'bi-book', label: 'Asignaturas' },
+                { href: 'facturas.html', icon: 'bi-receipt', label: 'Facturas' },
+                { href: 'mensajes-alumnos.html', icon: 'bi-megaphone', label: 'Mensajes a alumnos' },
+                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             academico: { label: 'Acceso Académico', links: [
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Admin' },
                 { href: 'tesoreria.html', icon: 'bi-cash-coin', label: 'Tesorería' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
+                { href: 'eventos.html', icon: 'bi-qr-code-scan', label: 'Eventos' },
                 { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
                 { href: 'academic/indicadores_por_unidad.html', icon: 'bi-graph-up', label: 'Indicadores' },
-                { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' }
+                { href: 'academic/criterios_evaluacion.html', icon: 'bi-clipboard-check', label: 'Criterios' },
+                { href: 'facturas.html', icon: 'bi-receipt', label: 'Facturas' },
+                { href: 'mensajes-alumnos.html', icon: 'bi-megaphone', label: 'Mensajes a alumnos' },
+                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             admin_filial: { label: 'Filial', links: [
                 { href: 'admin/index.html', icon: 'bi-gear', label: 'Panel Filial' },
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
-                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' }
+                { href: 'eventos.html', icon: 'bi-qr-code-scan', label: 'Eventos' },
+                { href: 'attendance.html', icon: 'bi-person-check', label: 'Asistencia' },
+                { href: 'facturas.html', icon: 'bi-receipt', label: 'Facturas' },
+                { href: 'mensajes-alumnos.html', icon: 'bi-megaphone', label: 'Mensajes a alumnos' },
+                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]}
         };
 
@@ -1132,6 +1345,7 @@
                     cargarAsignaturas(user, cedula),
                     cargarEventos(token),
                     cargarFormularios(cedula),
+                    cargarConsultas(),
                     currentUserRole === 'alumno' ? cargarHistorialIntentos(cedula) : Promise.resolve()
                 ]);
 
@@ -1336,20 +1550,148 @@
             linksCont.innerHTML = roleInfo.links.map(l => `
                 <a href="${l.href}" class="dash-link-item">
                     <i class="bi ${l.icon}"></i>
-                    <span>${l.label}</span>
+                    <span>${l.label}</span>${l.badge ? '<span class="dash-badge-n" id="atencion-badge" hidden>0</span>' : ''}
                 </a>
             `).join('');
 
-            // CTA Matrícula si aplica
-            const cta = document.getElementById('cta-matricula');
-            if (cta) cta.style.display = (currentUserRole === 'alumno' && (!user.matricula_completa)) ? 'flex' : 'none';
+            // Avance de la ficha: si falta el formulario de matrícula oficial, el aviso ofrece completarlo
+            window.cvMatriculaPendiente = (currentUserRole === 'alumno' && !user.matricula_completa);
+            if (window.CvMensajes) setTimeout(window.CvMensajes.actualizarFicha, 0);
 
             // Iniciales
             const initials = ((n.charAt(0) || 'U') + (a.charAt(0) || '')).toUpperCase();
             document.getElementById('dash-avatar-initials').textContent = initials;
             document.getElementById('p-avatar-initials').textContent = initials;
 
+            // ═══ ÁREAS DEL SISTEMA (EXCLUSIVO ADMINISTRADOR GENERAL) ═══
+            const realRole = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || '').toLowerCase();
+            const esAdmin = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'].includes(realRole);
+            const btnSuite = document.getElementById('btn-admin-suite');
+            const adminBanner = document.getElementById('admin-mode-banner');
+
+            if (btnSuite) {
+                btnSuite.style.display = esAdmin ? 'inline-flex' : 'none';
+            }
+
+            // Si es admin navegando en vista de estudiante, mostrar banner interactivo
+            if (esAdmin && currentUserRole === 'alumno') {
+                if (adminBanner) {
+                    adminBanner.style.display = 'flex';
+                    const lbl = document.getElementById('admin-mode-label');
+                    if (lbl) lbl.innerHTML = `<strong>Modo Administrador General:</strong> Estás visualizando el Campus exactamente como lo ve un <u>Estudiante/Alumno</u> (${escHtml(c)}).`;
+                }
+            } else if (adminBanner) {
+                adminBanner.style.display = 'none';
+            }
+
+            renderizarAdminSuiteModulos(esAdmin);
+
             resolverFoto(user);
+        }
+
+        // Catálogo maestro de áreas y módulos del sistema para el Administrador General
+        const ADMIN_SUITE_AREAS = [
+            {
+                categoria: 'Vistas del Sistema',
+                items: [
+                    { titulo: 'Vista Estudiante / Alumno', desc: 'Entorno real de estudio, libreta, exámenes y materiales', icono: 'bi-mortarboard-fill', color: '#10b981', accion: () => conmutarVistaAdmin('alumno') },
+                    { titulo: 'Vista Panel Docente', desc: 'Calificaciones, planificación, actas y planilla docente', icono: 'bi-person-badge-fill', color: '#3b82f6', url: 'docente.html' },
+                    { titulo: 'Vista Asistencia al Estudiante', desc: 'Ficha del estudiante, quejas, cumpleaños y beneficios', icono: 'bi-person-heart', color: '#f59e0b', url: 'atencion-estudiante.html' },
+                    { titulo: 'Vista Acceso Académico', desc: 'Indicadores por unidad, criterios y habilitaciones', icono: 'bi-building', color: '#8b5cf6', url: 'academic/indicadores_por_unidad.html' }
+                ]
+            },
+            {
+                categoria: 'Administración y Gestión Central',
+                items: [
+                    { titulo: 'Panel Central Administrador', desc: 'Gestión de usuarios, pendientes, filiales y configuración', icono: 'bi-gear-wide-connected', color: '#f43f5e', url: 'admin/index.html' },
+                    { titulo: 'Gestión de Usuarios y Roles', desc: 'Aprobación de registros, altas directas y permisos', icono: 'bi-people-fill', color: '#0ea5e9', url: 'admin/index.html#usuarios' },
+                    { titulo: 'Gestión de Asignaturas y Mallas', desc: 'Asignaturas, docentes asignados y carreras', icono: 'bi-book-fill', color: '#10b981', url: 'admin/index.html#asignaturas' },
+                    { titulo: 'Constructor de Evaluaciones', desc: 'Creador de exámenes interactivos y reactivos', icono: 'bi-hammer', color: '#f59e0b', url: 'constructor/index.html' },
+                    { titulo: 'Habilitar Asignaturas', desc: 'Asignación rápida de materias a docentes y cursos', icono: 'bi-journal-check', color: '#6366f1', url: 'habilitar_asig.html' }
+                ]
+            },
+            {
+                categoria: 'Finanzas, Asistencia y Eventos',
+                items: [
+                    { titulo: 'Tesorería y Pagos', desc: 'Aranceles, cuotas, estados de cuenta y facturación', icono: 'bi-cash-coin', color: '#eab308', url: 'tesoreria.html' },
+                    { titulo: 'Control de Facturas', desc: 'Recepción y validación de facturas para exámenes', icono: 'bi-receipt', color: '#14b8a6', url: 'facturas.html' },
+                    { titulo: 'Control de Asistencia', desc: 'Registro presencial y virtual por código y QR', icono: 'bi-person-check-fill', color: '#3b82f6', url: 'attendance.html' },
+                    { titulo: 'Eventos Institucionales con QR', desc: 'Gestión de eventos, seminarios y lectura de asistencia', icono: 'bi-qr-code-scan', color: '#d4a843', url: 'eventos.html' },
+                    { titulo: 'Centro de Atención y Consultas', desc: 'Bandeja de mensajes, quejas y soporte al alumno', icono: 'bi-headset', color: '#ec4899', url: 'consultas.html' },
+                    { titulo: 'Mensajes Masivos a Alumnos', desc: 'Emisión de comunicados y avisos institucionales', icono: 'bi-megaphone-fill', color: '#8b5cf6', url: 'mensajes-alumnos.html' }
+                ]
+            },
+            {
+                categoria: 'Formatos y Documentación Oficial',
+                items: [
+                    { titulo: 'Actas de Calificaciones', desc: 'Emisión de actas oficiales para firma y archivo', icono: 'bi-file-earmark-ruled', color: '#64748b', url: 'Formatos/acta.html' },
+                    { titulo: 'Planilla de Registro de Clases', desc: 'Planillas pedagógicas y firmas de cátedra', icono: 'bi-journal-text', color: '#64748b', url: 'Formatos/registro_clases.html' },
+                    { titulo: 'Formulario de Matrícula', desc: 'Ficha oficial de inscripción institucional', icono: 'bi-file-earmark-person', color: '#64748b', url: 'formulario-matricula.html' }
+                ]
+            }
+        ];
+
+        function renderizarAdminSuiteModulos() {
+            const cont = document.getElementById('admin-suite-modules');
+            if (!cont) return;
+
+            let html = '';
+            ADMIN_SUITE_AREAS.forEach(grupo => {
+                html += `
+                    <div style="grid-column: 1 / -1; margin-top: 10px; margin-bottom: 2px;">
+                        <span style="font-size: .65rem; font-weight: 800; color: var(--dorado-claro); text-transform: uppercase; letter-spacing: .5px;">
+                            ${escHtml(grupo.categoria)}
+                        </span>
+                    </div>
+                `;
+                grupo.items.forEach(item => {
+                    if (item.url) {
+                        html += `
+                            <a href="${item.url}" class="admin-suite-card">
+                                <div class="admin-suite-icon" style="background:${item.color}20; border:1px solid ${item.color}50; color:${item.color};">
+                                    <i class="bi ${item.icono}"></i>
+                                </div>
+                                <div>
+                                    <div class="admin-suite-title">${escHtml(item.titulo)}</div>
+                                    <div class="admin-suite-desc">${escHtml(item.desc)}</div>
+                                </div>
+                            </a>
+                        `;
+                    } else if (item.accion) {
+                        html += `
+                            <div class="admin-suite-card" style="cursor:pointer;" onclick="cerrarAdminSuiteModal(); conmutarVistaAdmin('alumno');">
+                                <div class="admin-suite-icon" style="background:${item.color}20; border:1px solid ${item.color}50; color:${item.color};">
+                                    <i class="bi ${item.icono}"></i>
+                                </div>
+                                <div>
+                                    <div class="admin-suite-title">${escHtml(item.titulo)}</div>
+                                    <div class="admin-suite-desc">${escHtml(item.desc)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+            cont.innerHTML = html;
+        }
+
+        function abrirAdminSuiteModal() {
+            const m = document.getElementById('modal-admin-suite');
+            if (m) m.style.display = 'flex';
+        }
+
+        function cerrarAdminSuiteModal() {
+            const m = document.getElementById('modal-admin-suite');
+            if (m) m.style.display = 'none';
+        }
+
+        function conmutarVistaAdmin(nuevoRol) {
+            currentUserRole = nuevoRol;
+            if (currentUserData) {
+                renderUsuario(currentUserData, userId);
+            }
+            cerrarAdminSuiteModal();
+            showToast('Conmutado a vista de ' + (roleConfig[nuevoRol]?.label || nuevoRol).toUpperCase(), 'success');
         }
 
         async function cargarStats(user, cedula) {
@@ -1401,16 +1743,6 @@
                 icono: s.icono || s.Icono || 'bi-laptop'
             };
         }
-        function habilitadaPara(a, user) {
-            if (['INACTIVO', 'INACTIVA', 'FALSE', 'NO', '0', 'BAJA'].includes(normTxt(a.estado))) return false;
-            const g = normTxt(user.grado);
-            if (a.grado && g && normTxt(a.grado) !== g) return false;
-            const c = normTxt(user.carrera), ac = normTxt(a.carrera);
-            if (ac && c && !['GENERAL', 'TODAS', 'TODOS', 'TODAS LAS CARRERAS'].includes(ac) && ac !== c) return false;
-            const sec = normTxt(user.seccion);
-            if (a.secciones.length && sec && !a.secciones.includes(sec)) return false;
-            return true;
-        }
         function tarjetaCurso(a, user, esDocente) {
             const codigo = a.codigo || 'ADE18';
             const sec = esDocente ? a.seccion : (user.seccion || '');
@@ -1458,12 +1790,8 @@
                 const items = porGrado[g] || [];
                 const activo = esDocente ? items.length > 0 : g === miGrado;
                 const etiqueta = GRADOS_ETIQUETA[g] || g;
-                if (!activo) {
-                    html += `<section class="grado-block grado-inactivo" aria-disabled="true">
-                        <div class="grado-head"><i class="bi bi-lock"></i> ${escHtml(etiqueta)}<span class="grado-badge">${esDocente ? 'Sin asignaturas' : 'No inscripto'}</span></div>
-                    </section>`;
-                    return;
-                }
+                // Solo se muestran los niveles con cursos activos (el del propio alumno siempre)
+                if (!activo) return;
                 html += `<section class="grado-block grado-activo">
                     <div class="grado-head"><i class="bi bi-mortarboard"></i> ${escHtml(etiqueta)}
                         <span class="grado-count">${items.length} ${items.length === 1 ? 'asignatura' : 'asignaturas'}</span>
@@ -1473,32 +1801,95 @@
                         : '<div class="grado-vacio">Todavía no hay asignaturas habilitadas para tu carrera y sección. Consulta con Acceso Académico.</div>'}
                 </section>`;
             });
+            if (!html && esDocente) html = '<div class="grado-vacio">Todavía no tienes asignaturas asignadas. Consulta con Acceso Académico.</div>';
             container.className = '';
             container.innerHTML = html;
             return total;
         }
 
+        // Alumno: cursos reales según las autorizaciones de Acceso Académico (hoja Cursos: Activo · Pendiente · Desarrollado)
+        const ESTADO_CURSO = {
+            activo: { txt: 'Activo', cls: 'grado-badge' },
+            desarrollado: { txt: 'Desarrollado', cls: 'grado-badge' },
+            pendiente: { txt: 'Pendiente', cls: 'grado-badge' }
+        };
+        function tarjetaCursoAlumno(c) {
+            const a = c.asignatura || {};
+            const est = ESTADO_CURSO[c.estado] || ESTADO_CURSO.pendiente;
+            const color = c.estado === 'activo' ? '#4ade80' : c.estado === 'desarrollado' ? 'var(--dorado)' : 'rgba(255,255,255,.45)';
+            const accion = c.materiales
+                ? `<a href="Materiales_Clases/programa.html?curso=${encodeURIComponent(a.codigo || a.uuid || '')}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px"><i class="bi bi-arrow-right-circle"></i> ${c.estado === 'desarrollado' ? 'Repasar materiales' : 'Acceder al Curso'}</a>`
+                : `<span class="dash-btn" style="justify-content:center;margin-top:10px;opacity:.55;cursor:not-allowed" aria-disabled="true"><i class="bi bi-lock"></i> Se habilita cuando esté activo</span>`;
+            return `
+                <div class="course-card">
+                    <div>
+                        <div class="course-card-title">
+                            <i class="bi ${escHtml(a.icono || 'bi-journal-bookmark')}" style="color:var(--dorado);margin-right:6px"></i>
+                            ${escHtml(a.nombre || a.uuid || 'Asignatura')}
+                        </div>
+                        <div class="course-card-meta">
+                            <span style="color:${color};font-weight:700"><i class="bi bi-circle-fill" style="color:${color};font-size:.5rem"></i> ${est.txt}</span>
+                            ${a.codigo ? `<span><i class="bi bi-tag"></i> ${escHtml(a.codigo)}</span>` : ''}
+                            ${c.seccion ? `<span><i class="bi bi-people"></i> Sec: ${escHtml(c.seccion)}</span>` : ''}
+                            ${a.semestre ? `<span><i class="bi bi-calendar3"></i> ${escHtml(a.semestre)}</span>` : ''}
+                            ${a.carga_horaria ? `<span><i class="bi bi-clock"></i> ${escHtml(a.carga_horaria)} hs</span>` : ''}
+                        </div>
+                    </div>
+                    ${accion}
+                </div>`;
+        }
+        function renderCursosAlumno(container, resp) {
+            const cursos = resp.cursos || [];
+            const porGrado = {};
+            cursos.forEach(c => { const g = normTxt(c.grado) || 'GRADO'; (porGrado[g] = porGrado[g] || []).push(c); });
+            // Solo se muestran los niveles que tienen cursos (activos, desarrollados o pendientes); ningún «No inscripto»
+            const orden = GRADOS_ORDEN.concat(Object.keys(porGrado).filter(g => !GRADOS_ORDEN.includes(g)));
+            let html = '';
+            orden.forEach(g => {
+                const items = porGrado[g] || [];
+                if (!items.length) return;
+                const act = items.filter(c => c.estado === 'activo').length;
+                html += `<section class="grado-block grado-activo">
+                    <div class="grado-head"><i class="bi bi-mortarboard"></i> ${escHtml(GRADOS_ETIQUETA[g] || g)}
+                        <span class="grado-count">${items.length} ${items.length === 1 ? 'asignatura' : 'asignaturas'}</span>
+                        <span class="grado-badge">${act ? act + (act === 1 ? ' activa' : ' activas') : 'Sin cursos activos'}</span></div>
+                    <div class="courses-grid">${items.map(tarjetaCursoAlumno).join('')}</div>
+                </section>`;
+            });
+            if (!html) {
+                const d = resp.diagnostico || {};
+                const f = resp.ficha || {};
+                html = `<div class="grado-vacio">Todavía no hay asignaturas autorizadas para tu curso. Consulta con Acceso Académico desde Atención al Alumno.
+                    <div style="margin-top:6px;font-size:.6rem;opacity:.7">Tu ficha: ${escHtml([f.grado, f.carrera, f.seccion].filter(Boolean).join(' · ') || '—')}. ${escHtml(d.motivo || '')}</div></div>`;
+            }
+            container.className = '';
+            container.innerHTML = html;
+            return (resp.resumen && resp.resumen.activo) || 0;
+        }
+
         async function cargarAsignaturas(user, cedula) {
             const container = document.getElementById('dash-courses-container');
             const esDocente = currentUserRole === 'docente';
+            window.__cursosArgs = [user, cedula];
             try {
-                let subjects = [];
                 if (esDocente) {
                     const d = await CenturiaAPI.docente.getMySubjects(cedula);
-                    subjects = d.subjects || [];
-                } else {
-                    const dKit = await CenturiaAPI.kit.getHabilitadas();
-                    subjects = dKit.asignaturas || [];
+                    const lista = (d.subjects || []).map(normAsignatura);
+                    renderCursosPorGrado(container, lista, user, true);
+                    return;
                 }
-                let lista = subjects.map(normAsignatura);
-                if (!esDocente) lista = lista.filter(a => habilitadaPara(a, user));
-                const total = renderCursosPorGrado(container, lista, user, esDocente);
-                if (!esDocente) document.getElementById('stat-courses').textContent = total;
+                const resp = await CenturiaAPI.cursos.mios();
+                if (!resp || resp.ok === false) throw new Error((resp && resp.error) || 'Sin respuesta');
+                if (resp.alumno === false) {   // personal con acceso a la libreta: sin cursos propios
+                    container.className = '';
+                    container.innerHTML = '<div class="grado-vacio">No tienes cursos como alumno.</div>';
+                    document.getElementById('stat-courses').textContent = '0';
+                    return;
+                }
+                document.getElementById('stat-courses').textContent = renderCursosAlumno(container, resp);
             } catch (e) {
-                // Si falla la carga, se muestra solo el curso oficial TIC dentro de su grado (sin duplicados)
-                const respaldo = [normAsignatura({ codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', carrera: user.carrera || 'General', grado: user.grado || 'GRADO', icono: 'bi-laptop' })];
-                const total = renderCursosPorGrado(container, respaldo, user, esDocente);
-                document.getElementById('stat-courses').textContent = total;
+                container.className = '';
+                container.innerHTML = '<div class="grado-vacio">No pudimos cargar tus cursos. <button type="button" class="dash-btn" onclick="cargarAsignaturas.apply(null, window.__cursosArgs)"><i class="bi bi-arrow-repeat"></i> Reintentar</button></div>';
             }
         }
 
@@ -1536,15 +1927,42 @@
             }
         }
 
+        // Atención al Alumno: mis consultas + insignia con respuestas nuevas (alumno) o consultas por atender (personal)
+        function htmlEscape(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        async function cargarConsultas() {
+            const list = document.getElementById('dash-consultas-list');
+            const vacio = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.5);font-size:.7rem;line-height:1.6">Aún no tienes consultas.</div>';
+            try {
+                const d = await CenturiaAPI.consultas.listar({});
+                if (!d || d.ok !== true) { if (list) list.innerHTML = vacio; return; }
+                const badge = document.getElementById('atencion-badge');
+                const n = (d.sin_leer || 0) + (d.es_personal ? ((d.conteo && d.conteo.abierta) || 0) : 0);
+                if (badge) { badge.textContent = n > 99 ? '99+' : n; badge.hidden = n === 0; badge.title = d.es_personal ? 'Consultas abiertas por atender + respuestas sin leer' : 'Respuestas nuevas'; }
+                const est = { abierta: ['Abierta', '#fbbf24'], en_proceso: ['En proceso', '#7cc0ff'], resuelta: ['Resuelta', '#4ade80'] };
+                const mias = d.mias || [];
+                if (!list) return;
+                list.innerHTML = (mias.length ? mias.slice(0, 5).map(c => {
+                    const e = est[c.estado] || [c.estado, '#ccc'];
+                    return `<a href="consultas.html?id=${encodeURIComponent(c.id)}" class="profile-data-row" style="text-decoration:none;color:inherit">
+                        <div style="min-width:0">
+                            <div style="font-weight:700;color:#fff">${c.pendiente_alumno ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3ddc6e;margin-right:6px" title="Respuesta nueva"></span>' : ''}${htmlEscape(c.asunto)}</div>
+                            <div style="font-size:.55rem;color:rgba(255,255,255,.5)">${htmlEscape(c.categoria)} · ${c.mensajes} mensaje${c.mensajes === 1 ? '' : 's'}${c.pendiente_alumno ? ' · <b style="color:#3ddc6e">respuesta nueva</b>' : ''}</div>
+                        </div>
+                        <span style="font-size:.58rem;font-weight:700;color:${e[1]};white-space:nowrap">${e[0]}</span>
+                    </a>`;
+                }).join('') + (mias.length > 5 ? '<div style="text-align:right;margin-top:6px"><a href="consultas.html" style="font-size:.62rem;color:var(--dorado)">Ver todas (' + mias.length + ')</a></div>' : '')
+                    : vacio) + (d.es_personal && d.conteo && d.conteo.abierta ? `<div style="margin-top:10px"><a href="consultas.html" class="dash-btn dash-btn-gold" style="font-size:.65rem"><i class="bi bi-inbox"></i> ${d.conteo.abierta} consulta${d.conteo.abierta === 1 ? '' : 's'} de alumnos por atender</a></div>` : '');
+            } catch (e) { if (list) list.innerHTML = vacio; }
+        }
+
         async function cargarFormularios(cedula) {
             const list = document.getElementById('dash-forms-list');
             try {
                 const data = await CenturiaAPI.formularios.my(cedula);
                 const forms = data.formularios || [];
-                if (forms.length === 0) {
-                    list.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.4);font-size:.7rem">No hay formularios pendientes</div>';
-                    return;
-                }
+                const wrap = document.getElementById('dash-forms-wrap');
+                if (forms.length === 0) { if (wrap) wrap.style.display = 'none'; return; }
+                if (wrap) wrap.style.display = 'block';
                 list.innerHTML = forms.map(f => {
                     const isDone = f.mi_estado === 'completado';
                     return `
@@ -1701,13 +2119,17 @@
         }
 
         // === QR CODE DINÁMICO ===
-        // El QR lleva un código que emite el servidor: vale unos segundos, se usa una sola vez y NO contiene datos personales.
-        // Se renueva solo mientras la pestaña está a la vista. Una captura de pantalla deja de servir enseguida.
+        // El QR lleva un código que emite el servidor: NO contiene datos personales, vale unos segundos y se usa una sola vez.
+        // El servidor entrega un LOTE de códigos (uno por cada ventana de ~20 s) y aquí se van mostrando uno tras otro sin
+        // volver a pedir nada: el cambio es instantáneo y sigue funcionando si la red se corta un momento.
+        // Se pide un lote nuevo con tiempo de sobra (quedando ~40 s), y se precarga apenas abre el panel.
         let lastQRText = '';
-        let qrExpiraAt = 0;
-        let qrTtlMs = 45000;
+        let qrLote = [];                 // [{codigo, desde, hasta}] en hora de este dispositivo
+        let qrPasoMs = 20000;
         let qrPidiendo = false;
-        let qrRenovarTimer = null;
+        let qrFallos = 0;
+        let qrProximoIntento = 0;
+        let qrUltimoError = '';
         let qrTickTimer = null;
 
         function qrVisible() {
@@ -1736,7 +2158,7 @@
 
         function qrMensaje(html) {
             const c = document.getElementById('qr-container');
-            if (c) c.innerHTML = '<div style="color:#0d2c16;font-size:.72rem;font-weight:700;padding:24px 12px;text-align:center;line-height:1.5">' + html + '</div>';
+            if (c) c.innerHTML = '<div style="color:#0d2c16;font-size:.72rem;font-weight:700;padding:18px 10px;text-align:center;line-height:1.5">' + html + '</div>';
             const f = document.getElementById('qr-fullscreen-container');
             if (f && qrModalAbierto()) f.innerHTML = '<div style="color:#0d2c16;font-size:.85rem;font-weight:700;padding:24px;text-align:center">' + html + '</div>';
         }
@@ -1747,65 +2169,87 @@
             if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
         }
 
-        function qrTick() {
-            if (!qrVisible()) { clearInterval(qrTickTimer); qrTickTimer = null; return; }
-            const resta = qrExpiraAt - Date.now();
-            if (!lastQRText) return;
-            if (resta <= 0) {
-                lastQRText = '';
-                qrMensaje('<i class="bi bi-arrow-repeat"></i> Código vencido.<br>Renovando…');
-                qrEstado('Renovando…', 0);
-                renovarQR();
-                return;
-            }
-            qrEstado('Válido ' + Math.ceil(resta / 1000) + ' s · se renueva solo', resta / qrTtlMs * 100);
-        }
+        function qrHtmlEscape(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-        async function renovarQR(manual) {
+        // Pide un lote de códigos al servidor. Una sola petición a la vez; si falla, reintenta pronto (1,5 s → 3 → 5 → 8).
+        async function pedirLote(manual) {
             if (qrPidiendo) return;
             qrPidiendo = true;
-            clearTimeout(qrRenovarTimer);
-            let espera = 8000;
+            const t0 = Date.now();
             try {
                 const d = await CenturiaAPI.credencial.generar();
-                if (!d || d.ok === false) throw new Error((d && d.error) || 'Sin respuesta del servidor');
-                lastQRText = d.codigo;
-                qrTtlMs = (Number(d.expira_en) || 45) * 1000;
-                qrExpiraAt = Date.now() + qrTtlMs;
-                dibujarQR(document.getElementById('qr-container'), lastQRText, 200);
-                if (qrModalAbierto()) {
-                    const fs = document.getElementById('qr-fullscreen-container');
-                    dibujarQR(fs, lastQRText, Math.round(fs.getBoundingClientRect().width) || 300);
+                if (!d || d.ok !== true || !Array.isArray(d.codigos) || !d.codigos.length) {
+                    const m = (d && (d.error || d.mensaje)) || 'respuesta inesperada del servidor';
+                    throw new Error(/no reconocida|no v[aá]lida/i.test(m) ? 'El servidor todavía no tiene el QR dinámico: falta publicar la nueva versión del script' : m);
                 }
+                const paso = (Number(d.paso) || 20) * 1000;
+                qrPasoMs = paso;
+                qrLote = d.codigos.map(c => ({ codigo: c.codigo, desde: t0 + c.desde_en * 1000, hasta: t0 + c.desde_en * 1000 + paso }));
+                qrFallos = 0; qrUltimoError = '';
+                qrProximoIntento = 0;
                 qrTick();
-                espera = (Number(d.renovar_en) || 25) * 1000;
             } catch (e) {
                 console.warn('QR dinámico:', e);
-                // Nunca se deja a la vista un código que ya venció
-                if (Date.now() >= qrExpiraAt) {
-                    lastQRText = '';
-                    qrMensaje('<i class="bi bi-wifi-off"></i> No se pudo obtener el código.<br>Reintentando…');
-                    qrEstado('Sin conexión con el servidor', 0);
-                }
-                if (manual) showToast(e.message || 'No se pudo renovar el código', 'error');
-                if (/Espera/i.test(e.message || '')) espera = 4000;
+                qrFallos++;
+                qrUltimoError = (e && e.message) || 'error desconocido';
+                const espera = /Espera/i.test(qrUltimoError) ? 2500 : [1500, 3000, 5000, 8000][Math.min(qrFallos - 1, 3)];
+                qrProximoIntento = Date.now() + espera;
+                if (manual) showToast(qrUltimoError, 'error');
             } finally {
                 qrPidiendo = false;
-                qrRenovarTimer = setTimeout(() => { if (qrVisible()) renovarQR(); }, espera);
             }
         }
 
-        // Punto de entrada (se llama al abrir la pestaña y tras editar el perfil). Los argumentos ya no se usan:
-        // el servidor toma la cédula de la sesión.
+        // Cada 0,5 s mientras la pestaña está a la vista: muestra el código de la ventana actual y pide más cuando quedan pocos.
+        function qrTick() {
+            if (!qrVisible()) { clearInterval(qrTickTimer); qrTickTimer = null; return; }
+            const ahora = Date.now();
+            const cur = qrLote.find(c => ahora >= c.desde && ahora < c.hasta);
+            const ultimo = qrLote.length ? qrLote[qrLote.length - 1] : null;
+
+            if (!qrPidiendo && ahora >= qrProximoIntento && (!ultimo || ultimo.hasta - ahora < 40000)) pedirLote();
+
+            if (cur) {
+                if (cur.codigo !== lastQRText) {
+                    lastQRText = cur.codigo;
+                    dibujarQR(document.getElementById('qr-container'), lastQRText, 200);
+                    if (qrModalAbierto()) {
+                        const fs = document.getElementById('qr-fullscreen-container');
+                        dibujarQR(fs, lastQRText, Math.round(fs.getBoundingClientRect().width) || 300);
+                    }
+                }
+                const resta = cur.hasta - ahora;
+                qrEstado('Cambia en ' + Math.ceil(resta / 1000) + ' s' + (qrFallos ? ' · sin conexión' : ''), resta / qrPasoMs * 100);
+            } else {
+                lastQRText = '';
+                if (qrUltimoError) {
+                    qrMensaje('<i class="bi bi-wifi-off"></i> No se pudo obtener el código.<br><span style="font-weight:500;font-size:.62rem">' + qrHtmlEscape(qrUltimoError) + '</span><br>Reintentando…');
+                    qrEstado('Sin conexión con el servidor', 0);
+                } else {
+                    qrMensaje('<i class="bi bi-arrow-repeat"></i> Obteniendo código…');
+                    qrEstado('Obteniendo código…', 0);
+                }
+            }
+        }
+
+        // Punto de entrada (al abrir la pestaña y tras editar el perfil). El servidor toma la cédula de la sesión.
         function generarQR() {
             if (!qrVisible()) return;
             const cedula = (CenturiaAPI.getCurrentUser() || {}).username || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
             const el = document.getElementById('qr-card-cedula');
             if (el) el.textContent = cedula ? ('C.I. N° ' + (Number(cedula) ? Number(cedula).toLocaleString('es-PY') : cedula)) : 'C.I. N° —';
-            if (!qrTickTimer) qrTickTimer = setInterval(qrTick, 1000);
-            if (!lastQRText || Date.now() > qrExpiraAt - 8000) renovarQR();
+            if (!qrTickTimer) qrTickTimer = setInterval(qrTick, 500);
+            qrTick();
         }
+
+        // Botón «Renovar código»: pide un lote nuevo ya (el anterior deja de valer)
+        function renovarQR() { qrProximoIntento = 0; pedirLote(true); }
+
         document.addEventListener('visibilitychange', () => { if (qrVisible()) generarQR(); });
+        // Precarga: el lote ya está listo cuando se abre la pestaña de la credencial
+        document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
+            try { if (window.CenturiaSession && CenturiaSession.getToken && CenturiaSession.getToken()) pedirLote(); } catch (e) {}
+        }, 600));
 
         function abrirQRModal() {
             const modal = document.getElementById('modal-qr-fullscreen');
@@ -1821,13 +2265,9 @@
             if (cedEl) cedEl.textContent = 'C.I. N° ' + c;
 
             modal.style.display = 'flex';
-            if (lastQRText && Date.now() < qrExpiraAt) {
-                dibujarQR(fsContainer, lastQRText, Math.round(fsContainer.getBoundingClientRect().width) || 300);
-                qrTick();
-            } else {
-                qrMensaje('<i class="bi bi-arrow-repeat"></i> Generando código…');
-                renovarQR();
-            }
+            if (lastQRText) dibujarQR(fsContainer, lastQRText, Math.round(fsContainer.getBoundingClientRect().width) || 300);
+            else qrMensaje('<i class="bi bi-arrow-repeat"></i> Obteniendo código…');
+            qrTick();
         }
 
         function cerrarQRModal() {
@@ -2297,7 +2737,25 @@
         }
 
         // === CONTRASEÑA ===
+        function pintarAjustes() {
+            if (!window.CenturiaAccesibilidad) return;
+            const e = CenturiaAccesibilidad.estado();
+            const v = document.getElementById('aj-font-val'), c = document.getElementById('aj-contraste');
+            if (v) v.textContent = e.fontSize + '%';
+            if (c) { c.textContent = e.highContrast ? 'ON' : 'OFF'; c.classList.toggle('activo', !!e.highContrast); c.setAttribute('aria-pressed', e.highContrast ? 'true' : 'false'); }
+        }
+        document.addEventListener('acenturia:cambio', pintarAjustes);
+
+        // Ajustes: accesibilidad a la vista y la contraseña recogida (se despliega al tocarla)
+        function abrirAjustes() {
+            abrirModalPassword();
+            document.getElementById('aj-clave').open = false;
+            document.getElementById('pw-actual').blur();
+        }
+
         function abrirModalPassword() {
+            pintarAjustes();
+            document.getElementById('aj-clave').open = true;
             document.getElementById('modal-password').style.display = 'flex';
             document.getElementById('pw-actual').value = '';
             document.getElementById('pw-nueva').value = '';
@@ -2355,7 +2813,7 @@
                 var ced = (window.CenturiaSession && CenturiaSession.getCedula()) || '';
                 var hoy = new Date(), clave = 'cv_cumple_' + ced + '_' + hoy.getFullYear() + '-' + (hoy.getMonth() + 1) + '-' + hoy.getDate();
                 try { if (localStorage.getItem(clave)) return; } catch (e) {}
-                var d = await CenturiaAPI.cumple.mio();
+                var d = await (window.cvCumpleMio ? window.cvCumpleMio() : CenturiaAPI.cumple.mio());
                 if (!d || !d.ok || !d.cumple) return;
                 if (document.getElementById('cumple-flotante')) return;
 

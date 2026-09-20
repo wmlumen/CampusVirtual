@@ -586,6 +586,10 @@
                         <div class="profile-data-row"><span class="profile-data-label">Fecha de Nacimiento</span><span class="profile-data-value editable" id="p-fecha-nacimiento" data-field="fecha_nacimiento" data-type="date" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Lugar de Nacimiento</span><span class="profile-data-value editable" id="p-lugar-nacimiento" data-field="lugar_nacimiento" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Nacionalidad</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Calle y Número</span><span class="profile-data-value editable" id="p-direccion-calle" data-field="direccion_calle" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Barrio / Localidad</span><span class="profile-data-value editable" id="p-direccion-barrio" data-field="barrio" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Ciudad</span><span class="profile-data-value editable" id="p-direccion-ciudad" data-field="ciudad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Departamento / Provincia</span><span class="profile-data-value editable" id="p-direccion-departamento" data-field="departamento" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Dirección Completa</span><span class="profile-data-value editable" id="p-direccion" data-field="direccion" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Estado Civil</span><span class="profile-data-value editable" id="p-estado-civil" data-field="estado_civil" onclick="editarCampo(this)">-</span></div>
                     </div>
@@ -817,7 +821,18 @@
             const fechaNac = user.fecha_nacimiento || localStorage.getItem('centuria_fecha_nacimiento') || '';
             const lugarNac = user.lugar_nacimiento || localStorage.getItem('centuria_lugar_nacimiento') || '';
             const nacionalidad = user.nacionalidad || user.pais || localStorage.getItem('centuria_nacionalidad') || '';
-            const direccion = user.direccion || localStorage.getItem('centuria_direccion') || '';
+            
+            // Dirección y componentes
+            const dirCalle = user.direccion_calle || user.calle || localStorage.getItem('centuria_direccion_calle') || '';
+            const dirBarrio = user.barrio || user.barrio_compania || localStorage.getItem('centuria_barrio') || '';
+            const dirCiudad = user.ciudad || localStorage.getItem('centuria_ciudad') || '';
+            const dirDepto = user.departamento || localStorage.getItem('centuria_departamento') || '';
+            
+            let direccion = user.direccion || localStorage.getItem('centuria_direccion') || '';
+            if (!direccion && (dirCalle || dirBarrio || dirCiudad || dirDepto)) {
+                direccion = [dirCalle, dirBarrio, dirCiudad, dirDepto].filter(Boolean).join(', ');
+            }
+
             const estadoCivil = user.estado_civil || localStorage.getItem('centuria_estado_civil') || '';
             const telAlt = user.telefono_alternativo || user.telefono_fijo || localStorage.getItem('centuria_telefono_alternativo') || '';
             const contactoEmergencia = user.contacto_emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
@@ -855,6 +870,10 @@
             document.getElementById('p-fecha-nacimiento').textContent = fechaNac || '-';
             document.getElementById('p-lugar-nacimiento').textContent = lugarNac || '-';
             document.getElementById('p-nacionalidad').textContent = nacionalidad || '-';
+            document.getElementById('p-direccion-calle').textContent = dirCalle || '-';
+            document.getElementById('p-direccion-barrio').textContent = dirBarrio || '-';
+            document.getElementById('p-direccion-ciudad').textContent = dirCiudad || '-';
+            document.getElementById('p-direccion-departamento').textContent = dirDepto || '-';
             document.getElementById('p-direccion').textContent = direccion || '-';
             document.getElementById('p-estado-civil').textContent = estadoCivil || '-';
 

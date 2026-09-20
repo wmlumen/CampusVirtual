@@ -4,44 +4,6 @@
     <!-- v08.5: Security Guard -->
     <script src="./js/session-guard.js"></script>
     <script>CenturiaSession.protect();</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — Campus Virtual Centuria</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        :root {
-            --verde: #00B140;
-            --verde-dark: #007A33;
-            --verde-card: #E6F4EA;
-            --hover: #81C784;
-            --dorado: #d4a843;
-            --azul: #2563EB;
-            --rosa: #D94172;
-            --naranja: #D97706;
-            --texto: #FFFFFF;
-            --texto-sec: #2D2D2D;
-            --bg: #007A33;
-            --card-bg: #FFFFFF;
-            --border: #C8E6C9;
-            --txt-card: #2D2D2D;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--texto);
-            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,.04) 0%, transparent 50%),
-                              radial-gradient(circle at 80% 20%, rgba(0,177,64,.15) 0%, transparent 40%);
-        }
-        .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 80px; }
-
-        /* ═══ BARRA SUPERIOR FIJA ═══ */
-        .topbar {
             position: sticky; top: 0; z-index: 100;
             background: var(--verde-dark);
             border-bottom: 2px solid var(--verde);
@@ -242,27 +204,31 @@
     <div class="topbar">
         <div class="topbar-brand">🏛 Instituto Superior Centuria</div>
         <div class="topbar-nav">
-            <a href="dashboard.html" class="active">Dashboard</a>
-            <a href="perfil.html">Perfil</a>
+            <a href="dashboard.html" class="active">Dashboard & Perfil</a>
             <a href="Materiales_Clases/index.html">Materiales</a>
+            <a href="academic/index.html">Exámenes</a>
+            <a href="libreta.html">Libreta</a>
         </div>
     </div>
 
     <div class="wrap">
         <!-- BREADCRUMBS -->
         <div class="breadcrumb-bar">
-            <a href="dashboard.html">Inicio</a> / Dashboard
+            <a href="dashboard.html">Inicio</a> / Dashboard & Mi Perfil
         </div>
 
         <div id="pw-banner-dash" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #d4a843;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.68rem;color:#92400E">
-            <i class="bi bi-shield-lock me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad.
-            <a href="perfil.html" style="font-weight:700;color:#92400E">Ir a mi perfil →</a>
+            <i class="bi bi-shield-lock me-1"></i><strong>Cambia tu contraseña provisoria</strong> por seguridad institucional.
+            <button onclick="activarTab('tab-perfil'); abrirModalPassword();" style="background:none;border:none;font-weight:700;color:#92400E;text-decoration:underline;cursor:pointer;margin-left:6px">Cambiar ahora →</button>
         </div>
 
-        <!-- HEADER INSTITUCIONAL -->
+        <!-- HEADER INSTITUCIONAL UNIFICADO -->
         <div class="hdr">
             <div class="hdr-left">
-                <div class="avatar" id="dash-avatar">E</div>
+                <div class="avatar" id="dash-avatar" onclick="abrirFotoModal()" style="cursor:pointer;position:relative;overflow:hidden" title="Clic para ver o cambiar foto">
+                    <span id="dash-initials">E</span>
+                    <img id="dash-avatar-img" style="width:100%;height:100%;object-fit:cover;display:none" alt="Avatar">
+                </div>
                 <div>
                     <div class="hdr-name" id="dash-name">Cargando...</div>
                     <div class="hdr-sub" id="dash-sub">Cargando...</div>
@@ -276,74 +242,216 @@
             </div>
         </div>
 
-        <!-- STATS -->
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="bi bi-book"></i></div>
-                <div class="stat-val" id="stat-courses">0</div>
-                <div class="stat-lbl">Asignaturas</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon gold"><i class="bi bi-calendar-event"></i></div>
-                <div class="stat-val" id="stat-events">0</div>
-                <div class="stat-lbl">Eventos</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="bi bi-graph-up"></i></div>
-                <div class="stat-val" id="stat-promedio">-</div>
-                <div class="stat-lbl">Promedio</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon rose"><i class="bi bi-clipboard-check"></i></div>
-                <div class="stat-val" id="stat-asistencia">-</div>
-                <div class="stat-lbl">Asistencia</div>
-            </div>
+        <!-- NAVEGACIÓN POR PESTAÑAS (DASHBOARD / MI PERFIL & DATOS) -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid rgba(255,255,255,.15);padding-bottom:8px">
+            <button id="nav-btn-dash" class="btn" style="flex:initial;padding:8px 18px;background:var(--card-bg);color:var(--verde-dark);border-radius:10px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.1)" onclick="activarTab('tab-dash')">
+                <i class="bi bi-speedometer2 me-1"></i> Resumen Académico
+            </button>
+            <button id="nav-btn-perfil" class="btn" style="flex:initial;padding:8px 18px;background:rgba(255,255,255,.15);color:#fff;border-radius:10px;font-weight:700" onclick="activarTab('tab-perfil')">
+                <i class="bi bi-person-badge me-1"></i> Mi Perfil, QR y Datos
+            </button>
         </div>
 
-        <!-- ACCESO RÁPIDO -->
-        <div class="section">
-            <div class="sec-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div>
-            <div class="links" id="dash-links"></div>
-        </div>
-
-        <!-- ASIGNATURAS -->
-        <div class="section" id="section-courses">
-            <div class="sec-title">
-                <i class="bi bi-mortarboard-fill"></i> Mis Asignaturas
-                <div class="view-toggles">
-                    <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Cuadrícula" aria-label="Vista cuadrícula"><i class="bi bi-grid-3x3-gap-fill"></i></button>
-                    <button class="view-btn" id="btn-list" onclick="setView('list')" title="Lista" aria-label="Vista lista"><i class="bi bi-list-ul"></i></button>
+        <!-- ════════ VISTA 1: DASHBOARD ACADÉMICO ════════ -->
+        <div id="tab-dash">
+            <!-- STATS -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="bi bi-book"></i></div>
+                    <div class="stat-val" id="stat-courses">0</div>
+                    <div class="stat-lbl">Asignaturas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon gold"><i class="bi bi-calendar-event"></i></div>
+                    <div class="stat-val" id="stat-events">0</div>
+                    <div class="stat-lbl">Eventos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="bi bi-graph-up"></i></div>
+                    <div class="stat-val" id="stat-promedio">-</div>
+                    <div class="stat-lbl">Promedio</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon rose"><i class="bi bi-clipboard-check"></i></div>
+                    <div class="stat-val" id="stat-asistencia">-</div>
+                    <div class="stat-lbl">Asistencia</div>
                 </div>
             </div>
-            <div id="dash-courses">Cargando...</div>
+
+            <!-- ACCESO RÁPIDO -->
+            <div class="section">
+                <div class="sec-title"><i class="bi bi-grid-3x3-gap"></i> Acceso Rápido</div>
+                <div class="links" id="dash-links"></div>
+            </div>
+
+            <!-- ASIGNATURAS -->
+            <div class="section" id="section-courses">
+                <div class="sec-title">
+                    <i class="bi bi-mortarboard-fill"></i> Mis Asignaturas
+                    <div class="view-toggles">
+                        <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Cuadrícula" aria-label="Vista cuadrícula"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                        <button class="view-btn" id="btn-list" onclick="setView('list')" title="Lista" aria-label="Vista lista"><i class="bi bi-list-ul"></i></button>
+                    </div>
+                </div>
+                <div id="dash-courses">Cargando...</div>
+            </div>
+
+            <!-- HISTORIAL DE INTENTOS -->
+            <div class="section">
+                <div class="sec-title"><i class="bi bi-repeat"></i> Historial de Intentos de Exámenes</div>
+                <div style="overflow-x:auto;background:var(--card-bg);border-radius:12px;padding:12px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:600px;color:var(--txt-card)">
+                        <thead><tr style="border-bottom:2px solid var(--border)">
+                            <th style="padding:8px;text-align:left;font-weight:700">Examen</th>
+                            <th style="padding:8px;text-align:center;font-weight:700">Intento 1</th>
+                            <th style="padding:8px;text-align:center;font-weight:700">Intento 2</th>
+                            <th style="padding:8px;text-align:center;font-weight:700;background:#E6F4EA;color:var(--verde-dark)">Puntaje Final</th>
+                        </tr></thead>
+                        <tbody id="tbody-historial-intentos">
+                            <tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando intentos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EVENTOS -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px;">
+                <div class="section">
+                    <div class="sec-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div>
+                    <div id="dash-calendar">Cargando...</div>
+                </div>
+                <div class="section">
+                    <div class="sec-title"><i class="bi bi-exclamation-triangle"></i> En Puerta</div>
+                    <div id="dash-events">Cargando...</div>
+                </div>
+            </div>
         </div>
 
-        <!-- HISTORIAL DE INTENTOS -->
-        <div class="section">
-            <div class="sec-title"><i class="bi bi-repeat"></i> Historial de Intentos de Exámenes</div>
-            <div style="overflow-x:auto;background:var(--card-bg);border-radius:12px;padding:12px;">
-                <table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:600px;color:var(--txt-card)">
-                    <thead><tr style="border-bottom:2px solid var(--border)">
-                        <th style="padding:8px;text-align:left;font-weight:700">Examen</th>
-                        <th style="padding:8px;text-align:center;font-weight:700">Intento 1</th>
-                        <th style="padding:8px;text-align:center;font-weight:700">Intento 2</th>
-                        <th style="padding:8px;text-align:center;font-weight:700;background:#E6F4EA;color:var(--verde-dark)">Puntaje Final</th>
-                    </tr></thead>
-                    <tbody id="tbody-historial-intentos">
-                        <tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b"><i class="bi bi-hourglass-split"></i> Cargando intentos...</td></tr>
-                    </tbody>
-                </table>
+        <!-- ════════ VISTA 2: MI PERFIL Y DATOS PERSONALES ════════ -->
+        <div id="tab-perfil" style="display:none;">
+            <!-- CTA MATRÍCULA -->
+            <div id="cta-matricula" style="display:none;margin-bottom:12px;background:#E6F4EA;border:1px solid var(--verde);border-left:4px solid var(--verde-dark);border-radius:12px;padding:12px 14px">
+                <div style="font-size:.72rem;font-weight:800;color:var(--verde-dark)"><i class="bi bi-file-earmark-text"></i> Completa tu Formulario de Matrícula</div>
+                <div style="font-size:.62rem;color:#2D2D2D;margin:4px 0 10px">Ya ves tu entorno. Ahora completa el formulario oficial para terminar tu inscripción.</div>
+                <a href="formulario-matricula.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:700;background:var(--verde);color:#fff;text-decoration:none"><i class="bi bi-pencil-square"></i> Completar formulario</a>
+            </div>
+
+            <!-- TARJETA PRINCIPAL DE PERFIL -->
+            <div class="section" style="padding:0;overflow:hidden">
+                <div style="height:90px;background:linear-gradient(135deg,var(--verde-dark),var(--verde),#22c55e);position:relative"></div>
+                <div style="text-align:center;margin-top:-45px;position:relative;z-index:2;padding-bottom:16px">
+                    <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:inline-flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.2);overflow:hidden;cursor:pointer" onclick="abrirFotoModal()">
+                        <span id="perfil-initials">E</span>
+                        <img id="perfil-avatar-img" style="width:100%;height:100%;object-fit:cover;display:none" alt="Foto">
+                    </div>
+                    <div style="font-size:1.1rem;font-weight:800;color:var(--verde-dark);margin-top:8px" id="p-nombre-completo">Cargando...</div>
+                    <div style="font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--verde)" id="p-rol-badge">-</div>
+                    <div style="font-size:.6rem;color:#64748b;margin-top:2px" id="p-cedula-txt">C.I: -</div>
+
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+                        <label for="foto-input-dash" class="subj-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+                            <i class="bi bi-cloud-upload"></i> Subir Foto
+                        </label>
+                        <button type="button" class="btn-out" id="btn-quitar-foto" onclick="quitarFotoPerfil()" style="display:none">
+                            <i class="bi bi-trash"></i> Quitar
+                        </button>
+                        <input type="file" id="foto-input-dash" accept="image/*" style="display:none" onchange="subirFotoPerfil(this)">
+                    </div>
+                </div>
+
+                <div style="padding:16px 20px">
+                    <!-- DATOS PERSONALES -->
+                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-person"></i> Datos Personales (Clic para editar)</div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">CÉDULA</span>
+                            <span style="font-weight:700;color:var(--txt-card)" id="p-cedula">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">NOMBRE</span>
+                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-nombre" data-field="firstname" onclick="editarCampoPerfil(this)">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">APELLIDO</span>
+                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-apellido" data-field="lastname" onclick="editarCampoPerfil(this)">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">EMAIL</span>
+                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-email" data-field="email" onclick="editarCampoPerfil(this)">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">TELÉFONO</span>
+                            <span style="font-weight:700;color:var(--txt-card);cursor:pointer" class="editable-val" id="p-telefono" data-field="telefono" onclick="editarCampoPerfil(this)">-</span>
+                        </div>
+                    </div>
+
+                    <!-- DATOS ACADÉMICOS -->
+                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-mortarboard"></i> Datos Académicos Institucionales</div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">GRADO</span>
+                            <span style="font-weight:700;color:var(--txt-card)" id="p-grado">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">CARRERA</span>
+                            <span style="font-weight:700;color:var(--txt-card)" id="p-carrera">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">SECCIÓN</span>
+                            <span style="font-weight:700;color:var(--txt-card)" id="p-seccion">-</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">ESTADO</span>
+                            <span style="font-weight:700;color:var(--verde-dark)" id="p-estado">ACTIVO</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.75rem">
+                            <span style="font-weight:600;color:#64748b">ÚLTIMO ACCESO</span>
+                            <span style="font-weight:700;color:var(--txt-card)" id="p-login">-</span>
+                        </div>
+                    </div>
+
+                    <!-- QR DE ASISTENCIA / EVENTOS -->
+                    <div style="background:var(--verde-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center">
+                        <div class="sec-title" style="margin-bottom:8px"><i class="bi bi-qr-code"></i> Código QR para Eventos y Asistencia</div>
+                        <div style="display:inline-block;background:#fff;padding:12px;border-radius:10px;border:2px solid var(--verde);margin:10px auto">
+                            <div id="qr-container-dash" style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#64748b">
+                                <i class="bi bi-hourglass-split"></i> Generando QR...
+                            </div>
+                        </div>
+                        <div style="font-size:.58rem;color:#64748b;margin-bottom:10px">Muestra este código para registrar tu presencia institucional.</div>
+                        <button class="subj-btn" onclick="descargarQRDash()"><i class="bi bi-download"></i> Descargar QR</button>
+                    </div>
+
+                    <!-- ACCIONES -->
+                    <div style="display:flex;gap:8px;margin-top:14px">
+                        <button class="btn" style="background:var(--verde);color:#fff;border-radius:8px;padding:8px" onclick="abrirModalPassword()"><i class="bi bi-key"></i> Cambiar Contraseña</button>
+                        <button class="btn" style="background:#F1F5F9;color:#2D2D2D;border-radius:8px;padding:8px" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir Ficha</button>
+                    </div>
+                </div>
             </div>
         </div>
-        <!-- EVENTOS -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="section">
-                <div class="sec-title"><i class="bi bi-calendar3"></i> Próximos Eventos</div>
-                <div id="dash-calendar">Cargando...</div>
+    </div>
+
+    <!-- MODAL FOTO DE PERFIL AMPLIADA -->
+    <div id="modal-foto-dash" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:pointer" onclick="cerrarFotoModal()">
+        <img id="mf-img-dash" style="width:min(80vw,320px);height:min(80vw,320px);object-fit:cover;border-radius:50%;border:5px solid #fff;box-shadow:0 8px 32px rgba(0,0,0,.5)" alt="Foto ampliada">
+        <div id="mf-name-dash" style="color:#fff;font-weight:700;font-size:.9rem"></div>
+        <button class="subj-btn" style="background:#fff;color:var(--verde-dark);border-radius:20px;padding:6px 20px" onclick="cerrarFotoModal()">Cerrar ✕</button>
+    </div>
+
+    <!-- MODAL CAMBIAR CONTRASEÑA -->
+    <div id="modal-password" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);color:#2D2D2D">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 style="margin:0;font-size:.9rem;color:var(--verde-dark);font-weight:800"><i class="bi bi-key"></i> Cambiar Contraseña</h3>
+                <button onclick="cerrarModalPassword()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#64748b">✕</button>
             </div>
-            <div class="section">
-                <div class="sec-title"><i class="bi bi-exclamation-triangle"></i> En Puerta</div>
-                <div id="dash-events">Cargando...</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <input id="pw-actual" type="password" placeholder="Contraseña actual" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <input id="pw-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <input id="pw-confirmar" type="password" placeholder="Confirmar nueva contraseña" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:.78rem;font-family:'Montserrat'">
+                <div id="pw-error" style="color:#991B1B;font-size:.7rem;display:none"></div>
+                <button class="subj-btn" onclick="cambiarPassword()" style="width:100%;padding:10px;font-size:.75rem"><i class="bi bi-check-lg"></i> Guardar Contraseña</button>
             </div>
         </div>
     </div>
@@ -427,39 +535,359 @@
             }
         };
 
-        // ═══ CARGAR DASHBOARD ═══
+        // ═══ PESTAÑAS (TABS) ═══
+        function activarTab(tabId) {
+            document.getElementById('tab-dash').style.display = tabId === 'tab-dash' ? 'block' : 'none';
+            document.getElementById('tab-perfil').style.display = tabId === 'tab-perfil' ? 'block' : 'none';
+            
+            const btnDash = document.getElementById('nav-btn-dash');
+            const btnPerfil = document.getElementById('nav-btn-perfil');
+            
+            if (tabId === 'tab-dash') {
+                btnDash.style.background = 'var(--card-bg)';
+                btnDash.style.color = 'var(--verde-dark)';
+                btnPerfil.style.background = 'rgba(255,255,255,.15)';
+                btnPerfil.style.color = '#fff';
+            } else {
+                btnPerfil.style.background = 'var(--card-bg)';
+                btnPerfil.style.color = 'var(--verde-dark)';
+                btnDash.style.background = 'rgba(255,255,255,.15)';
+                btnDash.style.color = '#fff';
+                generarQRDash();
+            }
+        }
+
+        // ═══ GESTIÓN DE PERFIL & DATOS ═══
+        let editandoPerfil = null;
+
+        function renderDatosPerfil(user) {
+            const n = user.firstname || user.nombre || 'Estudiante';
+            const a = user.lastname || user.apellido || '';
+            const c = user.username || user.cedula || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '-';
+            const r = user.role || user.rol || 'alumno';
+            const g = user.grado || localStorage.getItem('centuria_grado') || 'GRADO';
+            const ca = user.carrera || localStorage.getItem('centuria_carrera') || 'ADMINISTRACIÓN';
+            const s = user.seccion || localStorage.getItem('centuria_seccion') || 'S026';
+            const e = user.email || localStorage.getItem('centuria_email') || 'No registrado';
+            const t = user.telefono || localStorage.getItem('centuria_telefono') || 'No registrado';
+            const est = user.estado || 'ACTIVO';
+            const login = user.last_login || '';
+
+            document.getElementById('p-nombre-completo').textContent = n + ' ' + a;
+            document.getElementById('p-rol-badge').textContent = (roleConfig[r]?.label || r).toUpperCase();
+            document.getElementById('p-cedula-txt').textContent = 'C.I: ' + c;
+            document.getElementById('p-cedula').textContent = c;
+            document.getElementById('p-nombre').textContent = n;
+            document.getElementById('p-apellido').textContent = a;
+            document.getElementById('p-email').textContent = e;
+            document.getElementById('p-telefono').textContent = t;
+            document.getElementById('p-grado').textContent = g;
+            document.getElementById('p-carrera').textContent = ca;
+            document.getElementById('p-seccion').textContent = s;
+            document.getElementById('p-estado').textContent = est.toUpperCase();
+            document.getElementById('p-login').textContent = login ? new Date(login).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
+
+            // CTA Formulario de matricula si es alumno
+            const ctaMat = document.getElementById('cta-matricula');
+            if (ctaMat) ctaMat.style.display = (r === 'alumno' || r === 'student' || r === '') ? 'block' : 'none';
+
+            // Foto y avatares
+            const ini = ((n || 'U').charAt(0) + (a || '').charAt(0)).toUpperCase();
+            document.getElementById('dash-initials').textContent = ini;
+            document.getElementById('perfil-initials').textContent = ini;
+            resolverFotoPerfil(user);
+        }
+
+        function editarCampoPerfil(el) {
+            if (editandoPerfil) return;
+            editandoPerfil = el;
+            const valor = el.textContent.trim();
+            const field = el.dataset.field;
+            el.innerHTML = `<input class="row-input" style="padding:4px 8px;border:2px solid var(--verde);border-radius:6px;font-size:.75rem;font-weight:700;color:var(--verde-dark);outline:none;background:#fff;max-width:180px" type="${field === 'email' ? 'email' : 'text'}" value="${valor === 'No registrado' ? '' : valor}" 
+                onblur="guardarCampoPerfil(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicionPerfil(this,'${field}')}">`;
+            el.querySelector('input').focus();
+            el.querySelector('input').select();
+        }
+
+        function cancelarEdicionPerfil(input, field) {
+            const el = input.parentElement;
+            el.textContent = input.defaultValue || '-';
+            editandoPerfil = null;
+        }
+
+        async function guardarCampoPerfil(input, field) {
+            const el = input.parentElement;
+            const valor = input.value.trim();
+            el.textContent = valor || '-';
+            editandoPerfil = null;
+            if (!valor) return;
+
+            try {
+                const res = await CenturiaAPI.auth.updateProfile({ [field]: valor });
+                if (res && res.ok) {
+                    showToastDash('Perfil actualizado correctamente', 'success');
+                    // Actualizar localStorage
+                    if (field === 'firstname') localStorage.setItem('centuria_nombre', valor);
+                    if (field === 'lastname') localStorage.setItem('centuria_apellido', valor);
+                    if (field === 'email') localStorage.setItem('centuria_email', valor);
+                    if (field === 'telefono') localStorage.setItem('centuria_telefono', valor);
+                    const user = CenturiaAPI.getCurrentUser() || {};
+                    user[field] = valor;
+                    localStorage.setItem('centuria_user', JSON.stringify(user));
+                } else {
+                    showToastDash((res && res.error) || 'Error al guardar cambios', 'error');
+                }
+            } catch(e) {
+                showToastDash('Error de conexión', 'error');
+            }
+        }
+
+        // ═══ FOTO DE PERFIL ═══
+        function fotoKeyDash() {
+            const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            return 'centuria_foto_' + c;
+        }
+
+        function aplicarFotoPerfil(url) {
+            const has = !!url;
+            const dImg = document.getElementById('dash-avatar-img');
+            const dIni = document.getElementById('dash-initials');
+            const pImg = document.getElementById('perfil-avatar-img');
+            const pIni = document.getElementById('perfil-initials');
+            const btnQ = document.getElementById('btn-quitar-foto');
+
+            if (dImg) { dImg.src = url || ''; dImg.style.display = has ? 'block' : 'none'; }
+            if (dIni) dIni.style.display = has ? 'none' : 'block';
+            if (pImg) { pImg.src = url || ''; pImg.style.display = has ? 'block' : 'none'; }
+            if (pIni) pIni.style.display = has ? 'none' : 'block';
+            if (btnQ) btnQ.style.display = has ? 'inline-flex' : 'none';
+        }
+
+        function resolverFotoPerfil(user) {
+            let f = (user && (user.foto || user.photo)) || '';
+            if (!f) { try { f = localStorage.getItem(fotoKeyDash()) || ''; } catch(e) {} }
+            if (!f) { try { f = sessionStorage.getItem('centuria_foto_tmp') || ''; } catch(e) {} }
+            aplicarFotoPerfil(f);
+            return f;
+        }
+
+        function abrirFotoModal() {
+            const pImg = document.getElementById('perfil-avatar-img');
+            if (!pImg || !pImg.src || pImg.style.display === 'none') {
+                showToastDash('No hay foto personalizada cargada', 'error');
+                return;
+            }
+            document.getElementById('mf-img-dash').src = pImg.src;
+            document.getElementById('mf-name-dash').textContent = document.getElementById('p-nombre-completo').textContent || '';
+            document.getElementById('modal-foto-dash').style.display = 'flex';
+        }
+
+        function cerrarFotoModal() {
+            document.getElementById('modal-foto-dash').style.display = 'none';
+        }
+
+        function subirFotoPerfil(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showToastDash('Selecciona un archivo de imagen', 'error'); return; }
+            if (file.size > 4 * 1024 * 1024) { showToastDash('La foto no debe superar 4MB', 'error'); return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const S = 240;
+                    const cv = document.createElement('canvas');
+                    cv.width = S; cv.height = S;
+                    const ctx = cv.getContext('2d');
+                    const m = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+                    guardarFotoPerfil(cv.toDataURL('image/jpeg', 0.82));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function guardarFotoPerfil(dataUrl) {
+            aplicarFotoPerfil(dataUrl);
+            const ced = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
+            let finalFoto = dataUrl;
+            try {
+                if (typeof gasUploadPhoto === 'function') {
+                    const nom = document.getElementById('p-nombre-completo').textContent || '';
+                    const up = await gasUploadPhoto(ced, nom, dataUrl);
+                    if (up && up.ok && up.url) finalFoto = up.url;
+                }
+            } catch(e) {}
+
+            try { localStorage.setItem(fotoKeyDash(), finalFoto); } catch(e) {}
+            try { sessionStorage.setItem('centuria_foto_tmp', finalFoto); } catch(e) {}
+            try {
+                const raw = localStorage.getItem('centuria_user');
+                if (raw) { const u = JSON.parse(raw); u.foto = finalFoto; localStorage.setItem('centuria_user', JSON.stringify(u)); }
+            } catch (e) {}
+
+            try { await CenturiaAPI.auth.updateProfile({ foto: finalFoto }); } catch(e) {}
+            showToastDash('Foto guardada exitosamente', 'success');
+        }
+
+        function quitarFotoPerfil() {
+            aplicarFotoPerfil('');
+            try { localStorage.removeItem(fotoKeyDash()); } catch(e) {}
+            try { sessionStorage.removeItem('centuria_foto_tmp'); } catch(e) {}
+            showToastDash('Foto de perfil eliminada', 'success');
+        }
+
+        // ═══ CÓDIGO QR ═══
+        function generarQRDash() {
+            try {
+                const user = CenturiaAPI.getCurrentUser() || {};
+                const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Alumno';
+                const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
+                const grado = user.grado || localStorage.getItem('centuria_grado') || '-';
+                const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '-';
+                const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '-';
+                const cedula = user.username || user.cedula || sessionStorage.getItem('current_cedula') || '-';
+
+                const datos = {
+                    cedula: cedula,
+                    nombre: nombre + ' ' + apellido,
+                    grado: grado,
+                    carrera: carrera,
+                    seccion: seccion,
+                    timestamp: new Date().toISOString()
+                };
+
+                const container = document.getElementById('qr-container-dash');
+                container.innerHTML = '';
+
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(container, {
+                        text: JSON.stringify(datos),
+                        width: 180,
+                        height: 180,
+                        colorDark: '#007A33',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    container.innerHTML = '<span style="color:#64748b;font-size:.65rem">QR generado para ' + cedula + '</span>';
+                }
+            } catch(e) {
+                console.error('Error QR:', e);
+            }
+        }
+
+        function descargarQRDash() {
+            const canvas = document.querySelector('#qr-container-dash canvas');
+            if (!canvas) { showToastDash('Espera que se genere el QR', 'error'); return; }
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `qr-centuria-${new Date().getTime()}.png`;
+            link.click();
+        }
+
+        // ═══ CONTRASEÑA ═══
+        function abrirModalPassword() {
+            document.getElementById('modal-password').style.display = 'flex';
+            document.getElementById('pw-actual').value = '';
+            document.getElementById('pw-nueva').value = '';
+            document.getElementById('pw-confirmar').value = '';
+            document.getElementById('pw-error').style.display = 'none';
+            document.getElementById('pw-actual').focus();
+        }
+
+        function cerrarModalPassword() {
+            document.getElementById('modal-password').style.display = 'none';
+        }
+
+        async function cambiarPassword() {
+            const actual = document.getElementById('pw-actual').value.trim();
+            const nueva = document.getElementById('pw-nueva').value.trim();
+            const confirmar = document.getElementById('pw-confirmar').value.trim();
+            const errEl = document.getElementById('pw-error');
+
+            errEl.style.display = 'none';
+            if (!actual || !nueva || !confirmar) {
+                errEl.textContent = 'Completa todos los campos';
+                errEl.style.display = 'block';
+                return;
+            }
+            if (nueva.length < 6) {
+                errEl.textContent = 'La nueva contraseña debe tener mínimo 6 caracteres';
+                errEl.style.display = 'block';
+                return;
+            }
+            if (nueva !== confirmar) {
+                errEl.textContent = 'Las contraseñas no coinciden';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await CenturiaAPI.auth.changePassword(actual, nueva);
+                if (res && res.ok) {
+                    showToastDash('Contraseña actualizada correctamente', 'success');
+                    cerrarModalPassword();
+                    try { sessionStorage.setItem('must_change', '0'); } catch(e) {}
+                    document.getElementById('pw-banner-dash').style.display = 'none';
+                } else {
+                    errEl.textContent = (res && res.error) || 'Error al cambiar contraseña';
+                    errEl.style.display = 'block';
+                }
+            } catch(e) {
+                errEl.textContent = 'Error de conexión';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function showToastDash(msg, type) {
+            const t = document.createElement('div');
+            t.style.position = 'fixed';
+            t.style.top = '20px';
+            t.style.right = '20px';
+            t.style.padding = '12px 20px';
+            t.style.borderRadius = '10px';
+            t.style.fontSize = '.75rem';
+            t.style.fontWeight = '700';
+            t.style.zIndex = '99999';
+            t.style.boxShadow = '0 4px 16px rgba(0,0,0,.2)';
+            t.style.background = type === 'success' ? '#D1FAE5' : '#FEE2E2';
+            t.style.color = type === 'success' ? '#065F46' : '#991B1B';
+            t.style.border = '1px solid ' + (type === 'success' ? '#6EE7B7' : '#FCA5A5');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ═══ CARGAR DASHBOARD PRINCIPAL ═══
         async function cargarDashboard() {
             if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno', 'academico'], currentRolePage: 'dashboard' })) {
                 return;
             }
 
             const token = CenturiaAPI.getToken();
-            const user = CenturiaAPI.getCurrentUser();
-            const cedula = (user && (user.cedula || user.username)) || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
+            const user = CenturiaAPI.getCurrentUser() || {};
+            const cedula = user.cedula || user.username || sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || '';
 
-            // Datos del usuario
-            const nombre = user ? (user.firstname || 'Estudiante') : (localStorage.getItem('centuria_nombre') || 'Estudiante');
-            const apellido = user ? (user.lastname || '') : (localStorage.getItem('centuria_apellido') || '');
-            const rawRole = user ? (user.role || user.rol || 'alumno') : (localStorage.getItem('centuria_rol') || 'alumno');
+            // Render datos del usuario y perfil unificado
+            const nombre = user.firstname || localStorage.getItem('centuria_nombre') || 'Estudiante';
+            const apellido = user.lastname || localStorage.getItem('centuria_apellido') || '';
+            const rawRole = user.role || user.rol || localStorage.getItem('centuria_rol') || 'alumno';
             const rol = ROLE_ES[rawRole] || rawRole;
-            const carrera = user ? (user.carrera || '') : (localStorage.getItem('centuria_carrera') || '');
-            const filial = user ? (user.filial || '') : (localStorage.getItem('centuria_filial') || '');
-            const cedulaVal = user ? (user.username || cedula || '') : (cedula || '');
-
-            // Aviso de provisoria por cambiar
-            try {
-                let mc = sessionStorage.getItem('must_change') === '1';
-                if (!mc && user) mc = !!user.must_change_password;
-                document.getElementById('pw-banner-dash').style.display = mc ? 'block' : 'none';
-            } catch (e) {}
+            const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
+            const filial = user.filial || localStorage.getItem('centuria_filial') || '';
+            const cedulaVal = user.username || cedula || '';
 
             // Render header
             document.getElementById('dash-name').textContent = nombre + ' ' + apellido;
             document.getElementById('dash-sub').textContent = cedulaVal + (carrera ? ' • ' + carrera : '') + (filial ? ' • ' + filial : '');
-            document.getElementById('dash-avatar').textContent = (nombre.charAt(0) + apellido.charAt(0)).toUpperCase();
-            document.getElementById('dash-avatar').className = 'avatar ' + rol;
             document.getElementById('dash-badge').textContent = roleConfig[rol]?.label || rol;
             document.getElementById('dash-badge').className = 'badge-rol ' + rol;
+
+            renderDatosPerfil(user);
 
             // Quick links
             const cfg = roleConfig[rol] || roleConfig.alumno;
@@ -467,20 +895,15 @@
                 `<a href="${l.href}" class="link" aria-label="${l.label}"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
             ).join('');
 
-            // ═══ CARGAR ASIGNATURAS SEGÚN ROL ═══
+            // Asignaturas, eventos, notas, historial
             if (rol === 'docente') {
                 await cargarAsignaturasDocente(user, token, cedulaVal);
             } else {
                 await cargarAsignaturasGenerales();
             }
 
-            // Cargar eventos
             await cargarEventos(token);
-            
-            // Cargar notas
             await cargarNotas(token);
-            
-            // Cargar historial de intentos
             if (cedulaVal) await cargarHistorialIntentos(cedulaVal);
         }
 
@@ -488,13 +911,10 @@
         async function cargarAsignaturasDocente(user, token, cedula) {
             try {
                 const data = await CenturiaAPI.docente.getMySubjects(cedula);
-
-                // Solo mostrar las asignaturas que realmente tiene asignadas
                 const subjects = (data.subjects || []).filter(s => {
                     const assignments = data.assignments || [];
                     return assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo');
                 });
-
                 document.getElementById('stat-courses').textContent = subjects.length;
                 renderMisAsignaturas(subjects);
             } catch (e) {
@@ -503,13 +923,11 @@
             }
         }
 
-        // ═══ ASIGNATURAS GENERALES (alumno/admin/académico) — Solo habilitadas ═══
+        // ═══ ASIGNATURAS GENERALES (alumno/admin/académico) ═══
         async function cargarAsignaturasGenerales() {
             try {
-                // Primero obtener asignaturas con kit completo
                 const dKit = await CenturiaAPI.kit.getHabilitadas();
                 const habilitadas = dKit.asignaturas || [];
-
                 document.getElementById('stat-courses').textContent = habilitadas.length;
 
                 if (habilitadas.length === 0) {
@@ -523,7 +941,6 @@
                         </div>`;
                     return;
                 }
-
                 renderMisAsignaturas(habilitadas);
             } catch (e) {
                 document.getElementById('dash-courses').innerHTML = `<div class="empty"><i class="bi bi-inbox"></i><p>No hay asignaturas</p></div>`;
@@ -573,15 +990,12 @@
             } catch (e) {}
         }
 
-        // ═══ TOGGLE VISTA ASIGNATURAS ═══
-
         // ═══ HISTORIAL DE INTENTOS ═══
         async function cargarHistorialIntentos(cedula) {
             const tbody = document.getElementById('tbody-historial-intentos');
             if (!tbody) return;
             
             try {
-                // Exámenes parciales a verificar
                 const examenes = [
                     { id: 'examen_parcial_1', nombre: 'Parcial 1' },
                     { id: 'examen_parcial_2', nombre: 'Parcial 2' },
@@ -591,23 +1005,15 @@
                 ];
 
                 let rows = [];
-                
                 for (const ex of examenes) {
                     try {
                         const res = await CenturiaAPI.exams.getAttempts(ex.id, cedula);
                         const intentos = res.intentos || [];
-                        
                         if (intentos.length === 0) continue;
-                        
-                        // Ordenar por timestamp
                         intentos.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-                        
                         const intento1 = intentos[0];
                         const intento2 = intentos[1];
-                        const mejor = res.mejor_intento || Math.max(
-                            intento1?.puntaje || 0,
-                            intento2?.puntaje || 0
-                        );
+                        const mejor = res.mejor_intento || Math.max(intento1?.puntaje || 0, intento2?.puntaje || 0);
                         
                         rows.push(`
                             <tr style="border-bottom:1px solid var(--border)">
@@ -623,21 +1029,15 @@
                                 </td>
                             </tr>
                         `);
-                    } catch (e) {
-                        // Examen sin intentos, continuar
-                    }
+                    } catch (e) {}
                 }
                 
-                if (rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b">No tienes intentos registrados aún</td></tr>';
-                } else {
-                    tbody.innerHTML = rows.join('');
-                }
+                tbody.innerHTML = rows.length === 0 ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#64748b">No tienes intentos registrados aún</td></tr>' : rows.join('');
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#dc2626">Error cargando intentos</td></tr>';
-                console.error('Error en historial de intentos:', e);
             }
         }
+
         let currentView = 'grid';
         let lastSubjects = [];
 

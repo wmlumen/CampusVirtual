@@ -844,7 +844,13 @@
                                 <span class="phone-actions" id="p-tel-alt-actions" style="display:none"></span>
                             </div>
                         </div>
-                        <div class="profile-data-row"><span class="profile-data-label">Contacto de Emergencia</span><span class="profile-data-value editable" id="p-contacto-emergencia" data-field="contacto_emergencia" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row">
+                            <span class="profile-data-label">Contacto de Emergencia</span>
+                            <div style="display:flex;align-items:center;">
+                                <span class="profile-data-value editable" id="p-contacto-emergencia" data-field="contacto_emergencia" onclick="editarCampo(this)">-</span>
+                                <span class="phone-actions" id="p-contacto-emergencia-actions" style="display:none"></span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 🎓 Expediente Académico -->
@@ -1206,7 +1212,7 @@
 
             // Función para formatear teléfono internacionalmente (+595 por defecto si no tiene prefijo)
             function formatPhoneDisplay(num) {
-                if (!num || ['-', 'No registrado'].includes(num)) return { text: '-', raw: '', clean: '' };
+                if (!num || ['-', 'No registrado', 'No asignado', 'No asignada'].includes(num)) return { text: '-', raw: '', clean: '' };
                 let str = String(num).trim();
                 let clean = str.replace(/[^\d+]/g, '');
                 
@@ -1222,17 +1228,33 @@
                 return { text: clean, raw: str, clean: waClean };
             }
 
-            function renderPhoneAction(elId, actionId, phoneObj) {
+            // Extraer números de teléfono en textos como "Mamá: 0981 123 456" o "Juan Pérez (0982) 555-666"
+            function extractPhoneFromText(txt) {
+                if (!txt || ['-', 'No registrado'].includes(txt)) return null;
+                const matches = String(txt).match(/(?:\+?595|0)?[98762]\d{1,3}[-\s]?\d{3}[-\s]?\d{3,4}|\+?\d{8,15}/g);
+                if (matches && matches.length > 0) {
+                    const rawNum = matches[0];
+                    return formatPhoneDisplay(rawNum);
+                }
+                return null;
+            }
+
+            function renderPhoneAction(elId, actionId, phoneObj, preserveOriginalText = false, originalText = '') {
                 const el = document.getElementById(elId);
                 const actEl = document.getElementById(actionId);
                 if (!el || !actEl) return;
                 
-                el.textContent = phoneObj.text;
-                if (phoneObj.clean && phoneObj.clean.length >= 8) {
+                if (!preserveOriginalText) {
+                    el.textContent = phoneObj.text;
+                } else {
+                    el.textContent = originalText || phoneObj.raw || '-';
+                }
+
+                if (phoneObj && phoneObj.clean && phoneObj.clean.length >= 8) {
                     actEl.style.display = 'inline-flex';
                     actEl.innerHTML = `
-                        <a href="tel:+${phoneObj.clean}" class="phone-btn-action phone-btn-call" title="Llamar directamente" target="_blank"><i class="bi bi-telephone-fill"></i></a>
-                        <a href="https://wa.me/${phoneObj.clean}" class="phone-btn-action phone-btn-wa" title="Escribir por WhatsApp" target="_blank"><i class="bi bi-whatsapp"></i></a>
+                        <a href="tel:+${phoneObj.clean}" class="phone-btn-action phone-btn-call" title="Llamar al +${phoneObj.clean}" target="_blank"><i class="bi bi-telephone-fill"></i></a>
+                        <a href="https://wa.me/${phoneObj.clean}" class="phone-btn-action phone-btn-wa" title="Escribir por WhatsApp a +${phoneObj.clean}" target="_blank"><i class="bi bi-whatsapp"></i></a>
                     `;
                 } else {
                     actEl.style.display = 'none';
@@ -1246,6 +1268,16 @@
             const parsedTelAlt = formatPhoneDisplay(telAlt);
             renderPhoneAction('p-tel-alt', 'p-tel-alt-actions', parsedTelAlt);
 
+            // Contacto de Emergencia: detectar si contiene un teléfono para habilitar llamada / WhatsApp
+            const parsedEmergencia = extractPhoneFromText(contactoEmergencia);
+            if (parsedEmergencia && parsedEmergencia.clean) {
+                renderPhoneAction('p-contacto-emergencia', 'p-contacto-emergencia-actions', parsedEmergencia, true, contactoEmergencia);
+            } else {
+                document.getElementById('p-contacto-emergencia').textContent = contactoEmergencia || '-';
+                const emAct = document.getElementById('p-contacto-emergencia-actions');
+                if (emAct) { emAct.style.display = 'none'; emAct.innerHTML = ''; }
+            }
+
             document.getElementById('p-fecha-nacimiento').textContent = fechaNac || '-';
             document.getElementById('p-lugar-nacimiento').textContent = lugarNac || '-';
             document.getElementById('p-nacionalidad').textContent = nacionalidad || '-';
@@ -1254,9 +1286,6 @@
             document.getElementById('p-direccion-ciudad').textContent = dirCiudad || '-';
             document.getElementById('p-direccion-departamento').textContent = dirDepto || '-';
             document.getElementById('p-estado-civil').textContent = estadoCivil || '-';
-
-            // Contacto
-            document.getElementById('p-contacto-emergencia').textContent = contactoEmergencia || '-';
 
             // Académico
             document.getElementById('p-grado').textContent = grado || 'No asignado';

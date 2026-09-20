@@ -539,7 +539,12 @@ API.academico = {
 
 API.grades = {
     list: (params) => callGas('listar_notas', params || {}, 'GET'),
-    save: (data) => callGas('guardar_nota', data, 'POST'),
+    save: (data) => {
+        if (data && (Array.isArray(data.notas) || data.notas)) {
+            return callGas('guardar_notas_asignatura', data, 'POST');
+        }
+        return callGas('guardar_nota', data, 'POST');
+    },
     recordSubject: (data) => callGas('guardar_notas_asignatura', data, 'POST')
 };
 

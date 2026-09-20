@@ -12,6 +12,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         :root {
             --verde-oscuro: #0d2c16;
@@ -362,6 +364,16 @@
             color: #fff;
             transform: scale(1.1);
         }
+        .phone-btn-mail {
+            background: rgba(212,168,67,.2);
+            color: var(--dorado-claro);
+            border: 1px solid rgba(212,168,67,.4);
+        }
+        .phone-btn-mail:hover {
+            background: var(--dorado);
+            color: #000;
+            transform: scale(1.1);
+        }
 
         /* ── Events List ── */
         .event-item {
@@ -618,7 +630,13 @@
                         <div class="profile-data-row"><span class="profile-data-label">Cédula N°</span><span class="profile-data-value" id="p-cedula">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Nombre</span><span class="profile-data-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Apellido</span><span class="profile-data-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Email</span><span class="profile-data-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row">
+                            <span class="profile-data-label">Email</span>
+                            <div style="display:flex;align-items:center;">
+                                <span class="profile-data-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span>
+                                <span class="phone-actions" id="p-email-actions" style="display:none"></span>
+                            </div>
+                        </div>
                         <div class="profile-data-row">
                             <span class="profile-data-label">Teléfono</span>
                             <div style="display:flex;align-items:center;">
@@ -634,6 +652,34 @@
                         <div class="profile-data-row"><span class="profile-data-label">Ciudad</span><span class="profile-data-value editable" id="p-direccion-ciudad" data-field="ciudad" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Departamento / Provincia</span><span class="profile-data-value editable" id="p-direccion-departamento" data-field="departamento" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Estado Civil</span><span class="profile-data-value editable" id="p-estado-civil" data-field="estado_civil" onclick="editarCampo(this)">-</span></div>
+                    </div>
+
+                    <!-- 📍 Ubicación y Coordenadas en Mapa -->
+                    <div class="dash-section">
+                        <div class="dash-section-title">
+                            <div class="dash-section-title-left"><i class="bi bi-geo-alt-fill text-danger"></i> 📍 Coordenadas de Domicilio en Mapa</div>
+                            <button type="button" class="dash-btn dash-btn-ghost" onclick="obtenerMiGPS()" style="font-size:.65rem;padding:4px 10px;">
+                                <i class="bi bi-crosshair"></i> Mi GPS Actual
+                            </button>
+                        </div>
+                        <p style="font-size:.66rem;color:rgba(255,255,255,.65);margin-bottom:12px;">
+                            Haz clic en el mapa para marcar o ajustar la ubicación exacta de tu domicilio.
+                        </p>
+                        <div id="map-domicilio" style="height:260px;width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.15);margin-bottom:12px;z-index:1;"></div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="profile-data-row mb-0">
+                                    <span class="profile-data-label">Latitud</span>
+                                    <span class="profile-data-value editable" id="p-latitud" data-field="latitud" onclick="editarCampo(this)">-</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="profile-data-row mb-0">
+                                    <span class="profile-data-label">Longitud</span>
+                                    <span class="profile-data-value editable" id="p-longitud" data-field="longitud" onclick="editarCampo(this)">-</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 📞 Datos de Contacto -->
@@ -759,7 +805,7 @@
     </div>
 
     <!-- ═══ Scripts ═══ -->
-    <script src="js/api.js?v=13"></script>
+    <script src="js/api.js?v=14"></script>
     <script src="js/session-guard.js?v=2"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
@@ -824,6 +870,10 @@
             document.getElementById('tab-btn-dash').classList.toggle('active', tab === 'dash');
             document.getElementById('tab-btn-perfil').classList.toggle('active', tab === 'perfil');
             document.getElementById('tab-btn-qr').classList.toggle('active', tab === 'qr');
+
+            if (tab === 'perfil') {
+                setTimeout(inicializarMapaDomicilio, 150);
+            }
 
             if (tab === 'qr') {
                 const user = CenturiaAPI.getCurrentUser() || {};
@@ -926,7 +976,26 @@
             document.getElementById('p-cedula').textContent = c;
             document.getElementById('p-nombre').textContent = n;
             document.getElementById('p-apellido').textContent = a;
-            document.getElementById('p-email').textContent = email;
+            
+            // Email con botón de contacto directo
+            const emailEl = document.getElementById('p-email');
+            const emailActEl = document.getElementById('p-email-actions');
+            emailEl.textContent = email || 'No registrado';
+            if (email && email.includes('@') && email !== 'No registrado') {
+                emailActEl.style.display = 'inline-flex';
+                emailActEl.innerHTML = `<a href="mailto:${email}" class="phone-btn-action phone-btn-mail" title="Enviar correo electrónico"><i class="bi bi-envelope-fill"></i></a>`;
+            } else {
+                emailActEl.style.display = 'none';
+                emailActEl.innerHTML = '';
+            }
+
+            // Coordenadas
+            const lat = user.latitud || user.lat || localStorage.getItem('centuria_latitud') || '';
+            const lng = user.longitud || user.lng || localStorage.getItem('centuria_longitud') || '';
+            document.getElementById('p-latitud').textContent = lat || '-';
+            document.getElementById('p-longitud').textContent = lng || '-';
+            actualizarMarcadorMapa(lat, lng);
+
             // Función para formatear teléfono internacionalmente (+595 por defecto si no tiene prefijo)
             function formatPhoneDisplay(num) {
                 if (!num || ['-', 'No registrado'].includes(num)) return { text: '-', raw: '', clean: '' };
@@ -1673,6 +1742,8 @@
                     barrio: valDe('p-direccion-barrio') || u.barrio || '',
                     ciudad: valDe('p-direccion-ciudad') || u.ciudad || '',
                     departamento: valDe('p-direccion-departamento') || u.departamento || '',
+                    latitud: valDe('p-latitud') || u.latitud || '',
+                    longitud: valDe('p-longitud') || u.longitud || '',
                     estado_civil: valDe('p-estado-civil') || u.estado_civil || '',
                     grado: valDe('p-grado') || u.grado || '',
                     carrera: valDe('p-carrera') || u.carrera || '',
@@ -1714,6 +1785,102 @@
                     btn.innerHTML = originalText;
                 }
             }
+        }
+
+        // ════ MAPA INTERACTIVO DOMICILIO (Leaflet) ════
+        let leafletMap = null;
+        let leafletMarker = null;
+
+        function inicializarMapaDomicilio() {
+            const mapCont = document.getElementById('map-domicilio');
+            if (!mapCont || typeof L === 'undefined') return;
+
+            const latEl = document.getElementById('p-latitud');
+            const lngEl = document.getElementById('p-longitud');
+            
+            let curLat = latEl && parseFloat(latEl.textContent.trim());
+            let curLng = lngEl && parseFloat(lngEl.textContent.trim());
+
+            // Default: San Lorenzo, Paraguay [-25.3397, -57.5089]
+            if (isNaN(curLat) || isNaN(curLng) || !curLat || !curLng) {
+                curLat = -25.3397;
+                curLng = -57.5089;
+            }
+
+            if (!leafletMap) {
+                leafletMap = L.map('map-domicilio').setView([curLat, curLng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(leafletMap);
+
+                leafletMap.on('click', function(e) {
+                    fijarCoordenadas(e.latlng.lat, e.latlng.lng);
+                });
+            } else {
+                leafletMap.invalidateSize();
+                leafletMap.setView([curLat, curLng], leafletMap.getZoom() || 14);
+            }
+
+            actualizarMarcadorMapa(curLat, curLng);
+        }
+
+        function actualizarMarcadorMapa(lat, lng) {
+            const numLat = parseFloat(lat);
+            const numLng = parseFloat(lng);
+            if (isNaN(numLat) || isNaN(numLng) || !leafletMap || typeof L === 'undefined') return;
+
+            if (leafletMarker) {
+                leafletMarker.setLatLng([numLat, numLng]);
+            } else {
+                leafletMarker = L.marker([numLat, numLng], { draggable: true }).addTo(leafletMap);
+                leafletMarker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    fijarCoordenadas(pos.lat, pos.lng);
+                });
+            }
+        }
+
+        async function fijarCoordenadas(lat, lng) {
+            const latFixed = parseFloat(lat).toFixed(6);
+            const lngFixed = parseFloat(lng).toFixed(6);
+
+            document.getElementById('p-latitud').textContent = latFixed;
+            document.getElementById('p-longitud').textContent = lngFixed;
+
+            actualizarMarcadorMapa(latFixed, lngFixed);
+            if (leafletMap) leafletMap.panTo([latFixed, lngFixed]);
+
+            try {
+                localStorage.setItem('centuria_latitud', latFixed);
+                localStorage.setItem('centuria_longitud', lngFixed);
+                const u = CenturiaAPI.getCurrentUser() || {};
+                u.latitud = latFixed;
+                u.longitud = lngFixed;
+                sessionStorage.setItem('centuria_user', JSON.stringify(u));
+                localStorage.setItem('centuria_user', JSON.stringify(u));
+
+                await CenturiaAPI.auth.updateProfile({ latitud: latFixed, longitud: lngFixed });
+                showToast('Ubicación fijada en el mapa: ' + latFixed + ', ' + lngFixed, 'success');
+            } catch(e) {}
+        }
+
+        function obtenerMiGPS() {
+            if (!navigator.geolocation) {
+                showToast('Tu navegador no soporta geolocalización GPS.', 'warning');
+                return;
+            }
+            showToast('Obteniendo tu ubicación GPS...', 'info');
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    fijarCoordenadas(pos.coords.latitude, pos.coords.longitude);
+                    if (leafletMap) leafletMap.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                },
+                function(err) {
+                    showToast('No se pudo obtener el GPS: ' + err.message, 'error');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         }
 
         // Al cambiar el grado, avisa si la carrera actual no corresponde a ese grado en la base de datos.

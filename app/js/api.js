@@ -1,4 +1,5 @@
-// api.js - Centuria Portal API Client (v13)
+// api.js - Centuria Portal API Client (v14)
+// v14 (2026-09-20): rol Asistencia al Estudiante (API.asistente: ficha, cumpleaños, beneficios, quejas) y API.cumple.mio() para el mensaje de cumpleaños del alumno.
 // v13 (2026-09-20): GAS_URL apunta al despliegue con backend v08.4.1 (catálogos tolerantes, secciones desde la planilla).
 // Cliente unificado para Servidor Cloud + Base de Datos / Almacenamiento Cloud
 // 100% compatible con GitHub Pages (sin dependencia de PHP ni SQLite)
@@ -200,6 +201,8 @@ function mapUser(u) {
         ciudad: u.ciudad || '',
         departamento: u.departamento || '',
         direccion: u.direccion || '',
+        latitud: u.latitud || u.lat || '',
+        longitud: u.longitud || u.lng || '',
         estado_civil: u.estado_civil || '',
         grado: u.grado || '',
         carrera: u.carrera || '',
@@ -750,6 +753,26 @@ API.pagos = {
     save: (data) => callGas('registrar_pago', data, 'POST'),
     updateStatus: (data) => callGas('actualizar_pago', data, 'POST'),
     delete: (data) => callGas('actualizar_pago', Object.assign({}, data, { estado: 'anulado' }), 'POST')
+};
+
+// Asistencia al Estudiante (v08.5): todo va por POST con el token de sesión (el token no viaja en la URL).
+API.asistente = {
+    _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
+    catalogos: () => API.asistente._p('asist_catalogos'),
+    buscar: (q) => API.asistente._p('asist_buscar', { q }),
+    ficha: (cedula) => API.asistente._p('asist_ficha', { cedula }),
+    cumpleanos: (periodo, mes) => API.asistente._p('asist_cumpleanos', { periodo, mes }),
+    otorgarBeneficio: (datos) => API.asistente._p('asist_beneficio_otorgar', datos),
+    estadoBeneficio: (id, accion) => API.asistente._p('asist_beneficio_estado', { id, accion }),   // accion: canjear | anular
+    registrarQueja: (datos) => API.asistente._p('asist_queja_registrar', datos),
+    listarQuejas: (filtros) => API.asistente._p('asist_queja_listar', filtros),
+    enviarQueja: (id, destino, nota) => API.asistente._p('asist_queja_enviar', { id, destino, nota }),
+    cerrarQueja: (id, accion, respuesta) => API.asistente._p('asist_queja_cerrar', { id, accion, respuesta })   // accion: resolver | anular
+};
+
+// Mensaje de cumpleaños del alumno: el servidor usa la cédula de SU sesión, nunca un parámetro.
+API.cumple = {
+    mio: () => callGas('cumple_mio', { token: API.getToken() }, 'POST')
 };
 
 API.filiales = {

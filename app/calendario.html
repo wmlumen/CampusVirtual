@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v09.0: Calendario Académico con Diseño Premium Libreta & Feriados Paraguay 2026 -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +35,7 @@
             --ev-actividad: #3b82f6;
             --ev-tarea: #8b5cf6;
             --ev-feriado: #ef4444;
+            --ev-evento: #d4a843;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -420,6 +421,32 @@
         .event-badge.actividad { background: rgba(59,130,246,.85); border-left: 2.5px solid #3b82f6; }
         .event-badge.tarea { background: rgba(139,92,246,.85); border-left: 2.5px solid #8b5cf6; }
         .event-badge.feriado { background: rgba(239,68,68,.85); border-left: 2.5px solid #ef4444; }
+        .event-badge.evento { background: rgba(212,168,67,.9); border-left: 2.5px solid #d4a843; color: #1a1400; }
+        .day-card-link { display:inline-flex; align-items:center; gap:4px; margin-top:8px; font-size:.7rem; font-weight:700; color:var(--ev-evento); text-decoration:none; }
+        .day-card-link:hover { text-decoration:underline; }
+        .day-card-exam-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, var(--dorado), var(--dorado-claro));
+            color: #060f09 !important;
+            font-size: .72rem;
+            font-weight: 800;
+            padding: 7px 14px;
+            border-radius: 10px;
+            text-decoration: none !important;
+            transition: all .2s ease;
+            box-shadow: 0 4px 12px rgba(212,168,67,.3);
+            width: 100%;
+        }
+        .day-card-exam-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(212,168,67,.45);
+            background: #fff;
+            color: #060f09 !important;
+        }
 
         .more-events-tag {
             font-size: .52rem;
@@ -621,6 +648,9 @@
                 <i class="bi bi-arrow-left"></i> Volver al Dashboard
             </a>
             <div style="display:flex;gap:8px;align-items:center;">
+                <a href="eventos.html" class="btn-cal-nav" id="btn-eventos-nav" style="display:none;">
+                    <i class="bi bi-qr-code-scan"></i> Eventos
+                </a>
                 <a href="academic/asistencia_presencial.html" class="btn-cal-nav">
                     <i class="bi bi-person-check"></i> Asistencia
                 </a>
@@ -698,6 +728,7 @@
                         <option value="examen">Exámenes</option>
                         <option value="feriado">Feriados Nacionales</option>
                         <option value="actividad">Actividades Institucionales</option>
+                        <option value="evento">Eventos</option>
                     </select>
                 </div>
 
@@ -706,6 +737,7 @@
                     <div class="legend-tag"><span class="legend-dot" style="background:var(--ev-examen)"></span> Examen</div>
                     <div class="legend-tag"><span class="legend-dot" style="background:var(--ev-feriado)"></span> Feriado Nacional</div>
                     <div class="legend-tag"><span class="legend-dot" style="background:var(--ev-actividad)"></span> Actividad</div>
+                    <div class="legend-tag"><span class="legend-dot" style="background:var(--ev-evento)"></span> Evento</div>
                 </div>
             </div>
 
@@ -811,8 +843,8 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=13"></script>
-    <script src="js/session-guard.js?v=2"></script>
+    <script src="js/api.js?v=19"></script>
+    <script src="js/session-guard.js?v=3"></script>
     <script>
         // ═══════════════════════════════════════════════════════════
         // FERIADOS OFICIALES DE PARAGUAY 2026 (Ley y Decretos)
@@ -856,6 +888,9 @@
 
             if (['teacher','docente','admin','academico','administrador_plataforma'].includes(userRole)) {
                 document.getElementById('btn-create').style.display = 'flex';
+            }
+            if (['admin','administrador','administrador_plataforma','admin_filial','academico'].includes(userRole)) {
+                document.getElementById('btn-eventos-nav').style.display = 'inline-flex';
             }
 
             await loadHabilitados(user);
@@ -967,20 +1002,142 @@
             }
         }
 
+        // El servidor devuelve las filas de la hoja CalendarEvents (Titulo, FechaInicio, HoraInicio, Tipo…).
+        // Se adaptan al formato que usa esta pantalla; los que ya vienen normalizados pasan sin cambios.
+        function normalizarEventoRemoto(r) {
+            if (!r || typeof r !== 'object') return r;
+            const f10 = (v) => {
+                if (!v) return '';
+                if (Object.prototype.toString.call(v) === '[object Date]' || /^\d{4}-\d{2}-\d{2}T/.test(String(v))) {
+                    const d = new Date(v);
+                    return isNaN(d) ? String(v).slice(0, 10) : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+                }
+                return String(v).slice(0, 10);
+            };
+            const hm = (v) => { const m = String(v || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : ''; };
+            return Object.assign({}, r, {
+                id: r.id || r.ID || '',
+                title: r.title || r.Titulo || r.titulo || '',
+                description: r.description || r.Descripcion || '',
+                date: f10(r.date || r.fecha || r.FechaInicio),
+                start_time: r.start_time || hm(r.HoraInicio),
+                end_time: r.end_time || hm(r.HoraFin),
+                event_type: (r.event_type || r.Tipo || r.tipo || 'actividad').toString().toLowerCase()
+            });
+        }
+
+        const EXAM_PAGES_MAP = {
+            'examen_parcial_1': { name: 'Parcial 1 (Unidades 1-3)', url: 'academic/examen_parcial1.html' },
+            'examen_parcial_2': { name: 'Parcial 2 (Unidades 4-6)', url: 'academic/examen_parcial2.html' },
+            'examen_virtual': { name: 'Examen Virtual', url: 'academic/examen_virtual.html' },
+            'examen_virtual_completo': { name: 'Examen Virtual Completo', url: 'academic/examen_virtual_completo.html' },
+            'examen_final_virtual': { name: 'Final Virtual', url: 'academic/examen_final_virtual.html' },
+            'examen_final_escrito': { name: 'Final Escrito', url: 'academic/examen_final_escrito.html' }
+        };
+
+        async function loadExamEventsForMonth(inicioMes, finMes) {
+            const examEvents = [];
+            try {
+                // Obtener códigos de asignaturas relevantes
+                const subjectCodes = (userHabilitados || []).map(h => h.codigo || h.id || '').filter(Boolean);
+                if (!subjectCodes.includes('ADE18')) subjectCodes.push('ADE18'); // Asignatura base TIC
+
+                const promises = subjectCodes.map(code => 
+                    CenturiaAPI.exams.getExamConfigs(code)
+                        .then(res => ({ code, res }))
+                        .catch(err => ({ code, res: null, err }))
+                );
+
+                const results = await Promise.all(promises);
+
+                results.forEach(({ code, res }) => {
+                    if (!res || !res.configs || !Array.isArray(res.configs)) return;
+                    
+                    const asigObj = userHabilitados.find(h => (h.codigo || '').toUpperCase() === code.toUpperCase()) || {};
+                    const asigNombre = asigObj.nombre || code;
+                    const asigCarrera = asigObj.carrera || userCarrera || '';
+                    const asigGrado = asigObj.grado || userGrado || '';
+                    const asigSeccion = asigObj.seccion || userSeccion || '';
+
+                    res.configs.forEach(cfg => {
+                        // Solo procesar si está habilitado y tiene fechas
+                        if (!cfg || !cfg.habilitado || !cfg.fecha_inicio) return;
+
+                        const infoExamen = EXAM_PAGES_MAP[cfg.examen_id] || { 
+                            name: (cfg.examen_id || 'Examen').replace(/_/g, ' ').toUpperCase(), 
+                            url: 'academic/examen_virtual.html' 
+                        };
+
+                        const fIni = String(cfg.fecha_inicio || '').slice(0, 10);
+                        const fFin = String(cfg.fecha_cierre || fIni).slice(0, 10);
+                        const hIni = String(cfg.hora_inicio || '').slice(0, 5) || '08:00';
+                        const hFin = String(cfg.hora_cierre || '').slice(0, 5) || '23:59';
+                        const urlExamen = `${infoExamen.url}?asig=${encodeURIComponent(code)}&exam=${encodeURIComponent(cfg.examen_id || '')}`;
+
+                        // Generar entradas de evento para el rango de días activos dentro de la ventana
+                        const startD = new Date(fIni + 'T00:00:00');
+                        const endD = new Date(fFin + 'T00:00:00');
+
+                        if (isNaN(startD.getTime())) return;
+
+                        // Si la fecha es válida, iterar día a día en el rango
+                        const curr = new Date(startD);
+                        const maxLimit = new Date(endD.getTime());
+                        // Límite de seguridad: máximo 31 días de ventana
+                        let safety = 0;
+                        while (curr <= maxLimit && safety < 35) {
+                            safety++;
+                            const y = curr.getFullYear();
+                            const m = String(curr.getMonth() + 1).padStart(2, '0');
+                            const day = String(curr.getDate()).padStart(2, '0');
+                            const dStr = `${y}-${m}-${day}`;
+
+                            examEvents.push({
+                                id: `EXAM-${cfg.examen_id}-${code}-${dStr}`,
+                                title: `📝 ${infoExamen.name} — ${code}`,
+                                description: `Examen habilitado para ${asigNombre}. Ventana: ${fIni} ${hIni} a ${fFin} ${hFin} (${cfg.intentos || 1} intento(s)).`,
+                                date: dStr,
+                                start_time: hIni,
+                                end_time: hFin,
+                                event_type: 'examen',
+                                carrera: asigCarrera,
+                                grado: asigGrado,
+                                seccion: asigSeccion,
+                                asignatura: code,
+                                exam_url: urlExamen,
+                                exam_name: infoExamen.name,
+                                exam_id: cfg.examen_id
+                            });
+
+                            curr.setDate(curr.getDate() + 1);
+                        }
+                    });
+                });
+            } catch(err) {
+                console.warn('No se pudieron sincronizar exámenes configurados:', err);
+            }
+            return examEvents;
+        }
+
         async function loadEvents() {
             try {
                 const mStr = String(currentMonth).padStart(2, '0');
                 const inicio = `${currentYear}-${mStr}-01`;
                 const fin = `${currentYear}-${mStr}-31`;
 
-                const d = await CenturiaAPI.calendar.list(inicio, fin);
-                remoteEvents = d.events || d.data || [];
+                const [calRes, examRes] = await Promise.all([
+                    CenturiaAPI.calendar.list(inicio, fin).catch(() => ({ events: [] })),
+                    loadExamEventsForMonth(inicio, fin).catch(() => [])
+                ]);
+
+                remoteEvents = ((calRes && (calRes.events || calRes.data || calRes.eventos)) || []).map(normalizarEventoRemoto);
+                
+                // Unir eventos de calendario institucional, exámenes programados y feriados
+                allEvents = [...FERIADOS_PARAGUAY_2026, ...remoteEvents, ...examRes];
             } catch(e) {
                 remoteEvents = [];
+                allEvents = [...FERIADOS_PARAGUAY_2026];
             }
-
-            // Combinar con feriados nacionales de Paraguay
-            allEvents = [...FERIADOS_PARAGUAY_2026, ...remoteEvents];
             
             renderCalendar();
             updateStats();
@@ -1189,7 +1346,8 @@
                 examen: { label: 'Examen', bg: 'var(--ev-examen)', text: '#000' },
                 actividad: { label: 'Actividad', bg: 'var(--ev-actividad)', text: '#fff' },
                 tarea: { label: 'Tarea', bg: 'var(--ev-tarea)', text: '#fff' },
-                feriado: { label: 'Feriado Nacional Paraguay', bg: 'var(--ev-feriado)', text: '#fff' }
+                feriado: { label: 'Feriado Nacional Paraguay', bg: 'var(--ev-feriado)', text: '#fff' },
+                evento: { label: 'Evento', bg: 'var(--ev-evento)', text: '#1a1400' }
             };
 
             container.innerHTML = dayEvents.map(e => {
@@ -1206,6 +1364,8 @@
                             ${e.career ? `<span><i class="bi bi-mortarboard-fill"></i> ${e.career}</span>` : ''}
                             ${e.description ? `<span><i class="bi bi-info-circle-fill"></i> ${e.description}</span>` : ''}
                         </div>
+                        ${t === 'evento' && /^EVT-/.test(String(e.id || '')) ? `<a class="day-card-link" href="eventos.html?id=${encodeURIComponent(e.id)}"><i class="bi bi-box-arrow-up-right"></i> Ver evento y asistencia</a>` : ''}
+                        ${t === 'examen' && (e.exam_url || /^EXAM-/.test(String(e.id || ''))) ? `<a class="day-card-exam-btn" href="${e.exam_url || 'academic/examen_virtual.html'}"><i class="bi bi-pencil-square"></i> Rendir / Ver Examen</a>` : ''}
                     </div>
                 `;
             }).join('');

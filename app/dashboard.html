@@ -325,6 +325,43 @@
         .profile-data-select:focus { box-shadow: 0 0 0 3px rgba(212,168,67,.28); }
         .profile-data-select option { background: #0d2c16; color: #fff; }
         .profile-data-select option:disabled { color: rgba(255,255,255,.45); }
+        .phone-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 8px;
+        }
+        .phone-btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: .8rem;
+            transition: .2s;
+        }
+        .phone-btn-call {
+            background: rgba(59,130,246,.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59,130,246,.4);
+        }
+        .phone-btn-call:hover {
+            background: #2563eb;
+            color: #fff;
+            transform: scale(1.1);
+        }
+        .phone-btn-wa {
+            background: rgba(37,211,102,.2);
+            color: #25d366;
+            border: 1px solid rgba(37,211,102,.4);
+        }
+        .phone-btn-wa:hover {
+            background: #25d366;
+            color: #fff;
+            transform: scale(1.1);
+        }
 
         /* ── Events List ── */
         .event-item {
@@ -582,7 +619,13 @@
                         <div class="profile-data-row"><span class="profile-data-label">Nombre</span><span class="profile-data-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Apellido</span><span class="profile-data-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Email</span><span class="profile-data-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Teléfono</span><span class="profile-data-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row">
+                            <span class="profile-data-label">Teléfono</span>
+                            <div style="display:flex;align-items:center;">
+                                <span class="profile-data-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)">-</span>
+                                <span class="phone-actions" id="p-telefono-actions" style="display:none"></span>
+                            </div>
+                        </div>
                         <div class="profile-data-row"><span class="profile-data-label">Fecha de Nacimiento</span><span class="profile-data-value editable" id="p-fecha-nacimiento" data-field="fecha_nacimiento" data-type="date" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Lugar de Nacimiento</span><span class="profile-data-value editable" id="p-lugar-nacimiento" data-field="lugar_nacimiento" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Nacionalidad</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
@@ -598,7 +641,13 @@
                         <div class="dash-section-title">
                             <div class="dash-section-title-left"><i class="bi bi-telephone-plus"></i> 📞 Datos de Contacto</div>
                         </div>
-                        <div class="profile-data-row"><span class="profile-data-label">Teléfono Alternativo</span><span class="profile-data-value editable" id="p-tel-alt" data-field="telefono_alternativo" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row">
+                            <span class="profile-data-label">Teléfono Alternativo</span>
+                            <div style="display:flex;align-items:center;">
+                                <span class="profile-data-value editable" id="p-tel-alt" data-field="telefono_alternativo" onclick="editarCampo(this)">-</span>
+                                <span class="phone-actions" id="p-tel-alt-actions" style="display:none"></span>
+                            </div>
+                        </div>
                         <div class="profile-data-row"><span class="profile-data-label">Contacto de Emergencia</span><span class="profile-data-value editable" id="p-contacto-emergencia" data-field="contacto_emergencia" onclick="editarCampo(this)">-</span></div>
                     </div>
 
@@ -865,7 +914,48 @@
             document.getElementById('p-nombre').textContent = n;
             document.getElementById('p-apellido').textContent = a;
             document.getElementById('p-email').textContent = email;
-            document.getElementById('p-telefono').textContent = tel;
+            // Función para formatear teléfono internacionalmente (+595 por defecto si no tiene prefijo)
+            function formatPhoneDisplay(num) {
+                if (!num || ['-', 'No registrado'].includes(num)) return { text: '-', raw: '', clean: '' };
+                let str = String(num).trim();
+                let clean = str.replace(/[^\d+]/g, '');
+                
+                // Si no empieza con +, normalizar
+                if (!clean.startsWith('+')) {
+                    if (clean.startsWith('0')) clean = clean.substring(1); // ej 0994 -> 994
+                    if (clean.startsWith('595')) clean = '+' + clean;
+                    else if (clean.startsWith('21')) clean = '+595' + clean; // Asunción
+                    else clean = '+595' + clean; // Paraguay default
+                }
+                
+                const waClean = clean.replace(/[^\d]/g, '');
+                return { text: clean, raw: str, clean: waClean };
+            }
+
+            function renderPhoneAction(elId, actionId, phoneObj) {
+                const el = document.getElementById(elId);
+                const actEl = document.getElementById(actionId);
+                if (!el || !actEl) return;
+                
+                el.textContent = phoneObj.text;
+                if (phoneObj.clean && phoneObj.clean.length >= 8) {
+                    actEl.style.display = 'inline-flex';
+                    actEl.innerHTML = `
+                        <a href="tel:+${phoneObj.clean}" class="phone-btn-action phone-btn-call" title="Llamar directamente" target="_blank"><i class="bi bi-telephone-fill"></i></a>
+                        <a href="https://wa.me/${phoneObj.clean}" class="phone-btn-action phone-btn-wa" title="Escribir por WhatsApp" target="_blank"><i class="bi bi-whatsapp"></i></a>
+                    `;
+                } else {
+                    actEl.style.display = 'none';
+                    actEl.innerHTML = '';
+                }
+            }
+
+            const parsedTel = formatPhoneDisplay(tel);
+            renderPhoneAction('p-telefono', 'p-telefono-actions', parsedTel);
+
+            const parsedTelAlt = formatPhoneDisplay(telAlt);
+            renderPhoneAction('p-tel-alt', 'p-tel-alt-actions', parsedTelAlt);
+
             document.getElementById('p-fecha-nacimiento').textContent = fechaNac || '-';
             document.getElementById('p-lugar-nacimiento').textContent = lugarNac || '-';
             document.getElementById('p-nacionalidad').textContent = nacionalidad || '-';
@@ -876,7 +966,6 @@
             document.getElementById('p-estado-civil').textContent = estadoCivil || '-';
 
             // Contacto
-            document.getElementById('p-tel-alt').textContent = telAlt || '-';
             document.getElementById('p-contacto-emergencia').textContent = contactoEmergencia || '-';
 
             // Académico

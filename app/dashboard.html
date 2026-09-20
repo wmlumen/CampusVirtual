@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v09.0: Unified Dashboard + Perfil con Diseño Premium Libreta -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=3"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -806,7 +806,7 @@
 
     <!-- ═══ Scripts ═══ -->
     <script src="js/api.js?v=14"></script>
-    <script src="js/session-guard.js?v=2"></script>
+    <script src="js/session-guard.js?v=3"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
         let userId = null;
@@ -898,6 +898,37 @@
                 currentUserRole = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || 'alumno').toLowerCase();
                 currentUserData = user;
                 userId = user.id || cedula;
+
+                // Sincronizar datos con la ficha de matrícula si existen
+                try {
+                    const matData = await CenturiaAPI.matricula.my(cedula);
+                    if (matData && (matData.matricula || matData.data)) {
+                        const m = matData.matricula || matData.data;
+                        user.firstname = user.firstname || user.nombre || m.nombres || m.Nombres || '';
+                        user.lastname = user.lastname || user.apellido || m.apellidos || m.Apellidos || '';
+                        user.email = user.email || m.correo_electronico || m.CorreoElectronico || '';
+                        user.telefono = user.telefono || m.telefono_movil || m.TelefonoMovil || '';
+                        user.telefono_alternativo = user.telefono_alternativo || m.telefono_fijo || m.TelefonoFijo || '';
+                        user.fecha_nacimiento = user.fecha_nacimiento || m.fecha_nacimiento || m.FechaNacimiento || '';
+                        user.lugar_nacimiento = user.lugar_nacimiento || m.lugar_nacimiento || m.LugarNacimiento || '';
+                        user.nacionalidad = user.nacionalidad || m.nacionalidad || m.Nacionalidad || m.pais || m.Pais || '';
+                        user.pais = user.pais || m.pais || m.Pais || user.nacionalidad || '';
+                        user.direccion_calle = user.direccion_calle || m.direccion || m.Direccion || '';
+                        user.barrio = user.barrio || m.barrio_compania || m.BarrioCompania || '';
+                        user.ciudad = user.ciudad || m.ciudad || m.Ciudad || '';
+                        user.departamento = user.departamento || m.departamento || m.Departamento || '';
+                        user.estado_civil = user.estado_civil || m.estado_civil || m.EstadoCivil || '';
+                        user.carrera = user.carrera || m.carrera || m.Carrera || '';
+                        user.grado = user.grado || m.semestre || m.Semestre || '';
+                        user.legajo_numero = user.legajo_numero || m.legajo_numero || m.LegajoNumero || '';
+                        user.fecha_inscripcion = user.fecha_inscripcion || m.fecha_inscripcion || m.FechaInscripcion || '';
+                        user.plan_pago = user.plan_pago || m.plan_pago || m.PlanPago || '';
+                        user.matricula_completa = true;
+
+                        sessionStorage.setItem('centuria_user', JSON.stringify(user));
+                        localStorage.setItem('centuria_user', JSON.stringify(user));
+                    }
+                } catch(eMat) {}
 
                 renderUsuario(user, cedula);
                 

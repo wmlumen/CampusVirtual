@@ -547,7 +547,7 @@
         <!-- ═════════════════════════════════════════════ -->
         <div id="view-tab-perfil" style="display:none;">
             <div class="row g-3">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="dash-section text-center">
                         <div class="dash-avatar mx-auto mb-3" style="width:96px;height:96px;font-size:2rem;" onclick="abrirFoto()">
                             <span id="p-avatar-initials">US</span>
@@ -556,7 +556,7 @@
                         <h4 id="p-display-name" style="font-size:1.1rem;font-weight:800;margin-bottom:2px">Usuario</h4>
                         <p id="p-display-role" style="font-size:.65rem;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Estudiante</p>
                         
-                        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
                             <label class="dash-btn dash-btn-primary" for="foto-input" style="cursor:pointer">
                                 <i class="bi bi-cloud-upload"></i> Subir Foto
                             </label>
@@ -565,29 +565,73 @@
                             </button>
                             <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
                         </div>
+
+                        <div style="font-size:.65rem;color:rgba(255,255,255,.5);line-height:1.4;border-top:1px solid rgba(255,255,255,.08);padding-top:10px;">
+                            <i class="bi bi-info-circle text-warning me-1"></i> Haz clic sobre los campos dorados punteados para editar tus datos en tiempo real.
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-7">
+                <div class="col-md-8">
+                    <!-- 📌 Datos Personales -->
                     <div class="dash-section">
                         <div class="dash-section-title">
-                            <div class="dash-section-title-left"><i class="bi bi-person-lines-fill"></i> Datos Personales</div>
+                            <div class="dash-section-title-left"><i class="bi bi-person-lines-fill"></i> 📌 Datos Personales</div>
                         </div>
                         <div class="profile-data-row"><span class="profile-data-label">Cédula N°</span><span class="profile-data-value" id="p-cedula">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Nombre</span><span class="profile-data-value editable" id="p-nombre" data-field="firstname" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Apellido</span><span class="profile-data-value editable" id="p-apellido" data-field="lastname" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Email</span><span class="profile-data-value editable" id="p-email" data-field="email" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Teléfono</span><span class="profile-data-value editable" id="p-telefono" data-field="telefono" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Fecha de Nacimiento</span><span class="profile-data-value editable" id="p-fecha-nacimiento" data-field="fecha_nacimiento" data-type="date" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Lugar de Nacimiento</span><span class="profile-data-value editable" id="p-lugar-nacimiento" data-field="lugar_nacimiento" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Nacionalidad</span><span class="profile-data-value editable" id="p-nacionalidad" data-field="nacionalidad" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Dirección Completa</span><span class="profile-data-value editable" id="p-direccion" data-field="direccion" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Estado Civil</span><span class="profile-data-value editable" id="p-estado-civil" data-field="estado_civil" onclick="editarCampo(this)">-</span></div>
                     </div>
 
+                    <!-- 📞 Datos de Contacto -->
                     <div class="dash-section">
                         <div class="dash-section-title">
-                            <div class="dash-section-title-left"><i class="bi bi-mortarboard"></i> Expediente Académico</div>
+                            <div class="dash-section-title-left"><i class="bi bi-telephone-plus"></i> 📞 Datos de Contacto</div>
+                        </div>
+                        <div class="profile-data-row"><span class="profile-data-label">Teléfono Alternativo</span><span class="profile-data-value editable" id="p-tel-alt" data-field="telefono_alternativo" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Contacto de Emergencia</span><span class="profile-data-value editable" id="p-contacto-emergencia" data-field="contacto_emergencia" onclick="editarCampo(this)">-</span></div>
+                    </div>
+
+                    <!-- 🎓 Expediente Académico -->
+                    <div class="dash-section">
+                        <div class="dash-section-title">
+                            <div class="dash-section-title-left"><i class="bi bi-mortarboard"></i> 🎓 Expediente Académico</div>
                         </div>
                         <div class="profile-data-row"><span class="profile-data-label">Grado</span><span class="profile-data-value editable" id="p-grado" data-field="grado" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Carrera</span><span class="profile-data-value editable" id="p-carrera" data-field="carrera" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Sección</span><span class="profile-data-value editable" id="p-seccion" data-field="seccion" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Estado</span><span class="profile-data-value editable" id="p-estado" data-field="estado" onclick="editarCampo(this)" style="color:#4ade80">ACTIVO</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Rol</span><span class="profile-data-value" id="p-rol">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">N° de Expediente / Legajo</span><span class="profile-data-value editable" id="p-legajo" data-field="legajo_numero" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Fecha de Inscripción</span><span class="profile-data-value editable" id="p-fecha-inscripcion" data-field="fecha_inscripcion" data-type="date" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Matrícula Asignada</span><span class="profile-data-value editable" id="p-matricula" data-field="matricula" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Estado de Pago de Aranceles</span><span class="profile-data-value editable" id="p-estado-pago" data-field="estado_pago" onclick="editarCampo(this)">-</span></div>
+                    </div>
+
+                    <!-- 🩺 Datos de Salud -->
+                    <div class="dash-section">
+                        <div class="dash-section-title">
+                            <div class="dash-section-title-left"><i class="bi bi-heart-pulse"></i> 🩺 Datos de Salud</div>
+                        </div>
+                        <div class="profile-data-row"><span class="profile-data-label">Grupo Sanguíneo</span><span class="profile-data-value editable" id="p-grupo-sanguineo" data-field="grupo_sanguineo" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Alergias o Condiciones Médicas</span><span class="profile-data-value editable" id="p-alergias" data-field="alergias" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Seguro Médico</span><span class="profile-data-value editable" id="p-seguro-medico" data-field="seguro_medico" onclick="editarCampo(this)">-</span></div>
+                    </div>
+
+                    <!-- 💡 Beneficios y Apoyos -->
+                    <div class="dash-section">
+                        <div class="dash-section-title">
+                            <div class="dash-section-title-left"><i class="bi bi-gift"></i> 💡 Beneficios y Apoyos</div>
+                        </div>
+                        <div class="profile-data-row"><span class="profile-data-label">Becas Solicitadas / Otorgadas</span><span class="profile-data-value editable" id="p-becas" data-field="becas" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Beneficios Institucionales</span><span class="profile-data-value editable" id="p-beneficios" data-field="beneficios_institucionales" onclick="editarCampo(this)">-</span></div>
                     </div>
                 </div>
             </div>
@@ -769,6 +813,25 @@
             const email = user.email || localStorage.getItem('centuria_email') || 'No registrado';
             const tel = user.telefono || localStorage.getItem('centuria_telefono') || 'No registrado';
 
+            // Nuevos campos
+            const fechaNac = user.fecha_nacimiento || localStorage.getItem('centuria_fecha_nacimiento') || '';
+            const lugarNac = user.lugar_nacimiento || localStorage.getItem('centuria_lugar_nacimiento') || '';
+            const nacionalidad = user.nacionalidad || user.pais || localStorage.getItem('centuria_nacionalidad') || '';
+            const direccion = user.direccion || localStorage.getItem('centuria_direccion') || '';
+            const estadoCivil = user.estado_civil || localStorage.getItem('centuria_estado_civil') || '';
+            const telAlt = user.telefono_alternativo || user.telefono_fijo || localStorage.getItem('centuria_telefono_alternativo') || '';
+            const contactoEmergencia = user.contacto_emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
+            const estado = user.estado || user.status || localStorage.getItem('centuria_estado') || 'ACTIVO';
+            const legajo = user.legajo_numero || user.legajo || user.expediente || localStorage.getItem('centuria_legajo_numero') || '';
+            const fechaInscripcion = user.fecha_inscripcion || localStorage.getItem('centuria_fecha_inscripcion') || '';
+            const matricula = user.matricula || user.matricula_numero || localStorage.getItem('centuria_matricula') || '';
+            const estadoPago = user.estado_pago || user.plan_pago || localStorage.getItem('centuria_estado_pago') || '';
+            const grupoSanguineo = user.grupo_sanguineo || localStorage.getItem('centuria_grupo_sanguineo') || '';
+            const alergias = user.alergias || user.condiciones_medicas || localStorage.getItem('centuria_alergias') || '';
+            const seguroMedico = user.seguro_medico || localStorage.getItem('centuria_seguro_medico') || '';
+            const becas = user.becas || user.becas_solicitadas || localStorage.getItem('centuria_becas') || '';
+            const beneficios = user.beneficios_institucionales || user.beneficios || localStorage.getItem('centuria_beneficios_institucionales') || '';
+
             document.getElementById('dash-user-name').textContent = n + ' ' + a;
             
             // Subtítulo con Cédula, Carrera y Sección garantizada
@@ -789,9 +852,35 @@
             document.getElementById('p-apellido').textContent = a;
             document.getElementById('p-email').textContent = email;
             document.getElementById('p-telefono').textContent = tel;
+            document.getElementById('p-fecha-nacimiento').textContent = fechaNac || '-';
+            document.getElementById('p-lugar-nacimiento').textContent = lugarNac || '-';
+            document.getElementById('p-nacionalidad').textContent = nacionalidad || '-';
+            document.getElementById('p-direccion').textContent = direccion || '-';
+            document.getElementById('p-estado-civil').textContent = estadoCivil || '-';
+
+            // Contacto
+            document.getElementById('p-tel-alt').textContent = telAlt || '-';
+            document.getElementById('p-contacto-emergencia').textContent = contactoEmergencia || '-';
+
+            // Académico
             document.getElementById('p-grado').textContent = grado || 'No asignado';
             document.getElementById('p-carrera').textContent = carrera || 'No asignado';
             document.getElementById('p-seccion').textContent = seccion || 'No asignada';
+            document.getElementById('p-estado').textContent = estado || 'ACTIVO';
+            document.getElementById('p-rol').textContent = (user.role || user.rol || currentUserRole || 'ACTIVO').toUpperCase();
+            document.getElementById('p-legajo').textContent = legajo || '-';
+            document.getElementById('p-fecha-inscripcion').textContent = fechaInscripcion || '-';
+            document.getElementById('p-matricula').textContent = matricula || '-';
+            document.getElementById('p-estado-pago').textContent = estadoPago || '-';
+
+            // Salud
+            document.getElementById('p-grupo-sanguineo').textContent = grupoSanguineo || '-';
+            document.getElementById('p-alergias').textContent = alergias || '-';
+            document.getElementById('p-seguro-medico').textContent = seguroMedico || '-';
+
+            // Beneficios
+            document.getElementById('p-becas').textContent = becas || '-';
+            document.getElementById('p-beneficios').textContent = beneficios || '-';
 
             // Links rápidos
             const linksCont = document.getElementById('dash-quick-links');
@@ -1367,9 +1456,12 @@
             if (CAMPOS_CATALOGO.includes(field)) { editarCampoCatalogo(el, field); return; }
             editando = el;
             const valor = el.textContent.trim();
-            el.innerHTML = `<input class="profile-data-input" type="${field==='email'?'email':'text'}" value="${valor==='No registrado'?'':valor}" onblur="guardarCampo(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this, '${field}')}">`;
+            const inputType = el.dataset.type || (field === 'email' ? 'email' : (field.includes('fecha') ? 'date' : 'text'));
+            const valorLimpio = ['-', 'No registrado', 'No asignado', 'No asignada'].includes(valor) ? '' : valor;
+            el.innerHTML = `<input class="profile-data-input" type="${inputType}" value="${valorLimpio}" onblur="guardarCampo(this, '${field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelarEdicion(this, '${field}')}">`;
             const inp = el.querySelector('input');
-            inp.focus(); inp.select();
+            inp.focus(); 
+            if (inputType !== 'date') inp.select();
         }
 
         function cancelarEdicion(input, field) {
@@ -1398,6 +1490,9 @@
                     if (field === 'carrera') localStorage.setItem('centuria_carrera', valor);
                     if (field === 'seccion') localStorage.setItem('centuria_seccion', valor);
                     if (field === 'estado') localStorage.setItem('centuria_estado', valor);
+                    
+                    // Guardar otros campos
+                    localStorage.setItem('centuria_' + field, valor);
 
                     // Actualizar objeto en sesión y refrescar cabecera
                     const u = CenturiaAPI.getCurrentUser() || {};

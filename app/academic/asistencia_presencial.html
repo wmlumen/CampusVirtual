@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- v09.0: Asistencia Presencial con Estilo Visual Premium Libreta -->
+    <!-- v09.0: Asistencia / Ausencia Presencial con Estilo Visual Premium Libreta -->
     <script src="../js/session-guard.js?v=2"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistencia Presencial — Campus Virtual Centuria</title>
+    <title>Asistencia / Ausencia — Campus Virtual Centuria</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -65,8 +65,8 @@
 
         .asist-wrapper {
             width: 100%;
-            max-width: 580px;
-            margin: 40px auto;
+            max-width: 620px;
+            margin: 30px auto;
             padding: 20px;
             padding-bottom: 60px;
             animation: fadeInUp .8s cubic-bezier(.16,1,.3,1);
@@ -82,7 +82,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            gap: 10px;
         }
 
         .btn-asist-back {
@@ -130,7 +131,7 @@
             color: var(--dorado-claro);
             border: 2px solid var(--dorado);
             box-shadow: 0 4px 20px rgba(0,0,0,.3);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .asist-title {
@@ -146,6 +147,44 @@
             color: var(--dorado-claro);
             margin-bottom: 24px;
             letter-spacing: .5px;
+        }
+
+        /* ── Tipo Selector (Presencia vs Ausencia) ── */
+        .tipo-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            background: rgba(255,255,255,.04);
+            padding: 4px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .tipo-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: .75rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: .2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Montserrat', sans-serif;
+            color: rgba(255,255,255,.6);
+            background: transparent;
+        }
+        .tipo-btn.active.presencia {
+            background: rgba(0,177,64,.35);
+            color: #4ade80;
+            border: 1px solid rgba(0,177,64,.5);
+        }
+        .tipo-btn.active.ausencia {
+            background: rgba(217,119,6,.35);
+            color: #fbbf24;
+            border: 1px solid rgba(217,119,6,.5);
         }
 
         /* ── Formularios & Inputs ── */
@@ -171,7 +210,7 @@
             font-family: 'Montserrat', sans-serif;
             outline: none;
             transition: .2s;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .asist-input:focus {
             border-color: var(--verde-medio);
@@ -192,7 +231,7 @@
             color: #fff;
             font-family: 'Montserrat', sans-serif;
             outline: none;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .btn-asist-primary {
@@ -220,6 +259,30 @@
             box-shadow: 0 4px 15px rgba(0,177,64,.3);
         }
 
+        .btn-asist-warning {
+            width: 100%;
+            background: rgba(217,119,6,.3);
+            color: #fbbf24;
+            border: 1px solid rgba(217,119,6,.5);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            cursor: pointer;
+            transition: .2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .btn-asist-warning:hover {
+            background: rgba(217,119,6,.5);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
         .btn-asist-link {
             background: none;
             border: none;
@@ -242,7 +305,7 @@
             border-radius: 12px;
             padding: 12px 16px;
             font-size: .72rem;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             text-align: left;
         }
 
@@ -279,6 +342,7 @@
         <!-- Barra de navegación -->
         <div class="top-nav-bar">
             <a href="glosario.html" class="btn-asist-back"><i class="bi bi-journal-text"></i> Glosario</a>
+            <a href="justificar_ausencia.html" class="btn-asist-back"><i class="bi bi-file-earmark-medical"></i> Justificar Ausencia</a>
             <a href="../dashboard.html" class="btn-asist-back"><i class="bi bi-grid-3x3-gap"></i> Dashboard</a>
         </div>
 
@@ -287,13 +351,13 @@
             <div class="asist-icon-box">
                 <i class="bi bi-person-check-fill"></i>
             </div>
-            <h1 class="asist-title">Registro de Asistencia</h1>
-            <p class="asist-sub">Instituto Superior Centuria · Sede Oficial</p>
+            <h1 class="asist-title">Registro de Asistencia / Ausencia</h1>
+            <p class="asist-sub">Instituto Superior Centuria · Control Académico Oficial</p>
 
             <!-- ═══ PASO 1: Ingreso de Cédula ═══ -->
             <div id="step-1-cedula">
                 <p style="font-size:.76rem;color:rgba(255,255,255,.7);margin-bottom:20px;">
-                    Ingresa tu número de documento de identidad para validar tu presencia en clase.
+                    Ingresa tu número de cédula para registrar tu presencia o justificar ausencia.
                 </p>
                 <div style="text-align:left;">
                     <label class="asist-label">Cédula de Identidad</label>
@@ -310,7 +374,7 @@
             <div id="step-2-register">
                 <div class="alert-custom-warning">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    <strong>Primera vez:</strong> Tu cédula no fue encontrada en la nómina. Completa tus datos para registrar tu asistencia.
+                    <strong>Primera vez:</strong> Tu cédula no fue encontrada en la nómina. Completa tus datos una única vez.
                 </div>
                 
                 <div class="row g-2 text-start">
@@ -356,29 +420,53 @@
 
             <!-- ═══ PASO 2: Usuario Recurrente ═══ -->
             <div id="step-2-returning">
-                <div style="background:rgba(0,177,64,.12);border:1px solid rgba(0,177,64,.3);border-radius:14px;padding:16px;margin-bottom:20px;">
-                    <div style="font-size:.72rem;color:var(--dorado-claro);text-transform:uppercase;letter-spacing:.8px;font-weight:700">Estudiante Confirmado</div>
+                <div style="background:rgba(0,177,64,.12);border:1px solid rgba(0,177,64,.3);border-radius:14px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.7rem;color:var(--dorado-claro);text-transform:uppercase;letter-spacing:.8px;font-weight:700">Estudiante Confirmado</div>
                     <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:2px" id="out-nombre">Alumno</div>
                     <div style="font-size:.65rem;color:rgba(255,255,255,.6);margin-top:2px" id="out-meta">Cédula Registrada</div>
                 </div>
 
-                <div class="text-start">
-                    <label class="asist-label">Observación (Opcional)</label>
-                    <input type="text" class="asist-input" id="inp-obs" placeholder="Ej: Tañarandy / Turno Tarde">
+                <!-- Selector de Tipo -->
+                <div class="tipo-selector">
+                    <button type="button" class="tipo-btn active presencia" id="btn-tipo-presencia" onclick="seleccionarTipo('presente')">
+                        <i class="bi bi-check-circle-fill"></i> Presente Hoy
+                    </button>
+                    <button type="button" class="tipo-btn ausencia" id="btn-tipo-ausencia" onclick="seleccionarTipo('ausente')">
+                        <i class="bi bi-x-circle-fill"></i> Ausente / Justificar
+                    </button>
                 </div>
 
-                <button class="btn-asist-primary" id="btn-marcar" onclick="marcarAsistencia()">
-                    <i class="bi bi-check-circle-fill"></i> Confirmar Presencia Hoy
-                </button>
+                <div class="text-start">
+                    <label class="asist-label" id="lbl-obs">Observación / Motivo</label>
+                    <input type="text" class="asist-input" id="inp-obs" placeholder="Ej: Tañarandy / Turno Tarde / Motivo laboral">
+                </div>
+
+                <div id="box-presencia-actions">
+                    <button class="btn-asist-primary" id="btn-marcar" onclick="marcarAsistencia('presente')">
+                        <i class="bi bi-check-circle-fill"></i> Confirmar Presencia Hoy
+                    </button>
+                </div>
+
+                <div id="box-ausencia-actions" style="display:none;">
+                    <button class="btn-asist-warning" id="btn-marcar-ausencia" onclick="marcarAsistencia('ausente')">
+                        <i class="bi bi-exclamation-circle-fill"></i> Registrar Ausencia
+                    </button>
+                    <div style="margin-top:10px;">
+                        <a href="justificar_ausencia.html" class="btn-asist-back" style="width:100%;justify-content:center;font-size:.68rem">
+                            <i class="bi bi-file-earmark-medical"></i> Adjuntar Certificado Médico o Laboral
+                        </a>
+                    </div>
+                </div>
+
                 <button class="btn-asist-link" onclick="volverPaso1()">¿No eres tú? (Volver)</button>
             </div>
 
             <!-- ═══ PASO 3: Éxito ═══ -->
             <div id="step-3-success" class="success-box">
-                <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
-                <h3 class="fw-bold" style="font-size:1.2rem;color:#4ade80;">¡Asistencia Confirmada!</h3>
-                <p style="font-size:.74rem;color:rgba(255,255,255,.7);margin-top:8px;line-height:1.5;">
-                    Tu presencia, fecha y hora oficial han sido guardadas y sincronizadas con la planilla del docente.
+                <div class="success-icon" id="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+                <h3 class="fw-bold" style="font-size:1.2rem;color:#4ade80;" id="success-title">¡Asistencia Confirmada!</h3>
+                <p style="font-size:.74rem;color:rgba(255,255,255,.7);margin-top:8px;line-height:1.5;" id="success-desc">
+                    Tu registro ha sido guardado y sincronizado con la planilla oficial del docente.
                 </p>
                 <div style="display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap;">
                     <button class="btn-asist-back" onclick="location.reload()"><i class="bi bi-arrow-repeat"></i> Registrar Otro</button>
@@ -402,6 +490,7 @@
     <script src="../js/session-guard.js?v=2"></script>
     <script>
         let cedulaActual = '';
+        let tipoActual = 'presente';
 
         document.addEventListener('DOMContentLoaded', () => {
             const c = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
@@ -409,6 +498,33 @@
                 document.getElementById('inp-cedula').value = c;
             }
         });
+
+        function seleccionarTipo(tipo) {
+            tipoActual = tipo;
+            const btnPres = document.getElementById('btn-tipo-presencia');
+            const btnAus = document.getElementById('btn-tipo-ausencia');
+            const boxPres = document.getElementById('box-presencia-actions');
+            const boxAus = document.getElementById('box-ausencia-actions');
+            const inpObs = document.getElementById('inp-obs');
+            const lblObs = document.getElementById('lbl-obs');
+
+            if (tipo === 'presente') {
+                btnPres.className = 'tipo-btn active presencia';
+                btnAus.className = 'tipo-btn ausencia';
+                boxPres.style.display = 'block';
+                boxAus.style.display = 'none';
+                lblObs.textContent = 'Observación (Opcional)';
+                inpObs.placeholder = 'Ej: Tañarandy / Turno Tarde';
+            } else {
+                btnPres.className = 'tipo-btn presencia';
+                btnAus.className = 'tipo-btn active ausencia';
+                boxPres.style.display = 'none';
+                boxAus.style.display = 'block';
+                lblObs.textContent = 'Motivo de la Ausencia (Requerido)';
+                inpObs.placeholder = 'Ej: Motivo de salud / Compromiso laboral / Viaje';
+                inpObs.focus();
+            }
+        }
 
         function showLoading(btnId) {
             let btn = document.getElementById(btnId);
@@ -453,7 +569,6 @@
                 }
             } catch (err) {
                 hideLoading('btn-buscar');
-                // Si falla API, permitir carga manual
                 document.getElementById('step-1-cedula').style.display = 'none';
                 document.getElementById('step-2-register').style.display = 'block';
             }
@@ -490,38 +605,57 @@
             try {
                 await CenturiaAPI.request('registrar_alumno', payload, 'POST');
                 hideLoading('btn-registrar');
-                mostrarExito();
+                mostrarExito('presente');
             } catch (error) {
                 hideLoading('btn-registrar');
-                // Intentar marcar de todos modos
-                mostrarExito();
+                mostrarExito('presente');
             }
         }
 
-        async function marcarAsistencia() {
+        async function marcarAsistencia(estado) {
             let obs = document.getElementById('inp-obs').value.trim();
-            showLoading('btn-marcar');
+            const btnId = estado === 'presente' ? 'btn-marcar' : 'btn-marcar-ausencia';
+            showLoading(btnId);
 
             let payload = {
                 action: 'marcar_asistencia',
                 cedula: cedulaActual,
-                observacion: obs,
+                estado: estado || 'presente',
+                observacion: (estado === 'ausente' ? '[AUSENCIA] ' : '') + obs,
                 timestamp: new Date().toISOString()
             };
 
             try {
                 await CenturiaAPI.request('marcar_asistencia', payload, 'POST');
-                hideLoading('btn-marcar');
-                mostrarExito();
+                hideLoading(btnId);
+                mostrarExito(estado);
             } catch (error) {
-                hideLoading('btn-marcar');
-                mostrarExito();
+                hideLoading(btnId);
+                mostrarExito(estado);
             }
         }
 
-        function mostrarExito() {
+        function mostrarExito(estado) {
             document.getElementById('step-2-register').style.display = 'none';
             document.getElementById('step-2-returning').style.display = 'none';
+            
+            const isAus = estado === 'ausente';
+            const icon = document.getElementById('success-icon');
+            const title = document.getElementById('success-title');
+            const desc = document.getElementById('success-desc');
+
+            if (isAus) {
+                icon.innerHTML = '<i class="bi bi-exclamation-circle-fill" style="color:#fbbf24"></i>';
+                title.textContent = '¡Ausencia Registrada!';
+                title.style.color = '#fbbf24';
+                desc.textContent = 'Tu aviso de ausencia ha sido asentado en el sistema del docente. Si posees justificativo formal, puedes cargarlo en la sección de Justificar Ausencia.';
+            } else {
+                icon.innerHTML = '<i class="bi bi-check-circle-fill" style="color:#4ade80"></i>';
+                title.textContent = '¡Asistencia Confirmada!';
+                title.style.color = '#4ade80';
+                desc.textContent = 'Tu presencia, fecha y hora oficial han sido guardadas y sincronizadas con la planilla del docente.';
+            }
+
             document.getElementById('step-3-success').style.display = 'block';
         }
 

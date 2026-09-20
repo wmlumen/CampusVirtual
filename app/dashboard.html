@@ -910,7 +910,10 @@
                     <div id="qr-container">
                         <i class="bi bi-hourglass-split"></i> Generando QR...
                     </div>
-                    <div style="margin-top:8px;font-size:.65rem;color:#0d2c16;font-weight:700;display:flex;align-items:center;gap:4px;">
+                    <div id="qr-card-cedula" style="margin-top:10px;font-size:.82rem;font-weight:800;color:#0d2c16;letter-spacing:.5px;">
+                        C.I. N° —
+                    </div>
+                    <div style="margin-top:4px;font-size:.62rem;color:rgba(13,44,22,.65);font-weight:700;display:flex;align-items:center;gap:4px;">
                         <i class="bi bi-arrows-fullscreen"></i> Toca para pantalla completa
                     </div>
                 </div>
@@ -1668,6 +1671,12 @@
                 };
                 
                 lastQRText = JSON.stringify(datos);
+                
+                const cardCedulaEl = document.getElementById('qr-card-cedula');
+                if (cardCedulaEl) {
+                    cardCedulaEl.textContent = c ? ('C.I. N° ' + Number(c).toLocaleString('es-PY')) : 'C.I. N° —';
+                }
+
                 const container = document.getElementById('qr-container');
                 if (!container) return;
                 container.innerHTML = '';

@@ -1224,29 +1224,39 @@
 
             // Función para formatear teléfono internacionalmente (+595 por defecto si no tiene prefijo)
             function formatPhoneDisplay(num) {
-                if (!num || ['-', 'No registrado', 'No asignado', 'No asignada'].includes(num)) return { text: '-', raw: '', clean: '' };
+                if (!num || ['-', 'No registrado', 'No asignado', 'No asignada', 'null', 'undefined'].includes(String(num).trim())) {
+                    return { text: '-', raw: '', clean: '' };
+                }
                 let str = String(num).trim();
+                // Extraer solo dígitos y el '+' si existiera
                 let clean = str.replace(/[^\d+]/g, '');
+                if (!clean) return { text: '-', raw: str, clean: '' };
                 
-                // Si no empieza con +, normalizar
+                // Si no empieza con +, normalizar prefijo de Paraguay
                 if (!clean.startsWith('+')) {
-                    if (clean.startsWith('0')) clean = clean.substring(1); // ej 0994 -> 994
-                    if (clean.startsWith('595')) clean = '+' + clean;
-                    else if (clean.startsWith('21')) clean = '+595' + clean; // Asunción
-                    else clean = '+595' + clean; // Paraguay default
+                    if (clean.startsWith('00595')) clean = '+' + clean.substring(2);
+                    else if (clean.startsWith('595')) clean = '+' + clean;
+                    else if (clean.startsWith('0')) clean = '+595' + clean.substring(1); // ej: 0981... -> +595981... o 021... -> +59521...
+                    else if (clean.startsWith('9') || clean.startsWith('21')) clean = '+595' + clean;
+                    else clean = '+595' + clean;
                 }
                 
                 const waClean = clean.replace(/[^\d]/g, '');
                 return { text: clean, raw: str, clean: waClean };
             }
 
-            // Extraer números de teléfono en textos como "Mamá: 0981 123 456" o "Juan Pérez (0982) 555-666"
+            // Extraer números de teléfono en textos como "Mamá: 0981 123 456", "(0982) 555-666", "+595 981 222 333"
             function extractPhoneFromText(txt) {
-                if (!txt || ['-', 'No registrado'].includes(txt)) return null;
-                const matches = String(txt).match(/(?:\+?595|0)?[98762]\d{1,3}[-\s]?\d{3}[-\s]?\d{3,4}|\+?\d{8,15}/g);
+                if (!txt || ['-', 'No registrado', 'No asignado', 'No asignada', 'null', 'undefined'].includes(String(txt).trim())) return null;
+                const str = String(txt);
+                // Buscar cualquier secuencia telefónica paraguaya o internacional
+                const matches = str.match(/(?:\+?595[-\s]?)?(?:0?[98762]\d{1,2}[-\s]?\d{3}[-\s]?\d{3,4}|\d{6,15})/g);
                 if (matches && matches.length > 0) {
                     const rawNum = matches[0];
-                    return formatPhoneDisplay(rawNum);
+                    const formatted = formatPhoneDisplay(rawNum);
+                    if (formatted.clean && formatted.clean.length >= 7) {
+                        return formatted;
+                    }
                 }
                 return null;
             }
@@ -1254,33 +1264,35 @@
             function renderPhoneAction(elId, actionId, phoneObj, preserveOriginalText = false, originalText = '') {
                 const el = document.getElementById(elId);
                 const actEl = document.getElementById(actionId);
-                if (!el || !actEl) return;
+                if (!el) return;
                 
                 if (!preserveOriginalText) {
-                    el.textContent = phoneObj.text;
+                    el.textContent = (phoneObj && phoneObj.text && phoneObj.text !== '-') ? phoneObj.text : '-';
                 } else {
-                    el.textContent = originalText || phoneObj.raw || '-';
+                    el.textContent = originalText || (phoneObj ? phoneObj.raw : '') || '-';
                 }
 
-                if (phoneObj && phoneObj.clean && phoneObj.clean.length >= 8) {
-                    actEl.style.display = 'inline-flex';
-                    actEl.innerHTML = `
-                        <a href="tel:+${phoneObj.clean}" class="phone-btn-action phone-btn-call" title="Llamar al +${phoneObj.clean}" target="_blank"><i class="bi bi-telephone-fill"></i></a>
-                        <a href="https://wa.me/${phoneObj.clean}" class="phone-btn-action phone-btn-wa" title="Escribir por WhatsApp a +${phoneObj.clean}" target="_blank"><i class="bi bi-whatsapp"></i></a>
-                    `;
-                } else {
-                    actEl.style.display = 'none';
-                    actEl.innerHTML = '';
+                if (actEl) {
+                    if (phoneObj && phoneObj.clean && phoneObj.clean.length >= 7) {
+                        actEl.style.display = 'inline-flex';
+                        actEl.innerHTML = `
+                            <a href="tel:+${phoneObj.clean}" class="phone-btn-action phone-btn-call" title="Llamar al +${phoneObj.clean}" target="_blank"><i class="bi bi-telephone-fill"></i></a>
+                            <a href="https://wa.me/${phoneObj.clean}" class="phone-btn-action phone-btn-wa" title="Escribir por WhatsApp a +${phoneObj.clean}" target="_blank"><i class="bi bi-whatsapp"></i></a>
+                        `;
+                    } else {
+                        actEl.style.display = 'none';
+                        actEl.innerHTML = '';
+                    }
                 }
             }
 
             const parsedTel = formatPhoneDisplay(tel);
             renderPhoneAction('p-telefono', 'p-telefono-actions', parsedTel);
 
-            const parsedTelAlt = formatPhoneDisplay(telAlt);
-            renderPhoneAction('p-tel-alt', 'p-tel-alt-actions', parsedTelAlt);
+            const parsedTelAlt = extractPhoneFromText(telAlt) || formatPhoneDisplay(telAlt);
+            renderPhoneAction('p-tel-alt', 'p-tel-alt-actions', parsedTelAlt, false, telAlt);
 
-            // Contacto de Emergencia: detectar si contiene un teléfono para habilitar llamada / WhatsApp
+            // Contacto de Emergencia: detectar si contiene un teléfono para habilitar llamada / WhatsApp manteniendo el texto (ej "Mamá: 0981...")
             const parsedEmergencia = extractPhoneFromText(contactoEmergencia);
             if (parsedEmergencia && parsedEmergencia.clean) {
                 renderPhoneAction('p-contacto-emergencia', 'p-contacto-emergencia-actions', parsedEmergencia, true, contactoEmergencia);
@@ -1961,6 +1973,9 @@
             const original = input.tagName === 'SELECT' ? (input.dataset.texto || input.dataset.original) : input.defaultValue;
             el.textContent = original || '-';
             editando = null;
+            const u = CenturiaAPI.getCurrentUser() || {};
+            const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+            renderUsuario(u, ced);
         }
 
         async function guardarCampo(input, field) {
@@ -1977,6 +1992,8 @@
                     if (field === 'lastname') localStorage.setItem('centuria_apellido', valor);
                     if (field === 'email') localStorage.setItem('centuria_email', valor);
                     if (field === 'telefono') localStorage.setItem('centuria_telefono', valor);
+                    if (field === 'telefono_alternativo') localStorage.setItem('centuria_telefono_alternativo', valor);
+                    if (field === 'contacto_emergencia') localStorage.setItem('centuria_contacto_emergencia', valor);
                     if (field === 'grado') localStorage.setItem('centuria_grado', valor);
                     if (field === 'carrera') localStorage.setItem('centuria_carrera', valor);
                     if (field === 'seccion') localStorage.setItem('centuria_seccion', valor);
@@ -1990,6 +2007,8 @@
                     u[field] = valor;
                     if (field === 'firstname') u.nombre = valor;
                     if (field === 'lastname') u.apellido = valor;
+                    if (field === 'telefono_alternativo') u.telefono_alternativo = valor;
+                    if (field === 'contacto_emergencia') u.contacto_emergencia = valor;
                     sessionStorage.setItem('centuria_user', JSON.stringify(u));
                     localStorage.setItem('centuria_user', JSON.stringify(u));
 
@@ -1999,9 +2018,15 @@
                     if (field === 'grado') avisarCarreraDelGrado(u);
                 } else { 
                     showToast((res && res.error) || 'Error al guardar cambios', 'error'); 
+                    const u = CenturiaAPI.getCurrentUser() || {};
+                    const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+                    renderUsuario(u, ced);
                 }
             } catch(e) { 
                 showToast('Error de conexión con el servidor', 'error'); 
+                const u = CenturiaAPI.getCurrentUser() || {};
+                const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+                renderUsuario(u, ced);
             }
         }
 

@@ -374,6 +374,53 @@
             color: #000;
             transform: scale(1.1);
         }
+        .map-wrapper-relative {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.15);
+            margin-bottom: 12px;
+        }
+        .map-ctrl-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+            backdrop-filter: blur(4px);
+        }
+        .map-ctrl-overlay.show {
+            opacity: 1;
+        }
+        .map-layer-switch {
+            display: flex;
+            gap: 6px;
+        }
+        .map-layer-btn {
+            font-size: .62rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.2);
+            color: rgba(255,255,255,.8);
+            transition: .2s;
+        }
+        .map-layer-btn.active {
+            background: var(--dorado);
+            color: #000;
+            border-color: var(--dorado);
+        }
 
         /* ── Events List ── */
         .event-item {
@@ -658,14 +705,25 @@
                     <div class="dash-section">
                         <div class="dash-section-title">
                             <div class="dash-section-title-left"><i class="bi bi-geo-alt-fill text-danger"></i> 📍 Coordenadas de Domicilio en Mapa</div>
-                            <button type="button" class="dash-btn dash-btn-ghost" onclick="obtenerMiGPS()" style="font-size:.65rem;padding:4px 10px;">
-                                <i class="bi bi-crosshair"></i> Mi GPS Actual
-                            </button>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div class="map-layer-switch">
+                                    <button type="button" class="map-layer-btn active" id="btn-layer-sat" onclick="cambiarCapaMapa('sat')"><i class="bi bi-globe"></i> Satélite</button>
+                                    <button type="button" class="map-layer-btn" id="btn-layer-calle" onclick="cambiarCapaMapa('calle')"><i class="bi bi-map"></i> Callejero</button>
+                                </div>
+                                <button type="button" class="dash-btn dash-btn-ghost" onclick="obtenerMiGPS()" style="font-size:.65rem;padding:4px 10px;">
+                                    <i class="bi bi-crosshair"></i> Mi GPS
+                                </button>
+                            </div>
                         </div>
                         <p style="font-size:.66rem;color:rgba(255,255,255,.65);margin-bottom:12px;">
-                            Haz clic en el mapa para marcar o ajustar la ubicación exacta de tu domicilio.
+                            <i class="bi bi-info-circle text-warning me-1"></i> Mapa satelital en alta resolución. Haz clic en el mapa para marcar tu domicilio. Usa <kbd style="background:rgba(255,255,255,.15);padding:1px 5px;border-radius:4px;">CTRL</kbd> + rueda del ratón para hacer zoom.
                         </p>
-                        <div id="map-domicilio" style="height:260px;width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.15);margin-bottom:12px;z-index:1;"></div>
+                        <div class="map-wrapper-relative">
+                            <div id="map-domicilio" style="height:280px;width:100%;z-index:1;"></div>
+                            <div id="map-overlay-ctrl" class="map-ctrl-overlay">
+                                <span><i class="bi bi-keyboard me-2"></i> Mantén presionado CTRL para hacer zoom con la rueda</span>
+                            </div>
+                        </div>
                         <div class="row g-2">
                             <div class="col-6">
                                 <div class="profile-data-row mb-0">
@@ -1821,6 +1879,29 @@
         // ════ MAPA INTERACTIVO DOMICILIO (Leaflet) ════
         let leafletMap = null;
         let leafletMarker = null;
+        let capaSatelital = null;
+        let capaCallejero = null;
+        let capaActual = 'sat';
+
+        function cambiarCapaMapa(tipo) {
+            capaActual = tipo;
+            const btnSat = document.getElementById('btn-layer-sat');
+            const btnCalle = document.getElementById('btn-layer-calle');
+            if (btnSat && btnCalle) {
+                btnSat.classList.toggle('active', tipo === 'sat');
+                btnCalle.classList.toggle('active', tipo === 'calle');
+            }
+
+            if (!leafletMap) return;
+
+            if (tipo === 'sat') {
+                if (capaCallejero && leafletMap.hasLayer(capaCallejero)) leafletMap.removeLayer(capaCallejero);
+                if (capaSatelital && !leafletMap.hasLayer(capaSatelital)) capaSatelital.addTo(leafletMap);
+            } else {
+                if (capaSatelital && leafletMap.hasLayer(capaSatelital)) leafletMap.removeLayer(capaSatelital);
+                if (capaCallejero && !leafletMap.hasLayer(capaCallejero)) capaCallejero.addTo(leafletMap);
+            }
+        }
 
         function inicializarMapaDomicilio() {
             const mapCont = document.getElementById('map-domicilio');
@@ -1839,18 +1920,56 @@
             }
 
             if (!leafletMap) {
-                leafletMap = L.map('map-domicilio').setView([curLat, curLng], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                leafletMap = L.map('map-domicilio', {
+                    scrollWheelZoom: false
+                }).setView([curLat, curLng], 15);
+
+                // Capa Satelital ESRI World Imagery
+                capaSatelital = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
-                    attribution: '© OpenStreetMap'
-                }).addTo(leafletMap);
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+
+                // Capa Callejero OpenStreetMap
+                capaCallejero = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                });
+
+                // Añadir capa satelital por defecto
+                capaSatelital.addTo(leafletMap);
 
                 leafletMap.on('click', function(e) {
                     fijarCoordenadas(e.latlng.lat, e.latlng.lng);
                 });
+
+                // Interacción CTRL + Scroll para Zoom
+                const overlay = document.getElementById('map-overlay-ctrl');
+                let overlayTimeout = null;
+
+                mapCont.addEventListener('wheel', function(e) {
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        if (overlay) overlay.classList.remove('show');
+                        if (e.deltaY < 0) {
+                            leafletMap.zoomIn();
+                        } else {
+                            leafletMap.zoomOut();
+                        }
+                    } else {
+                        if (overlay) {
+                            overlay.classList.add('show');
+                            clearTimeout(overlayTimeout);
+                            overlayTimeout = setTimeout(() => {
+                                overlay.classList.remove('show');
+                            }, 1200);
+                        }
+                    }
+                }, { passive: false });
+
             } else {
                 leafletMap.invalidateSize();
-                leafletMap.setView([curLat, curLng], leafletMap.getZoom() || 14);
+                leafletMap.setView([curLat, curLng], leafletMap.getZoom() || 15);
             }
 
             actualizarMarcadorMapa(curLat, curLng);

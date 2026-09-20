@@ -562,10 +562,10 @@
                         <div class="dash-section-title">
                             <div class="dash-section-title-left"><i class="bi bi-mortarboard"></i> Expediente Académico</div>
                         </div>
-                        <div class="profile-data-row"><span class="profile-data-label">Grado</span><span class="profile-data-value" id="p-grado">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Carrera</span><span class="profile-data-value" id="p-carrera">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Sección</span><span class="profile-data-value" id="p-seccion">-</span></div>
-                        <div class="profile-data-row"><span class="profile-data-label">Estado</span><span class="profile-data-value" id="p-estado" style="color:#4ade80">ACTIVO</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Grado</span><span class="profile-data-value editable" id="p-grado" data-field="grado" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Carrera</span><span class="profile-data-value editable" id="p-carrera" data-field="carrera" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Sección</span><span class="profile-data-value editable" id="p-seccion" data-field="seccion" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Estado</span><span class="profile-data-value editable" id="p-estado" data-field="estado" onclick="editarCampo(this)" style="color:#4ade80">ACTIVO</span></div>
                     </div>
                 </div>
             </div>
@@ -1142,13 +1142,33 @@
             try {
                 const res = await CenturiaAPI.auth.updateProfile({ [field]: valor });
                 if (res && res.ok) {
-                    showToast('Datos actualizados', 'success');
+                    showToast('Datos actualizados en la base de datos', 'success');
                     if (field === 'firstname') localStorage.setItem('centuria_nombre', valor);
                     if (field === 'lastname') localStorage.setItem('centuria_apellido', valor);
                     if (field === 'email') localStorage.setItem('centuria_email', valor);
                     if (field === 'telefono') localStorage.setItem('centuria_telefono', valor);
-                } else { showToast((res && res.error) || 'Error al guardar', 'error'); }
-            } catch(e) { showToast('Error de conexión', 'error'); }
+                    if (field === 'grado') localStorage.setItem('centuria_grado', valor);
+                    if (field === 'carrera') localStorage.setItem('centuria_carrera', valor);
+                    if (field === 'seccion') localStorage.setItem('centuria_seccion', valor);
+                    if (field === 'estado') localStorage.setItem('centuria_estado', valor);
+
+                    // Actualizar objeto en sesión y refrescar cabecera
+                    const u = CenturiaAPI.getCurrentUser() || {};
+                    u[field] = valor;
+                    if (field === 'firstname') u.nombre = valor;
+                    if (field === 'lastname') u.apellido = valor;
+                    sessionStorage.setItem('centuria_user', JSON.stringify(u));
+                    localStorage.setItem('centuria_user', JSON.stringify(u));
+
+                    const ced = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+                    renderUsuario(u, ced);
+                    generarQR(u, ced);
+                } else { 
+                    showToast((res && res.error) || 'Error al guardar cambios', 'error'); 
+                }
+            } catch(e) { 
+                showToast('Error de conexión con el servidor', 'error'); 
+            }
         }
 
         // === CONTRASEÑA ===

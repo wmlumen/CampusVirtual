@@ -1631,11 +1631,15 @@ function cvAuthUpdateProfile(ss, data) {
     var user = cvAuthFindUser(ss, cedula);
     if (!user) throw new Error('Usuario no encontrado.');
 
-    // Solo se permite editar datos personales: nombre, apellido, email, telefono, foto_url
+    // Permitir editar datos personales y académicos: nombre, apellido, email, telefono, foto_url, grado, carrera, seccion, estado
     var nombre = data.nombre !== undefined ? cvAuthSanitizeText(data.nombre, 100).toUpperCase() : user.nombre;
     var apellido = data.apellido !== undefined ? cvAuthSanitizeText(data.apellido, 100).toUpperCase() : user.apellido;
     var email = data.email !== undefined ? cvAuthNormalizeEmail(data.email) : user.email;
     var telefono = data.telefono !== undefined ? cvAuthSanitizeText(data.telefono, 40) : user.telefono;
+    var grado = data.grado !== undefined ? cvAuthSanitizeText(data.grado, 80).toUpperCase() : user.grado;
+    var carrera = data.carrera !== undefined ? cvAuthSanitizeText(data.carrera, 120).toUpperCase() : user.carrera;
+    var seccion = data.seccion !== undefined ? cvAuthSanitizeText(data.seccion, 40).toUpperCase() : user.seccion;
+    var estado = data.estado !== undefined ? cvAuthSanitizeText(data.estado, 30).toLowerCase() : (user.estado || 'activo');
     var foto = data.foto || data.foto_url || user.foto_url || '';
     var nowIso = new Date().toISOString();
 
@@ -1653,7 +1657,8 @@ function cvAuthUpdateProfile(ss, data) {
       var hCols = uSheet.getRange(1, 1, 1, uSheet.getLastColumn()).getValues()[0].map(function(x){return String(x).toLowerCase().trim();});
       var mapSet = {
         'nombre': nombre, 'apellido': apellido, 'email': email,
-        'telefono': telefono, 'foto_url': foto, 'updated_at': nowIso
+        'telefono': telefono, 'grado': grado, 'carrera': carrera,
+        'seccion': seccion, 'estado': estado, 'foto_url': foto, 'updated_at': nowIso
       };
       Object.keys(mapSet).forEach(function(k) {
         var idx = hCols.indexOf(k);
@@ -1662,9 +1667,9 @@ function cvAuthUpdateProfile(ss, data) {
     } else {
       var rowNew = [
         user.uuid || ('USR-' + cedula), user.uuid || ('USR-' + cedula), cedula,
-        nombre, apellido, email, telefono, user.rol || 'alumno', 'activo',
-        user.password_hash || '', user.salt || '', user.grado || '', user.carrera || '',
-        user.seccion || '', foto, nowIso, nowIso, nowIso, '', ''
+        nombre, apellido, email, telefono, user.rol || 'alumno', estado,
+        user.password_hash || '', user.salt || '', grado || '', carrera || '',
+        seccion || '', foto, nowIso, nowIso, nowIso, '', ''
       ];
       uSheet.appendRow(rowNew);
     }
@@ -1678,7 +1683,24 @@ function cvAuthUpdateProfile(ss, data) {
           alSheet.getRange(a + 1, 2).setValue(nombre);
           alSheet.getRange(a + 1, 3).setValue(apellido);
           alSheet.getRange(a + 1, 4).setValue(email);
+          if (grado) alSheet.getRange(a + 1, 5).setValue(grado);
+          if (carrera) alSheet.getRange(a + 1, 6).setValue(carrera);
+          if (seccion) alSheet.getRange(a + 1, 7).setValue(seccion);
           break;
+        }
+      }
+    }
+
+    // Actualizar también en Roles si existe
+    var rSheet = ss.getSheetByName('Roles');
+    if (rSheet) {
+      var rData = rSheet.getDataRange().getValues();
+      for (var r = 1; r < rData.length; r++) {
+        if (cvAuthNormalizeCedula(rData[r][0]) === cedula) {
+          if (nombre || apellido) rSheet.getRange(r + 1, 2).setValue((nombre + ' ' + apellido).trim());
+          if (carrera) rSheet.getRange(r + 1, 4).setValue(carrera);
+          if (seccion) rSheet.getRange(r + 1, 5).setValue(seccion);
+          if (estado) rSheet.getRange(r + 1, 7).setValue(estado);
         }
       }
     }
@@ -1688,13 +1710,17 @@ function cvAuthUpdateProfile(ss, data) {
     return {
       ok: true,
       status: 'Éxito',
-      mensaje: 'Perfil actualizado correctamente.',
+      mensaje: 'Perfil y expediente actualizados correctamente.',
       user: {
         cedula: cedula,
         nombre: nombre,
         apellido: apellido,
         email: email,
         telefono: telefono,
+        grado: grado,
+        carrera: carrera,
+        seccion: seccion,
+        estado: estado,
         foto_url: foto
       }
     };

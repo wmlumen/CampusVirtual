@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().rol == 'admin';
+    }
+
+    function isPlatformAdmin() {
+      return isAuthenticated() && getUserData().rol == 'administrador_plataforma';
+    }
+
+    function isAdminOrPlatform() {
+      return isAdmin() || isPlatformAdmin();
+    }
+
+    function isDocente() {
+      return isAuthenticated() && getUserData().rol == 'docente';
+    }
+
+    function isAcademico() {
+      return isAuthenticated() && getUserData().rol == 'academico';
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (
+        getUserData().rol == 'admin' ||
+        getUserData().rol == 'administrador_plataforma' ||
+        getUserData().rol == 'academico' ||
+        getUserData().rol == 'docente'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /usuarios/{userId} {
+      // Lectura autenticada (propietario o staff)
+      allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
+      
+      // 🔓 Lectura SIN autenticación Firebase para login/getRoles por cédula
+      // Permite query: where('cedula', '==', 'valor') con limit(1)
+      // Solo si el documento coincide con la cédula consultada
+      allow read: if request.auth == null 
+        && request.query.limit <= 1
+        && request.query.where.size() == 1
+        && request.query.where[0].field == 'cedula'
+        && request.query.where[0].op == '=='
+        && resource.data.cedula == request.query.where[0].value;
+      
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
+      allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
+      allow delete: if isAdminOrPlatform();
+
+      match /roles/{rolId} {
+        allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
+        allow write: if isAdminOrPlatform();
+      }
+    }
+
+    match /asignaturas/{asigId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (
+        isAdminOrPlatform() || isAcademico() || isDocente()
+      );
+      allow delete: if isAdminOrPlatform();
+    }
+
+    match /notas/{notaId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.cedula) || isStaff());
+      allow create, update: if isAuthenticated() && (
+        isAdminOrPlatform() || isAcademico() || isDocente()
+      );
+      allow delete: if isAdminOrPlatform();
+    }
+
+    match /asistencia/{asistId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.cedula) || isStaff());
+      allow create, update: if isAuthenticated() && (
+        isAdminOrPlatform() || isAcademico() || isDocente()
+      );
+      allow delete: if isAdminOrPlatform();
+    }
+
+    match /eventos/{eventoId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (
+        isAdminOrPlatform() || isAcademico() || isDocente()
+      );
+      allow delete: if isAuthenticated() && (
+        isAdminOrPlatform() || isAcademico() ||
+        (isDocente() && resource.data.creado_por == getUserData().cedula)
+      );
+    }
+
+    match /formularios/{formId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.cedula_alumno) || isAdminOrPlatform() || isAcademico()
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdminOrPlatform();
+    }
+
+    match /pagos/{pagoId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.cedula) || isAdminOrPlatform() || isAcademico()
+      );
+      allow create, update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico());
+      allow delete: if isAdminOrPlatform();
+    }
+
+    match /solicitudes_docentes/{solId} {
+      allow read: if isAuthenticated() && (isAdminOrPlatform() || isOwner(solId));
+      allow create: if isAuthenticated();
+      allow update: if isAdminOrPlatform();
+      allow delete: if false;
+    }
+
+    match /configuracion/{configId} {
+      allow read: if isAuthenticated() && isStaff();
+      allow write: if isAdminOrPlatform();
+    }
+
+    match /filiales/{filialId} {
+      allow read: if isAuthenticated();
+      allow write: if isPlatformAdmin();
+    }
+
+     match /calendar_events/{eventId} {
+       allow read: if isAuthenticated();
+       allow write: if isAuthenticated() && isStaff();
+     }
+
+     // ═══ NUEVAS COLECCIONES ═══
+
+     match /examenes/{examId} {
+       allow read: if isAuthenticated();
+       allow create, update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico());
+       allow delete: if isAdminOrPlatform();
+     }
+
+     match /consultas/{conId} {
+       allow read: if isAuthenticated() && (isOwner(resource.data.alumno_cedula) || isAdminOrPlatform() || isAcademico());
+       allow create: if isAuthenticated();
+       allow update: if isAuthenticated() && (isAdminOrPlatform() || isOwner(resource.data.alumno_cedula));
+     }
+
+     match /mensajes/{msgId} {
+       allow read: if isAuthenticated() && (isOwner(resource.data.destinatario) || isStaff());
+       allow create: if isAuthenticated();
+       allow delete: if isAuthenticated() && isOwner(resource.data.destinatario);
+     }
+
+     match /credenciales/{credId} {
+       allow read: if isAuthenticated();
+       allow create: if isAuthenticated();
+       allow update: if isAuthenticated() && isStaff();
+       allow delete: if isAdminOrPlatform();
+     }
+
+     match /borradores/{brwId} {
+       allow read: if isAuthenticated();
+       allow create: if isAuthenticated() && isStaff();
+       allow update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico() || isDocente());
+       allow delete: if isAdminOrPlatform();
+     }
+
+     match /cursos/{curId} {
+       allow read: if isAuthenticated();
+       allow write: if isAuthenticated() && isStaff();
+     }
+   }
+ }

@@ -248,11 +248,27 @@ function callGas(action, data, method) {
                 if (data.cedula) {
                     if (snap.empty) return { ok: true, roles: [], rol: '' };
                     const d = snap.docs[0].data();
-                    return { ok: true, roles: d.roles || [d.rol], rol: d.rol || '' };
+                    // Normalizar: si hay array roles[] usarlo; si no, construir desde campo rol simple.
+                    var roles = [];
+                    if (Array.isArray(d.roles) && d.roles.length > 0) {
+                        roles = d.roles.map(function(r) {
+                            return {
+                                rol:     String(r.rol     || 'alumno').toLowerCase(),
+                                estado:  String(r.estado  || 'activo').toLowerCase(),
+                                carrera: r.carrera || d.carrera || '',
+                                seccion: r.seccion || d.seccion || ''
+                            };
+                        });
+                    } else {
+                        // Compatibilidad legacy: solo campo rol raíz
+                        roles = [{ rol: d.rol || 'alumno', estado: d.estado || 'activo', carrera: d.carrera || '', seccion: d.seccion || '' }];
+                    }
+                    return { ok: true, roles: roles, rol: d.rol || '' };
                 }
                 const users = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
                 return { ok: true, roles: users.map(u => ({ cedula: u.cedula, nombre: u.nombre, rol: u.rol, estado: u.estado })), usuarios: users };
             }).catch(() => ({ ok: true, roles: [] }));
+
             case 'listar_usuarios': return db.collection('usuarios').get().then(snap => ({
                 ok: true, usuarios: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, usuarios: [] }));
@@ -351,10 +367,61 @@ function callGas(action, data, method) {
                 return { ok: true, id: id };
             })();
             case 'eliminar_asignatura': return db.collection('asignaturas').doc(data.id).delete().then(() => ({ ok: true })).catch(() => ({ ok: false }));
-            case 'asignar_rol': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
+            case 'asignar_rol': return (async () => {
+                // Acciones: 'agregar' (default) | 'quitar' | 'principal'
+                const ced    = String(data.cedula  || '').replace(/[\.\s\-]/g, '').trim();
+                const rolNuevo = String(data.rol || data.role || 'alumno').toLowerCase().trim();
+                const accion   = String(data.accion || 'agregar').toLowerCase();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                const snap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
                 if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
-                return snap.docs[0].ref.update({ rol: data.rol || data.role || 'alumno', updated_at: new Date().toISOString() }).then(() => ({ ok: true }));
-            });
+                const doc = snap.docs[0];
+                const d   = doc.data();
+                // Normalizar array de roles existente
+                var rolesActuales = [];
+                if (Array.isArray(d.roles)) {
+                    rolesActuales = d.roles;
+                } else if (d.rol) {
+                    rolesActuales = [{ rol: d.rol, estado: d.estado || 'activo', carrera: d.carrera || '', seccion: d.seccion || '' }];
+                }
+                var updates = { updated_at: new Date().toISOString() };
+                if (accion === 'quitar') {
+                    // Desactivar el rol en el array (no eliminar → preserva historial)
+                    rolesActuales = rolesActuales.map(function(r) {
+                        return r.rol === rolNuevo ? Object.assign({}, r, { estado: 'inactivo' }) : r;
+                    });
+                    updates.roles = rolesActuales;
+                } else if (accion === 'principal') {
+                    // Cambiar el rol raíz del documento
+                    updates.rol = rolNuevo;
+                    // Actualizar también el array (marcar el nuevo como activo)
+                    var existe = rolesActuales.some(function(r) { return r.rol === rolNuevo; });
+                    if (!existe) {
+                        rolesActuales.push({ rol: rolNuevo, estado: 'activo', carrera: data.carrera || '', seccion: data.seccion || '' });
+                    } else {
+                        rolesActuales = rolesActuales.map(function(r) {
+                            return r.rol === rolNuevo ? Object.assign({}, r, { estado: 'activo' }) : r;
+                        });
+                    }
+                    updates.roles = rolesActuales;
+                } else {
+                    // agregar: añadir si no existe, o reactivar si estaba inactivo
+                    var yaExiste = rolesActuales.some(function(r) { return r.rol === rolNuevo; });
+                    if (yaExiste) {
+                        rolesActuales = rolesActuales.map(function(r) {
+                            return r.rol === rolNuevo ? Object.assign({}, r, { estado: 'activo', carrera: data.carrera || r.carrera || '', seccion: data.seccion || r.seccion || '' }) : r;
+                        });
+                    } else {
+                        rolesActuales.push({ rol: rolNuevo, estado: 'activo', carrera: data.carrera || '', seccion: data.seccion || '' });
+                    }
+                    updates.roles = rolesActuales;
+                    // Si era el único rol o no tenía rol raíz, establecerlo
+                    if (!d.rol || d.rol === 'alumno') updates.rol = rolNuevo;
+                }
+                await doc.ref.update(updates);
+                return { ok: true, roles: updates.roles || rolesActuales };
+            })();
+
             case 'desactivar_rol': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
                 if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
                 return snap.docs[0].ref.update({ estado: 'inactivo', updated_at: new Date().toISOString() }).then(() => ({ ok: true }));
@@ -593,13 +660,83 @@ function callGas(action, data, method) {
             })();
             case 'cumple_mio': return Promise.resolve({ ok: true, cumpleano: false });
             case 'diagnostico': return Promise.resolve({ ok: true, diagnostico: {} });
-            case 'qr_credencial': return Promise.resolve({ ok: true, codigo: 'QR-' + Math.random().toString(36).substring(2, 10) });
+            case 'qr_credencial': {
+                // Lote de códigos para las próximas ventanas (la cédula sale de la sesión).
+                const qrCed = cvQrTokenCedula(data.token) ||
+                    (typeof localStorage !== 'undefined' ? (localStorage.getItem('centuria_cedula') || '') : '') ||
+                    (typeof sessionStorage !== 'undefined' ? (sessionStorage.getItem('current_cedula') || '') : '');
+                if (!qrCed) return { ok: false, error: 'No se pudo identificar tu cédula de sesión.' };
+                const ahora = Date.now();
+                const wIni = cvQrWindow(ahora);
+                const codigos = [];
+                for (let i = 0; i < 6; i++) {
+                    codigos.push({ codigo: cvQrCode(qrCed, wIni + i), desde_en: i * CV_QR_PASO_S });
+                }
+                return { ok: true, codigos: codigos, paso: CV_QR_PASO_S };
+            }
+            case 'qr_verificar': {
+                // El personal escanea el texto del QR y este módulo lo valida (ventana + firma).
+                const code = String(data.codigo || '').trim();
+                const partes = code.split('|');
+                if (partes.length !== 4 || partes[0] !== 'CV1') return { ok: true, valido: false, motivo: 'Código no reconocido.' };
+                const ced = partes[1], w = parseInt(partes[2], 10), sig = partes[3];
+                if (!Number.isFinite(w)) return { ok: true, valido: false, motivo: 'Código inválido.' };
+                const wAux = cvQrWindow(Date.now());
+                if (Math.abs(wAux - w) > 3) {            // tolerancia de ±3 ventanas (más de 1 min)
+                    const pasados = wAux > w;
+                    return { ok: true, valido: false, motivo: pasados ? 'El código ya venció.' : 'El código aún no está vigente.' };
+                }
+                if (sig !== cvQrSig(ced, w)) return { ok: true, valido: false, motivo: 'Firma no válida.' };
+                return { ok: true, valido: true, alumno: { cedula: ced } };
+            }
             default: return Promise.resolve({ ok: true, data: data || {} });
         }
     } catch (err) {
         console.error('[Firestore] Error en action=' + action + ':', err.code || '', err.message);
         return Promise.resolve({ ok: false, error: 'Firestore: ' + (err.code || '') + ' ' + err.message });
     }
+}
+
+// ── Credencial QR dinámico (código por ventana de tiempo) ─────────────────────
+// Genera códigos determinísticos por ventana (~20 s) con una clave compartida en el
+// cliente: funcionan entre dispositivos (alumno genera, personal verifica) sin depender
+// de un backend. El QR embebe el código que el verificador recalcula y compara.
+// Limitación conocida: la clave vive en el código del cliente (como todo el modelo
+// pseudo-token de la app), así que no es de seguridad criptográfica; garantiza rotación
+// temporal y consistencia entre quien emite y quien valida.
+const CV_QR_SECRET = 'cv-qr-dyn-2026-centuria';
+const CV_QR_PASO_S = 20;
+
+function cvQrTokenCedula(token) {
+    try {
+        token = token || '';
+        var parts = token.split('.');
+        if (parts.length < 2) return '';
+        var pad = parts[1];
+        while (pad.length % 4) pad += '=';
+        return (JSON.parse(atob(pad.replace(/-/g, '+').replace(/_/g, '/'))).cedula || '').toString();
+    } catch (e) { return ''; }
+}
+
+function cvQrHash(s) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = (h * 0x01000193) >>> 0;
+    }
+    return h.toString(36);
+}
+
+function cvQrWindow(tsMs) {
+    return Math.floor(tsMs / 1000 / CV_QR_PASO_S);
+}
+
+function cvQrSig(cedula, w) {
+    return cvQrHash(CV_QR_SECRET + '|' + cedula + '|' + w);
+}
+
+function cvQrCode(cedula, w) {
+    return 'CV1|' + cedula + '|' + w + '|' + cvQrSig(cedula, w);
 }
 
 // ══════════════════════════════════════════════════════════════

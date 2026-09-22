@@ -552,10 +552,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="../js/api.js?v=21"></script>
+
     <script>
         // ===== ESTADO GLOBAL =====
         let estadoExamen = {
@@ -793,41 +790,43 @@
 
                 estadoExamen.puntaje = puntaje;
 
-                const detalle = estadoExamen.preguntas.map((pregunta, index) => {
-                    const letra = estadoExamen.respuestas[index + 1];
-                    const opcionIndex = letra ? letra.charCodeAt(0) - 65 : -1;
-                    const correcta = letra === pregunta.respuesta;
-                    return {
-                        numero: index + 1,
-                        pregunta: pregunta.texto,
-                        respuesta: opcionIndex >= 0 ? pregunta.opciones[opcionIndex] : 'Sin responder',
-                        correcta: correcta,
-                        puntaje: correcta ? pregunta.puntos : 0
-                    };
-                });
-
-                // Guardar en la base central del CampusVirtual. Es la misma ruta
-                // utilizada por los demás exámenes y por el historial del alumno.
+                // Guardar en Sheets
                 const datos = {
                     cedula: estadoExamen.datosPersonales.cedula,
                     nombre: estadoExamen.datosPersonales.nombre,
-                    asignatura: 'TIC026',
-                    evaluacion: 'parcial' + estadoExamen.parcial,
-                    examen_id: 'examen_parcial_' + estadoExamen.parcial,
-                    respuestas: detalle,
+                    apellido: estadoExamen.datosPersonales.nombre.split(' ')[1] || '',
+                    carrera: estadoExamen.datosPersonales.carrera,
+                    seccion: estadoExamen.datosPersonales.seccion,
+                    codigo_examen: 'TIC026-P' + estadoExamen.parcial,
+                    intento: estadoExamen.intento,
+                    respuestas: JSON.stringify(estadoExamen.respuestas),
                     puntaje: puntaje,
-                    total: 100,
-                    pct: puntaje,
-                    correctas: detalle.filter(item => item.correcta).length,
                     timestamp: new Date().toISOString()
                 };
 
-                if (!window.CenturiaAPI || !window.CenturiaAPI.exams) {
-                    throw new Error('El servicio central del CampusVirtual no está disponible.');
+                // Llamar a Apps Script — URLSearchParams (compatible con e.parameter)
+                const url = 'https://script.google.com/macros/s/AKfycbwFP9KuZ8EmtJ1qw_YCmxOz9Q6nT5TfqBQ9wRZjZw6c_Wwkbt_pcEwb0D9WfFNhoxt1/exec';
+                const params = new URLSearchParams();
+                Object.entries(datos).forEach(([key, value]) => params.append(key, value));
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+
+                // Verificar respuesta del servidor
+                let respuestaServer = null;
+                const textoRespuesta = await response.text();
+                try {
+                    respuestaServer = JSON.parse(textoRespuesta);
+                } catch (jsonError) {
+                    console.error('Respuesta no JSON de Apps Script:', textoRespuesta);
+                    throw new Error('Apps Script no devolvió JSON válido: ' + textoRespuesta.slice(0, 180));
                 }
-                const respuestaServer = await window.CenturiaAPI.exams.saveAnswers(datos);
-                if (!respuestaServer || respuestaServer.ok !== true) {
-                    throw new Error((respuestaServer && respuestaServer.error) || 'La base de datos no confirmó el guardado.');
+
+                if (!response.ok || respuestaServer.success !== true) {
+                    throw new Error(respuestaServer.error || ('HTTP ' + response.status));
                 }
 
                 // Mostrar resultados

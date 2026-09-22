@@ -805,7 +805,7 @@
                 };
 
                 // Llamar a Apps Script — URLSearchParams (compatible con e.parameter)
-                const url = 'https://script.google.com/macros/s/AKfycbxdCOtN0t9oNDJYRBbuJXKCts4Fz6y1JDxq79m1nKT-nrkBZ4q04eATTpnprmJdmNbq/exec';
+                const url = 'https://script.google.com/macros/s/AKfycbwFP9KuZ8EmtJ1qw_YCmxOz9Q6nT5TfqBQ9wRZjZw6c_Wwkbt_pcEwb0D9WfFNhoxt1/exec';
                 const params = new URLSearchParams();
                 Object.entries(datos).forEach(([key, value]) => params.append(key, value));
 
@@ -817,14 +817,16 @@
 
                 // Verificar respuesta del servidor
                 let respuestaServer = null;
+                const textoRespuesta = await response.text();
                 try {
-                    respuestaServer = await response.json();
+                    respuestaServer = JSON.parse(textoRespuesta);
                 } catch (jsonError) {
-                    console.warn('Respuesta no JSON:', jsonError);
+                    console.error('Respuesta no JSON de Apps Script:', textoRespuesta);
+                    throw new Error('Apps Script no devolvió JSON válido: ' + textoRespuesta.slice(0, 180));
                 }
 
-                if (!response.ok || (respuestaServer && respuestaServer.success === false)) {
-                    throw new Error((respuestaServer && respuestaServer.error) || ('HTTP ' + response.status));
+                if (!response.ok || respuestaServer.success !== true) {
+                    throw new Error(respuestaServer.error || ('HTTP ' + response.status));
                 }
 
                 // Mostrar resultados

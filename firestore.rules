@@ -10,8 +10,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
-    function isAdmin() {
-      return isAuthenticated() && getUserData().rol == 'admin';
+    function getCedulaForUid() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/uid_cedula/$(request.auth.uid))
+          ? get(/databases/$(database)/documents/uid_cedula/$(request.auth.uid)).data.cedula
+          : null;
     }
 
     function isPlatformAdmin() {
@@ -19,34 +21,57 @@ service cloud.firestore {
     }
 
     function isAdminOrPlatform() {
-      return isAdmin() || isPlatformAdmin();
-    }
-
-    function isDocente() {
-      return isAuthenticated() && getUserData().rol == 'docente';
+      return isAuthenticated() && [
+        'admin',
+        'administrador_plataforma',
+        'administracion_general',
+        'admin_general',
+        'administracion'
+      ].hasAny([getUserData().rol]);
     }
 
     function isAcademico() {
       return isAuthenticated() && getUserData().rol == 'academico';
     }
 
+    function isDocente() {
+      return isAuthenticated() && getUserData().rol == 'docente';
+    }
+
+    function isAdminFilial() {
+      return isAuthenticated() && getUserData().rol == 'admin_filial';
+    }
+
     function isStaff() {
-      return isAuthenticated() && (
-        getUserData().rol == 'admin' ||
-        getUserData().rol == 'administrador_plataforma' ||
-        getUserData().rol == 'academico' ||
-        getUserData().rol == 'docente'
-      );
+      return isAuthenticated() && [
+        'admin',
+        'administrador_plataforma',
+        'administracion_general',
+        'admin_general',
+        'administracion',
+        'academico',
+        'academic',
+        'docente',
+        'admin_filial',
+        'asistencia_estudiante'
+      ].hasAny([getUserData().rol]);
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // ── Mapeo uid → cédula (escrito por el login cuando Firebase Auth anónimo está activo) ──
+    // Permite que las reglas de lectura de cada alumno se resuelvan por CÉDULA (getCedulaForUid()),
+    // comparando contra resource.data.cedula en notas, pagos, asistencia, consultas, etc.
+    match /uid_cedula/{uid} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     match /usuarios/{userId} {
-      // Lectura autenticada (propietario o staff)
-      allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
-      
+      // Lectura autenticada (propietario, el alumno por su cédula, o staff)
+      allow read: if isAuthenticated() && (isOwner(userId) || getCedulaForUid() == resource.data.cedula || isStaff());
+
       // 🔒 Login bootstrap SIN auth: SOLO query filtrada por cédula y con LIMIT 1.
       // Prohibida la lectura de la colección completa o por ID sin autenticación.
       // Con auth (anónima/real): scans puntuales por rol o es_docente para gestión docente (limit<=500).
@@ -58,7 +83,7 @@ service cloud.firestore {
                           && (request.query.where[0].field == 'rol'
                               || request.query.where[0].field == 'es_docente'))
                   );
-      
+
       // Cambio de contraseña SIN auth (login provisorio → definitiva):
       // exige current_password == password actual (prueba de identidad) y solo permite
       // tocar password/updated_at/must_change_password/current_password sin cambiar cedula.
@@ -66,7 +91,6 @@ service cloud.firestore {
       // Gestión docente (académico/admin) con auth: permite tocar SOLO claves de asignación,
       // sin cambiar cedula ni password.
       // Actualización de perfil: el propio usuario (por getCedulaForUid) o un admin.
-      // isOwner(userId) se mantiene para compatibilidad futura si el doc ID cambia a Firebase UID.
       allow update: if isAuthenticated() && (isOwner(userId) || getCedulaForUid() == resource.data.cedula || isAdminOrPlatform())
                  || (request.auth == null
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password','updated_at','must_change_password','current_password'])
@@ -79,7 +103,7 @@ service cloud.firestore {
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol','estado','roles','es_docente','asignaciones','updated_at'])
                      && request.resource.data.cedula == resource.data.cedula
                      && request.resource.data.password == resource.data.password);
-       allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
+      allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
       allow delete: if isAdminOrPlatform();
 
       match /roles/{rolId} {
@@ -91,23 +115,21 @@ service cloud.firestore {
     match /asignaturas/{asigId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated() && (
-        isAdminOrPlatform() || isAcademico() || isDocente()
+        isAdminOrPlatform() || isAcademico() || isDocente() || isAdminFilial()
       );
       allow delete: if isAdminOrPlatform();
     }
 
     match /notas/{notaId} {
-      // El alumno puede leer sus propias notas; el staff ve todas.
       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.cedula || isStaff());
       allow create, update: if isAuthenticated() && (
-
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
       allow delete: if isAdminOrPlatform();
     }
 
     match /asistencia/{asistId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.cedula) || isStaff());
+      allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.cedula || isStaff());
       allow create, update: if isAuthenticated() && (
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
@@ -127,7 +149,7 @@ service cloud.firestore {
 
     match /formularios/{formId} {
       allow read: if isAuthenticated() && (
-        isOwner(resource.data.cedula_alumno) || isAdminOrPlatform() || isAcademico()
+        getCedulaForUid() == resource.data.cedula_alumno || isAdminOrPlatform() || isAcademico()
       );
       allow create: if isAuthenticated();
       allow update, delete: if isAdminOrPlatform();
@@ -135,7 +157,7 @@ service cloud.firestore {
 
     match /pagos/{pagoId} {
       allow read: if isAuthenticated() && (
-        isOwner(resource.data.cedula) || isAdminOrPlatform() || isAcademico()
+        getCedulaForUid() == resource.data.cedula || isStaff()
       );
       allow create, update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico());
       allow delete: if isAdminOrPlatform();
@@ -172,15 +194,15 @@ service cloud.firestore {
      }
 
      match /consultas/{conId} {
-       allow read: if isAuthenticated() && (isOwner(resource.data.alumno_cedula) || isAdminOrPlatform() || isAcademico());
+       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.alumno_cedula || isAdminOrPlatform() || isAcademico());
        allow create: if isAuthenticated();
-       allow update: if isAuthenticated() && (isAdminOrPlatform() || isOwner(resource.data.alumno_cedula));
+       allow update: if isAuthenticated() && (isAdminOrPlatform() || getCedulaForUid() == resource.data.alumno_cedula);
      }
 
      match /mensajes/{msgId} {
-       allow read: if isAuthenticated() && (isOwner(resource.data.destinatario) || isStaff());
+       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.destinatario || isStaff());
        allow create: if isAuthenticated();
-       allow delete: if isAuthenticated() && isOwner(resource.data.destinatario);
+       allow delete: if isAuthenticated() && getCedulaForUid() == resource.data.destinatario;
      }
 
      match /credenciales/{credId} {

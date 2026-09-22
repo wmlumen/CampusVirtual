@@ -164,6 +164,16 @@ function callGas(action, data, method) {
                                 b64u({ cedula: ced, rol: d.rol || 'alumno',
                                        exp: now + 8 * 3600, iat: now }) + '.' +
                                 ced.replace(/[^0-9]/g, '').substring(0, 8);
+                    // ── Mapeo uid_cedula (no bloqueante) ──────────────────────────────
+                    // Si Firebase Auth anónimo está activo, deja que getCedulaForUid() en las
+                    // reglas resuelva la propiedad del alumno (notas, pagos, asistencia, etc.).
+                    // Si no está configurado, se omite sin romper el login.
+                    ensureAnonAuth().then(function(authUser) {
+                        return db.collection('uid_cedula').doc(authUser.uid).set({
+                            cedula: ced, rol: d.rol || 'alumno',
+                            updated_at: new Date().toISOString()
+                        });
+                    }).catch(function() {});
                     var user = Object.assign({}, d, { id: doc.id });
                     return { ok: true, token: token, user: user,
                              token_expires: new Date((now + 8 * 3600) * 1000).toISOString(),

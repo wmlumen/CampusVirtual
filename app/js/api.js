@@ -711,6 +711,187 @@ function callGas(action, data, method) {
                 const d = snap.data() || {};
                 return { ok: true, intentos: Array.isArray(d.intentos) ? d.intentos : [], mejor_intento: d.mejor_intento || null };
             })().catch(e => ({ ok: true, intentos: [], mejor_intento: null, error: e.message }));
+            case 'examen_config_listar': return db.collection('config_examen').get().then(snap => {
+                const asig = cvT(data.asignatura);
+                const configs = snap.docs.map(d => cvConfigNorm(d.data())).filter(c => !asig || c.asignatura === asig);
+                return { ok: true, configs: configs };
+            }).catch(e => ({ ok: false, error: e.message }));
+            case 'examen_config_guardar': return (async () => {
+                const examenId = cvT(data.examen_id), asig = cvT(data.asignatura);
+                if (!examenId || !asig) return { ok: false, error: 'Faltan el examen y la asignatura.' };
+                const habilitado = !(data.habilitado === false || cvT(data.habilitado).toLowerCase() === 'false');
+                const fi = cvT(data.fecha_inicio), hi = cvT(data.hora_inicio), fc = cvT(data.fecha_cierre), hc = cvT(data.hora_cierre);
+                const intentos = parseInt(data.intentos, 10) || 1;
+                if (habilitado) {
+                    const ini = cvLocalMs(fi, hi), cie = cvLocalMs(fc, hc);
+                    if (!ini || !cie) return { ok: false, error: 'Indicá fecha y hora de inicio y de cierre.' };
+                    if (cie <= ini) return { ok: false, error: 'El cierre debe ser posterior al inicio.' };
+                    if (!(intentos >= 1 && intentos <= 99)) return { ok: false, error: 'La cantidad de intentos debe ser entre 1 y 99.' };
+                }
+                const id = 'cfg_' + examenId + '_' + (cvDkey(asig) || 'x');
+                await db.collection('config_examen').doc(id).set({
+                    examen_id: examenId, asignatura: asig, habilitado: cvSi(habilitado),
+                    fecha_inicio: fi, hora_inicio: hi, fecha_cierre: fc, hora_cierre: hc,
+                    intentos: intentos, configuradopor: cvT(data.docente_cedula || data.cedula || ''),
+                    actualizado: new Date().toISOString()
+                }, { merge: true });
+                return { ok: true, mensaje: habilitado ? 'Examen habilitado con la ventana e intentos indicados.' : 'Examen deshabilitado.' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_abrir': return (async () => {
+                const examenId = cvT(data.examen_id), asig = cvT(data.asignatura);
+                if (!examenId || !asig) return { ok: false, error: 'Faltan el examen y la asignatura.' };
+                const abrir = !(data.abierto === false || cvT(data.abierto).toLowerCase() === 'false');
+                const id = 'cfg_' + examenId + '_' + (cvDkey(asig) || 'x');
+                const ref = db.collection('config_examen').doc(id);
+                const cur = await ref.get();
+                if (abrir) {
+                    if (!cur.exists || !cvBool(cur.data().habilitado))
+                        return { ok: false, error: 'Primero guardá fecha/hora e intentos del examen en el panel Config.' };
+                    const hoy = cvToday();
+                    await ref.update({
+                        abierto: 'Sí', abierto_hasta: cvT(data.fecha) || hoy,
+                        abierto_por: cvT(data.docente_cedula || data.cedula || ''), actualizado: new Date().toISOString()
+                    });
+                    return { ok: true, mensaje: 'Restricciones levantadas: todos los alumnos pueden rendir hoy (ventana ' + cvT(cur.data().fecha_inicio) + ' ' + cvT(cur.data().hora_inicio) + ' → ' + cvT(cur.data().fecha_cierre) + ' ' + cvT(cur.data().hora_cierre) + ').' };
+                }
+                await ref.update({ abierto: 'No', abierto_hasta: '', actualizado: new Date().toISOString() });
+                return { ok: true, mensaje: 'Restricciones activadas de nuevo: acceso por factura/clave.' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_config_publica': return (async () => {
+                const examenId = cvT(data.examen_id);
+                const snap = await db.collection('config_examen').get();
+                const ahora = Date.now();
+                const configs = snap.docs.map(d => cvConfigNorm(d.data()))
+                    .filter(c => c.examen_id === examenId && c.habilitado && c.cierre_ms > ahora)
+                    .map(c => ({ asignatura: c.asignatura, fecha_inicio: c.fecha_inicio, hora_inicio: c.hora_inicio, fecha_cierre: c.fecha_cierre, hora_cierre: c.hora_cierre, intentos: c.intentos, habilitado: true, abierto: c.abierto, abierto_hasta: c.abierto_hasta, inicio_ms: c.inicio_ms, cierre_ms: c.cierre_ms }));
+                return { ok: true, configs: configs };
+            })().catch(e => ({ ok: false, configs: [], error: e.message }));
+            case 'examen_estado_aprobacion': return db.collection('aprobacion_examen').doc(cvT(data.examen_id)).get().then(d => {
+                const e = d.exists ? cvT(d.data().estado) : 'pendiente';
+                return { ok: true, estado: e, aprobado: e === 'aprobado' };
+            }).catch(e => ({ ok: false, error: e.message, aprobado: false }));
+            case 'examen_codigo_guardar': return (async () => {
+                const id = cvT(data.examen_id), codigo = cvT(data.codigo).toUpperCase();
+                if (!id || !codigo) return { ok: false, error: 'Faltan el examen o el código.' };
+                const ref = db.collection('codigo_examen').doc(id);
+                const cur = await ref.get();
+                await ref.set({
+                    examen_id: id, codigo: codigo,
+                    activo: cur.exists ? cur.data().activo !== false : true,
+                    docente_cedula: cvT(data.docente_cedula || ''), actualizado: new Date().toISOString()
+                }, { merge: true });
+                return { ok: true, mensaje: 'Código guardado.', codigo: codigo };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_codigo_obtener': return db.collection('codigo_examen').doc(cvT(data.examen_id)).get().then(d => {
+                if (!d.exists || !cvT(d.data().codigo)) return { ok: true, codigo: null, activo: false };
+                return { ok: true, codigo: cvT(d.data().codigo), activo: d.data().activo !== false };
+            }).catch(e => ({ ok: true, codigo: null, activo: false }));
+            case 'examen_codigo_toggle': return (async () => {
+                const id = cvT(data.examen_id);
+                const ref = db.collection('codigo_examen').doc(id);
+                const cur = await ref.get();
+                if (!cur.exists || !cvT(cur.data().codigo)) return { ok: false, error: 'Primero guardá un código.' };
+                const activo = !(data.activo === false || cvT(data.activo).toLowerCase() === 'false');
+                await ref.update({ activo: activo, actualizado: new Date().toISOString() });
+                return { ok: true, activo: activo, mensaje: activo ? 'Código activado.' : 'Código desactivado.' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_listar_con_codigos': return (async () => {
+                const cods = await db.collection('codigo_examen').get();
+                const porId = {};
+                cods.docs.forEach(d => { porId[d.id] = d.data(); });
+                const cfgs = await db.collection('config_examen').get();
+                const asigPorExa = {};
+                cfgs.docs.forEach(d => {
+                    const dd = d.data();
+                    if (!asigPorExa[cvT(dd.examen_id)]) asigPorExa[cvT(dd.examen_id)] = [];
+                    if (asigPorExa[cvT(dd.examen_id)].indexOf(cvT(dd.asignatura)) < 0) asigPorExa[cvT(dd.examen_id)].push(cvT(dd.asignatura));
+                });
+                const examenes = CV_EXAMENES_LISTA.map(function (e) {
+                    const cod = porId[e.id] || {};
+                    return { examen_id: e.id, examen_nombre: e.nombre, asignaturas: asigPorExa[e.id] || [], codigo: cvT(cod.codigo), activo: cod.activo !== false && !!cvT(cod.codigo) };
+                });
+                return { ok: true, examenes: examenes };
+            })().catch(e => ({ ok: false, examenes: [], error: e.message }));
+            case 'pagos_ultimos': return cvPagosUltimos(data.cedulas || data.cedula || '', data.limite).then(r => ({ ok: true, limite: 4, resultados: r.resultados })).catch(e => ({ ok: false, error: e.message }));
+            case 'examen_solicitudes': return (async () => {
+                const examenId = cvT(data.examen_id), asig = cvT(data.asignatura);
+                const snap = await db.collection('acceso_examen').get();
+                const sols = snap.docs.map(d => d.data())
+                    .filter(s => (!examenId || cvT(s.examen_id) === examenId) && (!asig || cvT(s.asignatura) === asig))
+                    .map(s => ({
+                        cedula: cvT(s.cedula), nombre: cvT(s.nombre) || '—', email: cvT(s.email),
+                        asignatura: cvT(s.asignatura), examen_id: cvT(s.examen_id), factura: cvT(s.factura),
+                        factura_verificada: cvT(s.facturaverificada || s.factura_verificada) || 'No',
+                        estado: cvT(s.estado) || 'solicitado', resuelto_por: cvT(s.resuelto_por),
+                        fecha: cvT(s.fecha), observacion: cvT(s.observacion), intentos_usados: 0
+                    }));
+                const ceds = [];
+                sols.forEach(s => { if (ceds.indexOf(s.cedula) < 0) ceds.push(s.cedula); });
+                const pagosRes = ceds.length ? (await cvPagosUltimos(ceds.join(','), 4)).resultados : {};
+                return { ok: true, solicitudes: sols, pagos: pagosRes };
+            })().catch(e => ({ ok: false, solicitudes: [], pagos: {}, error: e.message }));
+            case 'examen_solicitar': return (async () => {
+                const ced = cvT(data.cedula).replace(/[\.\s\-]/g, '');
+                const examenId = cvT(data.examen_id), asig = cvT(data.asignatura), factura = cvT(data.factura);
+                if (!ced) return { ok: false, error: 'Falta tu cédula.' };
+                if (!asig) return { ok: false, error: 'Elegí la asignatura.' };
+                if (!/^[A-Za-z0-9][A-Za-z0-9\-\/\. ]{2,39}$/.test(factura)) return { ok: false, error: 'Ingresá el N° de factura tal como figura en tu comprobante.' };
+                const cfg = await cvBuscarCfg(examenId, asig);
+                if (!cfg || !cfg.habilitado || cfg.cierre_ms <= Date.now()) return { ok: false, error: 'Este examen todavía no fue habilitado por el docente para esa asignatura.' };
+                const id = 'acc_' + ced + '_' + examenId + '_' + (cvDkey(asig) || 'x');
+                const ref = db.collection('acceso_examen').doc(id);
+                const prev = await ref.get();
+                if (prev.exists && cvT(prev.data().estado) === 'rechazado') return { ok: false, error: 'Tu solicitud fue rechazada. Consultá con el docente.' };
+                const pg = (await cvPagosUltimos(ced, 12)).resultados[ced] || { pagos: [] };
+                const verificada = cvFacturaEstado(pg.pagos, factura);
+                const base = { cedula: ced, examen_id: examenId, asignatura: asig, factura: factura, facturaverificada: verificada, email: cvT(data.email), nombre: cvT(data.nombre), actualizado: new Date().toISOString() };
+                if (verificada === 'Sí') {
+                    const clave = cvQuizClave();
+                    await ref.set(Object.assign({ estado: 'habilitado', clave: clave }, base), { merge: true });
+                    return { ok: true, estado: 'habilitado', clave: clave, mensaje: 'Factura verificada. Tu clave de acceso es ' + clave + ' (ingresá con tu mail y esta clave).' };
+                }
+                await ref.set(Object.assign({ estado: 'solicitado' }, base), { merge: true });
+                return { ok: true, estado: 'solicitado', mensaje: verificada === 'Pendiente' ? 'Tu factura figura con pago pendiente. El docente revisará tu solicitud.' : 'No pudimos verificar esa factura automáticamente. El docente revisará tu solicitud.' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_resolver': return (async () => {
+                const ced = cvT(data.cedula).replace(/[\.\s\-]/g, '');
+                const examenId = cvT(data.examen_id), asig = cvT(data.asignatura);
+                const decision = cvT(data.decision);
+                if (['habilitar', 'rechazar'].indexOf(decision) < 0) return { ok: false, error: 'Decisión no válida.' };
+                const id = 'acc_' + ced + '_' + examenId + '_' + (cvDkey(asig) || 'x');
+                const ref = db.collection('acceso_examen').doc(id);
+                const cur = await ref.get();
+                if (!cur.exists) return { ok: false, error: 'No hay solicitud de ese alumno para este examen.' };
+                if (decision === 'rechazar') {
+                    await ref.update({ estado: 'rechazado', resuelto_por: cvT(data.docente_cedula || ''), observacion: cvT(data.observacion), actualizado: new Date().toISOString() });
+                    return { ok: true, estado: 'rechazado', mensaje: 'Solicitud rechazada.' };
+                }
+                const cfg = await cvBuscarCfg(examenId, asig);
+                if (!cfg || !cfg.habilitado) return { ok: false, error: 'Primero configurá fecha, hora e intentos del examen.' };
+                if (cfg.cierre_ms <= Date.now()) return { ok: false, error: 'La ventana del examen ya cerró. Actualizá las fechas.' };
+                const clave = cvQuizClave();
+                await ref.update({ estado: 'habilitado', clave: clave, resuelto_por: cvT(data.docente_cedula || ''), observacion: cvT(data.observacion), actualizado: new Date().toISOString() });
+                return { ok: true, estado: 'habilitado', clave: clave, mensaje: 'Alumno habilitado. Clave a entregarle: ' + clave };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_acceso_validar': return (async () => {
+                const examenId = cvT(data.examen_id);
+                const email = cvT(data.email).toLowerCase(), clave = cvT(data.clave).toUpperCase();
+                if (!email || !clave) return { ok: false, motivo: 'datos', mensaje: 'Ingresá tu mail y la clave.' };
+                const snap = await db.collection('acceso_examen').where('examen_id', '==', examenId).get();
+                const rows = snap.docs.map(d => d.data());
+                const f = rows.filter(r => cvT(r.email).toLowerCase() === email && cvT(r.estado) === 'habilitado' && cvT(r.clave) === clave)[0];
+                if (!f) return { ok: false, motivo: 'clave', mensaje: 'Mail o clave incorrectos.' };
+                const ced = cvT(f.cedula), asig = cvT(f.asignatura);
+                const cfg = await cvBuscarCfg(examenId, asig);
+                if (!cfg || !cfg.habilitado) return { ok: false, motivo: 'deshabilitado', mensaje: 'El docente deshabilitó este examen.' };
+                const ahora = Date.now();
+                if (ahora < cfg.inicio_ms) return { ok: false, motivo: 'no_iniciado', mensaje: 'El examen todavía no comenzó.' };
+                if (ahora >= cfg.cierre_ms) return { ok: false, motivo: 'cerrado', mensaje: 'El examen cerró.' };
+                const intSnap = await db.collection('intentos').doc(examenId + '__' + ced).get();
+                const usados = intSnap.exists && Array.isArray(intSnap.data().intentos) ? intSnap.data().intentos.length : 0;
+                if (usados >= cfg.intentos) return { ok: false, motivo: 'sin_intentos', mensaje: 'Ya usaste todos tus intentos (' + cfg.intentos + ').' };
+                return { ok: true, sesion_id: 's-' + Date.now().toString(36), intento: usados + 1, intentos_max: cfg.intentos, cierre_ms: cfg.cierre_ms, cedula: ced, nombre: cvT(f.nombre), asignatura: asig };
+            })().catch(e => ({ ok: false, error: e.message }));
             case 'cumple_mio': return Promise.resolve({ ok: true, cumpleano: false });
             case 'diagnostico': return Promise.resolve({ ok: true, diagnostico: {} });
             case 'qr_credencial': {
@@ -791,6 +972,87 @@ function cvQrSig(cedula, w) {
 function cvQrCode(cedula, w) {
     return 'CV1|' + cedula + '|' + w + '|' + cvQrSig(cedula, w);
 }
+
+// ── Helpers de exámenes (configuración, acceso por factura/clave y códigos) ──
+function cvT(v) { return String(v == null ? '' : v).trim(); }
+function cvDkey(v) { return cvT(v).replace(/[^A-Za-z0-9]/g, '').toLowerCase(); }
+function cvLocalMs(fecha, hora) {
+    var f = cvT(fecha).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    var h = cvT(hora).match(/^(\d{1,2}):(\d{2})$/);
+    if (!f || !h) return 0;
+    return new Date(+f[1], +f[2] - 1, +f[3], +h[1], +h[2], 0).getTime();
+}
+function cvSi(v) {
+    return v === true || cvT(v) === 'Sí' || cvT(v).toLowerCase() === 'si' || cvT(v).toLowerCase() === 'true' || cvT(v) === '1' ? 'Sí' : 'No';
+}
+function cvBool(v) { return cvSi(v) === 'Sí'; }
+function cvToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function cvQuizClave() {
+    var abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = '', i;
+    for (i = 0; i < 8; i++) s += abc.charAt(Math.floor(Math.random() * abc.length));
+    return s;
+}
+function cvConfigNorm(d) {
+    d = d || {};
+    var fi = cvT(d.fecha_inicio), hi = cvT(d.hora_inicio), fc = cvT(d.fecha_cierre), hc = cvT(d.hora_cierre);
+    return {
+        examen_id: cvT(d.examen_id), asignatura: cvT(d.asignatura),
+        habilitado: cvBool(d.habilitado), fecha_inicio: fi, hora_inicio: hi, fecha_cierre: fc, hora_cierre: hc,
+        intentos: parseInt(d.intentos, 10) || 1, configuradopor: cvT(d.configuradopor),
+        abierto: cvBool(d.abierto), abierto_hasta: cvT(d.abierto_hasta),
+        inicio_ms: cvLocalMs(fi, hi), cierre_ms: cvLocalMs(fc, hc), actualizado: cvT(d.actualizado)
+    };
+}
+async function cvBuscarCfg(examenId, asig) {
+    var snap = await db.collection('config_examen').where('examen_id', '==', examenId).get();
+    for (var i = 0; i < snap.docs.length; i++) {
+        var c = cvConfigNorm(snap.docs[i].data());
+        if (c.asignatura === asig) return c;
+    }
+    return null;
+}
+async function cvPagosUltimos(cedulasTxt, limiteRaw) {
+    var lista = cvT(cedulasTxt).split(',').map(function (c) { return cvT(c).replace(/[\.\s\-]/g, ''); }).filter(Boolean);
+    var limite = Math.max(1, Math.min(12, parseInt(limiteRaw, 10) || 4));
+    var resultados = {};
+    for (var j = 0; j < lista.length; j++) {
+        var ced = lista[j];
+        var q = await db.collection('pagos').where('cedula', '==', ced).limit(20).get();
+        var pagos = q.docs.map(function (d) {
+            var dd = d.data();
+            return {
+                concepto: cvT(dd.modulo || dd.concepto), monto: Number(dd.monto) || 0,
+                fecha: cvT(dd.fecha), estado: cvT(dd.estado) || 'pendiente',
+                comprobante: cvT(dd.comprobante), factura: cvT(dd.factura), tipo: cvT(dd.tipo) || 'modulo'
+            };
+        }).filter(function (p) { return p.estado !== 'anulado'; })
+            .sort(function (a, b) {
+                var t = function (s) { return new Date(s).getTime() || 0; };
+                return t(b.fecha) - t(a.fecha);
+            }).slice(0, limite);
+        var pendientes = pagos.filter(function (p) { return p.estado !== 'pagado'; }).length;
+        resultados[ced] = { pagos: pagos, total: pagos.length, pendientes: pendientes, al_dia: pagos.length > 0 && pendientes === 0 };
+    }
+    return { resultados: resultados };
+}
+function cvFacturaEstado(pagos, factura) {
+    var f = cvT(factura).toLowerCase(), res = 'No';
+    for (var i = 0; i < pagos.length; i++) {
+        if (cvT(pagos[i].factura).toLowerCase() !== f) continue;
+        if (pagos[i].estado === 'anulado') continue;
+        if (pagos[i].estado === 'pagado') return 'Sí';
+        res = 'Pendiente';
+    }
+    return res;
+}
+const CV_EXAMENES_LISTA = [
+    { id: 'examen_parcial_1', nombre: 'Parcial 1' }, { id: 'examen_parcial_2', nombre: 'Parcial 2' },
+    { id: 'examen_virtual', nombre: 'Examen Virtual' }, { id: 'examen_virtual_completo', nombre: 'Examen Virtual Completo' },
+    { id: 'examen_final_virtual', nombre: 'Final Virtual' }, { id: 'examen_final_escrito', nombre: 'Final Escrito' }
+];
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS DE AUTENTICACIÓN DIRECTOS AL SERVIDOR CLOUD
@@ -1281,6 +1543,11 @@ API.exams = {
     resolveExamRequest: (d) => callGas('examen_resolver', d, 'POST'),
     // Alumno: ventana vigente, carga de factura y validación de mail + clave
     getPublicExamConfig: (examenId) => callGas('examen_config_publica', { examen_id: examenId }, 'GET'),
+    // Docente: levanta las restricciones para que todos los alumnos rindan ese día (sin clave/factura)
+    openAccess: (d) => callGas('examen_abrir', {
+        examen_id: d.examen_id, asignatura: d.asignatura, abierto: d.abierto,
+        fecha: d.fecha || new Date().toISOString().slice(0, 10), docente_cedula: d.docente_cedula
+    }, 'POST'),
     requestExamAccess: (d) => callGas('examen_solicitar', d, 'POST'),
     validateExamAccess: (d) => callGas('examen_acceso_validar', d, 'POST'),
     

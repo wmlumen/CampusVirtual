@@ -195,9 +195,26 @@
         setInterval(tick, 1000);
     }
 
+    function isAbiertoHoy(cfgs) {
+        var d = new Date();
+        var hh = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        var now = d.getTime();
+        return (cfgs || []).some(function (c) {
+            return c.abierto === true && (!c.abierto_hasta || c.abierto_hasta === hh) && (c.inicio_ms || 0) <= now && now < (c.cierre_ms || 0);
+        });
+    }
+
     function start() {
         if (!api()) { setTimeout(start, 100); return; }
 
+        // 0) Modo abierto: el docente levantó las restricciones para hoy → todos pueden rendir
+        api().getPublicExamConfig(EXAM_ID).then(function (r) {
+            if (r && r.ok && isAbiertoHoy(r.configs)) { reveal(); return; }
+            rondaAprobacion();
+        }).catch(function () { rondaAprobacion(); });
+    }
+
+    function rondaAprobacion() {
         // 1) Aprobación académica
         api().getExamApprovalStatus(EXAM_ID).then(function (res) {
             if (!res || !res.ok || !res.aprobado) { showApprovalError(); return; }

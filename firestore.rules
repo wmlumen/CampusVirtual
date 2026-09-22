@@ -181,6 +181,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         getCedulaForUid() == resource.data.cedula || isStaff()
       );
+      // Verificación de factura del examen (módulo de exámenes): query pública SOLO por cédula, con límite.
+      allow list: if request.query.where.size() == 1
+                  && request.query.limit <= 20
+                  && request.query.where[0].field == 'cedula';
       allow create, update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico());
       allow delete: if isAdminOrPlatform();
     }
@@ -254,6 +258,27 @@ service cloud.firestore {
        allow read: if true;
        allow create, update: if request.resource.data.alumno_cedula == intentoId.split('__')[1];
        allow delete: if false;
+     }
+
+     // Módulo de exámenes: configuración (ventana/intentos), aprobación académica, código y
+     // solicitudes de acceso por factura. Lectura pública (el gate exam-lock la consulta sin
+     // auth). Escritura abierta mientras no exista Firebase Auth anónimo para poder
+     // autenticar docentes/académicos en el servidor (mismo modelo pseudo-token de la app).
+     match /config_examen/{cfgId} {
+       allow read: if true;
+       allow write: if true;
+     }
+     match /aprobacion_examen/{apId} {
+       allow read: if true;
+       allow write: if true;
+     }
+     match /codigo_examen/{codId} {
+       allow read: if true;
+       allow write: if true;
+     }
+     match /acceso_examen/{accId} {
+       allow read: if true;
+       allow write: if true;
      }
    }
  }

@@ -1159,6 +1159,7 @@ async function cargarHabilitacion(codigoAsignatura) {
                     <div class="hab-card-meta">
                         <span><i class="bi bi-envelope"></i> ${sols.length} solicitud${sols.length !== 1 ? 'es' : ''}${porRevisar ? ' · <strong style="color:#fbbf24">' + porRevisar + ' por revisar</strong>' : ''}</span>
                         ${habilitado ? '<span><i class="bi bi-clock"></i> ' + escHtml(fmtVentana(cfg)) + '</span>' : ''}
+                        ${cfg && cfg.abierto ? '<span style="color:#a7f3d0"><i class="bi bi-unlock"></i> Abierto a todos hoy</span>' : ''}
                     </div>
                 </div>
                 <span class="hab-card-badge ${habilitado ? 'ok' : 'off'}">${badgeTxt}</span>
@@ -1198,6 +1199,16 @@ async function cargarHabilitacion(codigoAsignatura) {
                         <button class="btn btn-p" onclick="guardarConfigExamen('${examId}', true)"><i class="bi bi-check2-circle"></i> Guardar y habilitar</button>
                         ${habilitado ? `<button class="btn btn-r" onclick="guardarConfigExamen('${examId}', false)"><i class="bi bi-slash-circle"></i> Deshabilitar</button>` : ''}
                     </div>
+                    ${habilitado ? `
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr)">
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                            <button class="btn ${cfg && cfg.abierto ? 'btn-r' : 'btn-g'}" onclick="abrirExamen('${examId}', ${cfg && cfg.abierto ? 'false' : 'true'})">
+                                <i class="bi ${cfg && cfg.abierto ? 'bi-lock-fill' : 'bi-unlock-fill'}"></i> ${cfg && cfg.abierto ? 'Restricciones levantadas — cerrar acceso' : 'Levantar restricciones (todos rinden hoy)'}
+                            </button>
+                            <span style="font-size:.55rem;color:var(--txt2)">${cfg && cfg.abierto ? 'Vigente hasta <b style="color:#4ade80">' + escHtml(cfg.abierto_hasta || 'hoy') + '</b> · sin clave ni factura' : 'Abre el examen a todos sin clave ni factura durante la ventana de hoy.'}</span>
+                            <div class="msg-abierto" data-exam="${examId}" style="font-size:.63rem;min-height:14px"></div>
+                        </div>
+                    </div>` : ''}
                     <div class="msg-hab" style="font-size:.63rem;min-height:14px"></div>
                 </div>
                 <div class="hab-panel" data-panel="solicitudes" data-hab-panel="${examId}">
@@ -1283,6 +1294,23 @@ async function guardarConfigExamen(examId, habilitado) {
         const m2 = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-hab`);
         if (m2) { m2.style.color = '#4ade80'; m2.textContent = '✓ ' + r.mensaje; }
     } catch (e) { msg.style.color = '#f87171'; msg.textContent = e.message; }
+}
+
+async function abrirExamen(examId, abierto) {
+    const msg = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-abierto`);
+    if (msg) { msg.style.color = 'var(--txt2)'; msg.textContent = 'Guardando...'; }
+    try {
+        const r = await CenturiaAPI.exams.openAccess({
+            examen_id: examId, asignatura: asigActual.codigo, abierto,
+            fecha: new Date().toISOString().slice(0, 10), docente_cedula: cedulaDocente()
+        });
+        if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo guardar');
+        await cargarHabilitacion(asigActual.codigo);
+        const m2 = document.querySelector(`.hab-card-body[data-hab="${examId}"] .msg-abierto`);
+        if (m2) { m2.style.color = '#4ade80'; m2.textContent = '✓ ' + r.mensaje; }
+    } catch (e) {
+        if (msg) { msg.style.color = '#f87171'; msg.textContent = e.message; }
+    }
 }
 
 async function resolverSolicitud(examId, cedula, decision) {

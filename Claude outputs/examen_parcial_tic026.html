@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v08.5: Security Guard -->
+    <script src="../js/session-guard.js"></script>
+    <script>CenturiaSession.protect();</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Parcial TIC026 — Campus Virtual</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+
+    <style>
+        :root {
+            --verde: #00B140;
+            --verde-dark: #007A33;
+            --rojo: #DC3545;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--verde-dark), #005a26);
+            min-height: 100vh;
+            color: #2D2D2D;
+            padding: 20px;
+        }
+
+        .container-exam {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            background: var(--verde-dark);
+            color: #fff;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .topbar .badge {
+            background: rgba(255,255,255,.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: .75rem;
+        }
+
+        .card-exam {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-weight: 700;
+            color: var(--verde-dark);
+            margin-bottom: 8px;
+            display: block;
+            font-size: .9rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: .95rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--verde);
+            box-shadow: 0 0 0 3px rgba(0,177,64,.1);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .radio-item:hover {
+            background: #f8f8f8;
+            border-color: var(--verde);
+        }
+
+        .radio-item input[type="radio"] {
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: var(--verde);
+        }
+
+        .progress-bar-exam {
+            background: var(--verde);
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .pregunta-info {
+            color: #64748b;
+            font-size: .85rem;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f0f8f4;
+            border-left: 3px solid var(--verde);
+            border-radius: 4px;
+        }
+
+        .botones {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn-exam {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: 'Montserrat', sans-serif;
+            font-size: .95rem;
+        }
+
+        .btn-primary-exam {
+            background: var(--verde);
+            color: #fff;
+        }
+
+        .btn-primary-exam:hover {
+            background: #009A2E;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,177,64,.3);
+        }
+
+        .btn-primary-exam:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary-exam {
+            background: #f0f0f0;
+            color: var(--verde-dark);
+            border: 2px solid var(--verde);
+        }
+
+        .btn-secondary-exam:hover {
+            background: var(--verde);
+            color: #fff;
+        }
+
+        .btn-danger-exam {
+            background: var(--rojo);
+            color: #fff;
+        }
+
+        .btn-danger-exam:hover {
+            background: #c82333;
+        }
+
+        .alert-exam {
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: .9rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .resumen {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .resumen-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .resumen-item:last-child {
+            border-bottom: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--verde);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,.6);
+            font-size: .8rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-exam">
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <h1><i class="bi bi-pencil-square"></i> Examen Parcial TIC026</h1>
+            <div class="badge" id="estadoExamen">INICIANDO...</div>
+        </div>
+
+        <!-- PASO 1: VALIDAR CÓDIGO -->
+        <div id="paso1" class="card-exam">
+            <h2 style="color: var(--verde-dark); margin-bottom: 20px;">
+                <i class="bi bi-lock"></i> Validación de Acceso
+            </h2>
+            <p style="color: #64748b; margin-bottom: 20px;">
+                Ingresa el código de acceso proporcionado por tu docente para comenzar el examen.
+            </p>
+
+            <div class="form-group">
+                <label for="codigoAcceso">Código de Acceso *</label>
+                <input
+                    type="password"
+                    id="codigoAcceso"
+                    class="form-control"
+                    placeholder="Ej: TIC026"
+                    maxlength="10"
+                >
+            </div>
+
+            <div id="mensajeError" class="alert-exam alert-error hidden"></div>
+
+            <button class="btn-exam btn-primary-exam" onclick="validarCodigo()">
+                <i class="bi bi-check-circle"></i> VALIDAR CÓDIGO
+            </button>
+        </div>
+
+        <!-- PASO 2: DATOS PERSONALES -->
+        <div id="paso2" class="card-exam hidden">
+            <h2 style="color: var(--verde-dark); margin-bottom: 20px;">
+                <i class="bi bi-person-fill"></i> Datos Personales
+            </h2>
+            <p style="color: #64748b; margin-bottom: 20px;">
+                Completa tus datos antes de comenzar el examen.
+            </p>
+
+            <div class="form-group">
+                <label for="nombre">Nombre y Apellido *</label>
+                <input
+                    type="text"
+                    id="nombre"
+                    class="form-control"
+                    placeholder="Ej: Juan Pérez"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="cedula">Cédula de Identidad *</label>
+                <input
+                    type="text"
+                    id="cedula"
+                    class="form-control"
+                    placeholder="Ej: 12345678, ABC123, 1234567"
+                    minlength="6"
+                    maxlength="20"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="carrera">Carrera *</label>
+                <select id="carrera" class="form-select" required>
+                    <option value="">-- Selecciona tu carrera --</option>
+                    <option value="Administración de Empresa">Administración de Empresa</option>
+                    <option value="Administración Aduanera">Administración Aduanera</option>
+                    <option value="Gestión Pública">Gestión Pública</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Sección *</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="seccion" value="S026" required>
+                        <span>S026</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="seccion" value="LV026" required>
+                        <span>LV026</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="mensajeError2" class="alert-exam alert-error hidden"></div>
+
+            <div class="botones">
+                <button class="btn-exam btn-secondary-exam" onclick="volverPaso1()">
+                    <i class="bi bi-arrow-left"></i> ATRÁS
+                </button>
+                <button class="btn-exam btn-primary-exam" onclick="irPaso3()">
+                    <i class="bi bi-arrow-right"></i> COMENZAR
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 3: EXAMEN (Preguntas) -->
+        <div id="paso3" class="card-exam hidden">
+            <div class="pregunta-info" id="infoProgreso">
+                Pregunta 1 de 20
+            </div>
+
+            <div class="progress-bar-exam" id="barraProgreso"></div>
+
+            <div id="contenidoPregunta"></div>
+
+            <div id="mensajeError3" class="alert-exam alert-error hidden"></div>
+
+            <div class="botones">
+                <button class="btn-exam btn-secondary-exam" id="btnAnterior" onclick="preguntaAnterior()" style="display:none;">
+                    <i class="bi bi-chevron-left"></i> ANTERIOR
+                </button>
+                <button class="btn-exam btn-primary-exam" id="btnSiguiente" onclick="preguntaSiguiente()">
+                    <i class="bi bi-chevron-right"></i> SIGUIENTE
+                </button>
+                <button class="btn-exam btn-danger-exam" id="btnEnviar" onclick="enviarExamen()" style="display:none;">
+                    <i class="bi bi-check-circle"></i> ENVIAR
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 4: RESULTADOS -->
+        <div id="paso4" class="card-exam hidden">
+            <h2 style="color: var(--verde-dark); margin-bottom: 20px; text-align: center;">
+                <i class="bi bi-check-circle"></i> ¡Examen Enviado!
+            </h2>
+
+            <div id="contenidoResultados"></div>
+
+            <div class="botones">
+                <button class="btn-exam btn-primary-exam" onclick="irAlDashboard()">
+                    <i class="bi bi-house"></i> IR AL DASHBOARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Instituto Superior Centuria — Examen Parcial v08.5
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="../js/api.js"></script>
+    <script src="../js/session-guard.js"></script>
+
+    <script>
+        // ===== ESTADO GLOBAL =====
+        let estadoExamen = {
+            codigoValido: false,
+            paso: 1,
+            intento: 1,
+            maxIntentos: 2,
+            preguntaActual: 1,
+            totalPreguntas: 20,
+            respuestas: {},
+            datosPersonales: {},
+            puntaje: 0,
+            preguntas: [] // Se carga del backend
+        };
+
+        let preguntasData = [
+            {id: 1, texto: "¿Cuál es el dispositivo principal utilizado para procesar datos en una computadora?", opciones: ["Memoria RAM", "Procesador", "Disco Duro", "Fuente de Poder"], respuesta: "B", puntos: 5},
+            {id: 2, texto: "¿Qué significa la sigla TIC?", opciones: ["Tecnologías de la Información y la Comunicación", "Tecnologías de Internet y Comercio", "Técnicas de Ingeniería en Computación", "Telecomunicaciones de Información Central"], respuesta: "A", puntos: 5},
+            {id: 3, texto: "El software de código abierto permite a los usuarios modificar su código fuente libremente.", opciones: ["Verdadero", "Falso"], respuesta: "A", puntos: 5},
+            {id: 4, texto: "¿Cuál es la función principal de la memoria RAM?", opciones: ["Almacenar datos permanentemente", "Procesar información rápidamente", "Proporcionar almacenamiento temporal de datos", "Controlar el flujo de energía"], respuesta: "C", puntos: 5},
+            {id: 5, texto: "¿Qué es un servidor web?", opciones: ["Una computadora para juegos", "Una computadora que aloja sitios web y responde solicitudes", "Un dispositivo de almacenamiento externo", "Un programa antivirus"], respuesta: "B", puntos: 5},
+            {id: 6, texto: "¿Cuál es la diferencia entre HTTP y HTTPS?", opciones: ["HTTPS es más rápido que HTTP", "HTTPS es una versión segura de HTTP con encriptación", "No hay diferencia", "HTTP es más seguro que HTTPS"], respuesta: "B", puntos: 5},
+            {id: 7, texto: "¿Qué es una base de datos?", opciones: ["Un archivo de texto", "Un conjunto organizado de datos", "Un tipo de computadora", "Un programa de edición"], respuesta: "B", puntos: 5},
+            {id: 8, texto: "¿Cuál es el propósito de una contraseña?", opciones: ["Acelerar la computadora", "Proteger datos mediante autenticación", "Mejorar la calidad de video", "Aumentar la velocidad de internet"], respuesta: "B", puntos: 5},
+            {id: 9, texto: "¿Qué es la nube (cloud computing)?", opciones: ["Solo almacenamiento de fotos", "Servicios de TI disponibles en internet bajo demanda", "Un tipo de computadora portátil", "Un software de edición"], respuesta: "B", puntos: 5},
+            {id: 10, texto: "¿Cuál es la función de un firewall?", opciones: ["Aumentar la velocidad de internet", "Proteger la red de accesos no autorizados", "Almacenar archivos", "Crear copias de seguridad"], respuesta: "B", puntos: 5},
+            {id: 11, texto: "¿Qué es un virus informático?", opciones: ["Un tipo de software gratuito", "Un código malicioso que daña la computadora", "Un antivirus", "Un navegador web"], respuesta: "B", puntos: 5},
+            {id: 12, texto: "¿Cuál es la diferencia entre software y hardware?", opciones: ["No hay diferencia", "Software es físico, hardware es lógico", "Hardware es físico, software es lógico", "Software es más importante que hardware"], respuesta: "C", puntos: 5},
+            {id: 13, texto: "¿Qué es una dirección IP?", opciones: ["Un tipo de contraseña", "Una identificación numérica única para dispositivos en red", "Un programa", "Un tipo de archivo"], respuesta: "B", puntos: 5},
+            {id: 14, texto: "¿Cuál es el propósito de un navegador web?", opciones: ["Crear documentos", "Acceder y visualizar páginas web", "Editar imágenes", "Crear bases de datos"], respuesta: "B", puntos: 5},
+            {id: 15, texto: "¿Qué es un correo electrónico?", opciones: ["Un servicio de entrega postal", "Un medio de comunicación digital", "Un tipo de archivo", "Un software de edición"], respuesta: "B", puntos: 5},
+            {id: 16, texto: "¿Cuál es la función principal de un módem?", opciones: ["Procesar datos", "Conectar a internet mediante una señal", "Almacenar archivos", "Crear redes wifi"], respuesta: "B", puntos: 5},
+            {id: 17, texto: "¿Qué es una aplicación web?", opciones: ["Un programa para la computadora", "Un sitio web que funciona como una aplicación", "Un tipo de hardware", "Un navegador"], respuesta: "B", puntos: 5},
+            {id: 18, texto: "¿Cuál es el propósito de una copia de seguridad?", opciones: ["Acelerar la computadora", "Proteger datos mediante duplicación", "Eliminar archivos", "Mejorar el rendimiento"], respuesta: "B", puntos: 5},
+            {id: 19, texto: "¿Qué es un hackeo?", opciones: ["Una reparación de computadora", "Un acceso no autorizado a sistemas", "Un tipo de software", "Una actualización"], respuesta: "B", puntos: 5},
+            {id: 20, texto: "¿Cuál es la importancia de las TIC en la educación?", opciones: ["Ninguna importancia", "Facilitan el acceso a información y mejoran el aprendizaje", "Solo para entretenimiento", "Son obligatorias"], respuesta: "B", puntos: 5}
+        ];
+
+        // ===== FUNCIONES PRINCIPALES =====
+
+        function validarCodigo() {
+            const codigo = document.getElementById('codigoAcceso').value.toUpperCase();
+            const mensajeError = document.getElementById('mensajeError');
+
+            if (codigo === 'TIC026') {
+                estadoExamen.codigoValido = true;
+                document.getElementById('paso1').classList.add('hidden');
+                document.getElementById('paso2').classList.remove('hidden');
+                mensajeError.classList.add('hidden');
+                estadoExamen.paso = 2;
+            } else {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Código incorrecto. Intenta de nuevo.';
+                document.getElementById('codigoAcceso').value = '';
+            }
+        }
+
+        function volverPaso1() {
+            document.getElementById('paso1').classList.remove('hidden');
+            document.getElementById('paso2').classList.add('hidden');
+            estadoExamen.paso = 1;
+        }
+
+        function irPaso3() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const cedula = document.getElementById('cedula').value.trim();
+            const carrera = document.getElementById('carrera').value;
+            const seccion = document.querySelector('input[name="seccion"]:checked')?.value;
+
+            const mensajeError = document.getElementById('mensajeError2');
+
+            if (!nombre || !cedula || !carrera || !seccion) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Completa todos los campos obligatorios.';
+                return;
+            }
+
+            if (cedula.length < 6 || cedula.length > 20) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> La cédula debe tener entre 6 y 20 caracteres.';
+                return;
+            }
+
+            estadoExamen.datosPersonales = {
+                nombre,
+                cedula,
+                carrera,
+                seccion
+            };
+
+            document.getElementById('paso2').classList.add('hidden');
+            document.getElementById('paso3').classList.remove('hidden');
+            estadoExamen.paso = 3;
+            estadoExamen.respuestas = {};
+            estadoExamen.preguntaActual = 1;
+
+            mostrarPregunta(1);
+        }
+
+        function mostrarPregunta(numero) {
+            if (numero < 1 || numero > estadoExamen.totalPreguntas) return;
+
+            estadoExamen.preguntaActual = numero;
+            const pregunta = preguntasData[numero - 1];
+
+            // Actualizar progreso
+            document.getElementById('infoProgreso').textContent = `Pregunta ${numero} de ${estadoExamen.totalPreguntas}`;
+            const porcentaje = (numero / estadoExamen.totalPreguntas) * 100;
+            document.getElementById('barraProgreso').style.width = porcentaje + '%';
+
+            // Mostrar pregunta
+            let html = `
+                <h3 style="color: var(--verde-dark); margin-bottom: 20px; font-size: 1.1rem;">
+                    ${pregunta.texto}
+                </h3>
+                <div class="radio-group">
+            `;
+
+            const opciones = ['A', 'B', 'C', 'D'];
+            const respuestaGuardada = estadoExamen.respuestas[numero];
+
+            pregunta.opciones.forEach((opcion, index) => {
+                const letra = opciones[index];
+                const checked = respuestaGuardada === letra ? 'checked' : '';
+                html += `
+                    <label class="radio-item">
+                        <input
+                            type="radio"
+                            name="respuesta"
+                            value="${letra}"
+                            onchange="guardarRespuesta(${numero}, '${letra}')"
+                            ${checked}
+                        >
+                        <span><strong>${letra})</strong> ${opcion}</span>
+                    </label>
+                `;
+            });
+
+            html += '</div>';
+
+            document.getElementById('contenidoPregunta').innerHTML = html;
+
+            // Actualizar botones
+            const btnAnterior = document.getElementById('btnAnterior');
+            const btnSiguiente = document.getElementById('btnSiguiente');
+            const btnEnviar = document.getElementById('btnEnviar');
+
+            if (numero === 1) {
+                btnAnterior.style.display = 'none';
+                btnSiguiente.style.display = 'block';
+                btnEnviar.style.display = 'none';
+            } else if (numero === estadoExamen.totalPreguntas) {
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'none';
+                btnEnviar.style.display = 'block';
+            } else {
+                btnAnterior.style.display = 'block';
+                btnSiguiente.style.display = 'block';
+                btnEnviar.style.display = 'none';
+            }
+        }
+
+        function guardarRespuesta(numero, respuesta) {
+            estadoExamen.respuestas[numero] = respuesta;
+        }
+
+        function preguntaAnterior() {
+            if (estadoExamen.preguntaActual > 1) {
+                mostrarPregunta(estadoExamen.preguntaActual - 1);
+            }
+        }
+
+        function preguntaSiguiente() {
+            if (estadoExamen.preguntaActual < estadoExamen.totalPreguntas) {
+                mostrarPregunta(estadoExamen.preguntaActual + 1);
+            }
+        }
+
+        async function enviarExamen() {
+            const btnEnviar = document.getElementById('btnEnviar');
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+
+            try {
+                // Calcular puntaje
+                let puntaje = 0;
+                preguntasData.forEach((pregunta, index) => {
+                    const respuestaAlumno = estadoExamen.respuestas[index + 1];
+                    if (respuestaAlumno === pregunta.respuesta) {
+                        puntaje += pregunta.puntos;
+                    }
+                });
+
+                estadoExamen.puntaje = puntaje;
+
+                // Guardar en Sheets
+                const datos = {
+                    cedula: estadoExamen.datosPersonales.cedula,
+                    nombre: estadoExamen.datosPersonales.nombre,
+                    apellido: estadoExamen.datosPersonales.nombre.split(' ')[1] || '',
+                    carrera: estadoExamen.datosPersonales.carrera,
+                    seccion: estadoExamen.datosPersonales.seccion,
+                    codigo_examen: 'TIC026',
+                    intento: estadoExamen.intento,
+                    respuestas: JSON.stringify(estadoExamen.respuestas),
+                    puntaje: puntaje,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Llamar a API
+                const response = await fetch('/api/examen/guardar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(datos)
+                });
+
+                // Mostrar resultados
+                document.getElementById('paso3').classList.add('hidden');
+                document.getElementById('paso4').classList.remove('hidden');
+
+                let mensajeResultado = `
+                    <div class="resumen">
+                        <div class="resumen-item">
+                            <span><strong>Nombre:</strong></span>
+                            <span>${estadoExamen.datosPersonales.nombre}</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span><strong>Cédula:</strong></span>
+                            <span>${estadoExamen.datosPersonales.cedula}</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span><strong>Carrera:</strong></span>
+                            <span>${estadoExamen.datosPersonales.carrera}</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span><strong>Sección:</strong></span>
+                            <span>${estadoExamen.datosPersonales.seccion}</span>
+                        </div>
+                        <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
+                            <span><strong>Puntaje Obtenido:</strong></span>
+                            <span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${puntaje} / 100</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span><strong>Intento:</strong></span>
+                            <span>${estadoExamen.intento} / ${estadoExamen.maxIntentos}</span>
+                        </div>
+                    </div>
+                `;
+
+                if (estadoExamen.intento < estadoExamen.maxIntentos && puntaje < 70) {
+                    mensajeResultado += `
+                        <div class="alert-exam alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Tienes un intento más. <strong>Puedes intentar nuevamente</strong> para mejorar tu puntaje.
+                        </div>
+                        <button class="btn-exam btn-primary-exam" style="margin-top: 20px;" onclick="intentarDeNuevo()">
+                            <i class="bi bi-arrow-clockwise"></i> INTENTAR DE NUEVO
+                        </button>
+                    `;
+                } else {
+                    mensajeResultado += `
+                        <div class="alert-exam alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            Examen finalizado. Se guardará tu mejor puntaje.
+                        </div>
+                    `;
+                }
+
+                document.getElementById('contenidoResultados').innerHTML = mensajeResultado;
+
+            } catch (error) {
+                console.error('Error:', error);
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
+                alert('Error al enviar el examen. Intenta de nuevo.');
+            }
+        }
+
+        function intentarDeNuevo() {
+            estadoExamen.intento++;
+            estadoExamen.preguntaActual = 1;
+            estadoExamen.respuestas = {};
+
+            document.getElementById('paso4').classList.add('hidden');
+            document.getElementById('paso3').classList.remove('hidden');
+
+            mostrarPregunta(1);
+        }
+
+        function irAlDashboard() {
+            window.location.href = '../alumno/index.html';
+        }
+
+        // Inicializar al cargar
+        window.addEventListener('load', () => {
+            document.getElementById('estadoExamen').textContent = 'LISTO';
+        });
+
+        // Prevenir cierre accidental
+        window.addEventListener('beforeunload', (e) => {
+            if (estadoExamen.paso >= 3 && Object.keys(estadoExamen.respuestas).length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -147,19 +147,32 @@ function callGas(action, data, method) {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
                 const pass = String(data.password || '').trim();
                 if (!ced || !pass) return Promise.resolve({ ok: false, error: 'Cédula y contraseña requeridas.' });
-                return db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(snap => {
-                    if (snap.empty) { console.warn('[Firestore login] ced='+ced+' no encontrado'); return { ok: false, error: 'Cédula o contraseña incorrecta.' }; }
+                return db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(function(snap) {
+                    if (snap.empty) return { ok: false, error: 'Cédula o contraseña incorrecta.' };
                     const doc = snap.docs[0];
                     const d = doc.data();
                     if (d.password && d.password !== pass) return { ok: false, error: 'Cédula o contraseña incorrecta.' };
-                    const token = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-                    const user = Object.assign({}, d, { id: doc.id });
-                    return { ok: true, token: token, user: user, must_change_password: d.must_change_password ? 1 : 0 };
-                }).catch(e => {
-                    console.error('[Firestore login] ced='+ced+' err=', e.code, e.message);
-                    return { ok: false, error: 'Firestore: ' + (e.code || '') + ' ' + e.message };
+                    if (d.estado === 'inactivo' || d.estado === 'baja') return { ok: false, error: 'Cuenta inactiva. Contactá a la administración.' };
+                    // ── Sesión con expiración de 8 h, sin depender de Firebase Auth anónimo ──
+                    // Pseudo-JWT compatible con parseJwt()/isExpired() de session-guard.js.
+                    const now = Math.floor(Date.now() / 1000);
+                    var b64u = function(obj) {
+                        return btoa(JSON.stringify(obj))
+                            .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+                    };
+                    var token = b64u({ alg: 'none', typ: 'JWT' }) + '.' +
+                                b64u({ cedula: ced, rol: d.rol || 'alumno',
+                                       exp: now + 8 * 3600, iat: now }) + '.' +
+                                ced.replace(/[^0-9]/g, '').substring(0, 8);
+                    var user = Object.assign({}, d, { id: doc.id });
+                    return { ok: true, token: token, user: user,
+                             token_expires: new Date((now + 8 * 3600) * 1000).toISOString(),
+                             must_change_password: d.must_change_password ? 1 : 0 };
+                }).catch(function(e) {
+                    return { ok: false, error: 'Error de conexión: ' + (e.code || e.message || 'desconocido') };
                 });
             }
+
             case 'register': return (async () => {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
                 if (!ced) return { ok: false, error: 'Cédula requerida.' };
@@ -249,9 +262,79 @@ function callGas(action, data, method) {
             case 'listar_cursos': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, cursos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             }))).catch(() => ({ ok: true, cursos: [] }));
-            case 'mis_cursos': return db.collection('asignaturas').get().then(snap => ({
-                ok: true, cursos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, cursos: [] }));
+            case 'mis_cursos': return (async () => {
+                // ── Parsear token para obtener cédula y rol ─────────────────────────────
+                var cedTok = '', rolTok = 'alumno', fichaAlumno = {};
+                try {
+                    var tok = (data && data.token) || '';
+                    if (tok) {
+                        var parts = tok.split('.');
+                        if (parts.length >= 2) {
+                            var pad = parts[1];
+                            while (pad.length % 4) pad += '=';
+                            var pl = JSON.parse(atob(pad.replace(/-/g, '+').replace(/_/g, '/')));
+                            cedTok = pl.cedula || '';
+                            rolTok = pl.rol || 'alumno';
+                        }
+                    }
+                } catch(e) {}
+                // Personal (no alumno): sin cursos propios
+                if (rolTok !== 'alumno') return { ok: true, alumno: false, cursos: [], materiales: [], resumen: {} };
+                // ── Obtener ficha del alumno (carrera, sección, grado) ──────────────────
+                if (cedTok) {
+                    try {
+                        var uSnap = await db.collection('usuarios').where('cedula', '==', cedTok).limit(1).get();
+                        if (!uSnap.empty) fichaAlumno = uSnap.docs[0].data() || {};
+                    } catch(e) {}
+                }
+                var carrera  = (fichaAlumno.carrera  || '').toUpperCase().trim();
+                var seccion  = (fichaAlumno.seccion  || '').toUpperCase().trim();
+                var grado    = (fichaAlumno.grado    || 'GRADO').toUpperCase().trim();
+                // ── Obtener asignaturas y filtrar ──────────────────────────────────────
+                var snap = await db.collection('asignaturas').get();
+                var todas = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+                // Filtrar: si el alumno tiene carrera definida, solo las de esa carrera (o sin carrera).
+                var filtradas = carrera
+                    ? todas.filter(function(a) {
+                        var ac = (a.carrera || '').toUpperCase().trim();
+                        return !ac || ac === carrera;
+                    })
+                    : todas;
+                // Construir cursos con la estructura que espera renderCursosAlumno
+                var materiales = [];
+                var cursos = filtradas.map(function(a) {
+                    var codigo = (a.codigo || a.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    var estado = (a.estado || 'activo').toLowerCase();
+                    var tieneMateria = estado === 'activo' || estado === 'desarrollado';
+                    if (tieneMateria && codigo) materiales.push(codigo);
+                    return {
+                        estado: estado,
+                        materiales: tieneMateria,
+                        grado: a.grado || grado,
+                        seccion: a.seccion || seccion,
+                        asignatura: {
+                            id:           a.id,
+                            codigo:       a.codigo || a.id,
+                            uuid:         a.codigo || a.id,
+                            nombre:       a.nombre || a.Nombre || 'Asignatura',
+                            carrera:      a.carrera || carrera,
+                            icono:        a.icono   || 'bi-journal-bookmark',
+                            semestre:     a.semestre || '',
+                            carga_horaria: a.carga_horaria || a.horas || ''
+                        }
+                    };
+                });
+                var activos = cursos.filter(function(c) { return c.estado === 'activo'; }).length;
+                return {
+                    ok: true, alumno: true,
+                    ficha: { carrera: fichaAlumno.carrera || '', seccion: fichaAlumno.seccion || '', grado: fichaAlumno.grado || '' },
+                    cursos: cursos,
+                    materiales: materiales,
+                    resumen: { activo: activos, total: cursos.length },
+                    diagnostico: {}
+                };
+            })().catch(function() { return { ok: true, alumno: true, cursos: [], materiales: [], resumen: {}, diagnostico: {} }; });
+
             case 'guardar_asignatura': return (async () => {
                 const id = data.codigo || data.id || 'ASIG-' + Date.now().toString(36);
                 await db.collection('asignaturas').doc(id).set(Object.assign({}, data, { updated_at: new Date().toISOString() }));
@@ -271,10 +354,17 @@ function callGas(action, data, method) {
                 await db.collection('pagos').doc(id).set(Object.assign({}, data, { fecha: new Date().toISOString(), estado: data.estado || 'pagado' }));
                 return { ok: true, id: id };
             })();
-            case 'consultar_pagos': return db.collection('pagos').get().then(snap => {
-                const pagos = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
-                return { ok: true, pagos: data.cedula ? pagos.filter(p => p.cedula === data.cedula) : pagos };
-            }).catch(() => ({ ok: true, pagos: [] }));
+            case 'consultar_pagos': {
+                // Si hay cédula, filtramos en Firestore (más eficiente y permite que las reglas funcionen).
+                // El alumno solo puede leer sus propios documentos gracias a getCedulaForUid() en las reglas.
+                var pagosQuery = data.cedula
+                    ? db.collection('pagos').where('cedula', '==', data.cedula)
+                    : db.collection('pagos');
+                return pagosQuery.get().then(function(snap) {
+                    return { ok: true, pagos: snap.docs.map(function(doc) { return Object.assign({ id: doc.id }, doc.data()); }) };
+                }).catch(function() { return { ok: true, pagos: [] }; });
+            }
+
             case 'pagos.stats': return db.collection('pagos').get().then(snap => {
                 const pagos = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
                 const total = pagos.length;
@@ -476,9 +566,16 @@ function callGas(action, data, method) {
             })();
             case 'eliminar_filial': return db.collection('filiales').doc(data.id).delete().then(() => ({ ok: true })).catch(() => ({ ok: false }));
             case 'guardar_configuracion': return db.collection('configuracion').doc(data.key || 'default').set({ valor: data.valor, updated_at: new Date().toISOString() }).then(() => ({ ok: true }));
-            case 'listar_notas': return db.collection('notas').get().then(snap => ({
-                ok: true, data: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, data: [] }));
+            case 'listar_notas': {
+                // Con cédula: query filtrada en Firestore (alumno ve solo las suyas; staff pasa cedula vacía).
+                var notasQuery = data.cedula
+                    ? db.collection('notas').where('cedula', '==', data.cedula)
+                    : db.collection('notas');
+                return notasQuery.get().then(function(snap) {
+                    return { ok: true, data: snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); }) };
+                }).catch(function() { return { ok: true, data: [] }; });
+            }
+
             case 'guardar_nota': case 'guardar_notas_asignatura': return (async () => {
                 const id = data.id || 'NOTA-' + Date.now().toString(36);
                 await db.collection('notas').doc(id).set(Object.assign({}, data, { updated_at: new Date().toISOString() }));

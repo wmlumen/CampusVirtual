@@ -30,6 +30,21 @@ service cloud.firestore {
       ].hasAny([getUserData().rol]);
     }
 
+    // Roles autorizados para asignar/quitar roles a otros usuarios.
+    // ✅ Definido por el administrador: admin_plataforma, admin_general, filial, académico, administrativo.
+    function canAssignRoles() {
+      return isAuthenticated() && [
+        'admin',
+        'administrador_plataforma',
+        'administracion_general',
+        'admin_general',
+        'administracion',
+        'administrativo',
+        'academico',
+        'admin_filial'
+      ].hasAny([getUserData().rol]);
+    }
+
     function isAcademico() {
       return isAuthenticated() && getUserData().rol == 'academico';
     }
@@ -41,6 +56,7 @@ service cloud.firestore {
     function isAdminFilial() {
       return isAuthenticated() && getUserData().rol == 'admin_filial';
     }
+
 
     function isStaff() {
       return isAuthenticated() && [
@@ -99,7 +115,10 @@ service cloud.firestore {
                  || (request.auth == null
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['current_password'])
                      && !('current_password' in request.resource.data))
-                 || (isAuthenticated()
+                 // Gestión de roles: solo roles autorizados pueden tocar rol/roles/estado.
+                 // canAssignRoles() = admin, administrador_plataforma, administracion_general,
+                 //                    administrativo, academico, admin_filial.
+                 || (canAssignRoles()
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol','estado','roles','es_docente','asignaciones','updated_at'])
                      && request.resource.data.cedula == resource.data.cedula
                      && request.resource.data.password == resource.data.password);
@@ -108,12 +127,15 @@ service cloud.firestore {
 
       match /roles/{rolId} {
         allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
-        allow write: if isAdminOrPlatform();
+        allow write: if canAssignRoles();   // académico, filial, administrativo también pueden
       }
+
     }
 
     match /asignaturas/{asigId} {
-      allow read: if isAuthenticated();
+      // Catálogo público: necesario para cargar "Mis Cursos" cuando Firebase Auth anónimo
+      // no está habilitado. Las escrituras siguen restringidas al staff.
+      allow read: if true;
       allow create, update: if isAuthenticated() && (
         isAdminOrPlatform() || isAcademico() || isDocente() || isAdminFilial()
       );
@@ -137,7 +159,7 @@ service cloud.firestore {
     }
 
     match /eventos/{eventoId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create, update: if isAuthenticated() && (
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
@@ -220,8 +242,8 @@ service cloud.firestore {
      }
 
      match /cursos/{curId} {
-       allow read: if isAuthenticated();
-       allow write: if isAuthenticated() && isStaff();
-     }
+      allow read: if true;
+      allow write: if isAuthenticated() && isStaff();
+    }
    }
  }

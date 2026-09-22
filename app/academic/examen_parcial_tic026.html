@@ -11,57 +11,140 @@
 
     <style>
         :root {
-            --verde: #00B140;
-            --verde-dark: #007A33;
-            --rojo: #DC3545;
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-hover: #22c55e;
+            --verde-light: #e8f5ec;
+            --dorado: #d4a843;
+            --dorado-claro: #f3dfa2;
+            --rojo: #ef5350;
+            --verde: #22c55e;
+            --verde-dark: var(--dorado);
+            --txt: #ffffff;
+            --txt2: rgba(255,255,255,.6);
+            --txt3: rgba(255,255,255,.4);
+            --panel: rgba(255,255,255,.07);
+            --panel-hover: rgba(255,255,255,.12);
+            --bdr: rgba(255,255,255,.12);
+            --bdr-strong: rgba(255,255,255,.2);
+            --shadow: 0 8px 32px rgba(0,0,0,.25);
+            --radius: 18px;
+            --excelente: #4ade80;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, var(--verde-dark), #005a26);
+            color: var(--txt);
             min-height: 100vh;
-            color: #2D2D2D;
             padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* FONDO TEXTURIZADO (igual a libreta.html) */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(22,129,61,.12) 0%, transparent 60%),
+                linear-gradient(160deg, #060f09 0%, #0d2c16 35%, #0f3820 65%, #060f09 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
+            z-index: 0;
+            pointer-events: none;
         }
 
         .container-exam {
-            max-width: 700px;
+            max-width: 760px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: fadeUp .7s ease-out;
+            padding-bottom: 30px;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .topbar {
-            background: var(--verde-dark);
+            background: var(--panel);
+            border: 1px solid var(--bdr);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
             color: #fff;
-            padding: 16px 20px;
-            border-radius: 10px;
+            padding: 14px 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            box-shadow: var(--shadow);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+        }
+
+        .topbar .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .topbar .logo-wrap img {
+            height: 42px;
+            width: auto;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
         }
 
         .topbar h1 {
             font-size: 1rem;
             font-weight: 700;
             margin: 0;
+            letter-spacing: .5px;
+            color: #fff;
         }
 
         .topbar .badge {
-            background: rgba(255,255,255,.2);
-            padding: 6px 12px;
+            background: rgba(0,177,64,.25);
+            color: var(--excelente);
+            border: 1px solid rgba(0,177,64,.4);
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: .75rem;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            white-space: nowrap;
         }
 
         .card-exam {
-            background: #fff;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 12px rgba(0,0,0,.1);
+            background: var(--panel);
+            border: 1px solid var(--bdr);
+            border-radius: var(--radius);
+            padding: 26px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
             margin-bottom: 20px;
+            color: var(--txt);
+            position: relative;
+        }
+
+        .card-exam::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--verde-medio), var(--dorado), var(--verde-medio));
+            border-radius: var(--radius) var(--radius) 0 0;
         }
 
         .form-group {
@@ -69,24 +152,35 @@
         }
 
         .form-group label {
-            font-weight: 700;
-            color: var(--verde-dark);
+            font-weight: 600;
+            color: var(--dorado-claro);
             margin-bottom: 8px;
             display: block;
-            font-size: .9rem;
+            font-size: .82rem;
+            letter-spacing: .5px;
+            text-transform: uppercase;
         }
 
         .form-control, .form-select {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 10px 12px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid var(--bdr-strong);
+            border-radius: 12px;
+            padding: 11px 14px;
             font-size: .95rem;
             font-family: 'Montserrat', sans-serif;
+            color: #fff;
+            transition: all .2s;
         }
 
+        .form-control::placeholder { color: rgba(255,255,255,.4); }
+        .form-select { color: #fff; }
+        .form-select option { color: #0d2c16; background: #fff; }
+
         .form-control:focus, .form-select:focus {
-            border-color: var(--verde);
-            box-shadow: 0 0 0 3px rgba(0,177,64,.1);
+            border-color: var(--dorado);
+            background: rgba(255,255,255,.09);
+            box-shadow: 0 0 0 3px rgba(212,168,67,.15);
+            color: #fff;
         }
 
         .radio-group {
@@ -99,39 +193,48 @@
         .radio-item {
             display: flex;
             align-items: center;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid var(--bdr);
+            border-radius: 12px;
             cursor: pointer;
             transition: all .2s;
         }
 
         .radio-item:hover {
-            background: #f8f8f8;
-            border-color: var(--verde);
+            background: var(--panel-hover);
+            border-color: rgba(212,168,67,.5);
         }
 
         .radio-item input[type="radio"] {
             margin-right: 12px;
             cursor: pointer;
-            accent-color: var(--verde);
+            accent-color: var(--dorado);
+            flex-shrink: 0;
+        }
+
+        .radio-item span strong {
+            color: var(--dorado);
+            margin-right: 4px;
         }
 
         .progress-bar-exam {
-            background: var(--verde);
+            background: linear-gradient(90deg, var(--verde-medio), var(--verde-hover));
             height: 8px;
             border-radius: 4px;
             margin-bottom: 20px;
+            transition: width .3s;
         }
 
         .pregunta-info {
-            color: #64748b;
+            color: var(--dorado-claro);
             font-size: .85rem;
+            font-weight: 600;
             margin-bottom: 20px;
-            padding: 10px;
-            background: #f0f8f4;
-            border-left: 3px solid var(--verde);
-            border-radius: 4px;
+            padding: 10px 14px;
+            background: rgba(0,177,64,.12);
+            border-left: 3px solid var(--dorado);
+            border-radius: 8px;
         }
 
         .botones {
@@ -142,41 +245,48 @@
 
         .btn-exam {
             flex: 1;
-            padding: 12px 20px;
+            padding: 13px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all .2s;
             font-family: 'Montserrat', sans-serif;
-            font-size: .95rem;
+            font-size: .9rem;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-primary-exam {
-            background: var(--verde);
+            background: var(--verde-medio);
             color: #fff;
         }
 
         .btn-primary-exam:hover {
-            background: #009A2E;
+            background: var(--verde-hover);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,177,64,.3);
+            box-shadow: 0 6px 16px rgba(34,197,94,.35);
         }
 
         .btn-primary-exam:disabled {
-            background: #ccc;
+            background: rgba(255,255,255,.12);
+            color: rgba(255,255,255,.4);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-secondary-exam {
-            background: #f0f0f0;
-            color: var(--verde-dark);
-            border: 2px solid var(--verde);
+            background: rgba(255,255,255,.08);
+            color: #fff;
+            border: 1px solid var(--bdr-strong);
         }
 
         .btn-secondary-exam:hover {
-            background: var(--verde);
-            color: #fff;
+            background: rgba(255,255,255,.15);
         }
 
         .btn-danger-exam {
@@ -185,38 +295,41 @@
         }
 
         .btn-danger-exam:hover {
-            background: #c82333;
+            background: #f0655c;
+            transform: translateY(-2px);
         }
 
         .alert-exam {
             padding: 16px;
-            border-radius: 6px;
+            border-radius: 12px;
             margin-bottom: 20px;
             font-size: .9rem;
+            border: 1px solid;
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(74,222,128,.12);
+            color: #6ee7a0;
+            border-color: rgba(74,222,128,.3);
         }
 
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: rgba(239,83,80,.12);
+            color: #f8a09b;
+            border-color: rgba(239,83,80,.3);
         }
 
         .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background: rgba(212,168,67,.12);
+            color: var(--dorado-claro);
+            border-color: rgba(212,168,67,.3);
         }
 
         .resumen {
-            background: #f8f9fa;
+            background: rgba(0,0,0,.18);
+            border: 1px solid var(--bdr);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 14px;
             margin-bottom: 20px;
         }
 
@@ -224,7 +337,8 @@
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--bdr);
+            gap: 12px;
         }
 
         .resumen-item:last-child {
@@ -236,8 +350,8 @@
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--verde);
+            border: 3px solid rgba(255,255,255,.15);
+            border-top: 3px solid var(--dorado);
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -252,7 +366,7 @@
 
         .footer {
             text-align: center;
-            color: rgba(255,255,255,.6);
+            color: var(--txt3);
             font-size: .8rem;
             margin-top: 20px;
         }
@@ -293,6 +407,33 @@
             </button>
         </div>
 
+        <!-- PASO 1.5: SELECCIÓN DE PARCIAL -->
+        <div id="pasoSelector" class="card-exam hidden">
+            <h2 style="color: var(--verde-dark); margin-bottom: 20px;">
+                <i class="bi bi-collection"></i> Elegí tu Examen Parcial
+            </h2>
+            <p style="color: #64748b; margin-bottom: 24px;">
+                Seleccioná cuál parcial vas a rendir hoy. Cada parcial tiene 10 preguntas (10 puntos c/u = 100).
+            </p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+                <button class="btn-exam btn-primary-exam" style="height:110px;flex-direction:column;gap:6px;padding:16px;" onclick="seleccionarParcial(1)">
+                    <i class="bi bi-1-circle" style="font-size:1.6rem"></i>
+                    <span style="font-size:.8rem;letter-spacing:1px">PARCIAL 1</span>
+                    <span style="font-size:.58rem;font-weight:500;opacity:.85">Unidades 1–3 alineadas al programa</span>
+                </button>
+                <button class="btn-exam btn-primary-exam" style="height:110px;flex-direction:column;gap:6px;padding:16px;" onclick="seleccionarParcial(2)">
+                    <i class="bi bi-2-circle" style="font-size:1.6rem"></i>
+                    <span style="font-size:.8rem;letter-spacing:1px">PARCIAL 2</span>
+                    <span style="font-size:.58rem;font-weight:500;opacity:.85">Unidades 4–6 alineadas al programa</span>
+                </button>
+            </div>
+
+            <button class="btn-exam btn-secondary-exam" onclick="volverPaso1()">
+                <i class="bi bi-arrow-left"></i> ATRÁS
+            </button>
+        </div>
+
         <!-- PASO 2: DATOS PERSONALES -->
         <div id="paso2" class="card-exam hidden">
             <h2 style="color: var(--verde-dark); margin-bottom: 20px;">
@@ -301,6 +442,9 @@
             <p style="color: #64748b; margin-bottom: 20px;">
                 Completa tus datos antes de comenzar el examen.
             </p>
+            <div class="alert-exam" style="margin-bottom:20px;background:#eef7ef;border:1px solid #cde8d0;color:#236b3c;">
+                <i class="bi bi-pencil-square"></i> Examen: <strong>Parcial <span id="parcialSel">—</span></strong> · 10 preguntas · 100 puntos
+            </div>
 
             <div class="form-group">
                 <label for="nombre">Nombre y Apellido *</label>
@@ -353,7 +497,7 @@
             <div id="mensajeError2" class="alert-exam alert-error hidden"></div>
 
             <div class="botones">
-                <button class="btn-exam btn-secondary-exam" onclick="volverPaso1()">
+                <button class="btn-exam btn-secondary-exam" onclick="volverPasoSelector()">
                     <i class="bi bi-arrow-left"></i> ATRÁS
                 </button>
                 <button class="btn-exam btn-primary-exam" onclick="irPaso3()">
@@ -365,7 +509,7 @@
         <!-- PASO 3: EXAMEN (Preguntas) -->
         <div id="paso3" class="card-exam hidden">
             <div class="pregunta-info" id="infoProgreso">
-                Pregunta 1 de 20
+                Pregunta 1 de 10
             </div>
 
             <div class="progress-bar-exam" id="barraProgreso"></div>
@@ -416,35 +560,37 @@
             paso: 1,
             intento: 1,
             maxIntentos: 2,
+            parcial: 1,
             preguntaActual: 1,
-            totalPreguntas: 20,
+            totalPreguntas: 10,
             respuestas: {},
             datosPersonales: {},
             puntaje: 0,
-            preguntas: [] // Se carga del backend
+            preguntas: []
         };
 
+        // Banco completo de 20 preguntas. Parcial 1 = 1 a 10, Parcial 2 = 11 a 20.
         let preguntasData = [
-            {id: 1, texto: "¿Cuál es el dispositivo principal utilizado para procesar datos en una computadora?", opciones: ["Memoria RAM", "Procesador", "Disco Duro", "Fuente de Poder"], respuesta: "B", puntos: 5},
-            {id: 2, texto: "¿Qué significa la sigla TIC?", opciones: ["Tecnologías de la Información y la Comunicación", "Tecnologías de Internet y Comercio", "Técnicas de Ingeniería en Computación", "Telecomunicaciones de Información Central"], respuesta: "A", puntos: 5},
-            {id: 3, texto: "El software de código abierto permite a los usuarios modificar su código fuente libremente.", opciones: ["Verdadero", "Falso"], respuesta: "A", puntos: 5},
-            {id: 4, texto: "¿Cuál es la función principal de la memoria RAM?", opciones: ["Almacenar datos permanentemente", "Procesar información rápidamente", "Proporcionar almacenamiento temporal de datos", "Controlar el flujo de energía"], respuesta: "C", puntos: 5},
-            {id: 5, texto: "¿Qué es un servidor web?", opciones: ["Una computadora para juegos", "Una computadora que aloja sitios web y responde solicitudes", "Un dispositivo de almacenamiento externo", "Un programa antivirus"], respuesta: "B", puntos: 5},
-            {id: 6, texto: "¿Cuál es la diferencia entre HTTP y HTTPS?", opciones: ["HTTPS es más rápido que HTTP", "HTTPS es una versión segura de HTTP con encriptación", "No hay diferencia", "HTTP es más seguro que HTTPS"], respuesta: "B", puntos: 5},
-            {id: 7, texto: "¿Qué es una base de datos?", opciones: ["Un archivo de texto", "Un conjunto organizado de datos", "Un tipo de computadora", "Un programa de edición"], respuesta: "B", puntos: 5},
-            {id: 8, texto: "¿Cuál es el propósito de una contraseña?", opciones: ["Acelerar la computadora", "Proteger datos mediante autenticación", "Mejorar la calidad de video", "Aumentar la velocidad de internet"], respuesta: "B", puntos: 5},
-            {id: 9, texto: "¿Qué es la nube (cloud computing)?", opciones: ["Solo almacenamiento de fotos", "Servicios de TI disponibles en internet bajo demanda", "Un tipo de computadora portátil", "Un software de edición"], respuesta: "B", puntos: 5},
-            {id: 10, texto: "¿Cuál es la función de un firewall?", opciones: ["Aumentar la velocidad de internet", "Proteger la red de accesos no autorizados", "Almacenar archivos", "Crear copias de seguridad"], respuesta: "B", puntos: 5},
-            {id: 11, texto: "¿Qué es un virus informático?", opciones: ["Un tipo de software gratuito", "Un código malicioso que daña la computadora", "Un antivirus", "Un navegador web"], respuesta: "B", puntos: 5},
-            {id: 12, texto: "¿Cuál es la diferencia entre software y hardware?", opciones: ["No hay diferencia", "Software es físico, hardware es lógico", "Hardware es físico, software es lógico", "Software es más importante que hardware"], respuesta: "C", puntos: 5},
-            {id: 13, texto: "¿Qué es una dirección IP?", opciones: ["Un tipo de contraseña", "Una identificación numérica única para dispositivos en red", "Un programa", "Un tipo de archivo"], respuesta: "B", puntos: 5},
-            {id: 14, texto: "¿Cuál es el propósito de un navegador web?", opciones: ["Crear documentos", "Acceder y visualizar páginas web", "Editar imágenes", "Crear bases de datos"], respuesta: "B", puntos: 5},
-            {id: 15, texto: "¿Qué es un correo electrónico?", opciones: ["Un servicio de entrega postal", "Un medio de comunicación digital", "Un tipo de archivo", "Un software de edición"], respuesta: "B", puntos: 5},
-            {id: 16, texto: "¿Cuál es la función principal de un módem?", opciones: ["Procesar datos", "Conectar a internet mediante una señal", "Almacenar archivos", "Crear redes wifi"], respuesta: "B", puntos: 5},
-            {id: 17, texto: "¿Qué es una aplicación web?", opciones: ["Un programa para la computadora", "Un sitio web que funciona como una aplicación", "Un tipo de hardware", "Un navegador"], respuesta: "B", puntos: 5},
-            {id: 18, texto: "¿Cuál es el propósito de una copia de seguridad?", opciones: ["Acelerar la computadora", "Proteger datos mediante duplicación", "Eliminar archivos", "Mejorar el rendimiento"], respuesta: "B", puntos: 5},
-            {id: 19, texto: "¿Qué es un hackeo?", opciones: ["Una reparación de computadora", "Un acceso no autorizado a sistemas", "Un tipo de software", "Una actualización"], respuesta: "B", puntos: 5},
-            {id: 20, texto: "¿Cuál es la importancia de las TIC en la educación?", opciones: ["Ninguna importancia", "Facilitan el acceso a información y mejoran el aprendizaje", "Solo para entretenimiento", "Son obligatorias"], respuesta: "B", puntos: 5}
+            {id: 1, texto: "¿Cuál es el dispositivo principal utilizado para procesar datos en una computadora?", opciones: ["Memoria RAM", "Procesador", "Disco Duro", "Fuente de Poder"], respuesta: "B", puntos: 10},
+            {id: 2, texto: "¿Qué significa la sigla TIC?", opciones: ["Tecnologías de la Información y la Comunicación", "Tecnologías de Internet y Comercio", "Técnicas de Ingeniería en Computación", "Telecomunicaciones de Información Central"], respuesta: "A", puntos: 10},
+            {id: 3, texto: "El software de código abierto permite a los usuarios modificar su código fuente libremente.", opciones: ["Verdadero", "Falso"], respuesta: "A", puntos: 10},
+            {id: 4, texto: "¿Cuál es la función principal de la memoria RAM?", opciones: ["Almacenar datos permanentemente", "Procesar información rápidamente", "Proporcionar almacenamiento temporal de datos", "Controlar el flujo de energía"], respuesta: "C", puntos: 10},
+            {id: 5, texto: "¿Qué es un servidor web?", opciones: ["Una computadora para juegos", "Una computadora que aloja sitios web y responde solicitudes", "Un dispositivo de almacenamiento externo", "Un programa antivirus"], respuesta: "B", puntos: 10},
+            {id: 6, texto: "¿Cuál es la diferencia entre HTTP y HTTPS?", opciones: ["HTTPS es más rápido que HTTP", "HTTPS es una versión segura de HTTP con encriptación", "No hay diferencia", "HTTP es más seguro que HTTPS"], respuesta: "B", puntos: 10},
+            {id: 7, texto: "¿Qué es una base de datos?", opciones: ["Un archivo de texto", "Un conjunto organizado de datos", "Un tipo de computadora", "Un programa de edición"], respuesta: "B", puntos: 10},
+            {id: 8, texto: "¿Cuál es el propósito de una contraseña?", opciones: ["Acelerar la computadora", "Proteger datos mediante autenticación", "Mejorar la calidad de video", "Aumentar la velocidad de internet"], respuesta: "B", puntos: 10},
+            {id: 9, texto: "¿Qué es la nube (cloud computing)?", opciones: ["Solo almacenamiento de fotos", "Servicios de TI disponibles en internet bajo demanda", "Un tipo de computadora portátil", "Un software de edición"], respuesta: "B", puntos: 10},
+            {id: 10, texto: "¿Cuál es la función de un firewall?", opciones: ["Aumentar la velocidad de internet", "Proteger la red de accesos no autorizados", "Almacenar archivos", "Crear copias de seguridad"], respuesta: "B", puntos: 10},
+            {id: 11, texto: "¿Qué es un virus informático?", opciones: ["Un tipo de software gratuito", "Un código malicioso que daña la computadora", "Un antivirus", "Un navegador web"], respuesta: "B", puntos: 10},
+            {id: 12, texto: "¿Cuál es la diferencia entre software y hardware?", opciones: ["No hay diferencia", "Software es físico, hardware es lógico", "Hardware es físico, software es lógico", "Software es más importante que hardware"], respuesta: "C", puntos: 10},
+            {id: 13, texto: "¿Qué es una dirección IP?", opciones: ["Un tipo de contraseña", "Una identificación numérica única para dispositivos en red", "Un programa", "Un tipo de archivo"], respuesta: "B", puntos: 10},
+            {id: 14, texto: "¿Cuál es el propósito de un navegador web?", opciones: ["Crear documentos", "Acceder y visualizar páginas web", "Editar imágenes", "Crear bases de datos"], respuesta: "B", puntos: 10},
+            {id: 15, texto: "¿Qué es un correo electrónico?", opciones: ["Un servicio de entrega postal", "Un medio de comunicación digital", "Un tipo de archivo", "Un software de edición"], respuesta: "B", puntos: 10},
+            {id: 16, texto: "¿Cuál es la función principal de un módem?", opciones: ["Procesar datos", "Conectar a internet mediante una señal", "Almacenar archivos", "Crear redes wifi"], respuesta: "B", puntos: 10},
+            {id: 17, texto: "¿Qué es una aplicación web?", opciones: ["Un programa para la computadora", "Un sitio web que funciona como una aplicación", "Un tipo de hardware", "Un navegador"], respuesta: "B", puntos: 10},
+            {id: 18, texto: "¿Cuál es el propósito de una copia de seguridad?", opciones: ["Acelerar la computadora", "Proteger datos mediante duplicación", "Eliminar archivos", "Mejorar el rendimiento"], respuesta: "B", puntos: 10},
+            {id: 19, texto: "¿Qué es un hackeo?", opciones: ["Una reparación de computadora", "Un acceso no autorizado a sistemas", "Un tipo de software", "Una actualización"], respuesta: "B", puntos: 10},
+            {id: 20, texto: "¿Cuál es la importancia de las TIC en la educación?", opciones: ["Ninguna importancia", "Facilitan el acceso a información y mejoran el aprendizaje", "Solo para entretenimiento", "Son obligatorias"], respuesta: "B", puntos: 10}
         ];
 
         // ===== FUNCIONES PRINCIPALES =====
@@ -456,7 +602,7 @@
             if (codigo === 'TIC026') {
                 estadoExamen.codigoValido = true;
                 document.getElementById('paso1').classList.add('hidden');
-                document.getElementById('paso2').classList.remove('hidden');
+                document.getElementById('pasoSelector').classList.remove('hidden');
                 mensajeError.classList.add('hidden');
                 estadoExamen.paso = 2;
             } else {
@@ -466,10 +612,35 @@
             }
         }
 
+        function seleccionarParcial(numero) {
+            if (!estadoExamen.codigoValido) return;
+
+            estadoExamen.parcial = numero;
+            if (numero === 1) {
+                estadoExamen.preguntas = preguntasData.slice(0, 10);
+            } else {
+                estadoExamen.preguntas = preguntasData.slice(10, 20);
+            }
+            estadoExamen.totalPreguntas = estadoExamen.preguntas.length;
+
+            document.getElementById('parcialSel').textContent = numero;
+            document.getElementById('estadoExamen').textContent = 'PARCIAL ' + numero + ' · LISTO';
+            document.getElementById('pasoSelector').classList.add('hidden');
+            document.getElementById('paso2').classList.remove('hidden');
+            estadoExamen.paso = 2;
+        }
+
         function volverPaso1() {
             document.getElementById('paso1').classList.remove('hidden');
+            document.getElementById('pasoSelector').classList.add('hidden');
             document.getElementById('paso2').classList.add('hidden');
             estadoExamen.paso = 1;
+        }
+
+        function volverPasoSelector() {
+            document.getElementById('pasoSelector').classList.remove('hidden');
+            document.getElementById('paso2').classList.add('hidden');
+            estadoExamen.paso = 2;
         }
 
         function irPaso3() {
@@ -512,10 +683,10 @@
             if (numero < 1 || numero > estadoExamen.totalPreguntas) return;
 
             estadoExamen.preguntaActual = numero;
-            const pregunta = preguntasData[numero - 1];
+            const pregunta = estadoExamen.preguntas[numero - 1];
 
             // Actualizar progreso
-            document.getElementById('infoProgreso').textContent = `Pregunta ${numero} de ${estadoExamen.totalPreguntas}`;
+            document.getElementById('infoProgreso').textContent = `Parcial ${estadoExamen.parcial} · Pregunta ${numero} de ${estadoExamen.totalPreguntas}`;
             const porcentaje = (numero / estadoExamen.totalPreguntas) * 100;
             document.getElementById('barraProgreso').style.width = porcentaje + '%';
 
@@ -589,13 +760,28 @@
 
         async function enviarExamen() {
             const btnEnviar = document.getElementById('btnEnviar');
+
+            // Asegurar que todas las respuestas estén guardadas
+            const sinResponder = [];
+            for (let i = 1; i <= estadoExamen.totalPreguntas; i++) {
+                if (!estadoExamen.respuestas[i]) sinResponder.push(i);
+            }
+            if (sinResponder.length > 0) {
+                const mensaje = document.getElementById('mensajeError3');
+                mensaje.classList.remove('hidden');
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> Aún te faltan ' + sinResponder.length +
+                    ' pregunta(s) por responder: ' + sinResponder.join(', ');
+                return;
+            }
+            document.getElementById('mensajeError3').classList.add('hidden');
+
             btnEnviar.disabled = true;
             btnEnviar.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
 
             try {
-                // Calcular puntaje
+                // Calcular puntaje (10 puntos por pregunta, todas respondidas)
                 let puntaje = 0;
-                preguntasData.forEach((pregunta, index) => {
+                estadoExamen.preguntas.forEach((pregunta, index) => {
                     const respuestaAlumno = estadoExamen.respuestas[index + 1];
                     if (respuestaAlumno === pregunta.respuesta) {
                         puntaje += pregunta.puntos;
@@ -611,7 +797,7 @@
                     apellido: estadoExamen.datosPersonales.nombre.split(' ')[1] || '',
                     carrera: estadoExamen.datosPersonales.carrera,
                     seccion: estadoExamen.datosPersonales.seccion,
-                    codigo_examen: 'TIC026',
+                    codigo_examen: 'TIC026-P' + estadoExamen.parcial,
                     intento: estadoExamen.intento,
                     respuestas: JSON.stringify(estadoExamen.respuestas),
                     puntaje: puntaje,
@@ -648,6 +834,10 @@
                         <div class="resumen-item">
                             <span><strong>Sección:</strong></span>
                             <span>${estadoExamen.datosPersonales.seccion}</span>
+                        </div>
+                        <div class="resumen-item">
+                            <span><strong>Examen:</strong></span>
+                            <span>Parcial ${estadoExamen.parcial}</span>
                         </div>
                         <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
                             <span><strong>Puntaje Obtenido:</strong></span>

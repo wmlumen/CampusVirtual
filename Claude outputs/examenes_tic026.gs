@@ -5,6 +5,9 @@
  */
 
 // ===== CONFIGURACIÓN =====
+// Base de datos (Google Sheets) donde se guardan las respuestas.
+const ID_HOJA_BASE = '1TeExNQVxQEXk8fFeKouXod3XlfU95X4CLVTuaQ44AMY';
+
 const CONFIG_EXAMEN = {
   codigo: 'TIC026',
   nombre: 'Examen Parcial TIC026',
@@ -15,10 +18,27 @@ const CONFIG_EXAMEN = {
   hojaResultadosFinal: 'ResultadosFinal'
 };
 
+// Devuelve el spreadsheet de la base (openById) con respaldo al activo.
+function obtenerSpreadsheet() {
+  try {
+    const ss = SpreadsheetApp.openById(ID_HOJA_BASE);
+    Logger.log('Base abierta por ID: ' + ss.getId());
+    return ss;
+  } catch (error) {
+    Logger.log('No se pudo abrir por ID, usando active: ' + error);
+    return SpreadsheetApp.getActiveSpreadsheet();
+  }
+}
+
 // ===== RUTA: GUARDAR RESPUESTAS DEL EXAMEN =====
 function examen_respuestas_guardar(cedula, nombre, apellido, carrera, seccion, codigo_examen, intento, respuestas, puntaje) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultados);
+    let sheet = obtenerSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultados);
+
+    if (!sheet) {
+      crearHojasExamen();
+      sheet = obtenerSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultados);
+    }
 
     if (!sheet) {
       return {
@@ -65,7 +85,7 @@ function examen_respuestas_guardar(cedula, nombre, apellido, carrera, seccion, c
 // ===== ACTUALIZAR RESULTADO FINAL (mejor puntaje) =====
 function actualizarResultadoFinal(cedula, nombre, apellido, carrera, seccion, codigo_examen, intento, puntaje) {
   try {
-    const sheetFinal = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
+    const sheetFinal = obtenerSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
 
     if (!sheetFinal) {
       Logger.log('Hoja de resultados finales no encontrada');
@@ -117,7 +137,7 @@ function actualizarResultadoFinal(cedula, nombre, apellido, carrera, seccion, co
 // ===== RUTA: OBTENER RESULTADOS DEL ALUMNO =====
 function examen_resultados_obtener(cedula, codigo_examen) {
   try {
-    const sheetFinal = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
+    const sheetFinal = obtenerSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
 
     if (!sheetFinal) {
       return {
@@ -161,7 +181,7 @@ function examen_resultados_obtener(cedula, codigo_examen) {
 // ===== RUTA: LISTAR TODOS LOS RESULTADOS (para docente) =====
 function examen_resultados_listar(codigo_examen) {
   try {
-    const sheetFinal = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
+    const sheetFinal = obtenerSpreadsheet().getSheetByName(CONFIG_EXAMEN.hojaResultadosFinal);
 
     if (!sheetFinal) {
       return {
@@ -206,7 +226,7 @@ function examen_resultados_listar(codigo_examen) {
 // ===== CREAR HOJAS AUTOMÁTICAMENTE (si no existen) =====
 function crearHojasExamen() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = obtenerSpreadsheet();
 
     // Crear hoja de respuestas
     if (!ss.getSheetByName(CONFIG_EXAMEN.hojaResultados)) {
@@ -260,7 +280,8 @@ function crearHojasExamen() {
 // ===== ENDPOINT PARA POST (integración con HTML) =====
 function doPost(e) {
   try {
-    const params = JSON.parse(e.postData.contents);
+    const p = e && e.parameter ? e.parameter : {};
+    const params = (Object.keys(p).length) ? p : JSON.parse((e && e.postData && e.postData.contents) || '{}');
 
     const resultado = examen_respuestas_guardar(
       params.cedula,

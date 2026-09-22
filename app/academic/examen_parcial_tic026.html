@@ -405,6 +405,52 @@
             <button class="btn-exam btn-primary-exam" onclick="validarCodigo()">
                 <i class="bi bi-check-circle"></i> VALIDAR CÓDIGO
             </button>
+
+            <button class="btn-exam btn-secondary-exam" style="margin-top: 12px;" onclick="mostrarConsultaResultados()">
+                <i class="bi bi-search"></i> CONSULTAR RESULTADOS POR CÉDULA
+            </button>
+        </div>
+
+        <!-- CONSULTA DE RESULTADOS -->
+        <div id="pasoConsulta" class="card-exam hidden">
+            <h2 style="color: var(--verde-dark); margin-bottom: 20px;">
+                <i class="bi bi-search"></i> Consulta de Resultados
+            </h2>
+            <p style="color: #64748b; margin-bottom: 20px;">
+                Consulta el primer puntaje, segundo puntaje y puntaje definitivo por cédula.
+            </p>
+
+            <div class="form-group">
+                <label for="consultaCedula">Cédula *</label>
+                <input
+                    type="text"
+                    id="consultaCedula"
+                    class="form-control"
+                    placeholder="Ej: 1340125"
+                    minlength="6"
+                    maxlength="20"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="consultaParcial">Examen *</label>
+                <select id="consultaParcial" class="form-select">
+                    <option value="1">Parcial 1</option>
+                    <option value="2" selected>Parcial 2</option>
+                </select>
+            </div>
+
+            <div id="mensajeConsulta" class="alert-exam alert-error hidden"></div>
+            <div id="resultadoConsulta" class="hidden" style="margin-top: 18px;"></div>
+
+            <div class="botones">
+                <button class="btn-exam btn-secondary-exam" onclick="volverDesdeConsulta()">
+                    <i class="bi bi-arrow-left"></i> ATRÁS
+                </button>
+                <button id="btnConsultarResultado" class="btn-exam btn-primary-exam" onclick="consultarResultadosCedula()">
+                    <i class="bi bi-search"></i> CONSULTAR
+                </button>
+            </div>
         </div>
 
         <!-- PASO 1.5: SELECCIÓN DE PARCIAL -->
@@ -620,13 +666,7 @@
         function seleccionarParcial(numero) {
             if (!estadoExamen.codigoValido) return;
 
-            estadoExamen.parcial = numero;
-            if (numero === 1) {
-                estadoExamen.preguntas = preguntasData.slice(0, 10);
-            } else {
-                estadoExamen.preguntas = preguntasData.slice(10, 20);
-            }
-            estadoExamen.totalPreguntas = estadoExamen.preguntas.length;
+            seleccionarPreguntasParcial(numero);
 
             document.getElementById('parcialSel').textContent = numero;
             document.getElementById('estadoExamen').textContent = 'PARCIAL ' + numero + ' · LISTO';
@@ -680,7 +720,7 @@
             Object.entries(datos).forEach(([clave, valor]) => params.append(clave, String(valor ?? '')));
             const urlSinCache = EXAMEN_API_URL + '?t=' + Date.now();
             const controlador = new AbortController();
-            const temporizador = setTimeout(() => controlador.abort(), 30000);
+            const temporizador = setTimeout(() => controlador.abort(), 60000);
             let respuesta;
             try {
                 respuesta = await fetch(urlSinCache, {
@@ -710,6 +750,130 @@
                 throw error;
             }
             return json;
+        }
+
+        function ocultarTodosLosPasos() {
+            ['paso1', 'pasoSelector', 'paso2', 'paso3', 'paso4', 'pasoConsulta'].forEach(id => {
+                const nodo = document.getElementById(id);
+                if (nodo) nodo.classList.add('hidden');
+            });
+        }
+
+        function seleccionarPreguntasParcial(numero) {
+            estadoExamen.parcial = Number(numero) === 2 ? 2 : 1;
+            estadoExamen.preguntas = estadoExamen.parcial === 1 ? preguntasData.slice(0, 10) : preguntasData.slice(10, 20);
+            estadoExamen.totalPreguntas = estadoExamen.preguntas.length;
+        }
+
+        function mostrarConsultaResultados() {
+            ocultarTodosLosPasos();
+            document.getElementById('pasoConsulta').classList.remove('hidden');
+            document.getElementById('estadoExamen').textContent = 'CONSULTA';
+            document.getElementById('mensajeConsulta').classList.add('hidden');
+            document.getElementById('resultadoConsulta').classList.add('hidden');
+        }
+
+        function volverDesdeConsulta() {
+            ocultarTodosLosPasos();
+            document.getElementById('paso1').classList.remove('hidden');
+            document.getElementById('estadoExamen').textContent = 'INICIANDO...';
+        }
+
+        function formatearPuntaje(valor) {
+            const numero = Number(valor);
+            return Number.isFinite(numero) ? numero + ' / 10' : 'Pendiente';
+        }
+
+        function crearBloqueRevisionProtegida() {
+            return `
+                <div id="accesoRevision" style="margin-top: 20px; padding: 16px; border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;">
+                    <h3 style="color: var(--dorado); margin-bottom: 10px;">
+                        <i class="bi bi-lock"></i> Revisión protegida
+                    </h3>
+                    <p style="margin-bottom: 12px; font-size: 0.86rem;">Completaste los dos intentos. Ingresa el código del profesor para mostrar los resultados detallados.</p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input id="codigoRevision" type="password" autocomplete="off" placeholder="Código de revisión"
+                            style="flex: 1 1 190px; min-width: 0; padding: 10px 12px; border: 1px solid rgba(212,168,67,0.35); border-radius: 8px;">
+                        <button type="button" class="btn-exam btn-primary-exam" style="width: auto; margin: 0;" onclick="validarCodigoRevision()">
+                            <i class="bi bi-unlock"></i> MOSTRAR REVISIÓN
+                        </button>
+                    </div>
+                    <div id="mensajeRevision" class="hidden" style="margin-top: 10px; color: #f8a09b; font-size: 0.82rem;"></div>
+                </div>
+                <div id="revisionDetallada" class="hidden" style="margin-top: 20px;">
+                    <h3 style="color: var(--dorado); margin-bottom: 16px; border-bottom: 1px solid rgba(212,168,67,0.3); padding-bottom: 8px;">
+                        <i class="bi bi-clipboard-check"></i> Revisión de tu examen
+                    </h3>
+                    <div id="contenidoRevision" style="max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
+                </div>
+            `;
+        }
+
+        async function consultarResultadosCedula() {
+            const cedula = document.getElementById('consultaCedula').value.trim();
+            const parcial = Number(document.getElementById('consultaParcial').value || 2);
+            const mensaje = document.getElementById('mensajeConsulta');
+            const resultado = document.getElementById('resultadoConsulta');
+            const boton = document.getElementById('btnConsultarResultado');
+
+            mensaje.classList.add('hidden');
+            resultado.classList.add('hidden');
+            resultado.innerHTML = '';
+
+            if (cedula.length < 6 || cedula.length > 20) {
+                mensaje.classList.remove('hidden');
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> Ingresa una cédula válida.';
+                return;
+            }
+
+            boton.disabled = true;
+            boton.innerHTML = '<i class="bi bi-hourglass-split"></i> CONSULTANDO...';
+            try {
+                const datos = await llamarApiExamen({
+                    accion: 'consultar_resultados',
+                    cedula,
+                    codigo_examen: 'TIC026-P' + parcial
+                });
+
+                seleccionarPreguntasParcial(parcial);
+                estadoExamen.datosPersonales = {
+                    nombre: datos.nombre || '',
+                    cedula: datos.cedula || cedula,
+                    carrera: datos.carrera || '',
+                    seccion: datos.seccion || ''
+                };
+
+                const revisionHtml = datos.revision_disponible ? crearBloqueRevisionProtegida() : `
+                    <div class="alert-exam alert-warning" style="margin-top: 16px;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        La revisión protegida se habilita después de completar los dos intentos.
+                    </div>
+                `;
+
+                resultado.innerHTML = `
+                    <div class="resumen">
+                        <div class="resumen-item"><span><strong>Nombre:</strong></span><span>${escaparHtml(datos.nombre || 'No registrado')}</span></div>
+                        <div class="resumen-item"><span><strong>Cédula:</strong></span><span>${escaparHtml(datos.cedula || cedula)}</span></div>
+                        <div class="resumen-item"><span><strong>Carrera:</strong></span><span>${escaparHtml(datos.carrera || 'No registrada')}</span></div>
+                        <div class="resumen-item"><span><strong>Sección:</strong></span><span>${escaparHtml(datos.seccion || 'No registrada')}</span></div>
+                        <div class="resumen-item"><span><strong>Examen:</strong></span><span>Parcial ${parcial}</span></div>
+                        <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
+                            <span><strong>Primer puntaje:</strong></span><span>${formatearPuntaje(datos.primer_puntaje)}</span>
+                        </div>
+                        <div class="resumen-item"><span><strong>Segundo puntaje:</strong></span><span>${formatearPuntaje(datos.segundo_puntaje)}</span></div>
+                        <div class="resumen-item"><span><strong>Puntaje definitivo:</strong></span><span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${formatearPuntaje(datos.puntaje_definitivo)}</span></div>
+                    </div>
+                    ${revisionHtml}
+                `;
+                resultado.classList.remove('hidden');
+                document.getElementById('estadoExamen').textContent = 'RESULTADO CONSULTADO';
+            } catch (error) {
+                mensaje.classList.remove('hidden');
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + (error.message || 'No se pudo consultar el resultado.');
+            } finally {
+                boton.disabled = false;
+                boton.innerHTML = '<i class="bi bi-search"></i> CONSULTAR';
+            }
         }
 
         async function irPaso3() {
@@ -941,28 +1105,7 @@
                 `;
 
                 // La opción aparece únicamente después de completar los dos intentos.
-                let revisionHtml = respuestaServer.revision_disponible ? `
-                    <div id="accesoRevision" style="margin-top: 20px; padding: 16px; border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;">
-                        <h3 style="color: var(--dorado); margin-bottom: 10px;">
-                            <i class="bi bi-lock"></i> Revisión protegida
-                        </h3>
-                        <p style="margin-bottom: 12px; font-size: 0.86rem;">Completaste los dos intentos. Ingresa el código del profesor para mostrar los resultados detallados.</p>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <input id="codigoRevision" type="password" autocomplete="off" placeholder="Código de revisión"
-                                style="flex: 1 1 190px; min-width: 0; padding: 10px 12px; border: 1px solid rgba(212,168,67,0.35); border-radius: 8px;">
-                            <button type="button" class="btn-exam btn-primary-exam" style="width: auto; margin: 0;" onclick="validarCodigoRevision()">
-                                <i class="bi bi-unlock"></i> MOSTRAR REVISIÓN
-                            </button>
-                        </div>
-                        <div id="mensajeRevision" class="hidden" style="margin-top: 10px; color: #f8a09b; font-size: 0.82rem;"></div>
-                    </div>
-                    <div id="revisionDetallada" class="hidden" style="margin-top: 20px;">
-                        <h3 style="color: var(--dorado); margin-bottom: 16px; border-bottom: 1px solid rgba(212,168,67,0.3); padding-bottom: 8px;">
-                            <i class="bi bi-clipboard-check"></i> Revisión de tu examen
-                        </h3>
-                        <div id="contenidoRevision" style="max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
-                    </div>
-                ` : '';
+                let revisionHtml = respuestaServer.revision_disponible ? crearBloqueRevisionProtegida() : '';
 
                 mensajeResultado += revisionHtml;
 

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v08.5.4: Atención al Alumno — consultas con expediente -->
+    <script src="./js/session-guard.js?v=5"></script>
+    <script>
+    // Cualquier usuario con sesión. Qué consultas ve cada uno lo decide el servidor.
+    CenturiaSession.protect();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atención al Alumno — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado:#d4a843;--txt3:rgba(255,255,255,.55);--rojo:#ff8a87;--ok:#3ddc6e;--naranja:#fbbf24;--azul:#7cc0ff}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Montserrat',sans-serif;min-height:100vh;color:#fff;position:relative;overflow-x:hidden;background:#060f09}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(22,129,61,.12) 0%,transparent 60%),linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%);z-index:-2}
+        .wrap{width:100%;max-width:1100px;margin:0 auto;padding:20px 20px 64px}
+        [hidden]{display:none !important}
+        a{color:var(--dorado)}
+        :focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+
+        .lib-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);margin-bottom:20px}
+        .lib-header-left{display:flex;align-items:center;gap:16px;min-width:0}
+        .lib-avatar{width:56px;height:56px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:2px solid var(--dorado)}
+        .lib-header-name{font-size:1.1rem;font-weight:700}
+        .lib-header-sub{font-size:.7rem;color:var(--dorado);letter-spacing:1px}
+        .lib-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .lib-btn{padding:8px 16px;border-radius:12px;font-size:.7rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .lib-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+
+        .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:20px;backdrop-filter:blur(20px);margin-bottom:16px}
+        .card h3{font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .card h3 i{color:var(--dorado)}
+        .form-group{margin-bottom:10px}
+        .form-group label{display:block;font-size:.6rem;font-weight:700;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+        .form-group input,.form-group select,.form-group textarea,.inp{width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:.75rem;font-family:'Montserrat';font-weight:600;color:#fff;background:rgba(255,255,255,.06);color-scheme:dark}
+        .form-group select option{background:#0d2c16;color:#fff}
+        .form-group input::placeholder,.form-group textarea::placeholder,.inp::placeholder{color:rgba(255,255,255,.3)}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus,.inp:focus{outline:none;border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.18)}
+        .form-group textarea{resize:vertical;min-height:110px;line-height:1.5}
+        .cnt{font-size:.58rem;color:var(--txt3);text-align:right;margin-top:2px}
+
+        .btn{padding:9px 16px;border:none;border-radius:12px;font-size:.7rem;font-weight:700;font-family:'Montserrat';cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+        .btn:disabled{opacity:.45;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,var(--verde-medio),#0f6a31);color:#fff;border:1px solid rgba(212,168,67,.45)}.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#1a9448,var(--verde-medio))}
+        .btn-gold{background:rgba(212,168,67,.18);color:var(--dorado);border:1px solid rgba(212,168,67,.4)}.btn-gold:hover:not(:disabled){background:rgba(212,168,67,.3)}
+        .btn-secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15)}.btn-secondary:hover:not(:disabled){background:rgba(255,255,255,.14);color:#fff}
+        .btn-danger{background:rgba(239,83,80,.15);color:var(--rojo);border:1px solid rgba(239,83,80,.35)}.btn-danger:hover:not(:disabled){background:rgba(239,83,80,.25)}
+        .btn-sm{padding:6px 12px;font-size:.62rem}
+        .acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+        .seg .btn.on{background:rgba(0,177,64,.22);color:var(--ok);border-color:rgba(0,177,64,.4)}
+        .seg .n{background:rgba(255,255,255,.15);border-radius:9px;padding:0 6px;font-size:.58rem}
+
+        .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.6rem;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+        .b-ok{background:rgba(0,177,64,.2);color:var(--ok)}.b-warn{background:rgba(251,191,36,.18);color:var(--naranja)}.b-bad{background:rgba(239,83,80,.18);color:var(--rojo)}.b-gold{background:rgba(212,168,67,.2);color:var(--dorado)}.b-mute{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}.b-blue{background:rgba(124,192,255,.18);color:var(--azul)}
+        .muted{color:var(--txt3);font-size:.68rem}
+        .empty{text-align:center;padding:28px;color:var(--txt3);font-size:.75rem}
+        .empty i{font-size:2rem;display:block;margin-bottom:6px;color:rgba(255,255,255,.2)}
+
+        .item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 15px;margin-bottom:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px;cursor:pointer;transition:.15s;width:100%;text-align:left;color:inherit;font-family:inherit}
+        .item:hover{border-color:rgba(212,168,67,.55);background:rgba(255,255,255,.07)}
+        .item.nuevo{border-color:rgba(0,177,64,.55);background:rgba(0,177,64,.08)}
+        .item b{font-size:.82rem;display:block;margin-bottom:3px}
+        .item .meta{font-size:.64rem;color:var(--txt3);line-height:1.5}
+        .punto{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 8px var(--ok)}
+
+        .exp-cab{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+        .exp-cab h2{font-size:1.15rem;font-weight:800;line-height:1.3}
+        .grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+        .grid>div>.card:last-child{margin-bottom:0}
+        .hilo{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding:2px 4px 2px 0}
+        .msg{max-width:82%;padding:10px 14px;border-radius:14px;font-size:.75rem;line-height:1.55;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);align-self:flex-start;word-break:break-word}
+        .msg.propio{align-self:flex-end;background:rgba(22,129,61,.3);border-color:rgba(0,177,64,.4)}
+        .msg.nota{align-self:stretch;max-width:100%;background:repeating-linear-gradient(135deg,rgba(251,191,36,.10),rgba(251,191,36,.10) 8px,rgba(251,191,36,.05) 8px,rgba(251,191,36,.05) 16px);border:1px dashed rgba(251,191,36,.6)}
+        .msg.sistema{align-self:center;max-width:100%;background:none;border:none;color:var(--txt3);font-size:.64rem;text-align:center;padding:2px}
+        .msg .quien{font-size:.62rem;font-weight:800;margin-bottom:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .msg .quien em{font-style:normal;font-weight:600;color:var(--dorado)}
+        .msg .cuando{font-size:.55rem;color:var(--txt3);margin-top:4px;text-align:right}
+        .msg .txt{white-space:pre-wrap}
+        .resp{margin-top:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+        .resp textarea{min-height:84px}
+        .chk{display:flex;align-items:center;gap:6px;font-size:.68rem;color:var(--naranja);font-weight:700;cursor:pointer}
+        .kv{display:grid;grid-template-columns:78px 1fr;gap:5px 10px;font-size:.7rem;align-items:start}
+        .kv dt{color:var(--txt3);font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding-top:2px}
+        .kv dd{font-weight:600;word-break:break-word}
+        .pers{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 10px;margin-bottom:5px;border-radius:10px;background:rgba(255,255,255,.05);font-size:.68rem}
+        .pers small{display:block;color:var(--txt3);font-size:.58rem}
+        .x{background:none;border:none;color:var(--rojo);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:6px}.x:hover{background:rgba(239,83,80,.2)}
+        .fila-add{display:flex;gap:6px;margin-top:8px}
+        .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+        .chip{padding:5px 10px;border-radius:14px;font-size:.62rem;font-weight:700;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-family:inherit}
+        .chip.on{background:rgba(212,168,67,.25);border-color:var(--dorado);color:var(--dorado)}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:12px;font-size:.72rem;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:340px}
+        .toast.ok{background:rgba(13,44,22,.96);color:var(--ok);border:1px solid rgba(0,177,64,.5)}
+        .toast.err{background:rgba(60,15,15,.96);color:var(--rojo);border:1px solid rgba(239,83,80,.5)}
+        .footer{position:fixed;bottom:0;left:0;right:0;z-index:10;text-align:center;padding:10px 20px;font-size:.55rem;color:rgba(255,255,255,.6);background:rgba(0,61,25,.9);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.08)}
+
+        @media print{body{background:#fff !important;color:#000 !important}body::before{display:none}.lib-header-actions,.acciones,.footer,.btn,.seg,.resp,#lateral-atencion,.x,.fila-add,.chips{display:none !important}.card,.lib-header{background:#fff;border:1px solid #ccc;color:#000}.hilo{max-height:none;overflow:visible}.msg{background:#fff !important;border:1px solid #bbb !important;color:#000}.muted,.kv dt,.msg .cuando{color:#444}.grid{grid-template-columns:1fr}}
+        @media(max-width:820px){.wrap{padding:12px 12px 70px}.lib-header{flex-direction:column;align-items:flex-start}.grid{grid-template-columns:1fr}.msg{max-width:94%}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="lib-header">
+        <div class="lib-header-left">
+            <div class="lib-avatar" id="h-avatar">A</div>
+            <div>
+                <div class="lib-header-name" id="h-name">Atención al Alumno</div>
+                <div class="lib-header-sub" id="h-sub">ATENCIÓN AL ALUMNO</div>
+            </div>
+        </div>
+        <div class="lib-header-actions">
+            <button class="lib-btn" id="btn-lista" onclick="irLista()" hidden><i class="bi bi-list-ul"></i> Todas las consultas</button>
+            <a class="lib-btn" href="dashboard.html"><i class="bi bi-house"></i> Inicio</a>
+            <button class="lib-btn" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </div>
+    </div>
+
+    <!-- ═══ LISTA ═══ -->
+    <div id="v-lista">
+        <div class="card" id="c-atender" hidden>
+            <h3><i class="bi bi-inbox"></i> Consultas para atender</h3>
+            <div class="seg" id="seg-estado"></div>
+            <div class="acciones" style="margin-bottom:12px">
+                <input class="inp" id="f-q" placeholder="Buscar por asunto, nombre, cédula o número…" style="flex:1;min-width:200px" aria-label="Buscar consultas">
+                <select class="inp" id="f-cat" style="width:auto;min-width:180px" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+            </div>
+            <div id="lista-atender"></div>
+        </div>
+
+        <div class="card" id="c-mias">
+            <h3><i class="bi bi-chat-dots"></i> Mis consultas <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="abrirNueva()"><i class="bi bi-plus-lg"></i> Nueva consulta</button></h3>
+            <p class="muted" style="margin-bottom:12px;line-height:1.5" id="intro-mias">Escribe aquí lo que necesites (una beca, un pago, un documento, una duda académica…). El equipo de atención lo recibe directamente y te responde en esta misma pantalla.</p>
+            <div id="lista-mias"></div>
+        </div>
+    </div>
+
+    <!-- ═══ NUEVA CONSULTA ═══ -->
+    <div id="v-nueva" hidden>
+        <form class="card" onsubmit="enviarNueva(event)" novalidate>
+            <h3><i class="bi bi-pencil-square"></i> Nueva consulta</h3>
+            <div class="form-group"><label for="n-cat">¿Sobre qué es?</label><select id="n-cat"></select></div>
+            <div class="form-group"><label for="n-asunto">Asunto *</label><input id="n-asunto" maxlength="120" placeholder="Ej.: Solicitud de beca parcial" autocomplete="off"></div>
+            <div class="form-group"><label for="n-msg">Tu consulta *</label><textarea id="n-msg" maxlength="2000" placeholder="Cuéntanos con detalle qué necesitas."></textarea><div class="cnt"><span id="n-cnt">0</span>/2000</div></div>
+            <div class="acciones">
+                <button class="btn btn-primary" id="btn-enviar" type="submit"><i class="bi bi-send"></i> Enviar consulta</button>
+                <button class="btn btn-secondary" type="button" onclick="irLista()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ═══ EXPEDIENTE ═══ -->
+    <div id="v-hilo" hidden>
+        <div class="card"><div class="exp-cab" id="exp-cab"></div></div>
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h3><i class="bi bi-journal-text"></i> Expediente</h3>
+                    <div class="hilo" id="hilo" aria-live="polite"></div>
+                    <div class="resp" id="resp">
+                        <div class="form-group" style="margin-bottom:8px"><label for="r-txt" id="r-lbl">Tu respuesta</label><textarea id="r-txt" maxlength="2000" placeholder="Escribe aquí…"></textarea></div>
+                        <div class="acciones">
+                            <button class="btn btn-primary" id="btn-resp" onclick="responder()"><i class="bi bi-send"></i> Enviar</button>
+                            <label class="chk" id="chk-nota" hidden><input type="checkbox" id="r-nota"> Nota interna (solo la ve el personal)</label>
+                            <span class="muted" style="margin-left:auto">Ctrl + Enter para enviar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="lateral">
+                <div class="card" id="c-alumno" hidden><h3><i class="bi bi-person-vcard"></i> Estudiante</h3><dl class="kv" id="kv-alumno"></dl></div>
+                <div id="lateral-atencion" hidden>
+                    <div class="card">
+                        <h3><i class="bi bi-flag"></i> Estado</h3>
+                        <div class="chips" id="chips-estado" style="margin-top:0"></div>
+                    </div>
+                    <div class="card">
+                        <h3><i class="bi bi-people"></i> Quién más lo ve</h3>
+                        <p class="muted" style="margin-bottom:8px;line-height:1.5">Atención al Estudiante, Académico y Administración la ven siempre. Suma a otra persona por su cédula para que la vea y responda sin reenviar nada.</p>
+                        <div id="participantes"></div>
+                        <div class="fila-add"><input class="inp" id="add-ced" placeholder="Cédula de la persona" inputmode="numeric" autocomplete="off" aria-label="Cédula de la persona a sumar"><button class="btn btn-gold btn-sm" onclick="sumar()"><i class="bi bi-person-plus"></i></button></div>
+                        <div class="muted" style="margin:12px 0 4px;font-weight:700">Derivar a un área</div>
+                        <div class="chips" id="chips-areas" style="margin-top:0"></div>
+                    </div>
+                </div>
+                <div class="acciones"><button class="btn btn-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir expediente</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="footer">Instituto Superior Centuria — Atención al Alumno &copy; 2026</div>
+
+<script src="js/api.js?v=21"></script>
+<script src="js/logout.js?v=2"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const K = () => CenturiaAPI.consultas;
+const CATS = ['Beca', 'Matrícula / Inscripción', 'Pagos / Tesorería', 'Académica (notas, exámenes, materias)', 'Documentos / Certificados', 'Queja o sugerencia', 'Otra'];
+const ESTADOS = { abierta: ['b-warn', 'Abierta'], en_proceso: ['b-blue', 'En proceso'], resuelta: ['b-ok', 'Resuelta'] };
+
+let datos = null;                 // última respuesta de con_listar
+let filtroEstado = '';
+let actual = null;                // expediente abierto (respuesta de con_ver)
+let timerLista = null, timerHilo = null;
+let vistaActual = 'lista';
+
+function toast(msg, tipo) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (tipo === 'err' ? 'err' : 'ok');
+    t.setAttribute('role', tipo === 'err' ? 'alert' : 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4200);
+}
+async function llamar(promesa, silencioso) {
+    let d;
+    try { d = await promesa; } catch (e) { if (!silencioso) toast('No se pudo conectar con el servidor.', 'err'); return null; }
+    if (!d || d.ok !== true) {
+        const m = (d && (d.error || d.mensaje)) || 'El servidor no respondió como se esperaba.';
+        if (!silencioso) toast(/no reconocida|Acción/i.test(m) ? 'El servidor todavía no tiene Atención al Alumno: falta publicar la nueva versión del script.' : m, 'err');
+        return { _error: m };
+    }
+    return d;
+}
+const fallo = (d) => !d || d._error;
+function badgeEstado(e) { const m = ESTADOS[e] || ['b-mute', e]; return '<span class="badge ' + m[0] + '">' + esc(m[1]) + '</span>'; }
+function fechaHora(s) {
+    const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    return m ? m[3] + '/' + m[2] + '/' + m[1] + ' ' + m[4] + ':' + m[5] : String(s || '');
+}
+function rolEtiqueta(r) {
+    return { asistencia_estudiante: 'Atención al Estudiante', academico: 'Académico', admin: 'Administración', administrador: 'Administración', administrador_plataforma: 'Administración', admin_filial: 'Filial', tesoreria: 'Tesorería', docente: 'Docente', alumno: 'Estudiante' }[r] || r || '';
+}
+
+// ═══ INICIO ═══
+document.addEventListener('DOMContentLoaded', async () => {
+    const u = CenturiaAPI.getCurrentUser() || {};
+    const nombre = [u.nombre, u.apellido].filter(Boolean).join(' ') || u.username || 'Usuario';
+    $('h-avatar').textContent = (nombre.charAt(0) || 'A').toUpperCase();
+    $('h-name').textContent = nombre;
+    $('n-cat').innerHTML = CATS.map(c => '<option>' + esc(c) + '</option>').join('');
+    $('f-cat').innerHTML = '<option value="">Todas las categorías</option>' + CATS.map(c => '<option>' + esc(c) + '</option>').join('');
+    $('f-q').addEventListener('input', debounce(() => cargarLista(true), 350));
+    $('f-cat').addEventListener('change', () => cargarLista(true));
+    $('n-msg').addEventListener('input', () => { $('n-cnt').textContent = $('n-msg').value.length; });
+    $('r-txt').addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') responder(); });
+    $('add-ced').addEventListener('keydown', (e) => { if (e.key === 'Enter') sumar(); });
+    const id = new URLSearchParams(location.search).get('id');
+    await cargarLista();
+    if (id) abrirHilo(id);
+    else if (new URLSearchParams(location.search).get('nueva')) abrirNueva();
+    timerLista = setInterval(() => { if (!document.hidden && vistaActual === 'lista') cargarLista(true); }, 30000);
+});
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+function ver(v) {
+    vistaActual = v;
+    ['lista', 'nueva', 'hilo'].forEach(x => { $('v-' + x).hidden = x !== v; });
+    if (v !== 'hilo') { clearInterval(timerHilo); timerHilo = null; }
+    $('btn-lista').hidden = v === 'lista';
+    window.scrollTo(0, 0);
+}
+function irLista() {
+    history.replaceState(null, '', location.pathname);
+    actual = null;
+    ver('lista');
+    cargarLista(true);
+}
+
+// ═══ LISTA ═══
+function itemHtml(c, paraAtender) {
+    const nuevo = paraAtender ? (c.estado === 'abierta' && c.pendiente_personal) : c.pendiente_alumno;
+    return '<button class="item' + (nuevo ? ' nuevo' : '') + '" onclick="abrirHilo(\'' + esc(c.id) + '\')"><div style="min-width:0;flex:1">'
+        + '<b>' + (nuevo ? '<span class="punto" title="' + (paraAtender ? 'Espera respuesta' : 'Tiene una respuesta nueva') + '"></span>' : '') + esc(c.asunto) + '</b>'
+        + '<div class="meta">' + (paraAtender ? '<i class="bi bi-person"></i> ' + esc(c.nombre) + ' · C.I. ' + esc(c.cedula) + (c.carrera ? ' · ' + esc(c.carrera) : '') + '<br>' : '')
+        + esc(c.categoria) + ' · ' + esc(fechaHora(c.ultima_actividad)) + ' · ' + c.mensajes + ' mensaje' + (c.mensajes === 1 ? '' : 's')
+        + (nuevo && !paraAtender ? ' · <b style="display:inline;color:var(--ok)">respuesta nueva</b>' : '') + '</div></div>' + badgeEstado(c.estado) + '</button>';
+}
+async function cargarLista(silencioso) {
+    const d = await llamar(K().listar({ estado: filtroEstado, categoria: $('f-cat').value, q: $('f-q').value.trim() }), silencioso);
+    if (fallo(d)) {
+        if (!datos) $('lista-mias').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i>' + esc(d ? d._error : 'Sin conexión') + '</div>';
+        return;
+    }
+    datos = d;
+    const atiende = d.es_personal || d.conteo.total > 0;
+    $('c-atender').hidden = !atiende;
+    $('h-sub').textContent = atiende ? 'ATENCIÓN AL ALUMNO · PERSONAL' : 'ATENCIÓN AL ALUMNO';
+    if (atiende) {
+        const seg = [['', 'Todas', d.conteo.total], ['abierta', 'Abiertas', d.conteo.abierta], ['en_proceso', 'En proceso', d.conteo.en_proceso], ['resuelta', 'Resueltas', d.conteo.resuelta]];
+        $('seg-estado').innerHTML = seg.map(s => '<button class="btn btn-secondary btn-sm' + (filtroEstado === s[0] ? ' on' : '') + '" onclick="filtrarEstado(\'' + s[0] + '\')">' + s[1] + ' <span class="n">' + s[2] + '</span></button>').join('');
+        $('lista-atender').innerHTML = d.atender.length ? d.atender.map(c => itemHtml(c, true)).join('')
+            : '<div class="empty"><i class="bi bi-inbox"></i>No hay consultas en esta vista.</div>';
+    }
+    $('lista-mias').innerHTML = d.mias.length ? d.mias.map(c => itemHtml(c, false)).join('')
+        : '<div class="empty"><i class="bi bi-chat-square-text"></i>Todavía no enviaste ninguna consulta.</div>';
+    // El personal ve primero lo que tiene para atender; sus propias consultas quedan debajo
+    $('intro-mias').hidden = atiende;
+}
+function filtrarEstado(e) { filtroEstado = e; cargarLista(); }
+
+// ═══ NUEVA ═══
+function abrirNueva() {
+    $('n-asunto').value = ''; $('n-msg').value = ''; $('n-cnt').textContent = '0';
+    ver('nueva');
+    $('n-asunto').focus();
+}
+async function enviarNueva(e) {
+    e.preventDefault();
+    if ($('n-asunto').value.trim().length < 4) { toast('Escribe un asunto.', 'err'); $('n-asunto').focus(); return; }
+    if ($('n-msg').value.trim().length < 10) { toast('Cuéntanos tu consulta con un poco más de detalle.', 'err'); $('n-msg').focus(); return; }
+    $('btn-enviar').disabled = true;
+    const d = await llamar(K().crear($('n-cat').value, $('n-asunto').value.trim(), $('n-msg').value.trim()));
+    $('btn-enviar').disabled = false;
+    if (fallo(d)) return;
+    toast(d.mensaje || 'Consulta enviada.');
+    history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(d.id));
+    await abrirHilo(d.id);
+}
+
+// ═══ EXPEDIENTE ═══
+async function abrirHilo(id) {
+    history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(id));
+    ver('hilo');
+    $('exp-cab').innerHTML = '<div class="empty" style="width:100%">Cargando…</div>';
+    const d = await llamar(K().ver(id));
+    if (fallo(d)) { $('exp-cab').innerHTML = '<div class="empty" style="width:100%"><i class="bi bi-exclamation-circle"></i>' + esc(d ? d._error : 'Sin conexión') + '</div>'; return; }
+    actual = d;
+    renderCabecera(); renderHilo(true); renderLateral();
+    clearInterval(timerHilo);
+    timerHilo = setInterval(refrescarHilo, 12000);
+}
+async function refrescarHilo() {
+    if (document.hidden || !actual) return;
+    const d = await llamar(K().ver(actual.consulta.id), true);
+    if (fallo(d)) return;
+    const nuevos = d.mensajes.length !== actual.mensajes.length;
+    actual = d;
+    renderCabecera(); renderLateral();
+    if (nuevos) renderHilo(false);
+}
+function renderCabecera() {
+    const c = actual.consulta;
+    $('exp-cab').innerHTML = '<div style="min-width:0"><div class="muted" style="margin-bottom:4px">' + esc(c.categoria) + ' · N.º ' + esc(c.id) + '</div><h2>' + esc(c.asunto) + '</h2>'
+        + '<div class="muted" style="margin-top:4px">Abierta el ' + esc(fechaHora(c.creada)) + (c.estado === 'resuelta' && c.fecha_resolucion ? ' · Resuelta el ' + esc(fechaHora(c.fecha_resolucion)) + (c.resuelta_por ? ' por ' + esc(c.resuelta_por) : '') : '') + '</div></div><div>' + badgeEstado(c.estado) + '</div>';
+}
+function renderHilo(irAlFinal) {
+    const cont = $('hilo');
+    const cerca = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
+    cont.innerHTML = actual.mensajes.map(m => {
+        if (m.tipo === 'sistema') return '<div class="msg sistema"><i class="bi bi-arrow-repeat"></i> ' + esc(m.texto) + ' · ' + esc(fechaHora(m.fecha)) + '</div>';
+        const clase = m.tipo === 'nota' ? 'nota' : (m.propio ? 'propio' : '');
+        return '<div class="msg ' + clase + '"><div class="quien">' + esc(m.autor) + ' <em>' + esc(rolEtiqueta(m.rol)) + '</em>' + (m.tipo === 'nota' ? '<span class="badge b-warn"><i class="bi bi-eye-slash"></i> Nota interna · solo personal</span>' : '') + '</div>'
+            + '<div class="txt">' + esc(m.texto) + '</div><div class="cuando">' + esc(fechaHora(m.fecha)) + '</div></div>';
+    }).join('');
+    if (irAlFinal || cerca) cont.scrollTop = cont.scrollHeight;
+}
+function renderLateral() {
+    const p = actual.permisos, e = actual.estudiante;
+    $('c-alumno').hidden = !e;
+    if (e) $('kv-alumno').innerHTML = '<dt>Nombre</dt><dd>' + esc(e.nombre) + '</dd><dt>Cédula</dt><dd>' + esc(e.cedula) + '</dd>'
+        + (e.carrera ? '<dt>Carrera</dt><dd>' + esc(e.carrera) + '</dd>' : '') + (e.grado ? '<dt>Grado</dt><dd>' + esc(e.grado) + '</dd>' : '') + (e.seccion ? '<dt>Sección</dt><dd>' + esc(e.seccion) + '</dd>' : '')
+        + (e.telefono ? '<dt>Teléfono</dt><dd>' + esc(e.telefono) + '</dd>' : '') + (e.email ? '<dt>Correo</dt><dd>' + esc(e.email) + '</dd>' : '');
+    $('lateral-atencion').hidden = !p.atencion;
+    $('chk-nota').hidden = !p.atencion;
+    $('r-lbl').textContent = p.atencion ? 'Tu respuesta al estudiante' : 'Tu respuesta';
+    if (p.atencion) {
+        $('chips-estado').innerHTML = Object.keys(ESTADOS).map(k => '<button class="chip' + (actual.consulta.estado === k ? ' on' : '') + '" onclick="cambiarEstado(\'' + k + '\')">' + esc(ESTADOS[k][1]) + '</button>').join('');
+        $('participantes').innerHTML = actual.participantes.length
+            ? actual.participantes.map(x => '<div class="pers"><div>' + esc(x.nombre) + '<small>' + esc(x.rol) + ' · C.I. ' + esc(x.cedula) + '</small></div><button class="x" aria-label="Quitar a ' + esc(x.nombre) + '" onclick="quitar(\'' + esc(x.cedula) + '\')"><i class="bi bi-x-lg"></i></button></div>').join('')
+            : '<div class="muted">Nadie más fue agregado.</div>';
+        const activas = actual.areas.map(a => a.id);
+        $('chips-areas').innerHTML = p.areas_disponibles.map(a => {
+            const on = activas.indexOf(a.id) >= 0;
+            return '<button class="chip' + (on ? ' on' : '') + '" onclick="derivar(\'' + esc(a.id) + '\',' + on + ')">' + (on ? '<i class="bi bi-check2"></i> ' : '') + esc(a.nombre) + '</button>';
+        }).join('');
+    }
+}
+
+async function accion(promesa, refrescar) {
+    const d = await llamar(promesa);
+    if (fallo(d)) return null;
+    if (d.mensaje) toast(d.mensaje);
+    if (refrescar !== false) await refrescarHilo();
+    return d;
+}
+async function responder() {
+    const t = $('r-txt').value.trim();
+    if (t.length < 2) { toast('Escribe tu respuesta.', 'err'); return; }
+    $('btn-resp').disabled = true;
+    const d = await accion(K().responder(actual.consulta.id, t, $('r-nota').checked && actual.permisos.atencion), false);
+    $('btn-resp').disabled = false;
+    if (!d) return;
+    $('r-txt').value = ''; $('r-nota').checked = false;
+    const v = await llamar(K().ver(actual.consulta.id), true);
+    if (!fallo(v)) { actual = v; renderCabecera(); renderHilo(true); renderLateral(); }
+}
+function cambiarEstado(e) { if (actual.consulta.estado !== e) accion(K().estado(actual.consulta.id, e)); }
+async function sumar() {
+    const c = $('add-ced').value.trim();
+    if (!c) { toast('Escribe la cédula de la persona.', 'err'); return; }
+    const d = await accion(K().compartir(actual.consulta.id, c));
+    if (d) $('add-ced').value = '';
+}
+function quitar(ced) { if (confirm('¿Quitar el acceso de esta persona a la consulta?')) accion(K().quitar(actual.consulta.id, ced)); }
+function derivar(area, yaEsta) { accion(K().derivar(actual.consulta.id, area, yaEsta)); }
+</script>
+</body>
+</html>

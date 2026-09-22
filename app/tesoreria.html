@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=3"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -415,7 +415,31 @@
 
     <div class="footer">Instituto Superior Centuria — Tesorería © 2026</div>
 
-    <script src="js/api.js?v=19"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+    <script>
+      /* Firebase inicializado en api.js */
+      window.require = window.require || function(mod){
+        if(mod==='firebase-firestore'){
+          return {
+            collection: (db,coll)=> db.collection(coll),
+            doc: (db,coll,id)=> db.collection(coll).doc(id),
+            getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+            getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+            setDoc: (ref,data)=> ref.set(data),
+            updateDoc: (ref,data)=> ref.update(data),
+            deleteDoc: (ref)=> ref.delete(),
+            query: (q,...conds)=>{ let qq=q; for(const c of conds){ if(!c) continue; if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value); else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc'); else if(typeof c==='number') qq=qq.limit(c); } return qq; },
+            where: (field,op,value)=>({field,op,value}),
+            limit: (n)=> n,
+            orderBy: (field,dir)=>({fieldPath:field, order:dir})
+          };
+        }
+        throw new Error('Cannot find module '+mod);
+      };
+    </script>
+    <script src="js/api.js?v=21"></script>
     <script>
         let pagosCache = [];
         const token = () => CenturiaAPI.getToken();

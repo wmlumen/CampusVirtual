@@ -1,1224 +1,290 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- v10.0: Dashboard Admin Integral Centuria -->
-    <script src="./js/session-guard.js?v=3"></script>
+    <!-- Firebase SDK Compat - CARGA PRIMERO, antes de cualquier otro script -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('[dashboard-admin] Firebase app-compat FAILED')"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('[dashboard-admin] Firebase firestore-compat FAILED')"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('[dashboard-admin] Firebase auth-compat FAILED')"></script>
     <script>
-        CenturiaSession.protect({
-            allowedRoles: ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'],
-            currentRolePage: 'admin'
-        });
+      if(!window.firebase||!window.firebase.apps||window.firebase.apps.length===0){
+        (function(){
+          var loaded=false;
+          function onAllLoaded(){if(loaded)return;loaded=true;try{window.firebase={apps:[],initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);return a;},firestore:function(){return{collection:function(c){return{doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return{}})}}}}},where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]})}}}}}},auth:function(){return{}}};window.__firebaseFallback=true}catch(e){}}
+          var s1=document.createElement('script');s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+          var s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+          var s3=document.createElement('script');s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+          s1.onload=function(){s2.onload();};s2.onload=function(){s3.onload=onAllLoaded;document.head.appendChild(s3);};
+          s1.onerror=s2.onerror=s3.onerror=onAllLoaded;document.head.appendChild(s1);
+        })();
+      }
     </script>
+    <!-- v08.5: Security Guard -->
+    <script src="js/session-guard.js?v=3"></script>
+    <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Administrador — Campus Virtual Centuria</title>
+    <title>Panel Administrativo — Centuria</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/accesibilidad.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
-    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        :root {
-            --verde-oscuro: #0d2c16;
-            --verde-medio: #16813D;
-            --verde-claro: #e8f5ec;
-            --verde-hover: #1ebb4d;
-            --dorado: #d4a843;
-            --dorado-claro: #e8c676;
-            --blanco: #ffffff;
-            --rosa: #D94172;
-            --azul: #2563EB;
-            --naranja: #D97706;
-            --rojo: #ef5350;
-            --fondo-card: rgba(255, 255, 255, 0.06);
-            --border-card: rgba(255, 255, 255, 0.12);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            min-height: 100vh;
-            color: var(--blanco);
-            position: relative;
-            overflow-x: hidden;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            background-color: #060f09;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse at 15% 40%, rgba(22,129,61,.22) 0%, transparent 60%),
-                radial-gradient(ellipse at 85% 15%, rgba(212,168,67,.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 85%, rgba(13,44,22,.4) 0%, transparent 70%),
-                linear-gradient(160deg, #060f09 0%, #0d2c16 35%, #0f3820 65%, #060f09 100%);
-            z-index: -2;
-        }
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");
-            z-index: -1;
-        }
-        .dash-wrapper {
-            width: 100%;
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 20px;
-            padding-bottom: 60px;
-            animation: fadeInUp .7s cubic-bezier(.16,1,.3,1);
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── Header ── */
-        .dash-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 24px;
-            background: rgba(255,255,255,.07);
-            border: 1px solid var(--border-card);
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            margin-bottom: 24px;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .dash-header-left { display: flex; align-items: center; gap: 16px; }
-        .dash-avatar {
-            width: 58px; height: 58px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; font-weight: 800; color: var(--blanco);
-            border: 2px solid var(--dorado);
-            box-shadow: 0 4px 14px rgba(0,0,0,.35);
-            flex-shrink: 0;
-        }
-        .admin-badge {
-            background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05));
-            border: 1px solid var(--dorado);
-            color: var(--dorado-claro);
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 3px 9px;
-            border-radius: 20px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .btn-header {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.18);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-header:hover {
-            background: rgba(255,255,255,0.16);
-            color: var(--dorado-claro);
-            transform: translateY(-2px);
-        }
-
-        /* ── KPIs Bar ── */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .kpi-card {
-            background: var(--fondo-card);
-            border: 1px solid var(--border-card);
-            border-radius: 16px;
-            padding: 16px 20px;
-            backdrop-filter: blur(16px);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: transform 0.25s ease, border-color 0.25s ease;
-        }
-        .kpi-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(212,168,67,0.4);
-        }
-        .kpi-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-        }
-
-        /* ── Tabs Navigation ── */
-        .nav-tabs-admin {
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            padding-bottom: 12px;
-            margin-bottom: 24px;
-            overflow-x: auto;
-            scrollbar-width: thin;
-        }
-        .tab-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.75);
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-        .tab-btn:hover {
-            background: rgba(255,255,255,0.12);
-            color: #fff;
-        }
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--verde-medio), var(--verde-oscuro));
-            border-color: var(--dorado);
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(22,129,61,0.35);
-        }
-
-        /* ── Cards and Modules ── */
-        .admin-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid var(--border-card);
-            border-radius: 20px;
-            padding: 24px;
-            backdrop-filter: blur(18px);
-            margin-bottom: 24px;
-        }
-        .admin-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        /* ── App Grid (Ecosistema) ── */
-        .apps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 16px;
-        }
-        .app-tile {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.09);
-            border-radius: 16px;
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            text-decoration: none;
-            color: #fff;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .app-tile:hover {
-            background: rgba(255,255,255,0.12);
-            transform: translateY(-3px);
-            border-color: var(--dorado);
-            color: #fff;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-        }
-        .app-tile-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            flex-shrink: 0;
-        }
-
-        /* ── Custom Tables ── */
-        .table-admin-wrap {
-            overflow-x: auto;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .table-admin {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 0;
-        }
-        .table-admin th {
-            background: rgba(13, 44, 22, 0.7);
-            color: var(--dorado-claro);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.8px;
-            padding: 12px 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
-        }
-        .table-admin td {
-            padding: 12px 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            vertical-align: middle;
-        }
-        .table-admin tr:hover td {
-            background: rgba(255,255,255,0.04);
-        }
-
-        /* ── Search and Filter Inputs ── */
-        .search-inp {
-            background: rgba(0,0,0,0.35);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px;
-            color: #fff;
-            padding: 8px 14px;
-            font-size: 0.82rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .search-inp:focus {
-            border-color: var(--dorado);
-            box-shadow: 0 0 0 3px rgba(212,168,67,0.2);
-        }
-        .search-inp option {
-            background: #0d2c16;
-            color: #fff;
-        }
-
-        /* ── Action Buttons ── */
-        .btn-act {
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s ease;
-        }
-        .btn-act-success { background: #10B981; color: #fff; }
-        .btn-act-success:hover { background: #059669; }
-        .btn-act-warning { background: #F59E0B; color: #000; }
-        .btn-act-warning:hover { background: #D97706; }
-        .btn-act-primary { background: var(--verde-medio); color: #fff; }
-        .btn-act-primary:hover { background: var(--verde-hover); }
-        .btn-act-danger { background: #EF4444; color: #fff; }
-        .btn-act-danger:hover { background: #DC2626; }
-
-        /* Modal custom */
-        .modal-centuria-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(8px);
-            z-index: 1050;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal-centuria-box {
-            background: #0a1f11;
-            border: 1px solid var(--dorado);
-            border-radius: 20px;
-            max-width: 650px;
-            width: 100%;
-            padding: 26px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            color: #fff;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .badge-role {
-            font-size: 0.68rem;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .badge-role-admin { background: rgba(239,68,68,0.25); color: #fca5a5; border: 1px solid #ef4444; }
-        .badge-role-docente { background: rgba(59,130,246,0.25); color: #93c5fd; border: 1px solid #3b82f6; }
-        .badge-role-alumno { background: rgba(16,185,129,0.25); color: #6ee7b7; border: 1px solid #10b981; }
-        .badge-role-academico { background: rgba(139,92,246,0.25); color: #c4b5fd; border: 1px solid #8b5cf6; }
-
-        .spinner-custom {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        body { font-family: 'Montserrat', sans-serif; background: #0d2c16; color: #1e293b; }
+        .glass-panel { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.8); }
+        .btn-primary { background: linear-gradient(135deg, #16813D, #0d2c16); color: white; transition: 0.3s; }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(22,129,61,0.3); transform: translateY(-1px); }
+        .tab-active { background: #e8f5ec; color: #0d2c16; border-right: 3px solid #16813D; font-weight: 600; }
+        .tab-inactive { color: #64748b; }
+        .tab-inactive:hover { background: #f8fafc; color: #0f172a; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        /* Dashboard Admin Styles */
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado:#d4a843;--rosa:#D94172;--azul:#2563EB;--naranja:#D97706;--rojo:#ef5350}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Montserrat',sans-serif;min-height:100vh;color:#fff;position:relative;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;background-color:#060f09}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 40%,rgba(22,129,61,.22) 0%,transparent 60%),radial-gradient(ellipse at 85% 15%,rgba(212,168,67,.12) 0%,transparent 50%),radial-gradient(ellipse at 50% 85%,rgba(13,44,22,.4) 0%,transparent 70%),linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%);z-index:-2}
+        .dash-wrapper{width:100%;max-width:1320px;margin:0 auto;padding:20px;padding-bottom:60px;animation:fadeInUp .7s cubic-bezier(.16,1,.3,1)}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .dash-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);margin-bottom:24px;gap:16px;flex-wrap:wrap}
+        .dash-header-left{display:flex;align-items:center;gap:16px}
+        .dash-avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;color:#fff;border:2px solid var(--dorado);box-shadow:0 4px 14px rgba(0,0,0,.35);flex-shrink:0}
+        .admin-badge{background:linear-gradient(135deg,rgba(212,168,67,.2),rgba(212,168,67,.05));border:1px solid var(--dorado);color:#e8c676;font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px}
+        .btn-header{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 14px;border-radius:12px;font-size:.8rem;font-weight:600;transition:all .25s ease;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-header:hover{background:rgba(255,255,255,.16);color:#e8c676;transform:translateY(-2px)}
+        .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+        .kpi-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px 20px;backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;transition:transform .25s ease,border-color .25s ease}
+        .kpi-card:hover{transform:translateY(-3px);border-color:rgba(212,168,67,.4)}
+        .kpi-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+        .nav-tabs-admin{display:flex;gap:8px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:12px;margin-bottom:24px;overflow-x:auto;scrollbar-width:thin}
+        .tab-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.75);padding:10px 18px;border-radius:12px;font-size:.82rem;font-weight:700;letter-spacing:.5px;transition:all .2s ease;white-space:nowrap;display:flex;align-items:center;gap:8px;cursor:pointer}
+        .tab-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+        .tab-btn.active{background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));border-color:var(--dorado);color:#fff;box-shadow:0 4px 14px rgba(22,129,61,.35)}
+        .admin-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;backdrop-filter:blur(18px);margin-bottom:24px}
+        .admin-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+        .apps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+        .app-tile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;transition:all .25s ease;position:relative;overflow:hidden}
+        .app-tile:hover{background:rgba(255,255,255,.12);transform:translateY(-3px);border-color:var(--dorado);color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+        .app-tile-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+        .table-admin-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)}
+        .table-admin{width:100%;border-collapse:collapse;font-size:.8rem;color:rgba(255,255,255,.9);margin-bottom:0}
+        .table-admin th{background:rgba(13,44,22,.7);color:#e8c676;font-weight:700;text-transform:uppercase;font-size:.7rem;letter-spacing:.8px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.15)}
+        .table-admin td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle}
+        .table-admin tr:hover td{background:rgba(255,255,255,.04)}
+        .search-inp{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;padding:8px 14px;font-size:.82rem;outline:none;transition:border-color .2s}
+        .search-inp:focus{border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.2)}
+        .btn-act{padding:5px 10px;border-radius:8px;font-size:.75rem;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .2s ease}
+        .btn-act-success{background:#10B981;color:#fff}.btn-act-success:hover{background:#059669}
+        .btn-act-warning{background:#F59E0B;color:#000}.btn-act-warning:hover{background:#D97706}
+        .btn-act-primary{background:var(--verde-medio);color:#fff}.btn-act-primary:hover{background:#1ebb4d}
+        .btn-act-danger{background:#EF4444;color:#fff}.btn-act-danger:hover{background:#DC2626}
+        .modal-centuria-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:1050;display:flex;align-items:center;justify-content:center;padding:20px}
+        .modal-centuria-box{background:#0a1f11;border:1px solid var(--dorado);border-radius:20px;max-width:650px;width:100%;padding:26px;box-shadow:0 20px 40px rgba(0,0,0,.6);color:#fff;max-height:90vh;overflow-y:auto}
+        .badge-role{font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700;text-transform:uppercase}
+        .badge-role-admin{background:rgba(239,68,68,.25);color:#fca5a5;border:1px solid #ef4444}
+        .badge-role-docente{background:rgba(59,130,246,.25);color:#93c5fd;border:1px solid #3b82f6}
+        .badge-role-alumno{background:rgba(16,185,129,.25);color:#6ee7b7;border:1px solid #10b981}
+        .badge-role-academico{background:rgba(139,92,246,.25);color:#c4b5fd;border:1px solid #8b5cf6}
+        .spinner-custom{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .admin-section{display:none}
     </style>
+    <script>
+      window._fbCheck = function(){if(!window.firebase)console.error('[dashboard-admin] window.firebase UNDEFINED');else if(!window.firebase.apps||window.firebase.apps.length===0)console.warn('[dashboard-admin] Firebase exists but no apps');else console.log('[dashboard-admin] Firebase OK, apps:',window.firebase.apps.length)};
+      window.require = window.require || function(mod){if(mod==='firebase-firestore'){return{collection:(db,coll)=>db.collection(coll),doc:(db,coll,id)=>db.collection(coll).doc(id),getDocs:(q)=>q.get().then(snap=>({empty:snap.empty,size:snap.size,docs:snap.docs.map(d=>({id:d.id,data:()=>d.data(),exists:true})),forEach:snap.forEach.bind(snap)})),getDoc:(ref)=>ref.get().then(s=>({exists:s.exists,id:s.id,data:()=>s.data()})),setDoc:(ref,data)=>ref.set(data),updateDoc:(ref,data)=>ref.update(data),deleteDoc:(ref)=>ref.delete(),query:(q,...conds)=>{let qq=q;for(const c of conds){if(!c)continue;if(c&&c.field&&c.op)qq=qq.where(c.field,c.op,c.value);else if(c&&c.fieldPath)qq=qq.orderBy(c.fieldPath,c.order==='ASCENDING'?'asc':'desc');else if(typeof c==='number')qq=qq.limit(c)}return qq},where:(field,op,value)=>({field,op,value}),limit:(n)=>n,orderBy:(field,dir)=>({fieldPath:field,order:dir})};}throw new Error('Cannot find module '+mod)};
+    </script>
+    <script src="js/api.js?v=19"></script>
+    <script src="js/logout.js?v=2"></script>
 
-    <script src="./js/api.js?v=19"></script>
-    <script src="./js/logout.js?v=2"></script>
 </head>
 <body>
 
-    <div class="dash-wrapper">
-
-        <!-- ═══ HEADER ═══ -->
-        <header class="dash-header">
-            <div class="dash-header-left">
-                <div class="dash-avatar" id="admin-avatar">
-                    <i class="bi bi-shield-lock-fill"></i>
-                </div>
-                <div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <h1 class="h5 mb-0 fw-bold text-white" id="admin-nombre">Administrador Central</h1>
-                        <span class="admin-badge"><i class="bi bi-shield-check"></i> Super Admin</span>
-                    </div>
-                    <p class="small text-white-50 mb-0 mt-1">
-                        C.I: <span id="admin-cedula" class="text-white fw-bold">---</span> • Campus Virtual Centuria
-                    </p>
-                </div>
-            </div>
-            
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <!-- Selector Vista Previa -->
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-header dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-eye-fill text-warning"></i> Vista de Rol
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                        <li><h6 class="dropdown-header text-warning small">Cambiar Modo de Vista</h6></li>
-                        <li><a class="dropdown-item small" href="dashboard.html"><i class="bi bi-mortarboard me-2 text-success"></i>Vista Alumno</a></li>
-                        <li><a class="dropdown-item small" href="docente.html"><i class="bi bi-person-badge me-2 text-primary"></i>Vista Docente</a></li>
-                        <li><a class="dropdown-item small" href="academic/index.html"><i class="bi bi-building me-2 text-info"></i>Vista Académica</a></li>
-                        <li><a class="dropdown-item small" href="tesoreria.html"><i class="bi bi-cash-stack me-2 text-success"></i>Vista Tesorería</a></li>
-                        <li><a class="dropdown-item small" href="admin/index.html"><i class="bi bi-sliders me-2 text-danger"></i>Admin Avanzado (Alpine)</a></li>
-                    </ul>
-                </div>
-
-                <!-- Botón Refrescar Datos -->
-                <button onclick="cargarTodoElDashboard(true)" class="btn btn-sm btn-header" title="Actualizar datos desde la nube">
-                    <i class="bi bi-arrow-clockwise"></i> Sincronizar
-                </button>
-
-                <!-- Botón Salir -->
-                <button onclick="CenturiaLogout.salir()" class="btn btn-sm btn-danger px-3 py-2 rounded-3 fw-bold">
-                    <i class="bi bi-box-arrow-right me-1"></i> Salir
-                </button>
-            </div>
-        </header>
-
-        <!-- ═══ KPI STATS ═══ -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div>
-                    <p class="small text-white-50 mb-1 fw-bold">USUARIOS TOTALES</p>
-                    <h3 class="h4 fw-bold text-white mb-0" id="kpi-total-usuarios">--</h3>
-                </div>
-                <div class="kpi-icon" style="background: rgba(37,99,235,0.2); color: #60a5fa;">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-            </div>
-            
-            <div class="kpi-card">
-                <div>
-                    <p class="small text-white-50 mb-1 fw-bold">ALUMNOS ACTIVOS</p>
-                    <h3 class="h4 fw-bold text-success mb-0" id="kpi-alumnos">--</h3>
-                </div>
-                <div class="kpi-icon" style="background: rgba(16,185,129,0.2); color: #34d399;">
-                    <i class="bi bi-mortarboard-fill"></i>
-                </div>
-            </div>
-
-            <div class="kpi-card">
-                <div>
-                    <p class="small text-white-50 mb-1 fw-bold">CUERPO DOCENTE</p>
-                    <h3 class="h4 fw-bold text-info mb-0" id="kpi-docentes">--</h3>
-                </div>
-                <div class="kpi-icon" style="background: rgba(6,182,212,0.2); color: #22d3ee;">
-                    <i class="bi bi-person-badge-fill"></i>
-                </div>
-            </div>
-
-            <div class="kpi-card" style="border-color: rgba(245,158,11,0.3);">
-                <div>
-                    <p class="small text-warning mb-1 fw-bold">PENDIENTES APROBACIÓN</p>
-                    <h3 class="h4 fw-bold text-warning mb-0" id="kpi-pendientes">--</h3>
-                </div>
-                <div class="kpi-icon" style="background: rgba(245,158,11,0.2); color: #fbbf24;">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-            </div>
-
-            <div class="kpi-card">
-                <div>
-                    <p class="small text-white-50 mb-1 fw-bold">ESTADO SISTEMA</p>
-                    <h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-check-circle-fill me-1"></i> Operativo</h3>
-                </div>
-                <div class="kpi-icon" style="background: rgba(212,168,67,0.2); color: var(--dorado);">
-                    <i class="bi bi-hdd-network-fill"></i>
-                </div>
+    <!-- HEADER -->
+    <header class="glass-panel sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-4">
+            <img src="images/logo_centuria.png" alt="Centuria" class="h-10" onerror="this.src='favicon.ico'">
+            <div>
+                <h1 class="text-sm font-bold text-slate-800 tracking-wide uppercase">Panel Administrativo — Centuria</h1>
+                <p class="text-[10px] font-medium text-amber-600" id="admin-mode-label">Modo Admin — <span id="admin-user-display">CHRISTHIAN JOSE RAUL</span></p>
             </div>
         </div>
-
-        <!-- ═══ NAV TABS ═══ -->
-        <div class="nav-tabs-admin">
-            <button class="tab-btn active" onclick="cambiarSeccion('tab-ecosistema', this)">
-                <i class="bi bi-grid-fill"></i> Áreas del Ecosistema
+        <div class="flex items-center gap-3">
+            <button onclick="cargarTodoElDashboard()" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Actualizar datos">
+                <i class="bi bi-arrow-clockwise"></i> Sincronizar
             </button>
-            <button class="tab-btn" onclick="cambiarSeccion('tab-pendientes', this)">
-                <i class="bi bi-person-check-fill"></i> Aprobación de Usuarios <span id="badge-pendientes-tab" class="badge bg-danger ms-1" style="display:none">0</span>
-            </button>
-            <button class="tab-btn" onclick="cambiarSeccion('tab-usuarios', this)">
-                <i class="bi bi-people-fill"></i> Directorio de Usuarios
-            </button>
-            <button class="tab-btn" onclick="cambiarSeccion('tab-asignaturas', this)">
-                <i class="bi bi-book-half"></i> Asignaciones y Materias
-            </button>
-            <button class="tab-btn" onclick="cambiarSeccion('tab-tesoreria', this)">
-                <i class="bi bi-cash-stack"></i> Tesorería y Cobranzas
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold tracking-wide" id="admin-user-name">Administrador</span>
+            <button onclick="cerrarSesion()" class="p-2 rounded-xl hover:bg-rose-50 text-rose-500 transition" title="Cerrar Sesion">
+                <i class="bi bi-box-arrow-right text-lg"></i>
             </button>
         </div>
+    </header>
 
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- SECCIÓN 1: ECOSISTEMA Y HERRAMIENTAS DIRECTAS              -->
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <div id="tab-ecosistema" class="admin-section">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Módulos de Gestión Institucional</h2>
-                        <p class="small text-white-50 mb-0">Accesos directos con privilegios elevados para toda la plataforma</p>
+    <div class="flex h-[calc(100vh-65px)]">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 glass-panel border-t-0 shadow-sm flex flex-col py-4 z-20">
+            <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase px-6 mb-3">Módulos</p>
+            <button onclick="cambiarSeccion('tab-ecosistema', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-ecosistema">
+                <i class="bi bi-grid-3x3-gap-fill text-base"></i> Áreas del Ecosistema
+            </button>
+            <button onclick="cambiarSeccion('tab-pendientes', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-active" data-tab="tab-pendientes">
+                <i class="bi bi-person-check-fill text-base"></i> Aprobación <span id="badge-pendientes-tab" class="badge bg-danger ms-1" style="display:none">0</span>
+            </button>
+            <button onclick="cambiarSeccion('tab-usuarios', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-usuarios">
+                <i class="bi bi-people-fill text-base"></i> Directorio Usuarios
+            </button>
+            <button onclick="cambiarSeccion('tab-asignaturas', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-asignaturas">
+                <i class="bi bi-book-half text-base"></i> Asignaturas
+            </button>
+            <button onclick="cambiarSeccion('tab-tesoreria', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-tesoreria">
+                <i class="bi bi-cash-stack text-base"></i> Tesorería
+            </button>
+            <div class="border-t border-slate-200 my-2"></div>
+            <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase px-6 mb-2 mt-1">Sistema</p>
+            <button onclick="cerrarSesion()" class="text-left px-6 py-2.5 text-[11px] flex items-center gap-3 transition-colors text-rose-500 hover:bg-rose-50">
+                <i class="bi bi-box-arrow-right text-[8px]"></i> Cerrar Sesión
+            </button>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto p-6 relative" style="background:#060f09">
+            <div id="section-container">
+            <div class="dash-wrapper">
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div><p class="small text-white-50 mb-1 fw-bold">USUARIOS TOTALES</p><h3 class="h4 fw-bold text-white mb-0" id="kpi-total-usuarios">--</h3></div><div class="kpi-icon" style="background:rgba(37,99,235,0.2);color:#60a5fa;"><i class="bi bi-people-fill"></i></div></div>
+                    <div class="kpi-card"><div><p class="small text-white-50 mb-1 fw-bold">ALUMNOS ACTIVOS</p><h3 class="h4 fw-bold text-success mb-0" id="kpi-alumnos">--</h3></div><div class="kpi-icon" style="background:rgba(16,185,129,0.2);color:#34d399;"><i class="bi bi-mortarboard-fill"></i></div></div>
+                    <div class="kpi-card"><div><p class="small text-white-50 mb-1 fw-bold">CUERPO DOCENTE</p><h3 class="h4 fw-bold text-info mb-0" id="kpi-docentes">--</h3></div><div class="kpi-icon" style="background:rgba(6,182,212,0.2);color:#22d3ee;"><i class="bi bi-person-badge-fill"></i></div></div>
+                    <div class="kpi-card" style="border-color:rgba(245,158,11,0.3)"><div><p class="small text-warning mb-1 fw-bold">PENDIENTES APROBACION</p><h3 class="h4 fw-bold text-warning mb-0" id="kpi-pendientes">--</h3></div><div class="kpi-icon" style="background:rgba(245,158,11,0.2);color:#fbbf24;"><i class="bi bi-clock-history"></i></div></div>
+                </div>
+                <div class="nav-tabs-admin">
+                    <button class="tab-btn" onclick="cambiarSeccion('tab-ecosistema', this)"><i class="bi bi-grid-fill"></i> Ecosistema</button>
+                    <button class="tab-btn active" onclick="cambiarSeccion('tab-pendientes', this)"><i class="bi bi-person-check-fill"></i> Aprobacion <span id="badge-pendientes-tab2" class="badge bg-danger ms-1" style="display:none">0</span></button>
+                    <button class="tab-btn" onclick="cambiarSeccion('tab-usuarios', this)"><i class="bi bi-people-fill"></i> Usuarios</button>
+                    <button class="tab-btn" onclick="cambiarSeccion('tab-asignaturas', this)"><i class="bi bi-book-half"></i> Asignaturas</button>
+                    <button class="tab-btn" onclick="cambiarSeccion('tab-tesoreria', this)"><i class="bi bi-cash-stack"></i> Tesoreria</button>
+                </div>
+                <div id="tab-ecosistema" class="admin-section" style="display:none">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Modulos de Gestion</h2><p class="small text-white-50 mb-0">Accesos directos de la plataforma</p></div></div>
+                        <div class="apps-grid">
+                            <a href="tesoreria.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(16,185,129,0.2);color:#34d399;"><i class="bi bi-cash-stack"></i></div><div><div class="fw-bold text-white small">Tesoreria</div><div class="text-white-50" style="font-size:.7rem">Cobranzas y aranceles</div></div></a>
+                            <a href="facturas.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(59,130,246,0.2);color:#60a5fa;"><i class="bi bi-receipt"></i></div><div><div class="fw-bold text-white small">Facturacion</div><div class="text-white-50" style="font-size:.7rem">Comprobantes y pagos</div></div></a>
+                            <a href="attendance.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(245,158,11,0.2);color:#fbbf24;"><i class="bi bi-clipboard-check"></i></div><div><div class="fw-bold text-white small">Asistencia</div><div class="text-white-50" style="font-size:.7rem">Registro presencial y QR</div></div></a>
+                            <a href="calendario.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(6,182,212,0.2);color:#22d3ee;"><i class="bi bi-calendar3"></i></div><div><div class="fw-bold text-white small">Calendario</div><div class="text-white-50" style="font-size:.7rem">Examenes y eventos</div></div></a>
+                            <a href="consultas.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(168,85,247,0.2);color:#c084fc;"><i class="bi bi-chat-dots-fill"></i></div><div><div class="fw-bold text-white small">Consultas</div><div class="text-white-50" style="font-size:.7rem">Soporte academico</div></div></a>
+                            <a href="mensajes-alumnos.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(244,63,94,0.2);color:#fb7185;"><i class="bi bi-broadcast"></i></div><div><div class="fw-bold text-white small">Comunicados</div><div class="text-white-50" style="font-size:.7rem">Avisos y notificaciones</div></div></a>
+                            <a href="formulario-matricula.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(99,102,241,0.2);color:#818cf8;"><i class="bi bi-file-earmark-medical"></i></div><div><div class="fw-bold text-white small">Matricula</div><div class="text-white-50" style="font-size:.7rem">Inscripcion digital</div></div></a>
+                            <a href="libreta.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(249,115,22,0.2);color:#fb923c;"><i class="bi bi-journal-bookmark-fill"></i></div><div><div class="fw-bold text-white small">Libreta</div><div class="text-white-50" style="font-size:.7rem">Notas generales</div></div></a>
+                            <a href="asignar-rol-utilidad.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(212,168,67,0.2);color:#e8c676;"><i class="bi bi-shield-lock"></i></div><div><div class="fw-bold text-white small">Asignar Rol Admin</div><div class="text-white-50" style="font-size:.7rem">Elevar usuarios</div></div></a>
+                            <a href="constructor/index.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(20,184,166,0.2);color:#2dd4bf;"><i class="bi bi-tools"></i></div><div><div class="fw-bold text-white small">Constructor</div><div class="text-white-50" style="font-size:.7rem">Materias y unidades</div></div></a>
+                            <a href="academic/index.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(139,92,246,0.2);color:#a78bfa;"><i class="bi bi-mortarboard"></i></div><div><div class="fw-bold text-white small">Dir. Academica</div><div class="text-white-50" style="font-size:.7rem">Indicadores y actas</div></div></a>
+                            <a href="atencion-estudiante.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(236,72,153,0.2);color:#f472b6;"><i class="bi bi-person-heart"></i></div><div><div class="fw-bold text-white small">Atencion Estudiante</div><div class="text-white-50" style="font-size:.7rem">Fichas y beneficios</div></div></a>
+                        </div>
                     </div>
                 </div>
-
-                <div class="apps-grid">
-                    <!-- 1. Tesorería -->
-                    <a href="tesoreria.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(16,185,129,0.2); color: #34d399;">
-                            <i class="bi bi-cash-stack"></i>
+                <div id="tab-pendientes" class="admin-section" style="display:block">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-person-check-fill text-warning me-2"></i>Solicitudes Pendientes</h2><p class="small text-white-50 mb-0">Cuentas que esperan habilitacion</p></div><button onclick="cargarPendientes()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre Completo</th><th>Email</th><th>Rol</th><th>Carrera / Seccion</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-pendientes-body"><tr><td colspan="6" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
+                    </div>
+                </div>
+                <div id="tab-usuarios" class="admin-section" style="display:none">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-people-fill text-success me-2"></i>Directorio de Usuarios</h2><p class="small text-white-50 mb-0">Crear, editar, bloquear o eliminar usuarios</p></div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input type="text" id="filtro-user-busqueda" class="search-inp" placeholder="Buscar cedula, nombre..." oninput="filtrarUsuarios()">
+                            <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos los Roles</option><option value="alumno">Alumnos</option><option value="docente">Docentes</option><option value="admin">Admins</option><option value="academico">Academicos</option></select>
+                            <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="inactivo">Inactivos</option></select>
+                            <button onclick="abrirModalCrear()" class="btn-act btn-act-primary"><i class="bi bi-plus-lg"></i> Nuevo usuario</button>
+                        </div></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre</th><th>Rol</th><th>Carrera</th><th>Seccion</th><th>Estado</th><th class="text-end">Opciones</th></tr></thead><tbody id="tabla-usuarios-body"><tr><td colspan="7" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
+                    </div>
+                </div>
+                <div id="tab-asignaturas" class="admin-section" style="display:none">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Catedras</h2><p class="small text-white-50 mb-0">Materias del plan curricular</p></div><div class="d-flex gap-2"><a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none"><i class="bi bi-plus-circle me-1"></i> Constructor</a><button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Codigo / Materia</th><th>Carrera</th><th>Docente</th><th>Seccion</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-asignaturas-body"><tr><td colspan="5" class="text-center py-4">Cargando...</td></tr></tbody></table></div>
+                    </div>
+                </div>
+                <div id="tab-tesoreria" class="admin-section" style="display:none">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-cash-coin text-success me-2"></i>Estado Financiero</h2><p class="small text-white-50 mb-0">Resumen de pagos del campus</p></div><a href="tesoreria.html" class="btn btn-sm btn-success text-decoration-none fw-bold"><i class="bi bi-arrow-up-right-square me-1"></i> Tesoreria completa</a></div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4"><div class="p-3 rounded-4" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3)"><div class="small text-success fw-bold">TOTAL PAGADO</div><div class="h4 text-white fw-bold mt-1" id="teso-total-pagado">Gs. --</div></div></div>
+                            <div class="col-md-4"><div class="p-3 rounded-4" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3)"><div class="small text-warning fw-bold">PENDIENTE DE COBRO</div><div class="h4 text-white fw-bold mt-1" id="teso-total-pendiente">Gs. --</div></div></div>
+                            <div class="col-md-4"><div class="p-3 rounded-4" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)"><div class="small text-danger fw-bold">MORA / VENCIDOS</div><div class="h4 text-white fw-bold mt-1" id="teso-total-vencido">Gs. --</div></div></div>
                         </div>
-                        <div>
-                            <div class="fw-bold text-white small">Módulo Tesorería</div>
-                            <div class="text-white-50 text-[10px]" style="font-size:0.7rem">Cobranzas, aranceles y exoneraciones</div>
-                        </div>
-                    </a>
-
-                    <!-- 2. Facturas -->
-                    <a href="facturas.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(59,130,246,0.2); color: #60a5fa;">
-                            <i class="bi bi-receipt"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Facturación & Recibos</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Comprobantes y pagos registrados</div>
-                        </div>
-                    </a>
-
-                    <!-- 3. Constructor de Materias -->
-                    <a href="constructor/index.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(20,184,166,0.2); color: #2dd4bf;">
-                            <i class="bi bi-tools"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Constructor de Materias</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Estructura curricular y unidades</div>
-                        </div>
-                    </a>
-
-                    <!-- 4. Asistencia General -->
-                    <a href="attendance.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(245,158,11,0.2); color: #fbbf24;">
-                            <i class="bi bi-clipboard-check"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Control de Asistencia</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Registro presencial y por QR</div>
-                        </div>
-                    </a>
-
-                    <!-- 5. Atención al Estudiante -->
-                    <a href="atencion-estudiante.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(236,72,153,0.2); color: #f472b6;">
-                            <i class="bi bi-person-heart"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Atención al Estudiante</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Fichas, quejas, beneficios y cumpleaños</div>
-                        </div>
-                    </a>
-
-                    <!-- 6. Calendario Institucional -->
-                    <a href="calendario.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(6,182,212,0.2); color: #22d3ee;">
-                            <i class="bi bi-calendar3"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Calendario Global</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Exámenes, feriados y eventos</div>
-                        </div>
-                    </a>
-
-                    <!-- 7. Panel Académico Directivo -->
-                    <a href="academic/index.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(139,92,246,0.2); color: #a78bfa;">
-                            <i class="bi bi-mortarboard"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Dirección Académica</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Indicadores, actas y seguimiento</div>
-                        </div>
-                    </a>
-
-                    <!-- 8. Consultas y Tickets -->
-                    <a href="consultas.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(168,85,247,0.2); color: #c084fc;">
-                            <i class="bi bi-chat-dots-fill"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Mesa de Consultas</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Soporte académico y administrativo</div>
-                        </div>
-                    </a>
-
-                    <!-- 9. Mensajes Masivos -->
-                    <a href="mensajes-alumnos.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(244,63,94,0.2); color: #fb7185;">
-                            <i class="bi bi-broadcast"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Comunicados Masivos</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Envío de avisos y notificaciones</div>
-                        </div>
-                    </a>
-
-                    <!-- 10. Formulario Matrícula -->
-                    <a href="formulario-matricula.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(99,102,241,0.2); color: #818cf8;">
-                            <i class="bi bi-file-earmark-medical"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Formulario de Matrícula</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Inscripción y admisión digital</div>
-                        </div>
-                    </a>
-
-                    <!-- 11. Libreta Virtual -->
-                    <a href="libreta.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(249,115,22,0.2); color: #fb923c;">
-                            <i class="bi bi-journal-bookmark-fill"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Libreta de Calificaciones</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Visualizador general de notas</div>
-                        </div>
-                    </a>
-
-                    <!-- 12. Panel Admin Alpine -->
-                    <a href="admin/index.html" class="app-tile">
-                        <div class="app-tile-icon" style="background: rgba(239,68,68,0.2); color: #f87171;">
-                            <i class="bi bi-gear-fill"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small">Configuración Avanzada</div>
-                            <div class="text-white-50" style="font-size:0.7rem">Catálogos, filiales y permisos</div>
-                        </div>
-                    </a>
+                        <div class="text-center py-3"><a href="tesoreria.html" class="btn btn-act-primary px-4 py-2 me-2 text-decoration-none"><i class="bi bi-wallet2 me-1"></i> Ir a Tesoreria</a><a href="facturas.html" class="btn btn-outline-light px-4 py-2 text-decoration-none"><i class="bi bi-receipt me-1"></i> Ver Facturas</a></div>
+                    </div>
+                </div>
+            </div><!-- /dash-wrapper -->
+            <div id="modal-editar-usuario" class="modal-centuria-backdrop" style="display:none">
+                <div class="modal-centuria-box">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-warning mb-0"><i class="bi bi-person-gear me-2"></i>Editar usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalUsuario()"></button></div>
+                    <div class="mb-3"><label class="small text-white-50 mb-1">Nombre Completo</label><input type="text" id="modal-user-nombre" class="form-control form-control-sm search-inp w-100" readonly></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula</label><input type="text" id="modal-user-cedula" class="form-control form-control-sm search-inp w-100" readonly></div><div class="col-6"><label class="small text-white-50 mb-1">Rol</label><select id="modal-user-rol" class="form-select form-select-sm search-inp w-100"><option value="alumno">Alumno</option><option value="docente">Docente</option><option value="academico">Academico</option><option value="admin">Admin</option></select></div></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Carrera</label><input type="text" id="modal-user-carrera" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Seccion</label><input type="text" id="modal-user-seccion" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <div class="mb-3"><label class="small text-white-50 mb-1">Estado</label><select id="modal-user-estado" class="form-select form-select-sm search-inp w-100"><option value="activo">Activo</option><option value="pendiente">Pendiente</option><option value="inactivo">Inactivo / Bloqueado</option></select></div>
+                    <div id="modal-user-msg" class="small mb-3" style="display:none"></div>
+                    <div class="d-flex justify-content-end gap-2 mt-4"><button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalUsuario()">Cancelar</button><button type="button" class="btn btn-sm btn-act-primary px-4" onclick="guardarEdicionUsuario()"><i class="bi bi-check-lg me-1"></i> Guardar</button></div>
                 </div>
             </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- SECCIÓN 2: SOLICITUDES PENDIENTES DE APROBACIÓN           -->
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <div id="tab-pendientes" class="admin-section" style="display:none">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-person-check-fill text-warning me-2"></i>Solicitudes de Registro Pendientes</h2>
-                        <p class="small text-white-50 mb-0">Usuarios que crearon su cuenta y esperan habilitación institucional</p>
-                    </div>
-                    <button onclick="cargarPendientes()" class="btn btn-sm btn-outline-light rounded-pill px-3">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Lista
-                    </button>
-                </div>
-
-                <div class="table-admin-wrap">
-                    <table class="table-admin">
-                        <thead>
-                            <tr>
-                                <th>Cédula</th>
-                                <th>Nombre Completo</th>
-                                <th>Email / Contacto</th>
-                                <th>Rol Solicitado</th>
-                                <th>Carrera / Sección</th>
-                                <th class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-pendientes-body">
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-white-50">
-                                    <span class="spinner-custom me-2"></span> Cargando solicitudes pendientes...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div id="modal-crear-usuario" class="modal-centuria-backdrop" style="display:none">
+                <div class="modal-centuria-box">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-person-plus me-2"></i>Nuevo usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalCrear()"></button></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Nombre *</label><input type="text" id="crear-user-nombre" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Apellido *</label><input type="text" id="crear-user-apellido" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula *</label><input type="text" id="crear-user-cedula" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Email</label><input type="text" id="crear-user-email" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <div class="row g-2 mb-3"><div class="col-4"><label class="small text-white-50 mb-1">Rol</label><select id="crear-user-rol" class="form-select form-select-sm search-inp w-100"><option value="alumno">Alumno</option><option value="docente">Docente</option><option value="academico">Academico</option><option value="admin">Admin</option></select></div><div class="col-4"><label class="small text-white-50 mb-1">Carrera</label><input type="text" id="crear-user-carrera" class="form-control form-control-sm search-inp w-100"></div><div class="col-4"><label class="small text-white-50 mb-1">Seccion</label><input type="text" id="crear-user-seccion" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <div id="crear-user-msg" class="small mb-3" style="display:none"></div>
+                    <div class="d-flex justify-content-end gap-2 mt-4"><button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalCrear()">Cancelar</button><button type="button" class="btn btn-sm btn-act-primary px-4" onclick="crearUsuario()"><i class="bi bi-check-lg me-1"></i> Crear</button></div>
                 </div>
             </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- SECCIÓN 3: GESTIÓN Y DIRECTORIO DE USUARIOS                -->
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <div id="tab-usuarios" class="admin-section" style="display:none">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-people-fill text-success me-2"></i>Directorio Central de Usuarios</h2>
-                        <p class="small text-white-50 mb-0">Consulte, filtre o modifique roles de usuarios en el campus</p>
-                    </div>
-                    
-                    <!-- Filtros -->
-                    <div class="d-flex gap-2 flex-wrap">
-                        <input type="text" id="filtro-user-busqueda" class="search-inp" placeholder="Buscar cédula, nombre..." oninput="filtrarUsuarios()">
-                        <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()">
-                            <option value="">Todos los Roles</option>
-                            <option value="alumno">Alumnos</option>
-                            <option value="docente">Docentes</option>
-                            <option value="admin">Administradores</option>
-                            <option value="academico">Académicos</option>
-                        </select>
-                        <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()">
-                            <option value="">Todos los Estados</option>
-                            <option value="activo">Activos</option>
-                            <option value="pendiente">Pendientes</option>
-                            <option value="inactivo">Inactivos</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="table-admin-wrap">
-                    <table class="table-admin">
-                        <thead>
-                            <tr>
-                                <th>Cédula</th>
-                                <th>Nombre y Apellido</th>
-                                <th>Rol Principal</th>
-                                <th>Carrera</th>
-                                <th>Sección</th>
-                                <th>Estado</th>
-                                <th class="text-end">Opciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-usuarios-body">
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-white-50">
-                                    <span class="spinner-custom me-2"></span> Cargando base de usuarios...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- SECCIÓN 4: ASIGNATURAS Y CÁTEDRAS                          -->
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <div id="tab-asignaturas" class="admin-section" style="display:none">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Cátedras Habilitadas</h2>
-                        <p class="small text-white-50 mb-0">Asignación de docentes y materias del plan curricular</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none">
-                            <i class="bi bi-plus-circle me-1"></i> Abrir Constructor
-                        </a>
-                        <button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
-                        </button>
-                    </div>
-                </div>
-
-                <div class="table-admin-wrap">
-                    <table class="table-admin">
-                        <thead>
-                            <tr>
-                                <th>Código / Materia</th>
-                                <th>Carrera</th>
-                                <th>Docente Asignado</th>
-                                <th>Sección / Grado</th>
-                                <th class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-asignaturas-body">
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-white-50">
-                                    <span class="spinner-custom me-2"></span> Cargando catálogo de asignaturas...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- SECCIÓN 5: RESUMEN DE TESORERÍA                            -->
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <div id="tab-tesoreria" class="admin-section" style="display:none">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-cash-coin text-success me-2"></i>Estado Financiero y Recaudación</h2>
-                        <p class="small text-white-50 mb-0">Resumen ejecutivo del estado de pagos del campus</p>
-                    </div>
-                    <a href="tesoreria.html" class="btn btn-sm btn-success text-decoration-none fw-bold">
-                        <i class="bi bi-arrow-up-right-square me-1"></i> Abrir Panel de Tesorería Completo
-                    </a>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3)">
-                            <div class="small text-success fw-bold">TOTAL PAGADO (CONFIRMADO)</div>
-                            <div class="h4 text-white fw-bold mt-1" id="teso-total-pagado">Gs. --</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3)">
-                            <div class="small text-warning fw-bold">TOTAL PENDIENTE DE COBRO</div>
-                            <div class="h4 text-white fw-bold mt-1" id="teso-total-pendiente">Gs. --</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3)">
-                            <div class="small text-danger fw-bold">PAGOS VENCIDOS / MORA</div>
-                            <div class="h4 text-white fw-bold mt-1" id="teso-total-vencido">Gs. --</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-center py-3">
-                    <p class="small text-white-50 mb-3">Para registrar cobros de aranceles, emitir facturas o gestionar exoneraciones de cuotas:</p>
-                    <a href="tesoreria.html" class="btn btn-act-primary px-4 py-2 me-2 text-decoration-none">
-                        <i class="bi bi-wallet2 me-1"></i> Ir a Tesorería
-                    </a>
-                    <a href="facturas.html" class="btn btn-outline-light px-4 py-2 text-decoration-none">
-                        <i class="bi bi-receipt me-1"></i> Ver Facturas
-                    </a>
-                </div>
-            </div>
-        </div>
-
+        </main>
     </div>
 
-    <!-- ═══ MODAL PARA EDITAR ROL O ASIGNAR USUARIO ═══ -->
-    <div id="modal-editar-usuario" class="modal-centuria-backdrop" style="display:none">
-        <div class="modal-centuria-box">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 fw-bold text-warning mb-0"><i class="bi bi-person-gear me-2"></i>Editar Rol y Acceso</h3>
-                <button type="button" class="btn-close btn-close-white" onclick="cerrarModalUsuario()"></button>
-            </div>
 
-            <div class="mb-3">
-                <label class="small text-white-50 mb-1">Nombre Completo</label>
-                <input type="text" id="modal-user-nombre" class="form-control form-control-sm search-inp w-100" readonly>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <label class="small text-white-50 mb-1">Cédula de Identidad</label>
-                    <input type="text" id="modal-user-cedula" class="form-control form-control-sm search-inp w-100" readonly>
-                </div>
-                <div class="col-6">
-                    <label class="small text-white-50 mb-1">Rol Asignado</label>
-                    <select id="modal-user-rol" class="form-select form-select-sm search-inp w-100">
-                        <option value="alumno">Alumno / Estudiante</option>
-                        <option value="docente">Docente / Profesor</option>
-                        <option value="academico">Directivo Académico</option>
-                        <option value="admin">Administrador General</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <label class="small text-white-50 mb-1">Carrera</label>
-                    <input type="text" id="modal-user-carrera" class="form-control form-control-sm search-inp w-100" placeholder="Ej: MEDICINA, DERECHO">
-                </div>
-                <div class="col-6">
-                    <label class="small text-white-50 mb-1">Sección</label>
-                    <input type="text" id="modal-user-seccion" class="form-control form-control-sm search-inp w-100" placeholder="Ej: 1RA, 2DA, A">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="small text-white-50 mb-1">Estado de Cuenta</label>
-                <select id="modal-user-estado" class="form-select form-select-sm search-inp w-100">
-                    <option value="activo">Activo (Habilitado)</option>
-                    <option value="pendiente">Pendiente de Aprobación</option>
-                    <option value="inactivo">Inactivo / Suspendido</option>
-                </select>
-            </div>
-
-            <div id="modal-user-msg" class="small mb-3" style="display:none"></div>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalUsuario()">Cancelar</button>
-                <button type="button" id="btn-guardar-usuario" class="btn btn-sm btn-act-primary px-4" onclick="guardarEdicionUsuario()">
-                    <i class="bi bi-check-lg me-1"></i> Guardar Cambios
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Script de Lógica del Dashboard Admin -->
-    <script>
-        let LISTA_USUARIOS_CACHE = [];
-        let LISTA_PENDIENTES_CACHE = [];
-        let LISTA_ASIGNATURAS_CACHE = [];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            inicializarHeader();
-            cargarTodoElDashboard();
-        });
-
-        function inicializarHeader() {
-            const nombre = sessionStorage.getItem('current_nombre') || localStorage.getItem('centuria_nombre') || 'Administrador';
-            const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula') || 'ADMIN';
-            
-            document.getElementById('admin-nombre').textContent = nombre;
-            document.getElementById('admin-cedula').textContent = cedula;
-        }
-
-        function cambiarSeccion(tabId, btn) {
-            document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            const target = document.getElementById(tabId);
-            if (target) target.style.display = 'block';
-            if (btn) btn.classList.add('active');
-
-            if (tabId === 'tab-pendientes' && LISTA_PENDIENTES_CACHE.length === 0) {
-                cargarPendientes();
-            } else if (tabId === 'tab-usuarios' && LISTA_USUARIOS_CACHE.length === 0) {
-                cargarUsuarios();
-            } else if (tabId === 'tab-asignaturas' && LISTA_ASIGNATURAS_CACHE.length === 0) {
-                cargarAsignaturas();
-            }
-        }
-
-        async function cargarTodoElDashboard(forzar = false) {
-            await Promise.allSettled([
-                cargarPendientes(),
-                cargarUsuarios(),
-                cargarAsignaturas(),
-                cargarStatsTesoreria()
-            ]);
-        }
-
-        // ── 1. Pendientes ──
-        async function cargarPendientes() {
-            const tbody = document.getElementById('tabla-pendientes-body');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-white-50"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';
-            
-            try {
-                const res = await CenturiaAPI.usuarios.pendientes();
-                const list = (res && res.pendientes) ? res.pendientes : (Array.isArray(res) ? res : []);
-                LISTA_PENDIENTES_CACHE = list;
-
-                // KPI
-                const kpi = document.getElementById('kpi-pendientes');
-                if (kpi) kpi.textContent = list.length;
-
-                const badgeTab = document.getElementById('badge-pendientes-tab');
-                if (badgeTab) {
-                    if (list.length > 0) {
-                        badgeTab.textContent = list.length;
-                        badgeTab.style.display = 'inline-block';
-                    } else {
-                        badgeTab.style.display = 'none';
-                    }
-                }
-
-                if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-white-50"><i class="bi bi-check-circle text-success me-2"></i>No hay usuarios pendientes de aprobación.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = list.map(u => {
-                    const rol = (u.rol || 'alumno').toLowerCase();
-                    const badgeClass = rol === 'docente' ? 'badge-role-docente' : (rol === 'admin' ? 'badge-role-admin' : 'badge-role-alumno');
-                    return `
-                        <tr>
-                            <td class="fw-bold text-warning">${u.cedula || '---'}</td>
-                            <td class="fw-bold">${u.nombre || ''} ${u.apellido || ''}</td>
-                            <td>
-                                <div>${u.email || '<span class="text-white-50">Sin email</span>'}</div>
-                                <div class="text-white-50 text-[10px]">${u.telefono || ''}</div>
-                            </td>
-                            <td><span class="badge-role ${badgeClass}">${rol}</span></td>
-                            <td>${u.carrera || '---'} / ${u.seccion || '---'}</td>
-                            <td class="text-end">
-                                <button onclick="aprobarUsuarioRapido('${u.cedula}')" class="btn-act btn-act-success me-1" title="Aprobar de inmediato">
-                                    <i class="bi bi-check-lg"></i> Aprobar
-                                </button>
-                                <button onclick="abrirModalEditar('${u.cedula}', '${((u.nombre||'')+' '+(u.apellido||'')).replace(/'/g, "\\'")}', '${rol}', '${u.carrera||''}', '${u.seccion||''}', 'pendiente')" class="btn-act btn-act-warning" title="Editar y asignar">
-                                    <i class="bi bi-pencil-square"></i> Editar
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            } catch (err) {
-                console.error('Error cargando pendientes:', err);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar pendientes en el servidor.</td></tr>';
-            }
-        }
-
-        async function aprobarUsuarioRapido(cedula) {
-            if (!confirm(`¿Aprobar y habilitar inmediatamente al usuario con C.I. ${cedula}?`)) return;
-            
-            try {
-                const res = await CenturiaAPI.usuarios.aprobar(cedula);
-                if (res && res.ok) {
-                    alert(`Usuario ${cedula} aprobado con éxito.`);
-                    cargarPendientes();
-                    cargarUsuarios();
-                } else {
-                    alert((res && res.error) || 'No se pudo aprobar el usuario.');
-                }
-            } catch (err) {
-                alert('Error al procesar la aprobación.');
-            }
-        }
-
-        // ── 2. Usuarios ──
-        async function cargarUsuarios() {
-            const tbody = document.getElementById('tabla-usuarios-body');
-            try {
-                const res = await CenturiaAPI.usuarios.list();
-                const list = (res && res.usuarios) ? res.usuarios : (Array.isArray(res) ? res : []);
-                LISTA_USUARIOS_CACHE = list;
-
-                // Actualizar KPIs
-                const total = list.length;
-                const alumnos = list.filter(u => (u.rol||'').toLowerCase() === 'alumno').length;
-                const docentes = list.filter(u => (u.rol||'').toLowerCase() === 'docente').length;
-
-                document.getElementById('kpi-total-usuarios').textContent = total;
-                document.getElementById('kpi-alumnos').textContent = alumnos;
-                document.getElementById('kpi-docentes').textContent = docentes;
-
-                renderTablaUsuarios(list);
-            } catch (err) {
-                console.error('Error cargando usuarios:', err);
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar usuarios.</td></tr>';
-            }
-        }
-
-        function renderTablaUsuarios(list) {
-            const tbody = document.getElementById('tabla-usuarios-body');
-            if (!list || list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-white-50">No se encontraron usuarios con los filtros aplicados.</td></tr>';
-                return;
-            }
-
-            // Limitar a los primeros 100 para fluidez
-            const displayList = list.slice(0, 100);
-
-            tbody.innerHTML = displayList.map(u => {
-                const rol = (u.rol || 'alumno').toLowerCase();
-                const estado = (u.estado || 'activo').toLowerCase();
-                const badgeClass = rol === 'docente' ? 'badge-role-docente' : (rol === 'admin' ? 'badge-role-admin' : (rol === 'academico' ? 'badge-role-academico' : 'badge-role-alumno'));
-                const estadoColor = estado === 'activo' ? 'text-success' : (estado === 'pendiente' ? 'text-warning' : 'text-danger');
-
-                const nombreCompleto = `${u.nombre || u.firstname || ''} ${u.apellido || u.lastname || ''}`.trim() || '---';
-
-                return `
-                    <tr>
-                        <td class="fw-bold text-warning">${u.cedula || '---'}</td>
-                        <td class="fw-bold">${nombreCompleto}</td>
-                        <td><span class="badge-role ${badgeClass}">${rol}</span></td>
-                        <td>${u.carrera || '---'}</td>
-                        <td>${u.seccion || '---'}</td>
-                        <td class="${estadoColor} fw-bold text-uppercase" style="font-size:0.75rem">${estado}</td>
-                        <td class="text-end">
-                            <button onclick="abrirModalEditar('${u.cedula}', '${nombreCompleto.replace(/'/g, "\\'")}', '${rol}', '${u.carrera||''}', '${u.seccion||''}', '${estado}')" class="btn-act btn-act-primary">
-                                <i class="bi bi-sliders"></i> Gestionar
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function filtrarUsuarios() {
-            const txt = (document.getElementById('filtro-user-busqueda').value || '').toLowerCase().trim();
-            const rol = (document.getElementById('filtro-user-rol').value || '').toLowerCase();
-            const estado = (document.getElementById('filtro-user-estado').value || '').toLowerCase();
-
-            const filtrados = LISTA_USUARIOS_CACHE.filter(u => {
-                const nom = `${u.nombre || u.firstname || ''} ${u.apellido || u.lastname || ''}`.toLowerCase();
-                const ced = String(u.cedula || '').toLowerCase();
-                const matchTxt = !txt || nom.includes(txt) || ced.includes(txt);
-                const matchRol = !rol || (u.rol || '').toLowerCase() === rol;
-                const matchEstado = !estado || (u.estado || 'activo').toLowerCase() === estado;
-                return matchTxt && matchRol && matchEstado;
-            });
-
-            renderTablaUsuarios(filtrados);
-        }
-
-        // ── 3. Asignaturas ──
-        async function cargarAsignaturas() {
-            const tbody = document.getElementById('tabla-asignaturas-body');
-            try {
-                const res = await CenturiaAPI.materias.listar();
-                const list = (res && res.materias) ? res.materias : (Array.isArray(res) ? res : []);
-                LISTA_ASIGNATURAS_CACHE = list;
-
-                if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-white-50">No hay asignaturas registradas. Puede crearlas desde el Constructor.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = list.map(m => {
-                    return `
-                        <tr>
-                            <td>
-                                <div class="fw-bold text-white">${m.nombre || m.asignatura || 'Sin nombre'}</div>
-                                <div class="text-white-50 small">${m.codigo || '---'}</div>
-                            </td>
-                            <td>${m.carrera || 'General'}</td>
-                            <td class="text-info fw-bold">${m.docente || m.profesor || 'Sin asignar'}</td>
-                            <td>${m.seccion || '---'} / ${m.grado || '---'}</td>
-                            <td class="text-end">
-                                <a href="constructor/index.html?asignatura=${encodeURIComponent(m.codigo || m.nombre || '')}" class="btn-act btn-act-primary text-decoration-none">
-                                    <i class="bi bi-pencil"></i> Estructura
-                                </a>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            } catch (err) {
-                console.error('Error cargando asignaturas:', err);
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al consultar catálogo de asignaturas.</td></tr>';
-            }
-        }
-
-        // ── 4. Stats Tesorería ──
-        async function cargarStatsTesoreria() {
-            try {
-                const res = await CenturiaAPI.pagos.stats();
-                if (res && res.ok) {
-                    const fmt = (n) => 'Gs. ' + Number(n || 0).toLocaleString('es-PY');
-                    document.getElementById('teso-total-pagado').textContent = fmt(res.total_cobrado || res.total_pagado || 0);
-                    document.getElementById('teso-total-pendiente').textContent = fmt(res.total_pendiente || 0);
-                    document.getElementById('teso-total-vencido').textContent = fmt(res.total_vencido || 0);
-                }
-            } catch (e) {
-                console.warn('Stats tesorería:', e);
-            }
-        }
-
-        // ── 5. Modal Editar Usuario ──
-        function abrirModalEditar(cedula, nombre, rol, carrera, seccion, estado) {
-            document.getElementById('modal-user-cedula').value = cedula || '';
-            document.getElementById('modal-user-nombre').value = nombre || '';
-            document.getElementById('modal-user-rol').value = rol || 'alumno';
-            document.getElementById('modal-user-carrera').value = carrera || '';
-            document.getElementById('modal-user-seccion').value = seccion || '';
-            document.getElementById('modal-user-estado').value = estado || 'activo';
-            
-            const msgBox = document.getElementById('modal-user-msg');
-            msgBox.style.display = 'none';
-
-            document.getElementById('modal-editar-usuario').style.display = 'flex';
-        }
-
-        function cerrarModalUsuario() {
-            document.getElementById('modal-editar-usuario').style.display = 'none';
-        }
-
-        async function guardarEdicionUsuario() {
-            const cedula = document.getElementById('modal-user-cedula').value;
-            const rol = document.getElementById('modal-user-rol').value;
-            const carrera = document.getElementById('modal-user-carrera').value.trim();
-            const seccion = document.getElementById('modal-user-seccion').value.trim();
-            const estado = document.getElementById('modal-user-estado').value;
-            
-            const btn = document.getElementById('btn-guardar-usuario');
-            const msgBox = document.getElementById('modal-user-msg');
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-custom me-1"></span> Guardando...';
-
-            try {
-                const res = await CenturiaAPI.usuarios.actualizar(cedula, {
-                    rol: rol,
-                    carrera: carrera,
-                    seccion: seccion,
-                    estado: estado
-                });
-
-                if (res && res.ok) {
-                    msgBox.className = 'small mb-3 text-success';
-                    msgBox.innerHTML = '<i class="bi bi-check-circle me-1"></i> Usuario actualizado correctamente.';
-                    msgBox.style.display = 'block';
-
-                    setTimeout(() => {
-                        cerrarModalUsuario();
-                        cargarUsuarios();
-                        cargarPendientes();
-                    }, 1000);
-                } else {
-                    throw new Error((res && res.error) || 'No se pudo guardar la actualización.');
-                }
-            } catch (err) {
-                msgBox.className = 'small mb-3 text-danger';
-                msgBox.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> ${err.message || 'Error de conexión.'}`;
-                msgBox.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Guardar Cambios';
-            }
-        }
-    </script>
+<script>
+var LISTA_USUARIOS_CACHE=[],LISTA_PENDIENTES_CACHE=[],LISTA_ASIGNATURAS_CACHE=[];
+/* dashboard-admin: logica unica (sobrescribe funciones base). Query: view_as=admin&admin_token=muaqe8lciyxz34&admin_user=CHRISTHIAN JOSE RAUL */
+(function(){
+  var q=new URLSearchParams(location.search);
+  var au=q.get('admin_user')||'CHRISTHIAN JOSE RAUL';
+  try{au=decodeURIComponent(au);}catch(e){}
+  window._viewAs=q.get('view_as')||'admin';
+  window._adminToken=q.get('admin_token')||'muaqe8lciyxz34';
+  window._adminUser=au;
+  var d1=document.getElementById('admin-user-display'); if(d1)d1.textContent=au;
+  var d2=document.getElementById('admin-user-name'); if(d2)d2.textContent=au;
+})();
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escQ(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function badgeRol(rol){rol=(rol||'alumno').toLowerCase();var c=rol==='docente'?'badge-role-docente':rol==='admin'?'badge-role-admin':rol==='academico'?'badge-role-academico':'badge-role-alumno';return '<span class="badge-role '+c+'">'+esc(rol)+'</span>';}
+function badgeEstado(est){est=(est||'').toLowerCase();var c=est==='activo'?'badge-role-alumno':est==='pendiente'?'badge-role-docente':'badge-role-admin';return '<span class="badge-role '+c+'">'+esc(est||'---')+'</span>';}
+function inicializarHeader(){var n=sessionStorage.getItem('current_nombre')||window._adminUser||'Administrador';var e1=document.getElementById('admin-user-name');if(e1)e1.textContent=n;var e2=document.getElementById('admin-user-display');if(e2)e2.textContent=n;}
+function cambiarSeccion(tabId,btn){document.querySelectorAll('.admin-section').forEach(function(s){s.style.display='none';});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.side-btn').forEach(function(b){b.classList.remove('tab-active');b.classList.add('tab-inactive');});var t=document.getElementById(tabId);if(t)t.style.display='block';if(btn)btn.classList.add('active');var sb=document.querySelector('.side-btn[data-tab="'+tabId+'"]');if(sb){sb.classList.add('tab-active');sb.classList.remove('tab-inactive');}if(tabId==='tab-pendientes'&&LISTA_PENDIENTES_CACHE.length===0)cargarPendientes();else if(tabId==='tab-usuarios'&&LISTA_USUARIOS_CACHE.length===0)cargarUsuarios();else if(tabId==='tab-asignaturas'&&LISTA_ASIGNATURAS_CACHE.length===0)cargarAsignaturas();}
+async function cargarTodoElDashboard(){try{if(window._fbCheck)window._fbCheck();}catch(e){}await Promise.allSettled([cargarPendientes(),cargarUsuarios(),cargarAsignaturas(),cargarStatsTesoreria()]);}
+document.addEventListener('DOMContentLoaded',function(){inicializarHeader();cargarTodoElDashboard();});
+async function cargarPendientes(){var tb=document.getElementById('tabla-pendientes-body');if(!tb)return;tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';try{var res=await CenturiaAPI.usuarios.pendientes();var list=(res&&res.pendientes)?res.pendientes:(Array.isArray(res)?res:[]);LISTA_PENDIENTES_CACHE=list;var kpi=document.getElementById('kpi-pendientes');if(kpi)kpi.textContent=list.length;var b1=document.getElementById('badge-pendientes-tab');if(b1){b1.style.display=list.length>0?'inline-block':'none';b1.textContent=list.length;}var b2=document.getElementById('badge-pendientes-tab2');if(b2){b2.style.display=list.length>0?'inline-block':'none';b2.textContent=list.length;}if(!list.length){tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><i class="bi bi-check-circle text-success me-2"></i>Sin solicitudes pendientes.</td></tr>';return;}tb.innerHTML=list.map(function(u){var rol=(u.rol||'alumno').toLowerCase();var nm=esc((u.nombre||'')+' '+(u.apellido||''));return '<tr><td class="fw-bold text-warning">'+esc(u.cedula)+'</td><td class="fw-bold">'+nm+'</td><td>'+esc(u.email||'Sin email')+'</td><td>'+badgeRol(rol)+'</td><td>'+esc(u.carrera||'---')+' / '+esc(u.seccion||'---')+'</td><td class="text-end"><button onclick="aprobarUsuarioRapido(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-success me-1">Aprobar</button><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ((u.nombre||'')+' '+(u.apellido||''))+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\'pendiente\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="6" class="text-center py-4 text-danger">Error al cargar pendientes.</td></tr>';}}
+async function aprobarUsuarioRapido(cedula){if(!confirm('Aprobar y habilitar a C.I. '+cedula+'?'))return;try{var r=await CenturiaAPI.usuarios.aprobar(cedula);if(r&&r.ok){alert('Usuario '+cedula+' aprobado.');cargarPendientes();cargarUsuarios();}else{alert((r&&(r.error||r.mensaje))||'No se pudo aprobar.');}}catch(e){alert('Error de conexion.');}}
+async function cargarUsuarios(){var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;try{var res=await CenturiaAPI.usuarios.list();var list=(res&&res.usuarios)?res.usuarios:(res&&res.data)?res.data:(Array.isArray(res)?res:[]);LISTA_USUARIOS_CACHE=list;var tot=list.length;var al=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='alumno';}).length;var dc=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='docente';}).length;var e1=document.getElementById('kpi-total-usuarios');if(e1)e1.textContent=tot;var e2=document.getElementById('kpi-alumnos');if(e2)e2.textContent=al;var e3=document.getElementById('kpi-docentes');if(e3)e3.textContent=dc;renderTablaUsuarios(list);}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="7" class="text-center py-4 text-danger">Error al consultar usuarios.</td></tr>';}}
+function getRol(u){if(u.rol)return u.rol;if(u.roles&&u.roles.length)return u.roles[0].rol||'alumno';return 'alumno';}
+function getNombre(u){if(u.nombre||u.apellido)return (u.nombre||'')+' '+(u.apellido||'');return u.nombre_completo||u.firstname||'';}
+function renderTablaUsuarios(list){var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;if(!list||!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">No se encontraron usuarios.</td></tr>';return;}var f=((document.getElementById('filtro-user-busqueda')||{}).value||'').toLowerCase();var fr=(document.getElementById('filtro-user-rol')||{}).value||'';var fe=(document.getElementById('filtro-user-estado')||{}).value||'';var fl=list.filter(function(u){var nm=getNombre(u)+' '+(u.cedula||'');var m=!f||nm.toLowerCase().indexOf(f)>-1;var r=!fr||getRol(u).toLowerCase()===fr;var e=!fe||(u.estado||'').toLowerCase()===fe;return m&&r&&e;}).slice(0,200);if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin resultados para el filtro.</td></tr>';return;}tb.innerHTML=fl.map(function(u){var rol=getRol(u);var nm=getNombre(u);var estado=(u.estado||'activo');return '<tr><td class="fw-bold">'+esc(u.cedula)+'</td><td>'+esc(nm)+'</td><td>'+badgeRol(rol)+'</td><td>'+esc(u.carrera||'---')+'</td><td>'+esc(u.seccion||'---')+'</td><td>'+badgeEstado(estado)+'</td><td class="text-end"><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ(nm)+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\''+escQ(estado)+'\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}
+function filtrarUsuarios(){renderTablaUsuarios(LISTA_USUARIOS_CACHE);}
+async function cargarAsignaturas(){var tb=document.getElementById('tabla-asignaturas-body');if(!tb)return;try{var res=await CenturiaAPI.asignaturas.list({estado:'todas'});var list=(res&&res.asignaturas)?res.asignaturas:(res&&res.items)?res.items:(Array.isArray(res)?res:[]);LISTA_ASIGNATURAS_CACHE=list;if(!list.length){tb.innerHTML='<tr><td colspan="5" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}tb.innerHTML=list.slice(0,200).map(function(a){return '<tr><td class="fw-bold">'+esc(a.codigo||a.nombre||'---')+'</td><td>'+esc(a.carrera||'---')+'</td><td>'+esc(a.docente||a.docente_nombre||'---')+'</td><td>'+esc(a.seccion||a.grado||'---')+'</td><td class="text-end"><a href="constructor/index.html" class="btn-act btn-act-primary text-decoration-none">Abrir</a></td></tr>';}).join('');}catch(e){tb.innerHTML='<tr><td colspan="5" class="text-center py-4">No se pudo cargar el catalogo.</td></tr>';}}
+async function cargarStatsTesoreria(){try{var r=await CenturiaAPI.tesoreria.listarEstudiantes();var d=r||{};var pend=d.total_pendiente||0;var p=document.getElementById('teso-total-pendiente');if(p)p.textContent='Gs. '+Number(pend).toLocaleString();var p2=document.getElementById('teso-total-pagado');if(p2)p2.textContent='Gs. --';var p3=document.getElementById('teso-total-vencido');if(p3)p3.textContent='Gs. --';}catch(e){console.error('tesoreria:',e);}}
+function abrirModalEditar(cedula,nombre,rol,carrera,seccion,estado){var m=document.getElementById('modal-editar-usuario');if(!m)return;document.getElementById('modal-user-cedula').value=cedula||'';document.getElementById('modal-user-nombre').value=nombre||'';document.getElementById('modal-user-rol').value=(rol||'alumno').toLowerCase();document.getElementById('modal-user-carrera').value=carrera||'';document.getElementById('modal-user-seccion').value=seccion||'';document.getElementById('modal-user-estado').value=(estado||'activo').toLowerCase();var msg=document.getElementById('modal-user-msg');if(msg)msg.style.display='none';m.style.display='flex';}
+function cerrarModalUsuario(){var m=document.getElementById('modal-editar-usuario');if(m)m.style.display='none';}
+async function guardarEdicionUsuario(){var ced=document.getElementById('modal-user-cedula').value;var rol=document.getElementById('modal-user-rol').value;var est=document.getElementById('modal-user-estado').value;var car=document.getElementById('modal-user-carrera').value;var sec=document.getElementById('modal-user-seccion').value;var msg=document.getElementById('modal-user-msg');if(msg)msg.style.display='none';try{var r1=await CenturiaAPI.usuarios.actualizar(ced,{rol:rol,estado:est,carrera:car,seccion:sec});if(est==='activo'){try{await CenturiaAPI.usuarios.aprobar(ced);}catch(e){}}if(r1&&r1.ok!==false){cerrarModalUsuario();cargarPendientes();cargarUsuarios();alert('Usuario '+ced+' actualizado.');}else{if(msg){msg.textContent=(r1&&(r1.error||r1.mensaje))||'Error al actualizar';msg.style.display='block';}}}catch(e){if(msg){msg.textContent='Error de conexion';msg.style.display='block';}}}
+function abrirModalCrear(){var m=document.getElementById('modal-crear-usuario');if(m)m.style.display='flex';}
+function cerrarModalCrear(){var m=document.getElementById('modal-crear-usuario');if(m)m.style.display='none';}
+async function crearUsuario(){var nom=document.getElementById('crear-user-nombre').value.trim();var ape=document.getElementById('crear-user-apellido').value.trim();var ced=document.getElementById('crear-user-cedula').value.trim();var em=document.getElementById('crear-user-email').value.trim();var rol=document.getElementById('crear-user-rol').value;var car=document.getElementById('crear-user-carrera').value.trim();var sec=document.getElementById('crear-user-seccion').value.trim();var msg=document.getElementById('crear-user-msg');if(msg)msg.style.display='none';if(!nom||!ape||!ced){if(msg){msg.textContent='Nombre, apellido y cedula son obligatorios.';msg.style.display='block';}else{alert('Nombre, apellido y cedula son obligatorios.');}return;}try{var r=await CenturiaAPI.usuarios.registerDirect({cedula:ced,nombre:nom.toUpperCase(),apellido:ape.toUpperCase(),email:em,telefono:'',grado:'',carrera:(car||'').toUpperCase(),seccion:sec,rol:rol});if(r&&(r.ok||r.status==='Exito'||r.status==='Éxito')){cerrarModalCrear();cargarUsuarios();cargarPendientes();alert('Usuario '+ced+' creado.');document.getElementById('crear-user-nombre').value='';document.getElementById('crear-user-apellido').value='';document.getElementById('crear-user-cedula').value='';document.getElementById('crear-user-email').value='';}else{if(msg){msg.textContent=(r&&(r.error||r.mensaje))||'No se pudo crear';msg.style.display='block';}else{alert('No se pudo crear');}}}catch(e){if(msg){msg.textContent='Error de conexion';msg.style.display='block';}}}
+async function bloquearUsuario(cedula){if(!confirm('Bloquear a C.I. '+cedula+'? (estado inactivo)'))return;try{var r=await CenturiaAPI.usuarios.actualizar(cedula,{estado:'inactivo'});if(r&&r.ok!==false){alert('Usuario '+cedula+' bloqueado.');cargarUsuarios();cargarPendientes();}else{alert((r&&(r.error||r.mensaje))||'No se pudo bloquear.');}}catch(e){alert('Error de conexion.');}}
+async function eliminarUsuario(cedula){if(!confirm('Eliminar a C.I. '+cedula+'? Se marcara inactivo y se desactivara su rol.'))return;try{try{await CenturiaAPI.usuarios.actualizar(cedula,{estado:'inactivo'});}catch(e){}var r=await CenturiaAPI.request('desactivar_rol',{cedula:cedula},'POST');if(r&&r.ok!==false){alert('Usuario '+cedula+' eliminado.');cargarUsuarios();cargarPendientes();}else{alert((r&&(r.error||r.mensaje))||'Se marco inactivo. Verifique el directorio.');cargarUsuarios();}}catch(e){alert('Error de conexion.');}}
+function cerrarSesion(){if(typeof CenturiaLogout!=='undefined'&&typeof CenturiaLogout.salir==='function'){CenturiaLogout.salir();}else{sessionStorage.clear();localStorage.removeItem('centuria_auth_token');localStorage.removeItem('centuria_user');window.location.href='index.html';}}
+</script>
 </body>
 </html>

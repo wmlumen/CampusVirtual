@@ -52,3 +52,20 @@ function centuriaLogout(confirmar) {
 
     window.location.replace(dest);
 }
+
+// Objeto usado por los dashboards nuevos (dashboard-admin.html): CenturiaLogout.salir()
+window.CenturiaLogout = window.CenturiaLogout || {
+    salir: function (confirmar) {
+        if (typeof centuriaLogout === 'function') {
+            centuriaLogout(confirmar !== false);
+        } else {
+            try { sessionStorage.clear(); } catch (e) {}
+            try {
+                localStorage.removeItem('centuria_auth_token');
+                localStorage.removeItem('centuria_user');
+            } catch (e) {}
+            window.location.replace('index.html');
+        }
+    },
+    logout: function () { this.salir(true); }
+};

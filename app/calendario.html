@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v09.0: Calendario Académico con Diseño Premium Libreta & Feriados Paraguay 2026 -->
-    <script src="./js/session-guard.js?v=3"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -816,11 +816,6 @@
                     </div>
                 </div>
 
-                <label class="modal-label">Carrera</label>
-                <select class="modal-input" id="f-career">
-                    <option value="">Todas las Carreras</option>
-                </select>
-
                 <label class="modal-label">Descripción o Notas</label>
                 <textarea class="modal-input" id="f-desc" rows="2" placeholder="Detalles u observaciones del evento..."></textarea>
 
@@ -843,8 +838,61 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=19"></script>
-    <script src="js/session-guard.js?v=3"></script>
+<!-- Firebase SDK Compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script>
+  /* Fallback modular si los scripts compat no cargan */
+  if(!window.firebase||!window.firebase.apps||window.firebase.apps.length===0){
+    (function(){
+      var loaded=false;
+      function onAllLoaded(){
+        if(loaded)return;loaded=true;
+        try{
+          window.firebase={apps:[],initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);this.firestore=function(){return{collection:function(c){return{doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return{}})}}}}},where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]})}}}}};return a;},firestore:function(){return{collection:function(){},doc:function(){},collectionGroup:function(){}}},auth:function(){return{}}};
+          window.__firebaseFallback=true;
+        }catch(e){}
+      }
+      var s1=document.createElement('script');s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      var s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+      var s3=document.createElement('script');s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+      s1.onload=function(){s2.onload();};
+      s2.onload=function(){s3.onload=onAllLoaded;document.head.appendChild(s3);};
+      s1.onerror=s2.onerror=s3.onerror=onAllLoaded;
+      document.head.appendChild(s1);
+    })();
+  }
+  window.require = window.require || function(mod){
+    if(mod==='firebase-firestore'){
+      return {
+        collection: (db,coll)=> db.collection(coll),
+        doc: (db,coll,id)=> db.collection(coll).doc(id),
+        getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+        getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+        setDoc: (ref,data)=> ref.set(data),
+        updateDoc: (ref,data)=> ref.update(data),
+        deleteDoc: (ref)=> ref.delete(),
+        query: (q,...conds)=>{
+          let qq=q;
+          for(const c of conds){
+            if(!c) continue;
+            if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value);
+            else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc');
+            else if(typeof c==='number') qq=qq.limit(c);
+          }
+          return qq;
+        },
+        where: (field,op,value)=>({field,op,value}),
+        limit: (n)=> n,
+        orderBy: (field,dir)=>({fieldPath:field, order:dir})
+      };
+    }
+    throw new Error('Cannot find module '+mod);
+  };
+</script>
+<script src="js/api.js?v=21"></script>
+    <script src="js/session-guard.js?v=5"></script>
     <script>
         // ═══════════════════════════════════════════════════════════
         // FERIADOS OFICIALES DE PARAGUAY 2026 (Ley y Decretos)
@@ -899,10 +947,21 @@
         });
 
         async function loadHabilitados(user) {
+            let alumnoConDatosReales = false;
             try {
                 if (userRole === 'docente') {
                     const d = await CenturiaAPI.docente.getMySubjects(userId);
                     userHabilitados = d.subjects || [];
+                } else if (userRole === 'alumno') {
+                    // Cursos reales del alumno (hoja Cursos): solo Activo o Desarrollado
+                    const mc = await CenturiaAPI.cursos.mios();
+                    if (mc && mc.ok !== false && mc.alumno !== false) {
+                        userHabilitados = (mc.cursos || []).filter(c => c.materiales).map(c => {
+                            const a = c.asignatura || {};
+                            return { codigo: a.codigo || a.uuid || '', nombre: a.nombre || '', carrera: c.carrera || '', grado: c.grado || '', seccion: c.seccion || '' };
+                        });
+                        alumnoConDatosReales = true;
+                    }
                 } else {
                     const dKit = await CenturiaAPI.kit.getHabilitadas();
                     userHabilitados = dKit.asignaturas || [];
@@ -911,8 +970,8 @@
                 userHabilitados = [];
             }
 
-            // Fallback para garantizar la materia habilitada TIC
-            if (!userHabilitados || userHabilitados.length === 0) {
+            // Fallback para garantizar la materia habilitada TIC (no aplica al alumno con datos reales del servidor)
+            if (!alumnoConDatosReales && (!userHabilitados || userHabilitados.length === 0)) {
                 userHabilitados = [
                     {
                         codigo: 'ADE18',
@@ -944,7 +1003,6 @@
                 const selGrado = document.getElementById('filter-grado');
                 const selCareer = document.getElementById('filter-career');
                 const selSeccion = document.getElementById('filter-seccion');
-                const fSelCareer = document.getElementById('f-career');
 
                 // 1. Cargar Grados
                 let grados = ['GRADO', 'ESPECIALIZACIÓN', 'MAESTRÍA', 'DOCTORADO'];
@@ -962,7 +1020,6 @@
 
                 // 2. Cargar Carreras / Cursos habilitados
                 selCareer.innerHTML = '<option value="">Todas las Carreras</option>';
-                if (fSelCareer) fSelCareer.innerHTML = '<option value="">Todas las Carreras</option>';
 
                 const carrerasSet = new Set();
                 userHabilitados.forEach(h => {
@@ -979,7 +1036,6 @@
                 carrerasSet.forEach(c => {
                     const sel = (userCarrera && c.toUpperCase() === userCarrera.toUpperCase()) ? 'selected' : '';
                     selCareer.innerHTML += `<option value="${c}" ${sel}>${c}</option>`;
-                    if (fSelCareer) fSelCareer.innerHTML += `<option value="${c}">${c}</option>`;
                 });
 
                 // 3. Cargar Secciones
@@ -1055,9 +1111,6 @@
                     
                     const asigObj = userHabilitados.find(h => (h.codigo || '').toUpperCase() === code.toUpperCase()) || {};
                     const asigNombre = asigObj.nombre || code;
-                    const asigCarrera = asigObj.carrera || userCarrera || '';
-                    const asigGrado = asigObj.grado || userGrado || '';
-                    const asigSeccion = asigObj.seccion || userSeccion || '';
 
                     res.configs.forEach(cfg => {
                         // Solo procesar si está habilitado y tiene fechas
@@ -1100,9 +1153,6 @@
                                 start_time: hIni,
                                 end_time: hFin,
                                 event_type: 'examen',
-                                carrera: asigCarrera,
-                                grado: asigGrado,
-                                seccion: asigSeccion,
                                 asignatura: code,
                                 exam_url: urlExamen,
                                 exam_name: infoExamen.name,
@@ -1171,11 +1221,9 @@
 
             return allEvents.filter(e => {
                 const eType = (e.event_type || e.tipo || '').toLowerCase();
-                const eGrado = (e.grado || '').toLowerCase();
-                const eCareer = (e.career || e.carrera || '').toLowerCase();
-                const eSeccion = (e.seccion || e.section || '').toLowerCase();
                 const eTitle = (e.title || e.titulo || '').toLowerCase();
                 const eSubject = (e.asignatura || e.subject || e.codigo || '').toLowerCase();
+                const eDesc = (e.description || e.descripcion || '').toLowerCase();
 
                 // Feriados nacionales siempre se muestran a menos que se filtre explícitamente por otro tipo de evento
                 if (eType === 'feriado') {
@@ -1186,21 +1234,25 @@
                 // Filtrar por tipo seleccionado
                 if (type && eType !== type) return false;
 
-                // Filtro por Grado
-                if (gradoFilter && eGrado && !eGrado.includes(gradoFilter) && !gradoFilter.includes(eGrado)) {
-                    return false;
-                }
-
-                // Filtro por Carrera
-                if (careerFilter) {
-                    if (!eCareer.includes(careerFilter) && !careerFilter.includes(eCareer) && !eSubject.includes(careerFilter) && !eTitle.includes(careerFilter)) {
+                // Filtro por Grado (busca en título y asignatura)
+                if (gradoFilter) {
+                    if (!eTitle.includes(gradoFilter) && !eSubject.includes(gradoFilter) && !eDesc.includes(gradoFilter)) {
                         return false;
                     }
                 }
 
-                // Filtro por Sección
-                if (seccionFilter && eSeccion && !eSeccion.includes(seccionFilter) && !seccionFilter.includes(eSeccion)) {
-                    return false;
+                // Filtro por Carrera (busca en título y asignatura)
+                if (careerFilter) {
+                    if (!eTitle.includes(careerFilter) && !eSubject.includes(careerFilter) && !eDesc.includes(careerFilter)) {
+                        return false;
+                    }
+                }
+
+                // Filtro por Sección (busca en título y asignatura)
+                if (seccionFilter) {
+                    if (!eTitle.includes(seccionFilter) && !eSubject.includes(seccionFilter) && !eDesc.includes(seccionFilter)) {
+                        return false;
+                    }
                 }
 
                 // Si es administrador/académico, pasa el resto
@@ -1361,7 +1413,6 @@
                         <div class="day-card-title">${e.title || e.titulo}</div>
                         <div class="day-card-meta">
                             ${e.start_time ? `<span><i class="bi bi-clock-fill"></i> ${e.start_time} ${e.end_time ? ' - ' + e.end_time : ''}</span>` : ''}
-                            ${e.career ? `<span><i class="bi bi-mortarboard-fill"></i> ${e.career}</span>` : ''}
                             ${e.description ? `<span><i class="bi bi-info-circle-fill"></i> ${e.description}</span>` : ''}
                         </div>
                         ${t === 'evento' && /^EVT-/.test(String(e.id || '')) ? `<a class="day-card-link" href="eventos.html?id=${encodeURIComponent(e.id)}"><i class="bi bi-box-arrow-up-right"></i> Ver evento y asistencia</a>` : ''}
@@ -1416,15 +1467,11 @@
             const payload = {
                 action: 'crear_evento_calendario',
                 titulo: document.getElementById('f-title').value.trim(),
-                title: document.getElementById('f-title').value.trim(),
-                tipo: document.getElementById('f-type').value,
-                event_type: document.getElementById('f-type').value,
+                descripcion: document.getElementById('f-desc').value.trim(),
                 fecha_inicio: document.getElementById('f-date').value,
-                date: document.getElementById('f-date').value,
                 hora_inicio: document.getElementById('f-start').value,
                 hora_fin: document.getElementById('f-end').value,
-                carrera: document.getElementById('f-career').value,
-                descripcion: document.getElementById('f-desc').value.trim()
+                tipo: document.getElementById('f-type').value
             };
 
             try {

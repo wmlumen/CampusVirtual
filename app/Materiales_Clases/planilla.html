@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="../js/session-guard.js?v=2"></script>
+    <script src="../js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
+    <script src="../js/acceso-curso.js?v=1" data-asignatura="TIC"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planilla de Progreso - TIC Centuria</title>
@@ -262,12 +263,13 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white d-flex flex-wrap gap-2 justify-content-between align-items-center">
                         <div class="input-group" style="max-width:300px;"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span><input type="text" id="filtro-planilla" class="form-control form-control-sm" placeholder="Buscar por cédula o nombre..."></div>
+                        <select id="filtro-seccion" class="form-control form-control-sm" style="max-width:190px;" onchange="filtrarPlanilla()" title="Filtrar por sección"><option value="">Todas las secciones</option></select>
                         <input type="date" id="asis-fecha" class="form-control form-control-sm" style="max-width:150px;" onchange="loadSystemData()" title="Fecha de trabajo">
                         <button class="btn btn-sm text-white" style="background:#007A33;" onclick="exportarExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Acta a Excel</button>
                     </div>
                     <div class="card-body p-0 table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead style="background:#007A33; color:white;"><tr><th>Cédula</th><th>Nombre</th><th class="text-center">Asist.<br><small>10%</small></th><th class="text-center">P1<br><small>20%</small></th><th class="text-center">P2<br><small>20%</small></th><th class="text-center">Final<br><small>50%</small></th><th class="text-center">%</th><th class="text-center">Nota</th><th class="text-center">Hoy<br><small id="hoy-label">—</small></th></tr></thead>
+                            <thead style="background:#007A33; color:white;"><tr><th>Cédula</th><th>Nombre</th><th>Sección</th><th>Carrera</th><th class="text-center">Asist.<br><small>10%</small></th><th class="text-center">P1<br><small>20%</small></th><th class="text-center">P2<br><small>20%</small></th><th class="text-center">Final<br><small>50%</small></th><th class="text-center">%</th><th class="text-center">Nota</th><th class="text-center">Hoy<br><small id="hoy-label">—</small></th></tr></thead>
                             <tbody id="tabla-alumnos-real"></tbody>
                         </table>
                     </div>
@@ -348,7 +350,8 @@
         const a=amap[u.id];
         let asis=g.asis;
         if(a&&a.tot>0) asis=Math.round(a.pres/a.tot*5);
-        return {id:u.id,ced:u.cedula,nom:u.nombre,asis:asis,p1:Math.round(g.p1),p2:Math.round(g.p2),fin:Math.round(g.fin)};
+        const extra=(window.USUARIOS_MAP||{})[String(u.cedula||'')]||{};
+        return {id:u.id,ced:u.cedula,nom:u.nombre,sec:u.seccion||extra.seccion||'—',car:u.carrera||extra.carrera||'—',asis:asis,p1:Math.round(g.p1),p2:Math.round(g.p2),fin:Math.round(g.fin)};
     }
     function notaLetra(pct,asis){
         let nota=1,bg="bg-danger";
@@ -361,6 +364,12 @@
         try{
             await initCurso();
             const users=await CenturiaAPI.roster(CURSO_NOMBRE);
+            try{
+                const ru=await CenturiaAPI.usuarios.list();
+                const lu=(ru&&ru.usuarios)||(ru&&ru.data)||[];
+                window.USUARIOS_MAP={};
+                lu.forEach(function(x){ if(x&&x.cedula) window.USUARIOS_MAP[String(x.cedula)]={seccion:x.seccion||'',carrera:x.carrera||''}; });
+            }catch(e){ window.USUARIOS_MAP={}; }
             let grades=[],att=[];
             try{ grades=await CenturiaAPI.listGrades(CURSO_ID); }catch(e){}
             try{ att=await CenturiaAPI.listAttendance(CURSO_ID); }catch(e){}
@@ -395,7 +404,7 @@
                     +`<button class="btn btn-sm btn-warning" title="Tardanza" onclick="markUno(${r.id},'late')">T</button> `
                     +`<button class="btn btn-sm btn-danger" title="Ausente" onclick="markUno(${r.id},'absent')">A</button>`;
             }
-            tr.innerHTML=`<td>${r.ced}</td><td class="fw-bold">${r.nom}</td><td class="text-center"><span class="badge ${abg}">${r.asis}</span></td><td class="text-center">${r.p1}</td><td class="text-center">${r.p2}</td><td class="text-center">${r.fin}</td><td class="text-center fw-bold ${nl.nota===1?'text-danger':''}">${pct}%</td><td class="text-center"><span class="badge ${nl.bg}">${nl.nota}</span></td><td class="text-center">${hoy}</td>`;
+            tr.innerHTML=`<td>${r.ced}</td><td class="fw-bold">${r.nom}</td><td>${r.sec}</td><td><small>${r.car}</small></td><td class="text-center"><span class="badge ${abg}">${r.asis}</span></td><td class="text-center">${r.p1}</td><td class="text-center">${r.p2}</td><td class="text-center">${r.fin}</td><td class="text-center fw-bold ${nl.nota===1?'text-danger':''}">${pct}%</td><td class="text-center"><span class="badge ${nl.bg}">${nl.nota}</span></td><td class="text-center">${hoy}</td>`;
             tbody.appendChild(tr);
             if(currentUser && r.ced===currentUser){
                 document.getElementById('inp-asis').value=r.asis; document.getElementById('inp-par1').value=r.p1; document.getElementById('inp-par2').value=r.p2; document.getElementById('inp-final').value=r.fin;
@@ -410,6 +419,8 @@
             }
         });
         document.getElementById('lbl-alumnos').innerText=rows.length;
+        poblarSecciones(rows);
+        filtrarPlanilla();
         const hl=document.getElementById('hoy-label'); if(hl) hl.textContent=fecha.split('-').reverse().join('/');
         renderAsistenciaPropia(amap);
         renderAvanceUnidades();
@@ -472,7 +483,24 @@
     function isDocente(){ const r=(sessionStorage.getItem('rol')||'').toLowerCase(); return ['docente','teacher','admin','administrador','academico','academic'].includes(r); }
     function rolEtiqueta(){ const r=(sessionStorage.getItem('rol')||'alumno').toLowerCase(); const m={alumno:'Alumno',student:'Alumno',docente:'Docente',teacher:'Docente',admin:'Admin',administrador:'Admin',academico:'Académico',academic:'Académico'}; return m[r]||'Alumno'; }
     function actualizarBadgeRol(){ const b=document.getElementById('badge-rol'); if(b){ b.textContent='Rol: '+rolEtiqueta(); b.className=isDocente()?'badge bg-danger':'badge bg-success'; } const r=document.getElementById('btn-docente'); const l=document.querySelector('label[for="btn-docente"]'); if(!isDocente()&&r){ r.disabled=true; if(l){ l.style.display='none'; } } if(isDocente()){ document.getElementById('btn-docente').checked=true; toggleView('docente'); } }
-    function exportarExcel(){ const t=document.getElementById('tabla-alumnos-real'); if(!t||t.rows.length===0){ alert('No hay datos para exportar.'); return; } let csv='Cedula,Nombre,Asistencia,Parcial1,Parcial2,Final,Porcentaje,Nota\n'; for(let row of t.rows){ csv+=[...row.cells].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')+'\n'; } const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='Acta_TIC_'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(u); }
+    function poblarSecciones(rows){
+        const sel=document.getElementById('filtro-seccion'); if(!sel) return;
+        const actual=sel.value||'';
+        const secs=[...new Set((rows||[]).map(r=>r.sec).filter(s=>s&&s!=='—'))].sort();
+        sel.innerHTML='<option value="">Todas las secciones</option>'+secs.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+        if(secs.includes(actual)) sel.value=actual;
+    }
+    function filtrarPlanilla(){
+        const q=((document.getElementById('filtro-planilla')||{}).value||'').toLowerCase();
+        const sec=(document.getElementById('filtro-seccion')||{}).value||'';
+        document.querySelectorAll('#tabla-alumnos-real tr').forEach(tr=>{
+            const okQ=!q||tr.innerText.toLowerCase().includes(q);
+            const celdas=tr.cells;
+            const okS=!sec||(celdas.length>2&&celdas[2].innerText.trim()===sec);
+            tr.style.display=(okQ&&okS)?'':'none';
+        });
+    }
+    function exportarExcel(){ const t=document.getElementById('tabla-alumnos-real'); if(!t||t.rows.length===0){ alert('No hay datos para exportar.'); return; } let csv='Cedula,Nombre,Seccion,Carrera,Asistencia,Parcial1,Parcial2,Final,Porcentaje,Nota,Hoy\n'; for(let row of t.rows){ csv+=[...row.cells].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')+'\n'; } const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='Acta_TIC_'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(u); }
     function toggleView(view){ if(view==='docente' && !isDocente()){ alert('Acceso docente restringido.'); document.getElementById('btn-alumno').checked=true; return; } document.getElementById('vista-alumno').style.display=(view==='alumno'?'block':'none'); document.getElementById('vista-docente').style.display=(view==='docente'?'block':'none'); }
     window.addEventListener('load', actualizarBadgeRol);
     // Filtro docente
@@ -502,8 +530,8 @@
         window.location.replace('../index.html');
     });
 </script>
-<script src="../js/api.js?v=13"></script>
+<script src="../js/api.js?v=21"></script>
 <script src="../js/accesibilidad.js"></script>
-<script src="../js/session-guard.js?v=2"></script>
+<script src="../js/session-guard.js?v=5"></script>
 </body>
 </html>

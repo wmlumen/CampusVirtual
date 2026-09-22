@@ -1,0 +1,21 @@
+{
+  "name": "centuria-campusvirtual",
+  "version": "1.0.0",
+  "scripts": {
+    "sync": "node sync-check.js",
+    "sync-deploy": "node sync-check.js --deploy",
+    "sync-fix": "node sync-check.js --fix",
+    "watch-deploy": "onchange --initial --wait 1500 --verbose \"app/**\" \"firebase/**\" \"firebase.json\" \"package.json\" -- firebase deploy --only hosting",
+    "deploy": "firebase deploy --only hosting",
+    "deploy-all": "firebase deploy",
+    "watch": "onchange --initial --wait 1500 --verbose \"app/**\" \"firebase/**\" \"firebase.json\" -- echo 'Archivos modificados, desplegando...' && firebase deploy --only hosting"
+  },
+  "devDependencies": {
+    "onchange": "^7.1.0"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0",
+    "firebase-admin": "^14.4.0",
+    "node-fetch": "^2.7.0"
+  }
+}

@@ -63,6 +63,7 @@
 
     // Actualizar display del panel si existe
     updatePanelDisplay();
+    try { document.dispatchEvent(new CustomEvent('acenturia:cambio')); } catch (e) {}
   }
 
   // ── Actualizar display del panel ──
@@ -237,6 +238,15 @@
       insertSettingsButton();
     }
   }
+
+  // ── API pública: la usa el panel «Clave y accesibilidad» del dashboard ──
+  window.CenturiaAccesibilidad = {
+    agrandar: function () { changeFontSize(FONT_STEP); },
+    reducir: function () { changeFontSize(-FONT_STEP); },
+    contraste: toggleHighContrast,
+    restaurar: resetDefaults,
+    estado: function () { return { fontSize: settings.fontSize, highContrast: settings.highContrast }; }
+  };
 
   // ── Ejecutar ──
   init();

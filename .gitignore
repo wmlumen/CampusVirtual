@@ -25,6 +25,18 @@ secrets/
 credentials/
 *.key
 *.pem
+firebase-adc.json
+**/firebase-adc.json
+firebase-tools.json
+**/firebase-tools.json
+
+# === Firebase local ===
+.firebase/
+.firebaserc
+seed-modalidades.js
+
+# === Documentación local deshistoriada (con API key en histórico) ===
+AAA/
 
 # === Datos privados ===
 uploads/private/
@@ -78,3 +90,19 @@ moodle/
 # === Documentos internos ===
 *.md.bak
 shared_state.json
+
+# === Documentación local (NO subir) ===
+_local/
+
+# === Datos sensibles (PII) ===
+app/data/*.json
+app/data/*.csv
+*_consolidado.json
+
+# === Scripts de creación de usuarios (credenciales) ===
+CREAR_USUARIOS_*.gs
+CREAR_USUARIOS_*.md
+
+# === Scripts de importación con datos reales ===
+IMPORTAR_ASISTENCIAS_*.gs
+IMPORTAR_ALUMNOS_*.gs

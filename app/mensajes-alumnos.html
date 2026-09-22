@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v08.5.5: Mensajes a los alumnos (personal y docentes) -->
+    <script src="./js/session-guard.js?v=5"></script>
+    <script>
+    // Solo escribe quien tiene permiso (personal, filial y docentes); lo decide el servidor al enviar.
+    CenturiaSession.protect();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes a alumnos — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado:#d4a843;--txt3:rgba(255,255,255,.55);--rojo:#ff8a87;--ok:#3ddc6e;--naranja:#fbbf24;--azul:#7cc0ff}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Montserrat',sans-serif;min-height:100vh;color:#fff;position:relative;overflow-x:hidden;background:#060f09}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(22,129,61,.12) 0%,transparent 60%),linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%);z-index:-2}
+        .wrap{width:100%;max-width:1100px;margin:0 auto;padding:20px 20px 64px}
+        [hidden]{display:none !important}
+        a{color:var(--dorado)}
+        :focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+        .lib-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);margin-bottom:20px}
+        .lib-header-left{display:flex;align-items:center;gap:16px;min-width:0}
+        .lib-avatar{width:56px;height:56px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:2px solid var(--dorado)}
+        .lib-header-name{font-size:1.1rem;font-weight:700}
+        .lib-header-sub{font-size:.7rem;color:var(--dorado);letter-spacing:1px}
+        .lib-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .lib-btn{padding:8px 16px;border-radius:12px;font-size:.7rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .lib-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+        .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .tab{padding:9px 18px;border-radius:12px;font-size:.72rem;font-weight:700;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.1);font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+        .tab.on{background:rgba(0,177,64,.2);color:var(--ok);border-color:rgba(0,177,64,.45)}
+        .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:20px;backdrop-filter:blur(20px);margin-bottom:16px}
+        .card h3{font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .card h3 i{color:var(--dorado)}
+        .form-group{margin-bottom:10px}
+        .form-group label{display:block;font-size:.6rem;font-weight:700;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+        .form-group input,.form-group select,.form-group textarea,.inp{width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:.75rem;font-family:'Montserrat';font-weight:600;color:#fff;background:rgba(255,255,255,.06);color-scheme:dark}
+        .form-group select option{background:#0d2c16;color:#fff}
+        .form-group input::placeholder,.form-group textarea::placeholder,.inp::placeholder{color:rgba(255,255,255,.3)}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus,.inp:focus{outline:none;border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.18)}
+        .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .row3{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px}
+        .btn{padding:9px 16px;border:none;border-radius:12px;font-size:.7rem;font-weight:700;font-family:'Montserrat';cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+        .btn:disabled{opacity:.45;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,var(--verde-medio),#0f6a31);color:#fff;border:1px solid rgba(212,168,67,.45)}.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#1a9448,var(--verde-medio))}
+        .btn-gold{background:rgba(212,168,67,.18);color:var(--dorado);border:1px solid rgba(212,168,67,.4)}.btn-gold:hover:not(:disabled){background:rgba(212,168,67,.3)}
+        .btn-secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15)}.btn-secondary:hover:not(:disabled){background:rgba(255,255,255,.14);color:#fff}
+        .btn-danger{background:rgba(239,83,80,.15);color:var(--rojo);border:1px solid rgba(239,83,80,.35)}.btn-danger:hover:not(:disabled){background:rgba(239,83,80,.25)}
+        .btn-sm{padding:6px 12px;font-size:.62rem}
+        .acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+        .seg .btn.on{background:rgba(0,177,64,.22);color:var(--ok);border-color:rgba(0,177,64,.4)}
+        .seg .n{background:rgba(255,255,255,.15);border-radius:9px;padding:0 6px;font-size:.58rem}
+        .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.6rem;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+        .b-ok{background:rgba(0,177,64,.2);color:var(--ok)}.b-warn{background:rgba(251,191,36,.18);color:var(--naranja)}.b-bad{background:rgba(239,83,80,.18);color:var(--rojo)}.b-gold{background:rgba(212,168,67,.2);color:var(--dorado)}.b-mute{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}.b-blue{background:rgba(124,192,255,.18);color:var(--azul)}
+        .muted{color:var(--txt3);font-size:.68rem}
+        .empty{text-align:center;padding:28px;color:var(--txt3);font-size:.75rem}
+        .empty i{font-size:2rem;display:block;margin-bottom:6px;color:rgba(255,255,255,.2)}
+        .fac{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:13px 15px;margin-bottom:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px}
+        .fac.anulada{opacity:.55}
+        .fac b{font-size:.82rem}
+        .fac .meta{font-size:.66rem;color:var(--txt3);line-height:1.6;margin-top:3px}
+        .fac .obs{margin-top:6px;padding:7px 10px;border-radius:9px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);font-size:.68rem;color:var(--naranja);line-height:1.5}
+        .monto{font-weight:800;font-size:.9rem;color:var(--dorado);white-space:nowrap}
+        .preview{width:100%;max-height:220px;object-fit:contain;border-radius:12px;border:1px dashed rgba(255,255,255,.25);background:rgba(0,0,0,.25);margin-top:8px}
+        .drop{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border:2px dashed rgba(212,168,67,.5);border-radius:12px;cursor:pointer;font-size:.72rem;font-weight:700;color:var(--dorado);background:rgba(212,168,67,.06);text-align:center}
+        .drop:hover{background:rgba(212,168,67,.12)}
+        .pers{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 12px;margin-bottom:6px;border-radius:10px;background:rgba(255,255,255,.05);font-size:.72rem}
+        .pers small{display:block;color:var(--txt3);font-size:.6rem}
+        .totales{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:.7rem;color:var(--txt3)}
+        .totales b{color:#fff}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+        .modal{background:#0d2c16;border:1px solid rgba(212,168,67,.4);border-radius:18px;padding:18px;width:100%;max-width:640px;max-height:94vh;overflow-y:auto}
+        .modal h4{font-size:.85rem;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+        .modal img{width:100%;max-height:62vh;object-fit:contain;border-radius:12px;background:#000}
+        .modal .datos{font-size:.72rem;line-height:1.7;margin:10px 0}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:12px;font-size:.72rem;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:340px}
+        .toast.ok{background:rgba(13,44,22,.96);color:var(--ok);border:1px solid rgba(0,177,64,.5)}
+        .toast.err{background:rgba(60,15,15,.96);color:var(--rojo);border:1px solid rgba(239,83,80,.5)}
+        .footer{position:fixed;bottom:0;left:0;right:0;z-index:10;text-align:center;padding:10px 20px;font-size:.55rem;color:rgba(255,255,255,.6);background:rgba(0,61,25,.9);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.08)}
+        @media print{body{background:#fff !important;color:#000 !important}body::before{display:none}.lib-header-actions,.tabs,.acciones,.footer,.btn,.seg{display:none !important}.card,.lib-header,.fac{background:#fff;border:1px solid #ccc;color:#000}.muted{color:#444}}
+        @media(max-width:720px){.wrap{padding:12px 12px 70px}.lib-header{flex-direction:column;align-items:flex-start}.row2,.row3{grid-template-columns:1fr}}
+            .tonos{display:flex;gap:8px;flex-wrap:wrap}
+        .tono{padding:8px 14px;border-radius:12px;font-size:.68rem;font-weight:700;cursor:pointer;border:1px solid var(--c);color:var(--c);background:transparent}
+        .tono.on{background:var(--c);color:#0b1d10}
+        .tono[data-t="info"]{--c:#93c5fd}.tono[data-t="aviso"]{--c:#fcd34d}.tono[data-t="urgente"]{--c:#fca5a5}.tono[data-t="felicitacion"]{--c:#d8b4fe}
+        .prev{border-radius:14px;padding:12px 16px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 12%,transparent)}
+        .prev[data-t="info"]{--c:#93c5fd}.prev[data-t="aviso"]{--c:#fcd34d}.prev[data-t="urgente"]{--c:#fca5a5}.prev[data-t="felicitacion"]{--c:#d8b4fe}
+        .prev .pt{font-size:.6rem;letter-spacing:.8px;text-transform:uppercase;font-weight:800;color:var(--c)}
+        .prev .pn{font-weight:700;font-size:.82rem;margin-top:6px}.prev .px{font-size:.76rem;line-height:1.55;margin-top:4px;white-space:pre-wrap}
+        .msg{padding:13px 15px;margin-bottom:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .msg.off{opacity:.55}.msg b{font-size:.82rem}.msg .meta{font-size:.66rem;color:var(--txt3);line-height:1.6;margin-top:3px}
+        .b-blue{background:rgba(96,165,250,.18);color:#93c5fd}.b-mute{background:rgba(255,255,255,.1);color:var(--txt3)}
+        .cnt{font-size:.6rem;color:var(--txt3);text-align:right;margin-top:2px}
+
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="lib-header">
+        <div class="lib-header-left">
+            <div class="lib-avatar" id="h-avatar">M</div>
+            <div>
+                <div class="lib-header-name">Mensajes a los alumnos</div>
+                <div class="lib-header-sub" id="h-sub">APARECEN EN EL PANEL DE CADA ALUMNO</div>
+            </div>
+        </div>
+        <div class="lib-header-actions">
+            <a class="lib-btn" href="dashboard.html"><i class="bi bi-house"></i> Inicio</a>
+            <button class="lib-btn" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </div>
+    </div>
+
+    <form class="card" id="form" onsubmit="enviar(event)" novalidate>
+        <h3><i class="bi bi-megaphone"></i> Escribir un mensaje</h3>
+        <div class="form-group"><label for="m-tit">Título *</label><input id="m-tit" maxlength="80" placeholder="Ej.: Recordatorio de examen" autocomplete="off"></div>
+        <div class="form-group"><label for="m-txt">Mensaje *</label><textarea id="m-txt" rows="3" maxlength="500" placeholder="Escribe el mensaje que verá cada alumno"></textarea><div class="cnt"><span id="m-cnt">0</span>/500</div></div>
+        <div class="form-group"><label>Tipo</label>
+            <div class="tonos" id="tonos" role="radiogroup" aria-label="Tipo de mensaje">
+                <button type="button" class="tono on" data-t="info" role="radio" aria-checked="true">Información</button>
+                <button type="button" class="tono" data-t="aviso" role="radio" aria-checked="false">Aviso</button>
+                <button type="button" class="tono" data-t="urgente" role="radio" aria-checked="false">Importante</button>
+                <button type="button" class="tono" data-t="felicitacion" role="radio" aria-checked="false">Felicitación</button>
+            </div>
+        </div>
+        <div class="row3">
+            <div class="form-group"><label for="m-gra">Grado</label><select id="m-gra"><option value="">Todos</option></select></div>
+            <div class="form-group"><label for="m-car">Carrera</label><select id="m-car"><option value="">Todas</option></select></div>
+            <div class="form-group"><label for="m-sec">Sección</label><select id="m-sec"><option value="">Todas</option></select></div>
+        </div>
+        <div class="row2">
+            <div class="form-group"><label for="m-ced">Cédulas puntuales (opcional)</label><input id="m-ced" placeholder="Separadas por coma o espacio" autocomplete="off" inputmode="numeric"></div>
+            <div class="form-group"><label for="m-dias">Vigencia (días, máx. 60)</label><input id="m-dias" type="number" min="1" max="60" value="7"></div>
+        </div>
+        <p class="muted" id="ayuda-doc" hidden style="margin-bottom:8px"><i class="bi bi-info-circle"></i> Como docente puedes escribir a una sección o a alumnos puntuales.</p>
+        <div class="form-group"><label>Así lo verá el alumno</label>
+            <div class="prev" id="prev" data-t="info"><div class="pt" id="p-tipo">Información</div><div class="pn" id="p-tit">—</div><div class="px" id="p-txt">—</div></div>
+        </div>
+        <div class="acciones"><button class="btn btn-primary" id="btn-env" type="submit"><i class="bi bi-send"></i> Enviar mensaje</button></div>
+    </form>
+
+    <div class="card">
+        <h3><i class="bi bi-clock-history"></i> Mensajes enviados</h3>
+        <div id="lista"><div class="empty"><i class="bi bi-hourglass-split"></i>Cargando…</div></div>
+    </div>
+</div>
+<div class="footer">Instituto Superior Centuria — Mensajes &copy; 2026</div>
+
+<script src="js/api.js?v=21"></script>
+<script src="js/logout.js?v=2"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const M = () => CenturiaAPI.mensajes;
+const TONOS = { info: 'Información', aviso: 'Aviso', urgente: 'Importante', felicitacion: 'Felicitación' };
+let tono = 'info';
+
+function toast(msg, tipo) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (tipo === 'err' ? 'err' : 'ok');
+    t.setAttribute('role', tipo === 'err' ? 'alert' : 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4500);
+}
+async function llamar(promesa) {
+    let d;
+    try { d = await promesa; } catch (e) { toast('No se pudo conectar con el servidor.', 'err'); return null; }
+    if (!d || d.ok !== true) {
+        const m = (d && (d.error || d.mensaje)) || 'El servidor no respondió como se esperaba.';
+        toast(/no reconocida|Acción/i.test(m) ? 'El servidor todavía no tiene los mensajes: falta publicar la nueva versión del script.' : m, 'err');
+        return null;
+    }
+    return d;
+}
+function llenar(sel, lista) { lista.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); }); }
+function fmtF(f) { const m = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+
+function pintarPrev() {
+    $('prev').setAttribute('data-t', tono);
+    $('p-tipo').textContent = TONOS[tono];
+    $('p-tit').textContent = $('m-tit').value.trim() || '—';
+    $('p-txt').textContent = $('m-txt').value.trim() || '—';
+    $('m-cnt').textContent = $('m-txt').value.length;
+}
+document.querySelectorAll('.tono').forEach(b => b.addEventListener('click', () => {
+    tono = b.dataset.t;
+    document.querySelectorAll('.tono').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+    pintarPrev();
+}));
+['m-tit', 'm-txt'].forEach(id => $(id).addEventListener('input', pintarPrev));
+
+async function cargarDestinos() {
+    const d = await llamar(M().destinos());
+    if (!d) { $('btn-env').disabled = true; return; }
+    llenar($('m-gra'), d.grados || []); llenar($('m-car'), d.carreras || []); llenar($('m-sec'), d.secciones || []);
+}
+async function enviar(ev) {
+    ev.preventDefault();
+    const btn = $('btn-env'); btn.disabled = true;
+    const d = await llamar(M().enviar({
+        titulo: $('m-tit').value.trim(), texto: $('m-txt').value.trim(), tono,
+        grado: $('m-gra').value, carrera: $('m-car').value, seccion: $('m-sec').value, cedulas: $('m-ced').value.trim(), dias: Number($('m-dias').value) || 7
+    }));
+    btn.disabled = false;
+    if (!d) return;
+    toast(d.mensaje || 'Mensaje enviado.');
+    $('m-tit').value = ''; $('m-txt').value = ''; $('m-ced').value = ''; pintarPrev(); cargarLista();
+}
+async function cargarLista() {
+    const d = await llamar(M().listar());
+    const c = $('lista');
+    if (!d) { c.innerHTML = '<div class="empty"><i class="bi bi-wifi-off"></i>No se pudieron cargar los mensajes.</div>'; return; }
+    const lista = d.mensajes || [];
+    if (!lista.length) { c.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i>Todavía no enviaste mensajes.</div>'; return; }
+    c.innerHTML = lista.map(m => {
+        const dest = m.destino || {};
+        const partes = [dest.grado, dest.carrera, dest.seccion && ('Sección ' + dest.seccion), dest.cedulas && (String(dest.cedulas).split(',').filter(Boolean).length + ' cédula(s)')].filter(Boolean);
+        const estado = m.estado === 'retirado' ? ['b-mute', 'Retirado'] : (m.vigente ? ['b-ok', 'Vigente'] : ['b-warn', 'Vencido']);
+        return `<div class="msg ${m.estado === 'retirado' ? 'off' : ''}">
+            <div><b>${esc(m.titulo)}</b> <span class="badge ${estado[0]}">${estado[1]}</span> <span class="badge b-blue">${esc(TONOS[m.tono] || m.tono)}</span>
+                <div class="meta">${esc(m.texto)}<br>Para: ${esc(partes.join(' · ') || 'Todos los alumnos')} · ${m.destinatarios} alumno(s) · leído por ${m.leidos}${m.desde ? ' · desde ' + esc(fmtF(m.desde)) : ''}${m.hasta ? ' hasta ' + esc(fmtF(m.hasta)) : ''}${d.es_admin && m.emisor ? '<br>Envió: ' + esc(m.emisor) : ''}</div></div>
+            <div>${m.estado !== 'retirado' && (m.propio || d.es_admin) ? `<button class="btn btn-danger btn-sm" onclick="retirar('${esc(m.id)}')"><i class="bi bi-x-circle"></i> Retirar</button>` : ''}</div>
+        </div>`;
+    }).join('');
+}
+async function retirar(id) {
+    if (!confirm('¿Retirar este mensaje? Dejará de mostrarse a los alumnos.')) return;
+    const d = await llamar(M().retirar(id));
+    if (d) { toast(d.mensaje || 'Mensaje retirado.'); cargarLista(); }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const u = CenturiaAPI.getCurrentUser() || {};
+    const nombre = ((u.firstname || u.nombre || '') + ' ' + (u.lastname || u.apellido || '')).trim();
+    if (nombre) $('h-sub').textContent = nombre.toUpperCase();
+    if ((u.rol || u.role || (window.CenturiaSession && CenturiaSession.getRole && CenturiaSession.getRole())) === 'docente') $('ayuda-doc').hidden = false;
+    pintarPrev(); cargarDestinos(); cargarLista();
+});
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=3"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,6 +101,9 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px">
             <span class="badge-rol">Docente</span>
+            <button class="btn btn-s" onclick="abrirModalPerfilDocente()" style="padding:5px 10px;border-radius:8px;font-size:.65rem;cursor:pointer;background:rgba(212,168,67,.18);color:var(--dorado);border:1px solid rgba(212,168,67,.35)">
+                <i class="bi bi-person-gear"></i> Mi Perfil
+            </button>
             <button class="btn-out" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
         </div>
     </div>
@@ -116,6 +119,8 @@
             style="width:100%;padding:8px 12px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;margin-bottom:8px;outline:none">
         <div id="lista-disponibles" style="display:grid;gap:8px"></div>
         <div id="lista-pendientes" style="margin-top:8px"></div>
+    </div>
+
     <!-- EVALUACIONES: Códigos, Habilitación, Solicitudes y Crear -->
     <div class="sec" id="sec-exam-hab" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
@@ -154,6 +159,83 @@
                 </div>
                 <div id="eval-msg" style="font-size:.65rem;min-height:16px"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Mi Perfil Docente -->
+    <div id="modal-perfil-docente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#132a33;border:1px solid var(--dorado);border-radius:16px;max-width:560px;width:100%;padding:22px;color:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.6);max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--bdr);padding-bottom:10px;">
+                <div style="font-size:.85rem;font-weight:700;color:var(--dorado);display:flex;align-items:center;gap:8px;">
+                    <i class="bi bi-person-badge"></i> Mi Perfil Docente
+                </div>
+                <button type="button" onclick="cerrarModalPerfilDocente()" style="background:none;border:none;color:var(--txt2);font-size:1.2rem;cursor:pointer;">✕</button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;background:rgba(255,255,255,.03);padding:12px;border-radius:12px;border:1px solid var(--bdr);">
+                <div class="avatar" id="modal-doc-avatar" style="width:52px;height:52px;font-size:1.2rem;">D</div>
+                <div>
+                    <div id="modal-doc-nombre-view" style="font-size:.88rem;font-weight:700;color:#fff;">Docente</div>
+                    <div id="modal-doc-cedula-view" style="font-size:.68rem;color:var(--dorado);font-weight:600;">C.I: —</div>
+                    <div style="font-size:.58rem;color:var(--txt2);margin-top:2px;"><i class="bi bi-shield-check text-success me-1"></i> Rol Oficial: Docente / Catedrático</div>
+                </div>
+            </div>
+
+            <form id="form-perfil-docente" onsubmit="event.preventDefault(); guardarPerfilDocente();" style="display:grid;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Nombres</label>
+                        <input type="text" id="doc-p-nombre" required placeholder="Nombres" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Apellidos</label>
+                        <input type="text" id="doc-p-apellido" required placeholder="Apellidos" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Cédula de Identidad (No editable)</label>
+                        <input type="text" id="doc-p-cedula" disabled style="width:100%;padding:8px;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;color:var(--txt2);font-family:'Montserrat';font-size:.72rem;cursor:not-allowed;">
+                    </div>
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Correo Electrónico</label>
+                        <input type="email" id="doc-p-email" placeholder="ejemplo@centuria.edu.py" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Teléfono / WhatsApp</label>
+                        <input type="text" id="doc-p-telefono" placeholder="Ej: 0981 123456" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Teléfono Alternativo</label>
+                        <input type="text" id="doc-p-telefono-alt" placeholder="Ej: 0971 654321" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Contacto de Emergencia</label>
+                        <input type="text" id="doc-p-contacto-emergencia" placeholder="Nombre y Teléfono" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:.56rem;font-weight:700;color:var(--txt2);text-transform:uppercase;display:block;margin-bottom:3px;">Dirección / Ciudad</label>
+                        <input type="text" id="doc-p-direccion" placeholder="Ciudad, Barrio o Domicilio" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-family:'Montserrat';font-size:.72rem;">
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);">
+                    <span id="doc-perfil-msg" style="font-size:.65rem;color:#4ade80;"></span>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="btn btn-s" onclick="cerrarModalPerfilDocente()">Cancelar</button>
+                        <button type="submit" id="btn-doc-guardar-perfil" class="btn btn-p" style="background:var(--dorado);color:#0d2c16;font-weight:700;">
+                            <i class="bi bi-save me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -301,8 +383,41 @@
 
 <div class="footer">Instituto Superior Centuria © 2026 — Panel Docente</div>
 
-<script src="js/api.js?v=19"></script>
-<script src="js/session-guard.js?v=3"></script>
+<!-- Firebase SDK Compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script>
+  window.require = window.require || function(mod){
+    if(mod==='firebase-firestore'){
+      return {
+        collection: (db,coll)=> db.collection(coll),
+        doc: (db,coll,id)=> db.collection(coll).doc(id),
+        getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+        getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+        setDoc: (ref,data)=> ref.set(data),
+        updateDoc: (ref,data)=> ref.update(data),
+        deleteDoc: (ref)=> ref.delete(),
+        query: (q,...conds)=>{
+          let qq=q;
+          for(const c of conds){
+            if(!c) continue;
+            if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value);
+            else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc');
+            else if(typeof c==='number') qq=qq.limit(c);
+          }
+          return qq;
+        },
+        where: (field,op,value)=>({field,op,value}),
+        limit: (n)=> n,
+        orderBy: (field,dir)=>({fieldPath:field, order:dir})
+      };
+    }
+    throw new Error('Cannot find module '+mod);
+  };
+</script>
+<script src="js/api.js?v=21"></script>
+<script src="js/session-guard.js?v=5"></script>
 <script src="js/logout.js?v=2"></script>
 <script>
 // ═══ ESTADO ═══
@@ -331,6 +446,127 @@ async function cargarPanel() {
     await cargarMisAsignaturas(cedula);
     // 2) Catálogo para solicitar (busca y queda pendiente)
     await cargarDisponibles();
+}
+
+// ═══ GESTIÓN DE MI PERFIL DOCENTE ═══
+function abrirModalPerfilDocente() {
+    const u = CenturiaAPI.getCurrentUser() || {};
+    const cedula = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+    const nombre = u.nombre || u.firstname || sessionStorage.getItem('current_nombre') || '';
+    const apellido = u.apellido || u.lastname || '';
+    const email = u.email || localStorage.getItem('centuria_email') || '';
+    const telefono = u.telefono || localStorage.getItem('centuria_telefono') || '';
+    const telAlt = u.telefono_alternativo || localStorage.getItem('centuria_telefono_alternativo') || '';
+    const contactoEmerg = u.contacto_emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
+    const direccion = u.direccion || localStorage.getItem('centuria_direccion') || '';
+
+    const nomCompleto = (nombre + ' ' + apellido).trim() || 'Docente';
+    document.getElementById('modal-doc-nombre-view').textContent = nomCompleto;
+    document.getElementById('modal-doc-cedula-view').textContent = 'C.I: ' + (cedula || '—');
+    document.getElementById('modal-doc-avatar').textContent = nomCompleto.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+
+    document.getElementById('doc-p-nombre').value = nombre;
+    document.getElementById('doc-p-apellido').value = apellido;
+    document.getElementById('doc-p-cedula').value = cedula;
+    document.getElementById('doc-p-email').value = email;
+    document.getElementById('doc-p-telefono').value = telefono;
+    document.getElementById('doc-p-telefono-alt').value = telAlt;
+    document.getElementById('doc-p-contacto-emergencia').value = contactoEmerg;
+    document.getElementById('doc-p-direccion').value = direccion;
+
+    const msg = document.getElementById('doc-perfil-msg');
+    if (msg) msg.textContent = '';
+
+    document.getElementById('modal-perfil-docente').style.display = 'flex';
+}
+
+function cerrarModalPerfilDocente() {
+    document.getElementById('modal-perfil-docente').style.display = 'none';
+}
+
+async function guardarPerfilDocente() {
+    const btn = document.getElementById('btn-doc-guardar-perfil');
+    const msg = document.getElementById('doc-perfil-msg');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+    }
+    if (msg) {
+        msg.style.color = 'var(--txt2)';
+        msg.textContent = 'Guardando datos...';
+    }
+
+    try {
+        const u = CenturiaAPI.getCurrentUser() || {};
+        const cedula = u.cedula || u.username || sessionStorage.getItem('current_cedula') || '';
+        const nombre = document.getElementById('doc-p-nombre').value.trim();
+        const apellido = document.getElementById('doc-p-apellido').value.trim();
+        const email = document.getElementById('doc-p-email').value.trim();
+        const telefono = document.getElementById('doc-p-telefono').value.trim();
+        const telAlt = document.getElementById('doc-p-telefono-alt').value.trim();
+        const contactoEmerg = document.getElementById('doc-p-contacto-emergencia').value.trim();
+        const direccion = document.getElementById('doc-p-direccion').value.trim();
+
+        const datos = {
+            cedula,
+            firstname: nombre,
+            lastname: apellido,
+            nombre,
+            apellido,
+            email,
+            telefono,
+            telefono_alternativo: telAlt,
+            contacto_emergencia: contactoEmerg,
+            direccion
+        };
+
+        // Guardar localmente
+        if (nombre) localStorage.setItem('centuria_nombre', nombre);
+        if (apellido) localStorage.setItem('centuria_apellido', apellido);
+        if (email) localStorage.setItem('centuria_email', email);
+        if (telefono) localStorage.setItem('centuria_telefono', telefono);
+        if (telAlt) localStorage.setItem('centuria_telefono_alternativo', telAlt);
+        if (contactoEmerg) localStorage.setItem('centuria_contacto_emergencia', contactoEmerg);
+        if (direccion) localStorage.setItem('centuria_direccion', direccion);
+
+        const updatedUser = Object.assign({}, u, datos);
+        sessionStorage.setItem('centuria_user', JSON.stringify(updatedUser));
+        localStorage.setItem('centuria_user', JSON.stringify(updatedUser));
+        sessionStorage.setItem('current_nombre', (nombre + ' ' + apellido).trim());
+
+        // Actualizar vista header
+        const nomCompleto = (nombre + ' ' + apellido).trim() || 'Docente';
+        document.getElementById('userName').textContent = nomCompleto;
+        document.getElementById('avatar').textContent = nomCompleto.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+
+        const res = await CenturiaAPI.auth.updateProfile(datos);
+        if (res && res.ok) {
+            if (msg) {
+                msg.style.color = '#4ade80';
+                msg.textContent = '✓ ¡Perfil actualizado correctamente!';
+            }
+            setTimeout(() => {
+                cerrarModalPerfilDocente();
+            }, 1200);
+        } else {
+            if (msg) {
+                msg.style.color = '#fbbf24';
+                msg.textContent = (res && res.message) || (res && res.error) || 'Guardado localmente.';
+            }
+        }
+    } catch (e) {
+        console.error('Error al guardar perfil docente:', e);
+        if (msg) {
+            msg.style.color = '#f87171';
+            msg.textContent = 'Error al sincronizar con el servidor.';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
 }
 
 // ═══ CARGAR ASIGNATURAS ASIGNADAS ═══
@@ -815,12 +1051,9 @@ async function solicitarAsignatura(codigo) {
 
 // ═══ CÓDIGOS DE ACCESO A EXÁMENES ═══
 const examesMapa = {
-    'examen_parcial_1': 'Parcial 1 (Unidades 1-3)',
-    'examen_parcial_2': 'Parcial 2 (Unidades 4-6)',
-    'examen_virtual': 'Examen Virtual',
-    'examen_virtual_completo': 'Examen Virtual Completo',
-    'examen_final_virtual': 'Final Virtual',
-    'examen_final_escrito': 'Final Escrito'
+    'examen_parcial_1': 'Parcial 1',
+    'examen_parcial_2': 'Parcial 2',
+    'examen_final_virtual': 'Examen Final'
 };
 
 // Evaluaciones custom del usuario (persistidas en localStorage)

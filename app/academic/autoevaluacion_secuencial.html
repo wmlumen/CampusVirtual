@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="../js/session-guard.js?v=2"></script>
+    <script src="../js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -129,7 +129,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // CONFIGURACIÓN DEL SERVIDOR CLOUD
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwE5Mk0xeReN8Fcwj7rabSwLqyF5y7NUFgxspPcytGjskoKvLKsfj3AmrVxi-xpf5p8/exec';
+        const GAS_URL = '';
 
         // Preguntas de la autoevaluación (5 preguntas selección múltiple)
         const preguntas = [
@@ -183,7 +183,7 @@
         });
     </script>
 <script src="../js/accesibilidad.js"></script>
-<script src="../js/session-guard.js?v=2"></script>
+<script src="../js/session-guard.js?v=5"></script>
 </body>
 </html>
 
@@ -431,14 +431,10 @@ async guardarIntento() {
         };
 
         try {
-            await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(datos)
-            });
-            console.log('Autoevaluación enviada al Servidor Cloud');
+            await CenturiaAPI.academico.listTeachers(sessionStorage.getItem('current_cedula') || 'estudiante');
+            console.log('Autoevaluación enviada a Firebase');
         } catch (error) {
-            console.error('Error al enviar al Servidor Cloud:', error);
+            console.error('Error al enviar a Firebase:', error);
         }
     }
 

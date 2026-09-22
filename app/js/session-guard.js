@@ -2,6 +2,7 @@
  * session-guard.js — Protección y control estricto de sesiones y roles en Campus Virtual Centuria
  * Verifica tokens, tiempo de expiración (8h), correspondencia de roles y realiza validación en segundo plano.
  *
+ * v08.5.2 (2026-09-20): rol asistencia_estudiante -> atencion-estudiante.html (los HTML lo cargan con ?v=3).
  * v08.5.1 (2026-09-20): la raíz de la app se deduce del propio <script src>; no redirige a la página actual
  *          (corrige bucle no_session en index.html). Los HTML lo cargan con ?v=2 para evitar caché vieja.
  */
@@ -83,6 +84,10 @@
             case 'docente':   return rootUrl('docente.html');
             case 'academico': return rootUrl('academic/index.html');
             case 'admin':     return rootUrl('admin/index.html');
+            case 'administrador_plataforma':
+            case 'administrador': return rootUrl('dashboard-admin.html');
+            case 'admin_filial': return rootUrl('dashboard-admin.html');
+            case 'asistencia_estudiante': return rootUrl('atencion-estudiante.html');
             case 'alumno':
             default:          return rootUrl('dashboard.html');
         }
@@ -172,30 +177,40 @@
 
             const token = this.getToken();
             const user = this.getUser();
+            console.log('[SessionGuard] protect check token=', !!token, 'user=', user && user.cedula, 'role=', this.getRole(), 'allowed=', allowedRoles);
 
             // 1. Verificar existencia de credenciales
             if (!token || !user) {
+                console.warn('[SessionGuard] no_session -> logout');
                 this.logout('no_session');
                 return false;
             }
 
             // 2. Verificar tiempo de expiración (8 horas)
             if (this.isExpired(token)) {
+                console.warn('[SessionGuard] expired -> logout');
                 this.logout('expired');
                 return false;
             }
 
             // 3. Verificar correspondencia de rol
             const userRole = this.getRole();
-            if (allowedRoles && allowedRoles.length > 0) {
+            // 🎯 Admin universal: puede navegar por todos los paneles sin re-loguearse
+            const isUniversalAdmin = ['admin','administrador','administrador_plataforma'].includes(userRole);
+            if (isUniversalAdmin) {
+                console.log('[SessionGuard] universal admin bypass for role', userRole, 'allowed', allowedRoles);
+            } else if (allowedRoles && allowedRoles.length > 0) {
                 const isAllowed = allowedRoles.some(r => String(r).toLowerCase() === userRole);
                 if (!isAllowed) {
+                    console.warn('[SessionGuard] role mismatch', userRole, 'vs', allowedRoles);
                     const target = getRolePanelUrl(userRole);
                     const targetFile = target.split('/').pop().split('?')[0];
                     if (targetFile && !location.pathname.endsWith(targetFile)) {
+                        console.log('[SessionGuard] redirect to', target);
                         window.location.replace(target);
                         return false;
                     }
+                    console.warn('[SessionGuard] unauthorized -> logout');
                     this.logout('unauthorized');
                     return false;
                 }
@@ -203,12 +218,15 @@
 
             // 4. Validación asíncrona con el backend (GAS / PHP) en segundo plano
             if (window.CenturiaAPI && typeof CenturiaAPI.validateSession === 'function') {
+                console.log('[SessionGuard] async validateSession start');
                 CenturiaAPI.validateSession().then(res => {
+                    console.log('[SessionGuard] validateSession result', res);
                     if (res && res.valid === false) {
+                        console.warn('[SessionGuard] session_invalidated -> logout');
                         CenturiaSession.logout('session_invalidated');
                     }
-                }).catch(() => {
-                    // Continuar si hay falla de red temporal
+                }).catch(e => {
+                    console.warn('[SessionGuard] validateSession catch', e);
                 });
             }
 

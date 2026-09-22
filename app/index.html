@@ -760,7 +760,7 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
                             <input type="checkbox" id="chk-recordar" style="accent-color:var(--verde-medio);width:15px;height:15px;cursor:pointer">
-                            <label for="chk-recordar" style="color:#64748b;font-size:0.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Recordar mi cédula</label>
+                            <label for="chk-recordar" style="color:#64748b;font-size:0.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Recordar mi cédula y contraseña</label>
                         </div>
                     </div>
 
@@ -969,7 +969,54 @@
 
 <!-- Overlay de carga: avisa que hay que esperar al servidor -->
 <div id="global-loading" role="status" aria-live="polite"><div class="spin"></div><p id="global-loading-text">Conectando con el servidor... espera</p></div>
-<script src="js/api.js?v=19"></script>
+<!-- Firebase SDK Compat (requerido por api.js: window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script>
+  window._fbCheck = function(){
+    if(!window.firebase){
+      console.error('[Firebase] window.firebase is UNDEFINED after loading Firebase SDK scripts');
+    } else if(!window.firebase.apps || window.firebase.apps.length === 0){
+      console.warn('[Firebase] window.firebase exists but no apps initialized');
+    } else {
+      console.log('[Firebase] Successfully loaded, apps:', window.firebase.apps.length);
+    }
+  };
+  window._fbCheck();
+</script>
+<script>
+  /* Firebase inicializado en api.js */
+  // Shim para api.js v100 que usa require('firebase-firestore') en browser
+  window.require = window.require || function(mod){
+    if(mod==='firebase-firestore'){
+      return {
+        collection: (db,coll)=> db.collection(coll),
+        doc: (db,coll,id)=> db.collection(coll).doc(id),
+        getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+        getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+        setDoc: (ref,data)=> ref.set(data),
+        updateDoc: (ref,data)=> ref.update(data),
+        deleteDoc: (ref)=> ref.delete(),
+        query: (q,...conds)=>{
+          let qq=q;
+          for(const c of conds){
+            if(!c) continue;
+            if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value);
+            else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc');
+            else if(typeof c==='number') qq=qq.limit(c);
+          }
+          return qq;
+        },
+        where: (field,op,value)=>({field,op,value}),
+        limit: (n)=> n,
+        orderBy: (field,dir)=>({fieldPath:field, order:dir})
+      };
+    }
+    throw new Error('Cannot find module '+mod);
+  };
+</script>
+<script src="js/api.js?v=21"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -1074,6 +1121,36 @@ async function verificarCedula(){
 
     if(pwdSection.style.display==='none'){
         document.getElementById('btn-buscar').disabled=true;
+        showLoadingGlobal('Verificando cédula...');
+        try{
+            // 1) Intento Firestore directo (CenturiaAPI.checkStudent)
+            if(typeof CenturiaAPI !== 'undefined' && CenturiaAPI.checkStudent){
+                const chk = await CenturiaAPI.checkStudent(cedula);
+                if(chk && chk.existe && chk.estudiante){
+                    const u = chk.estudiante;
+                    const n = (u.nombre||u.firstname||'').split(' ')[0]||'';
+                    const a = (u.apellido||u.lastname||'').split(' ')[0]||'';
+                    hideLoadingGlobal();
+                    mostrarPasoPassword(n||u.nombre||'',a||u.apellido||'');
+                    document.getElementById('btn-buscar').disabled=false;
+                    return;
+                }
+            }
+            // 2) Fallback auth.verify (también Firestore)
+            if(typeof CenturiaAPI !== 'undefined' && CenturiaAPI.auth && CenturiaAPI.auth.verify){
+                const v = await CenturiaAPI.auth.verify(cedula);
+                if(v && v.valid && v.user){
+                    const u2=v.user;
+                    const n2=(u2.nombre||u2.firstname||'').split(' ')[0]||'';
+                    const a2=(u2.apellido||u2.lastname||'').split(' ')[0]||'';
+                    hideLoadingGlobal();
+                    mostrarPasoPassword(n2||u2.nombre||'',a2||u2.apellido||'');
+                    document.getElementById('btn-buscar').disabled=false;
+                    return;
+                }
+            }
+        }catch(e){ console.warn('checkStudent verify error',e); }
+        hideLoadingGlobal();
         await verificarCedulaOffline(cedula);
         document.getElementById('btn-buscar').disabled=false;
         return;
@@ -1098,13 +1175,14 @@ async function verificarCedula(){
         sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:u.nombre||u.firstname||'',apellido:u.apellido||u.lastname||''}));
         sessionStorage.setItem('must_change',(u.must_change_password||result.must_change_password)?'1':'0');
 
-        // Recordar únicamente cédula (seguridad estricta)
+        // Recordar cédula y contraseña (a pedido del usuario)
         if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){
             localStorage.setItem('centuria_remember_cedula',cedula);
+            try{ localStorage.setItem('centuria_remember', JSON.stringify({cedula, password})); }catch(e){}
         }else{
             localStorage.removeItem('centuria_remember_cedula');
+            localStorage.removeItem('centuria_remember');
         }
-        localStorage.removeItem('centuria_remember');
 
         // Roles múltiples
         const rolesResult=await CenturiaAPI.getRoles(cedula);
@@ -1390,9 +1468,14 @@ window.addEventListener('load',()=>{
         }
     }catch(e){}
 
-    // Cargar cédula recordada (nunca contraseña)
+    // Cargar cédula y contraseña recordadas (si el usuario lo activó)
     try{
-        const remCedula = localStorage.getItem('centuria_remember_cedula');
+        let remCedula = null; let remPass = null;
+        try{
+            const remObj = JSON.parse(localStorage.getItem('centuria_remember')||'null');
+            if(remObj && remObj.cedula){ remCedula = remObj.cedula; remPass = remObj.password||null; }
+        }catch(e){}
+        if(!remCedula) remCedula = localStorage.getItem('centuria_remember_cedula');
         if(remCedula){
             const inp = document.getElementById('inp-cedula');
             if(inp){
@@ -1403,11 +1486,12 @@ window.addEventListener('load',()=>{
                 document.getElementById('btn-buscar').querySelector('i').className = 'bi bi-arrow-right-circle me-2';
                 loginFase = 'pass';
                 const pwd = document.getElementById('inp-password');
-                if(pwd) pwd.focus();
+                if(pwd){
+                    if(remPass) pwd.value = remPass;
+                    pwd.focus();
+                }
             }
         }
-        // Limpieza de claves guardadas en versiones anteriores
-        localStorage.removeItem('centuria_remember');
     }catch(e){}
 });
 </script>

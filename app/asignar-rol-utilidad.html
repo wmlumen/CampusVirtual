@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilidad — Asignar Rol Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700" rel="stylesheet">
+    <style>
+        body{font-family:'Montserrat',sans-serif;background:#0d1e24;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .card{background:#132a33;border:1px solid #1e3a47;border-radius:14px;padding:24px;max-width:420px;width:100%}
+        .title{font-size:1rem;font-weight:700;margin-bottom:4px}
+        .sub{font-size:.7rem;color:#94a3b8;margin-bottom:16px}
+        label{font-size:.6rem;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:4px}
+        input,select{width:100%;padding:8px 10px;border:1px solid #1e3a47;border-radius:8px;font-size:.75rem;background:#0d1e24;color:#e2e8f0;font-family:'Montserrat';margin-bottom:12px}
+        input:focus,select:focus{outline:none;border-color:#2563EB}
+        .btn{padding:10px 16px;border-radius:8px;font-size:.72rem;font-weight:600;cursor:pointer;border:none;font-family:'Montserrat';transition:.15s;width:100%}
+        .btn-primary{background:#2563EB;color:#fff}.btn-primary:hover{background:#3b82f6}
+        .btn-secondary{background:#1e3a47;color:#94a3b8;margin-top:8px}.btn-secondary:hover{background:#2a4a57}
+        .msg{margin-top:12px;padding:10px;border-radius:8px;font-size:.7rem;display:none}
+        .msg.ok{display:block;background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+        .msg.err{display:block;background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+        .info{font-size:.6rem;color:#64748b;margin-bottom:12px;padding:8px;background:rgba(37,99,235,.08);border-radius:6px;border-left:3px solid #2563EB}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="title"><i class="bi bi-shield-lock" style="color:#d4a843"></i> Asignar Rol Admin</div>
+    <div class="sub">Utilidad para asignar rol de Administrador a un usuario</div>
+    
+    <div class="info">
+        <strong>Instrucciones:</strong> Ingresá la cédula, el email y la contraseña del usuario. Se le asigna el rol, se guardan sus credenciales y se le envía el acceso por email.
+    </div>
+
+    <label>Cédula del usuario</label>
+    <input type="text" id="inp-cedula" placeholder="Ej: 1340130" autofocus>
+
+    <label>Nombre completo (opcional)</label>
+    <input type="text" id="inp-nombre" placeholder="Ej: CHRISTHIAN KEIM">
+
+    <label>Email del usuario *</label>
+    <input type="email" id="inp-email" placeholder="Ej: usuario@correo.com" autocomplete="off">
+
+    <label>Contraseña de acceso *</label>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input type="text" id="inp-pass" placeholder="Generá o escribí una clave" style="margin-bottom:0" autocomplete="off">
+        <button type="button" class="btn btn-secondary" style="width:auto;margin-top:0;white-space:nowrap" onclick="generarPass()"><i class="bi bi-dice-5"></i> Generar</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:.7rem"><input type="checkbox" id="chk-mail" checked style="width:auto;margin-bottom:0"> Enviar credenciales por email</label>
+
+    <label>Rol a asignar</label>
+    <select id="sel-rol">
+        <option value="administrador_plataforma" selected>Administrador de Plataforma (acceso total)</option>
+        <option value="admin">Admin (panel administrativo)</option>
+        <option value="academico">Académico</option>
+        <option value="docente">Docente</option>
+        <option value="admin_filial">Admin Filial</option>
+    </select>
+
+    <button class="btn btn-primary" onclick="asignarRol()"><i class="bi bi-check2-circle"></i> Asignar Rol</button>
+    <button class="btn btn-secondary" onclick="window.location.href='index.html'"><i class="bi bi-arrow-left"></i> Volver al Login</button>
+
+    <div id="msg" class="msg"></div>
+</div>
+
+<!-- Firebase SDK Compat (requerido por api.js: window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script src="js/api.js?v=22"></script>
+<script>
+function generarPass(){
+    var c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    var p='';
+    for(var i=0;i<8;i++)p+=c[Math.floor(Math.random()*c.length)];
+    document.getElementById('inp-pass').value=p;
+}
+function showMsg(cls,html){
+    var msg=document.getElementById('msg');
+    msg.className='msg '+cls; msg.style.display='block';
+    if(html.indexOf('<')>-1)msg.innerHTML=html; else msg.textContent=html;
+}
+async function asignarRol() {
+    const cedula = document.getElementById('inp-cedula').value.trim().replace(/[\.\s\-]/g, '');
+    const nombre = document.getElementById('inp-nombre').value.trim();
+    const rol = document.getElementById('sel-rol').value;
+    const email = document.getElementById('inp-email').value.trim().toLowerCase();
+    const pass = document.getElementById('inp-pass').value.trim();
+    const sendMail = document.getElementById('chk-mail').checked;
+    const msg = document.getElementById('msg');
+
+    if (!cedula) { showMsg('err','Ingresá la cédula'); return; }
+    if (!email) { showMsg('err','Ingresá el email del usuario'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showMsg('err','El email no es válido'); return; }
+    if (!pass) { showMsg('err','Generá o escribí una contraseña'); return; }
+
+    showMsg('ok','Asignando rol y credenciales...');
+
+    try {
+        // 1. Asignar rol
+        const res = await CenturiaAPI.usuarios.addRole({
+            cedula: cedula,
+            nombre: nombre || 'Usuario ' + cedula,
+            rol: rol,
+            asignado_por: 'utilidad_directa'
+        }, 'POST');
+
+        if (!(res && (res.status === 'Éxito' || res.status === 'Exito' || res.ok))) {
+            showMsg('err','Error: ' + ((res && (res.error || res.mensaje)) || 'No se pudo asignar'));
+            return;
+        }
+
+        // 2. Guardar email en el perfil
+        try { await CenturiaAPI.usuarios.actualizar(cedula, { email: email }); } catch(e) {}
+
+        // 3. Fijar contraseña (sin pedir la anterior)
+        var passOk = false, passErr = '';
+        try {
+            const rpass = await CenturiaAPI.request('cambiar_password', { cedula: cedula, old_password: '', new_password: pass }, 'POST');
+            passOk = !!(rpass && (rpass.ok || rpass.status === 'Exito' || rpass.status === 'Éxito'));
+            if (!passOk) passErr = (rpass && (rpass.error || rpass.mensaje)) || 'sin respuesta del servidor';
+        } catch(e) { passErr = 'sin conexión'; }
+
+        // 4. Enviar credenciales por email
+        var mailMsg = 'Mail no solicitado.';
+        if (sendMail) {
+            try {
+                const rmail = await CenturiaAPI.request('enviar_provisoria', { email: email, nombre: nombre || ('Usuario ' + cedula), cedula: cedula, password: pass, rol: rol }, 'POST');
+                if (rmail && (rmail.ok || rmail.status === 'Exito' || rmail.status === 'Éxito')) {
+                    mailMsg = 'Mail con accesos enviado a <strong>' + email + '</strong>.';
+                } else {
+                    mailMsg = 'No se pudo enviar el mail (' + ((rmail && (rmail.error || rmail.mensaje)) || 'sin respuesta') + '). Compartí la clave manualmente.';
+                }
+            } catch(e) { mailMsg = 'No se pudo enviar el mail (sin conexión). Compartí la clave manualmente.'; }
+        }
+
+        showMsg('ok','<i class="bi bi-check-circle"></i> <strong>Listo</strong><br>C.I. ' + cedula + ' ahora tiene rol: <strong>' + rol.toUpperCase() + '</strong><br>Email: <strong>' + email + '</strong><br>Contraseña: <strong>' + pass + '</strong><br>' + (passOk ? '' : '<br>Atención: la contraseña no quedó guardada (' + passErr + ').<br>') + '<br>' + mailMsg + '<br><br>Login en <a href="index.html" style="color:#60a5fa">index.html</a>');
+    } catch(e) {
+        showMsg('err','Error de conexión: ' + e.message);
+    }
+}
+</script>
+</body>
+</html>

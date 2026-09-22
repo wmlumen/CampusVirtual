@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +42,7 @@
             <tbody id="tbody"><tr><td colspan="3" class="text-center text-muted">Pulsa Ejecutar diagnóstico.</td></tr></tbody>
         </table>
     </div>
-    <script src="js/api.js?v=13"></script>
+    <script src="js/api.js?v=21"></script>
     <script>
         const filas = [];
         function fila(nombre, estado, detalle) {
@@ -75,27 +75,22 @@
                 fila('Ruta ' + p, r.ok ? 'VERDE' : 'ROJO', r.ok ? ('HTTP ' + r.status) : 'no responde');
             }
 
-            // 3. Servidor Cloud health
+            // 3. Firebase Health
             let gasOk = false, planilla = '';
             try {
-                const r = await get(GAS_URL + '?action=health', 12000);
-                gasOk = !!(r.json && r.json.ok);
-                planilla = (r.json && r.json.data && r.json.data.cloudSheets && r.json.data.cloudSheets.planilla) || '';
+                const r = await CenturiaAPI.usuarios.list();
+                gasOk = r.ok;
+                planilla = (r.usuarios && r.usuarios.length ? r.usuarios.length + ' usuarios' : 'sin datos');
             } catch (e) {}
-            fila('Servidor Cloud (API)', gasOk ? 'VERDE' : 'ROJO', gasOk ? ('health OK' + (planilla ? ' · ' + planilla : '')) : 'sin respuesta (¿publicado?)');
+            fila('Firebase (API)', gasOk ? 'VERDE' : 'ROJO', gasOk ? ('conectado · ' + planilla) : 'sin respuesta');
 
             // 4. Base de Datos Cloud (diagnóstico)
             try {
-                const r = await get(GAS_URL + '?action=diagnostico', 12000);
-                const c = (r.json && r.json.conteos) || null;
-                if (c) {
-                    const vacias = Object.keys(c).filter(k => c[k] === 0);
-                    const ausentes = Object.keys(c).filter(k => c[k] < 0);
-                    fila('Base de Datos Cloud', ausentes.length ? 'AMARILLO' : 'VERDE',
-                        'RegistroAlumnos:' + c.RegistroAlumnos + ' Roles:' + c.Roles + ' Asignaturas:' + c.Asignaturas +
-                        (vacias.length ? ' · vacías: ' + vacias.join(',') : '') +
-                        (ausentes.length ? ' · faltan: ' + ausentes.join(',') : ''));
-                } else fila('Base de Datos Cloud', 'ROJO', 'sin conteos');
+                const r = await CenturiaAPI.configuracion.getAll();
+                const c = (r.config && Object.keys(r.config).length) || 0;
+                if (c > 0) {
+                    fila('Base de Datos Cloud', 'VERDE', c + ' colecciones/configuraciones activas');
+                } else fila('Base de Datos Cloud', 'AMARILLO', 'sin registros de diagnóstico');
             } catch (e) { fila('Base de Datos Cloud', 'ROJO', 'sin respuesta'); }
 
             // 5. Host Estático (GitHub Pages)

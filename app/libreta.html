@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=3"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -422,59 +422,47 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=17"></script>
+<!-- Firebase SDK Compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script>
+  window.require = window.require || function(mod){
+    if(mod==='firebase-firestore'){
+      return {
+        collection: (db,coll)=> db.collection(coll),
+        doc: (db,coll,id)=> db.collection(coll).doc(id),
+        getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+        getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+        setDoc: (ref,data)=> ref.set(data),
+        updateDoc: (ref,data)=> ref.update(data),
+        deleteDoc: (ref)=> ref.delete(),
+        query: (q,...conds)=>{
+          let qq=q;
+          for(const c of conds){
+            if(!c) continue;
+            if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value);
+            else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc');
+            else if(typeof c==='number') qq=qq.limit(c);
+          }
+          return qq;
+        },
+        where: (field,op,value)=>({field,op,value}),
+        limit: (n)=> n,
+        orderBy: (field,dir)=>({fieldPath:field, order:dir})
+      };
+    }
+    throw new Error('Cannot find module '+mod);
+  };
+</script>
+<script src="js/api.js?v=21"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
-        // Malla curricular de referencia por carrera
-        const mallaCurricular = {
-            'Administración de Empresas': [
-                { codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'ADE19', nombre: 'Contabilidad General', creditos: 5, grado: 'Grado' },
-                { codigo: 'ADE20', nombre: 'Administración y Gestión Pública', creditos: 5, grado: 'Grado' },
-                { codigo: 'ADE21', nombre: 'Logística y Comercio Internacional', creditos: 4, grado: 'Grado' },
-                { codigo: 'ADE22', nombre: 'Dirección de Empresas', creditos: 4, grado: 'Grado' }
-            ],
-            'Contabilidad': [
-                { codigo: 'CON18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'CON19', nombre: 'Contabilidad General', creditos: 6, grado: 'Grado' },
-                { codigo: 'CON20', nombre: 'Contabilidad Costera', creditos: 5, grado: 'Grado' },
-                { codigo: 'CON21', nombre: 'Auditoría Financiera', creditos: 5, grado: 'Grado' },
-                { codigo: 'CON22', nombre: 'Gestión Tributaria', creditos: 4, grado: 'Grado' }
-            ],
-            'Ingeniería Comercial': [
-                { codigo: 'ING18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'ING19', nombre: 'Matemáticas Aplicadas', creditos: 6, grado: 'Grado' },
-                { codigo: 'ING20', nombre: 'Estadística Empresarial', creditos: 5, grado: 'Grado' },
-                { codigo: 'ING21', nombre: 'Investigación de Operaciones', creditos: 5, grado: 'Grado' },
-                { codigo: 'ING22', nombre: 'Finanzas Corporativas', creditos: 4, grado: 'Grado' }
-            ],
-            'Administración Aduanera': [
-                { codigo: 'ADU18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'ADU19', nombre: 'Derecho Aduanero', creditos: 6, grado: 'Grado' },
-                { codigo: 'ADU20', nombre: 'Logística Internacional', creditos: 5, grado: 'Grado' },
-                { codigo: 'ADU21', nombre: 'Tributación Aduanera', creditos: 5, grado: 'Grado' },
-                { codigo: 'ADU22', nombre: 'Comercio Exterior', creditos: 4, grado: 'Grado' }
-            ],
-            'Administración y Gestión Pública': [
-                { codigo: 'AGP18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'AGP19', nombre: 'Administración Pública', creditos: 6, grado: 'Grado' },
-                { codigo: 'AGP20', nombre: 'Derecho Administrativo', creditos: 5, grado: 'Grado' },
-                { codigo: 'AGP21', nombre: 'Gestión Municipal', creditos: 5, grado: 'Grado' },
-                { codigo: 'AGP22', nombre: 'Presupuesto Público', creditos: 4, grado: 'Grado' }
-            ],
-            'Ciencias Sociales': [
-                { codigo: 'CS18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: 'Grado' },
-                { codigo: 'CS19', nombre: 'Sociología General', creditos: 6, grado: 'Grado' },
-                { codigo: 'CS20', nombre: 'Antropología Social', creditos: 5, grado: 'Grado' },
-                { codigo: 'CS21', nombre: 'Ciencia Política', creditos: 5, grado: 'Grado' },
-                { codigo: 'CS22', nombre: 'Economía Social', creditos: 4, grado: 'Grado' }
-            ]
-        };
-
         // Estado global de la vista
         let currentFilter = 'todas';
         let materiasProcesadas = [];
         let globalUser = null;
+        let datosCursos = null;
 
         function normTxt(v) {
             return String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase().replace(/\s+/g, ' ');
@@ -493,262 +481,112 @@
             return 'grade-f';
         }
 
-        function habilitadaPara(a, user) {
-            if (['INACTIVO', 'INACTIVA', 'FALSE', 'NO', '0', 'BAJA'].includes(normTxt(a.estado))) return false;
-            const g = normTxt(user.grado);
-            if (a.grado && g && normTxt(a.grado) !== g) return false;
-            const c = normTxt(user.carrera), ac = normTxt(a.carrera);
-            if (ac && c && !['GENERAL', 'TODAS', 'TODOS', 'TODAS LAS CARRERAS'].includes(ac) && ac !== c) return false;
-            const sec = normTxt(user.seccion);
-            if (a.secciones && a.secciones.length && sec && !a.secciones.includes(sec)) return false;
-            return true;
-        }
-
-        function normAsignatura(s) {
-            const sec = s.seccion || s.Seccion || s.secciones || s.Secciones || '';
-            return {
-                nombre: s.nombre || s.Nombre || s.nombre_completo || s.asignatura || '',
-                codigo: s.codigo || s.Codigo || '',
-                carrera: s.carrera || s.Carrera || '',
-                grado: s.grado || s.Grado || 'Grado',
-                seccion: Array.isArray(sec) ? sec.join(', ') : String(sec),
-                secciones: (Array.isArray(sec) ? sec : String(sec).split(/[,;\/]/)).map(normTxt).filter(Boolean),
-                estado: s.estado || s.Estado || 'activo',
-                creditos: s.creditos || s.Creditos || 5,
-                icono: s.icono || s.Icono || 'bi-journal-bookmark'
-            };
-        }
-
-        // ═══ CARGAR LIBRETA ═══
+        // ═══ CARGAR LIBRETA — datos reales ═══
+        // Cursos y estado (Activo · Pendiente · Desarrollado) salen de la hoja Cursos (autorizaciones de Acceso Académico),
+        // unidos a Asignaturas por UUID; las notas vienen de Notas y la asistencia de Asistencias. No hay asignaturas de ejemplo.
         async function cargarLibreta() {
-            try {
-                const user = CenturiaAPI.getCurrentUser();
-                if (!user) {
-                    const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
-                    if (!cedula) { location.href = 'index.html'; return; }
-                    await cargarDatosLocal(cedula);
-                    return;
-                }
-                await cargarDatosAPI(user);
-            } catch(e) {
-                console.error('Error cargando libreta:', e);
-                const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_cedula');
-                if (cedula) await cargarDatosLocal(cedula);
-            }
-        }
-
-        async function cargarDatosAPI(user) {
+            const user = CenturiaAPI.getCurrentUser();
+            if (!user) { location.href = 'index.html'; return; }
             globalUser = user;
             const nombre = user.firstname || user.nombre || 'Estudiante';
             const apellido = user.lastname || user.apellido || '';
             const cedula = user.username || user.cedula || '';
-            const carrera = user.carrera || 'Administración de Empresas';
-            const grado = user.grado || 'Grado';
-            const seccion = user.seccion || '';
+            const partes = ['CI: ' + cedula, user.grado, user.carrera, user.seccion ? 'Sección ' + user.seccion : ''].filter(Boolean);
+            document.getElementById('lib-name').textContent = (nombre + ' ' + apellido).trim();
+            document.getElementById('lib-sub').textContent = partes.join(' • ');
+            document.getElementById('lib-avatar').textContent = ((nombre.charAt(0) || 'U') + (apellido.charAt(0) || '')).toUpperCase();
 
-            document.getElementById('lib-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('lib-sub').textContent = `CI: ${cedula} • ${grado} • ${carrera} ${seccion ? '• Sección ' + seccion : ''}`;
-            const initials = ((nombre.charAt(0) || 'U') + (apellido.charAt(0) || '')).toUpperCase();
-            document.getElementById('lib-avatar').textContent = initials;
-
-            // 1. Obtener notas oficiales del alumno
-            let grades = [];
+            let cursosResp = null;
             try {
-                const resG = await CenturiaAPI.grades.list({ cedula: cedula });
-                grades = resG.data || resG.notas || [];
-            } catch(e) {
-                console.warn('No se pudieron obtener notas del API:', e);
+                cursosResp = await CenturiaAPI.cursos.mios();
+                if (!cursosResp || cursosResp.ok === false) throw new Error((cursosResp && cursosResp.error) || 'Sin respuesta del servidor');
+            } catch (e) {
+                console.warn('No se pudieron obtener los cursos:', e);
+                mostrarErrorLibreta(e && e.message ? e.message : 'No se pudo cargar tu libreta.');
+                return;
+            }
+            if (cursosResp.ficha && cursosResp.ficha.carrera) {
+                const f = cursosResp.ficha;
+                document.getElementById('lib-sub').textContent = ['CI: ' + cedula, f.grado, f.carrera, f.seccion ? 'Sección ' + f.seccion : ''].filter(Boolean).join(' • ');
             }
 
-            // 2. Obtener asistencias del alumno
-            let attendance = [];
-            try {
-                const resA = await CenturiaAPI.attendance.list({ cedula: cedula });
-                attendance = resA.data || resA.asistencias || [];
-            } catch(e) {
-                console.warn('No se pudieron obtener asistencias:', e);
-            }
-
-            // 3. Obtener catálogo / asignaturas habilitadas del servidor
-            let apiSubjects = [];
-            try {
-                const resKit = await CenturiaAPI.kit.getHabilitadas();
-                apiSubjects = (resKit.asignaturas || []).map(normAsignatura);
-            } catch(e) {
-                console.warn('No se pudieron obtener asignaturas del kit:', e);
-            }
-
-            procesarMaterias(user, grades, attendance, apiSubjects);
+            let grades = [], attendance = [];
+            const [rg, ra] = await Promise.all([
+                CenturiaAPI.grades.list({ cedula: cedula }).catch(() => null),
+                CenturiaAPI.attendance.list({ cedula: cedula }).catch(() => null)
+            ]);
+            if (rg) grades = rg.data || rg.notas || [];
+            if (ra) attendance = ra.data || ra.asistencias || [];
+            procesarMaterias(user, grades, attendance, cursosResp);
         }
 
-        async function cargarDatosLocal(cedula) {
-            const nombre = localStorage.getItem('centuria_nombre') || 'Estudiante';
-            const apellido = localStorage.getItem('centuria_apellido') || '';
-            const carrera = localStorage.getItem('centuria_carrera') || 'Administración de Empresas';
-            const grado = localStorage.getItem('centuria_grado') || 'Grado';
-            const seccion = localStorage.getItem('centuria_seccion') || '';
-
-            const user = { nombre, apellido, cedula, carrera, grado, seccion };
-            globalUser = user;
-
-            document.getElementById('lib-name').textContent = nombre + ' ' + apellido;
-            document.getElementById('lib-sub').textContent = `CI: ${cedula} • ${grado} • ${carrera} ${seccion ? '• Sección ' + seccion : ''}`;
-            const initials = ((nombre.charAt(0) || 'U') + (apellido.charAt(0) || '')).toUpperCase();
-            document.getElementById('lib-avatar').textContent = initials;
-
-            procesarMaterias(user, [], [], []);
+        function mostrarErrorLibreta(msg) {
+            ['badge-todas','badge-desarrolladas','badge-activas','badge-pendientes'].forEach(id => { const n = document.getElementById(id); if (n) n.textContent = '0'; });
+            document.getElementById('lib-content').innerHTML = `
+                <div class="lib-section"><div class="empty-state">
+                    <i class="bi bi-wifi-off"></i>
+                    <p>No pudimos cargar tu libreta. ${escHtml(msg)}</p>
+                    <button type="button" class="lib-tab" onclick="cargarLibreta()"><i class="bi bi-arrow-repeat"></i> Reintentar</button>
+                </div></div>`;
         }
 
-        // ═══ PROCESAR Y CLASIFICAR MATERIAS ═══
-        function procesarMaterias(user, grades, attendance, apiSubjects) {
-            const miCarrera = user.carrera || 'Administración de Empresas';
-            const miGrado = user.grado || 'Grado';
-            
-            // Asignaturas base de la carrera del alumno
-            let asignaturasBase = [];
-            
-            // Filtrar las asignaturas de la API que corresponden a la carrera y grado del alumno
-            const filteredApi = apiSubjects.filter(a => habilitadaPara(a, user));
-            
-            if (filteredApi.length > 0) {
-                asignaturasBase = filteredApi;
-            } else if (mallaCurricular[miCarrera]) {
-                asignaturasBase = mallaCurricular[miCarrera].map(normAsignatura);
-            } else {
-                // Fallback por defecto si no está en catálogo estático
-                asignaturasBase = [
-                    normAsignatura({ codigo: 'ADE18', nombre: 'TIC - Tecnología de la Información y Comunicación', creditos: 6, grado: miGrado, carrera: miCarrera }),
-                    normAsignatura({ codigo: 'ADE19', nombre: 'Contabilidad General', creditos: 5, grado: miGrado, carrera: miCarrera }),
-                    normAsignatura({ codigo: 'ADE20', nombre: 'Administración y Gestión Pública', creditos: 5, grado: miGrado, carrera: miCarrera })
-                ];
-            }
+        // ═══ PROCESAR: una fila por curso autorizado (asignatura + estado real) con sus notas y asistencia ═══
+        function procesarMaterias(user, grades, attendance, cursosResp) {
+            datosCursos = cursosResp;
+            const gv = v => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : parseFloat(v);
+            const coincide = (asig, codigo, nombre) => {
+                const aCode = normTxt(asig.codigo), aUuid = normTxt(asig.uuid), aName = normTxt(asig.nombre);
+                const c = normTxt(codigo), n = normTxt(nombre);
+                if (c && (c === aCode || c === aUuid)) return true;
+                return !!(n && aName && (n === aName || (n.length >= 4 && aName.includes(n)) || (aName.length >= 4 && n.includes(aName))));
+            };
 
-            // También agregar cualquier materia que esté en las notas del alumno aunque no estuviera en la malla base
-            grades.forEach(g => {
-                const nombreG = g.asignatura || g.subject || g.curso || '';
-                const codigoG = g.codigo || g.curso_id || '';
-                if (!nombreG && !codigoG) return;
-                
-                const yaExiste = asignaturasBase.some(a => 
-                    (codigoG && normTxt(a.codigo) === normTxt(codigoG)) || 
-                    (nombreG && normTxt(a.nombre) === normTxt(nombreG))
-                );
-                
-                if (!yaExiste) {
-                    asignaturasBase.push(normAsignatura({
-                        codigo: codigoG || 'EXT',
-                        nombre: nombreG || 'Asignatura Cursada',
-                        creditos: 5,
-                        grado: g.grado || miGrado,
-                        carrera: g.carrera || miCarrera
-                    }));
-                }
-            });
+            materiasProcesadas = (cursosResp.cursos || []).map(c => {
+                const asig = c.asignatura || {};
+                const asigGrade = grades.find(g => coincide(asig, g.codigo || g.curso_id, g.asignatura || g.subject || g.curso));
+                const asigAtt = attendance.filter(a => coincide(asig, a.curso_id || a.codigo, a.asignatura || a.curso));
 
-            // Mapear cada asignatura con su información de notas, asistencia y estado
-            materiasProcesadas = asignaturasBase.map(asig => {
-                // Buscar nota
-                const asigGrade = grades.find(g => {
-                    const gCode = normTxt(g.codigo || g.curso_id || '');
-                    const gName = normTxt(g.asignatura || g.subject || g.curso || '');
-                    const aCode = normTxt(asig.codigo);
-                    const aName = normTxt(asig.nombre);
-                    
-                    if (aCode && gCode && aCode === gCode) return true;
-                    if (aName && gName && (gName.includes(aName) || aName.includes(gName))) return true;
-                    return false;
-                });
-
-                // Buscar asistencias
-                const asigAtt = attendance.filter(a => {
-                    const attCode = normTxt(a.curso_id || a.codigo || '');
-                    const attName = normTxt(a.asignatura || a.curso || '');
-                    const aCode = normTxt(asig.codigo);
-                    const aName = normTxt(asig.nombre);
-                    if (aCode && attCode && aCode === attCode) return true;
-                    if (aName && attName && (attName.includes(aName) || aName.includes(attName))) return true;
-                    return false;
-                });
-
-                // Extraer calificaciones
-                const gv = v => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : parseFloat(v);
                 let p1 = null, p2 = null, fin = null, prom = null;
-                
                 if (asigGrade) {
                     p1 = gv(asigGrade.parcial1 !== undefined ? asigGrade.parcial1 : asigGrade.p1);
                     p2 = gv(asigGrade.parcial2 !== undefined ? asigGrade.parcial2 : asigGrade.p2);
                     fin = gv(asigGrade.final !== undefined ? asigGrade.final : asigGrade.examen_final);
                     prom = gv(asigGrade.promedio !== undefined ? asigGrade.promedio : asigGrade.score);
-
+                    // el servidor devuelve 0 cuando la celda está vacía: 0 en las tres evaluaciones = todavía sin notas
+                    if ((p1 || 0) + (p2 || 0) + (fin || 0) === 0 && !prom) { p1 = p2 = fin = null; }
                     if (prom === null && (p1 !== null || p2 !== null || fin !== null)) {
-                        const notasArr = [p1, p2, fin].filter(n => n !== null);
-                        if (notasArr.length > 0) {
-                            prom = parseFloat((notasArr.reduce((s, n) => s + n, 0) / notasArr.length).toFixed(1));
-                        }
+                        const arr = [p1, p2, fin].filter(n => n !== null && n > 0);
+                        if (arr.length) prom = parseFloat((arr.reduce((s, n) => s + n, 0) / arr.length).toFixed(1));
                     }
                 }
-
-                // Calcular porcentaje de asistencia
                 let asistPct = null;
                 if (asigAtt.length > 0) {
-                    const presentes = asigAtt.filter(a => a.estado === 'presente' || a.status === 'present').length;
+                    const presentes = asigAtt.filter(a => ['presente', 'present', 'justificado', 'tardanza'].includes(String(a.estado || a.status || '').toLowerCase())).length;
                     asistPct = Math.round((presentes / asigAtt.length) * 100);
                 }
 
-                // DETERMINACIÓN DEL ESTADO DEL CURSO:
-                // 1. "desarrollado": Si tiene nota final o promedio completado (rindió evaluaciones / completó el curso)
-                // 2. "activo": Es la materia actual habilitada en el campus (ej. TIC / ADE18 o con asistencia activa / curso en progreso)
-                // 3. "pendiente": Materia de la malla que aún no se ha cursado ni evaluado
-                let estadoCurso = 'pendiente';
-                let estadoBadgeClass = 'pendiente';
-                let estadoTexto = 'Curso Pendiente';
-                let progreso = 0;
-
-                const tieneNotas = (prom !== null || fin !== null || p1 !== null || p2 !== null);
-                const tieneAsistencia = (asigAtt.length > 0);
-                const esMateriaActiva = normTxt(asig.codigo) === 'ADE18' || normTxt(asig.nombre).includes('TIC') || asig.estado === 'activo' || asig.estado === 'habilitada';
-
-                if (prom !== null && (fin !== null || (p1 !== null && p2 !== null))) {
-                    // Ha completado evaluaciones
-                    estadoCurso = 'desarrollado';
+                const hechas = [p1, p2, fin].filter(n => n !== null && n > 0).length;
+                let estadoCurso = c.estado, badge, texto, progreso;
+                if (c.estado === 'desarrollado') {
                     progreso = 100;
-                    if (prom >= 70) {
-                        estadoBadgeClass = 'desarrollado';
-                        estadoTexto = 'Desarrollado • Aprobado';
-                    } else if (prom >= 50) {
-                        estadoBadgeClass = 'recuperacion';
-                        estadoTexto = 'Desarrollado • Recuperación';
-                    } else {
-                        estadoBadgeClass = 'reprobado';
-                        estadoTexto = 'Desarrollado • Reprobado';
-                    }
-                } else if (tieneNotas || tieneAsistencia || esMateriaActiva) {
-                    estadoCurso = 'activo';
-                    estadoBadgeClass = 'activo';
-                    estadoTexto = 'Curso Activo';
-                    progreso = p1 !== null ? 65 : (tieneAsistencia ? 40 : 25);
+                    if (prom === null) { badge = 'desarrollado'; texto = 'Desarrollado'; }
+                    else if (prom >= 70) { badge = 'desarrollado'; texto = 'Desarrollado • Aprobado'; }
+                    else if (prom >= 50) { badge = 'recuperacion'; texto = 'Desarrollado • Recuperación'; }
+                    else { badge = 'reprobado'; texto = 'Desarrollado • Reprobado'; }
+                } else if (c.estado === 'activo') {
+                    badge = 'activo'; texto = 'Curso Activo'; progreso = Math.round(hechas / 3 * 100);
                 } else {
-                    estadoCurso = 'pendiente';
-                    estadoBadgeClass = 'pendiente';
-                    estadoTexto = 'Curso Pendiente';
-                    progreso = 0;
+                    badge = 'pendiente'; texto = 'Curso Pendiente'; progreso = 0;
                 }
-
+                const horas = asig.carga_horaria ? String(asig.carga_horaria) : '';
                 return {
-                    codigo: asig.codigo || 'ADE18',
-                    nombre: asig.nombre,
-                    grado: asig.grado || miGrado,
-                    carrera: asig.carrera || miCarrera,
-                    creditos: asig.creditos || 5,
-                    parcial1: p1 !== null ? p1 : '-',
-                    parcial2: p2 !== null ? p2 : '-',
-                    final: fin !== null ? fin : '-',
-                    promedio: prom !== null ? prom : '-',
+                    codigo: asig.codigo || asig.uuid || '-', nombre: asig.nombre || asig.uuid || 'Asignatura',
+                    grado: c.grado || user.grado || 'Grado', carrera: c.carrera || user.carrera || '', seccion: c.seccion || '',
+                    semestre: asig.semestre || '', horas: horas, materiales: !!c.materiales,
+                    parcial1: p1 !== null && p1 > 0 ? p1 : '-', parcial2: p2 !== null && p2 > 0 ? p2 : '-',
+                    final: fin !== null && fin > 0 ? fin : '-', promedio: prom !== null ? prom : '-',
                     asistenciaPct: asistPct !== null ? asistPct : '-',
-                    estadoCurso: estadoCurso,
-                    estadoBadgeClass: estadoBadgeClass,
-                    estadoTexto: estadoTexto,
-                    progreso: progreso
+                    estadoCurso: estadoCurso, estadoBadgeClass: badge, estadoTexto: texto, progreso: progreso
                 };
             });
 
@@ -812,6 +650,24 @@
                 listado = listado.filter(m => m.estadoCurso === 'pendiente');
             }
 
+            if (materiasProcesadas.length === 0) {
+                const d = (datosCursos && datosCursos.diagnostico) || {};
+                const sa = d.sin_asignatura || {};
+                const extra = [];
+                if (sa.activo) extra.push(sa.activo + ' curso(s) activo(s) sin asignatura cargada');
+                if (sa.desarrollado) extra.push(sa.desarrollado + ' desarrollado(s) sin asignatura cargada');
+                if (sa.pendiente) extra.push(sa.pendiente + ' pendiente(s) sin asignatura cargada');
+                container.innerHTML = `
+                    <div class="lib-section">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>Todavía no hay asignaturas autorizadas para tu curso.</p>
+                            <p style="font-size:.7rem;opacity:.7">${escHtml(d.motivo || '')}${extra.length ? ' (' + escHtml(extra.join(', ')) + ')' : ''} Consulta con Acceso Académico desde Atención al Alumno.</p>
+                        </div>
+                    </div>`;
+                return;
+            }
+
             if (listado.length === 0) {
                 container.innerHTML = `
                     <div class="lib-section">
@@ -849,7 +705,7 @@
                             <thead>
                                 <tr>
                                     <th>Asignatura & Código</th>
-                                    <th style="text-align:center">Créd.</th>
+                                    <th style="text-align:center">Horas</th>
                                     <th style="text-align:center">Asistencia</th>
                                     <th style="text-align:center">Parcial 1</th>
                                     <th style="text-align:center">Parcial 2</th>
@@ -873,10 +729,11 @@
                             <td>
                                 <strong>${escHtml(asig.nombre)}</strong><br>
                                 <span style="font-size:.62rem;color:rgba(255,255,255,.45);letter-spacing:.5px;">
-                                    <i class="bi bi-tag me-1"></i>${escHtml(asig.codigo)} • ${escHtml(asig.carrera)}
+                                    <i class="bi bi-tag me-1"></i>${escHtml(asig.codigo)}${asig.semestre ? ' • ' + escHtml(asig.semestre) : ''}${asig.seccion ? ' • Sección ' + escHtml(asig.seccion) : ''}
                                 </span>
+                                ${asig.materiales && normTxt(asig.codigo) === 'TIC' ? '<br><a href="Materiales_Clases/index.html" style="font-size:.62rem;color:#4ade80;text-decoration:none;"><i class="bi bi-book me-1"></i>Abrir materiales</a>' : ''}
                             </td>
-                            <td style="text-align:center;font-weight:600;">${asig.creditos}</td>
+                            <td style="text-align:center;font-weight:600;">${asig.horas ? escHtml(asig.horas) : '-'}</td>
                             <td class="grade-cell ${asistClass}">${asig.asistenciaPct !== '-' ? asig.asistenciaPct + '%' : '-'}</td>
                             <td class="grade-cell ${p1Class}">${asig.parcial1}</td>
                             <td class="grade-cell ${p2Class}">${asig.parcial2}</td>

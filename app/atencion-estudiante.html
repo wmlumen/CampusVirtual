@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v08.5.2: Panel del rol Asistencia al Estudiante -->
+    <script src="./js/session-guard.js?v=5"></script>
+    <script>
+    // Solo el rol Asistencia al Estudiante (y administración). El servidor vuelve a comprobarlo en cada llamada.
+    window.ATENCION_ROLES = ['asistencia_estudiante', 'admin', 'administrador_plataforma'];
+    CenturiaSession.protect({ allowedRoles: window.ATENCION_ROLES });
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia al Estudiante — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado:#d4a843;--txt3:rgba(255,255,255,.55);--rojo:#ff8a87;--ok:#3ddc6e;--naranja:#fbbf24}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Montserrat',sans-serif;min-height:100vh;color:#fff;position:relative;overflow-x:hidden;background:#060f09}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(22,129,61,.12) 0%,transparent 60%),linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%);z-index:-2}
+        body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E");z-index:-1;pointer-events:none}
+        .wrap{width:100%;max-width:1200px;margin:0 auto;padding:20px 20px 56px}
+        [hidden]{display:none !important}
+
+        .lib-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);margin-bottom:20px}
+        .lib-header-left{display:flex;align-items:center;gap:16px;min-width:0}
+        .lib-avatar{width:56px;height:56px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:2px solid var(--dorado)}
+        .lib-header-name{font-size:1.1rem;font-weight:700}
+        .lib-header-sub{font-size:.7rem;color:var(--dorado);letter-spacing:1px}
+        .lib-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .lib-btn{padding:8px 16px;border-radius:12px;font-size:.7rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .lib-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+
+        .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .tab{padding:8px 16px;border-radius:12px;font-size:.7rem;font-weight:600;letter-spacing:.5px;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);transition:.2s;font-family:'Montserrat';display:inline-flex;align-items:center;gap:6px}
+        .tab:hover{background:rgba(255,255,255,.08);color:#fff}
+        .tab.active{background:rgba(0,177,64,.2);color:var(--ok);border-color:rgba(0,177,64,.3)}
+        .tab .n{background:var(--dorado);color:#0d2c16;border-radius:10px;padding:0 7px;font-size:.6rem;font-weight:800}
+        :focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+        .section{display:none}.section.active{display:block}
+
+        .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:20px;backdrop-filter:blur(20px);margin-bottom:16px}
+        .card h3{font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .card h3 i{color:var(--dorado)}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .grid2 .card{margin-bottom:0}
+
+        .form-group{margin-bottom:10px}
+        .form-group label{display:block;font-size:.6rem;font-weight:700;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:.75rem;font-family:'Montserrat';font-weight:600;color:#fff;background:rgba(255,255,255,.06);color-scheme:dark}
+        .form-group input::placeholder,.form-group textarea::placeholder{color:rgba(255,255,255,.3)}
+        .form-group select option{background:#0d2c16;color:#fff}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.18)}
+        .form-group textarea{resize:vertical;min-height:90px}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+        .btn{padding:9px 16px;border:none;border-radius:12px;font-size:.7rem;font-weight:700;font-family:'Montserrat';cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,var(--verde-medio),#0f6a31);color:#fff;border:1px solid rgba(212,168,67,.45)}.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#1a9448,var(--verde-medio))}
+        .btn-gold{background:rgba(212,168,67,.18);color:var(--dorado);border:1px solid rgba(212,168,67,.4)}.btn-gold:hover{background:rgba(212,168,67,.3)}
+        .btn-secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15)}.btn-secondary:hover{background:rgba(255,255,255,.14);color:#fff}
+        .btn-danger{background:rgba(239,83,80,.15);color:var(--rojo);border:1px solid rgba(239,83,80,.35)}.btn-danger:hover{background:rgba(239,83,80,.25)}
+        .btn-sm{padding:6px 12px;font-size:.62rem}
+
+        .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.6rem;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+        .b-ok{background:rgba(0,177,64,.2);color:var(--ok)}.b-warn{background:rgba(251,191,36,.18);color:var(--naranja)}.b-bad{background:rgba(239,83,80,.18);color:var(--rojo)}.b-gold{background:rgba(212,168,67,.2);color:var(--dorado)}.b-mute{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+        .chip{display:inline-block;margin:0 6px 6px 0;padding:4px 10px;border-radius:10px;font-size:.66rem;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+
+        .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:.74rem;align-items:start}
+        .kv dt{color:var(--txt3);font-size:.62rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding-top:2px}
+        .kv dd{font-weight:600;word-break:break-word}
+        .muted{color:var(--txt3);font-size:.68rem}
+
+        .result{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:12px;cursor:pointer;transition:.2s;width:100%;color:#fff;font-family:'Montserrat';text-align:left}
+        .result:hover{border-color:var(--dorado);background:rgba(255,255,255,.08)}
+        .result b{font-size:.78rem}.result small{display:block;color:var(--txt3);font-size:.62rem;margin-top:2px}
+
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:separate;border-spacing:0 4px;font-size:.7rem}
+        th{background:#0f3a1f;color:var(--dorado);padding:9px 12px;text-align:left;font-weight:700;font-size:.58rem;letter-spacing:1px;text-transform:uppercase}
+        th:first-child{border-radius:10px 0 0 10px}th:last-child{border-radius:0 10px 10px 0}
+        td{background:rgba(255,255,255,.04);padding:9px 12px;vertical-align:middle}
+        td:first-child{border-radius:10px 0 0 10px}td:last-child{border-radius:0 10px 10px 0}
+        tr:hover td{background:rgba(255,255,255,.08)}
+        .acciones{display:flex;gap:6px;flex-wrap:wrap}
+
+        .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+        .seg .btn.on{background:rgba(0,177,64,.22);color:var(--ok);border-color:rgba(0,177,64,.4)}
+        .seg select{padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-family:'Montserrat';font-size:.7rem;font-weight:600}
+        .seg select option{background:#0d2c16}
+
+        .queja{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px;padding:14px;margin-bottom:10px}
+        .queja.alta{border-left:4px solid var(--rojo)}.queja.media{border-left:4px solid var(--naranja)}.queja.baja{border-left:4px solid var(--ok)}
+        .queja p{font-size:.74rem;line-height:1.5;margin:8px 0;white-space:pre-wrap;word-break:break-word}
+        .queja .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+
+        .empty{text-align:center;padding:28px;color:var(--txt3);font-size:.75rem}
+        .empty i{font-size:2rem;display:block;margin-bottom:6px;color:rgba(255,255,255,.2)}
+
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+        .modal{background:#0d2c16;border:1px solid rgba(212,168,67,.4);border-radius:18px;padding:22px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto}
+        .modal h4{font-size:.85rem;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}.modal h4 i{color:var(--dorado)}
+        .modal .sub{font-size:.66rem;color:var(--txt3);margin-bottom:14px}
+        .modal .pie{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:12px;font-size:.72rem;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:340px}
+        .toast.ok{background:rgba(13,44,22,.96);color:var(--ok);border:1px solid rgba(0,177,64,.5)}
+        .toast.err{background:rgba(60,15,15,.96);color:var(--rojo);border:1px solid rgba(239,83,80,.5)}
+        .footer{position:fixed;bottom:0;left:0;right:0;z-index:10;text-align:center;padding:10px 20px;font-size:.55rem;color:rgba(255,255,255,.6);background:rgba(0,61,25,.9);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.08)}
+
+        @media print{body{background:#fff !important;color:#000 !important}body::before,body::after{display:none}.lib-header-actions,.tabs,.footer,.btn,.seg{display:none !important}.card,.lib-header{background:#fff;border:1px solid #ccc;color:#000}td{background:#f9f9f9 !important;color:#000}th{background:#007A33 !important;color:#fff !important}.kv dt,.muted{color:#444}}
+        @media(max-width:768px){.wrap{padding:12px 12px 56px}.lib-header{flex-direction:column;align-items:flex-start}.grid2,.form-row{grid-template-columns:1fr}.kv{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="lib-header">
+        <div class="lib-header-left">
+            <div class="lib-avatar" id="h-avatar">A</div>
+            <div>
+                <div class="lib-header-name" id="h-name">Asistencia al Estudiante</div>
+                <div class="lib-header-sub" id="h-sub">CARGANDO...</div>
+            </div>
+        </div>
+        <div class="lib-header-actions">
+            <a class="lib-btn" href="consultas.html"><i class="bi bi-headset"></i> Consultas de alumnos</a>
+            <a class="lib-btn" href="facturas.html"><i class="bi bi-receipt"></i> Facturas</a>
+            <a class="lib-btn" href="mensajes-alumnos.html"><i class="bi bi-megaphone"></i> Mensajes a alumnos</a>
+            <a class="lib-btn" id="h-panel" href="admin/index.html" hidden><i class="bi bi-gear"></i> Panel</a>
+            <button class="lib-btn" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+            <button class="lib-btn" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="estudiante" onclick="irTab('estudiante')"><i class="bi bi-person-vcard"></i> Estudiante</button>
+        <button class="tab" data-tab="cumples" onclick="irTab('cumples')"><i class="bi bi-cake2"></i> Cumpleaños <span class="n" id="n-hoy" hidden>0</span></button>
+        <button class="tab" data-tab="quejas" onclick="irTab('quejas')"><i class="bi bi-chat-left-text"></i> Quejas <span class="n" id="n-quejas" hidden>0</span></button>
+    </div>
+
+    <!-- ═══ ESTUDIANTE ═══ -->
+    <div class="section active" id="sec-estudiante">
+        <div class="card">
+            <h3><i class="bi bi-search"></i> Buscar estudiante</h3>
+            <div class="form-group" style="margin-bottom:0">
+                <input type="search" id="q" placeholder="Cédula o nombre (mínimo 2 caracteres)" autocomplete="off" aria-label="Buscar estudiante">
+            </div>
+            <div style="margin-top:10px"><button class="btn btn-gold btn-sm" type="button" onclick="escanearFicha()"><i class="bi bi-qr-code-scan"></i> Escanear credencial QR</button></div>
+            <div id="resultados" style="margin-top:10px"></div>
+        </div>
+        <div id="ficha" hidden></div>
+    </div>
+
+    <!-- ═══ CUMPLEAÑOS ═══ -->
+    <div class="section" id="sec-cumples">
+        <div class="card">
+            <h3><i class="bi bi-cake2"></i> Cumpleaños de estudiantes</h3>
+            <div class="seg" id="seg-cumples">
+                <button class="btn btn-secondary btn-sm" data-p="hoy" onclick="cargarCumples('hoy')">Hoy</button>
+                <button class="btn btn-secondary btn-sm on" data-p="semana" onclick="cargarCumples('semana')">Próximos 7 días</button>
+                <button class="btn btn-secondary btn-sm" data-p="proximos30" onclick="cargarCumples('proximos30')">Próximos 30 días</button>
+                <select id="mes" aria-label="Mes" onchange="cargarCumples('mes')"></select>
+            </div>
+            <div id="cumples-info" class="muted" style="margin-bottom:8px"></div>
+            <div class="table-wrap"><div id="cumples-lista"></div></div>
+        </div>
+    </div>
+
+    <!-- ═══ QUEJAS ═══ -->
+    <div class="section" id="sec-quejas">
+        <div class="card">
+            <h3><i class="bi bi-chat-left-text"></i> Quejas de estudiantes</h3>
+            <div class="seg" id="seg-quejas">
+                <button class="btn btn-secondary btn-sm on" data-e="" onclick="cargarQuejas('')">Todas</button>
+                <button class="btn btn-secondary btn-sm" data-e="registrada" onclick="cargarQuejas('registrada')">Sin enviar</button>
+                <button class="btn btn-secondary btn-sm" data-e="enviada" onclick="cargarQuejas('enviada')">Enviadas</button>
+                <button class="btn btn-secondary btn-sm" data-e="resuelta" onclick="cargarQuejas('resuelta')">Resueltas</button>
+                <button class="btn btn-primary btn-sm" onclick="abrirQueja()" style="margin-left:auto"><i class="bi bi-plus-lg"></i> Nueva queja</button>
+            </div>
+            <div id="quejas-lista"></div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">Instituto Superior Centuria — Asistencia al Estudiante &copy; 2026</div>
+
+<script src="js/api.js?v=21"></script>
+<script src="js/logout.js?v=2"></script>
+<script src="js/qr-lector.js?v=2"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const A = () => CenturiaAPI.asistente;
+let cat = { categorias: [], prioridades: ['baja', 'media', 'alta'], destinos: [], tipos_beneficio: [] };
+let fichaActual = null;
+let periodoCumples = 'semana';
+let filtroQuejas = '';
+
+function toast(msg, tipo) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (tipo === 'err' ? 'err' : 'ok');
+    t.setAttribute('role', tipo === 'err' ? 'alert' : 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4200);
+}
+
+// Llama a la API; si el servidor responde con error, avisa y devuelve null
+async function llamar(promesa) {
+    let d;
+    try { d = await promesa; } catch (e) { toast('No se pudo conectar con el servidor.', 'err'); return null; }
+    if (!d || d.ok === false) { toast((d && d.error) || 'El servidor no respondió como se esperaba. ¿Está publicada la versión nueva del script?', 'err'); return null; }
+    return d;
+}
+
+function fechaLarga(iso) { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : (iso || '-'); }
+function textoDias(n) { return n === 0 ? 'HOY' : n === 1 ? 'mañana' : 'en ' + n + ' días'; }
+function badgeEstado(e) {
+    const m = { registrada: ['b-warn', 'Sin enviar'], enviada: ['b-gold', 'Enviada'], resuelta: ['b-ok', 'Resuelta'], anulada: ['b-mute', 'Anulada'],
+                otorgado: ['b-gold', 'Pendiente de canje'], canjeado: ['b-ok', 'Canjeado'] }[e] || ['b-mute', e];
+    return '<span class="badge ' + m[0] + '">' + esc(m[1]) + '</span>';
+}
+function textoBeneficio(b) { return b.tipo + (b.tipo === 'Descuento' ? ' ' + b.porcentaje + '%' : '') + (b.detalle ? ' — ' + b.detalle : ''); }
+
+// ═══ TABS ═══
+function irTab(t) {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t));
+    document.querySelectorAll('.section').forEach(x => x.classList.toggle('active', x.id === 'sec-' + t));
+    if (t === 'cumples') cargarCumples(periodoCumples);
+    if (t === 'quejas') cargarQuejas(filtroQuejas);
+}
+
+// ═══ INICIO ═══
+document.addEventListener('DOMContentLoaded', async () => {
+    const u = CenturiaAPI.getCurrentUser() || {};
+    const rol = ((window.CenturiaSession && CenturiaSession.getRole()) || '').toLowerCase();
+    const nombre = [u.nombre, u.apellido].filter(Boolean).join(' ') || u.username || 'Usuario';
+    $('h-avatar').textContent = (nombre.charAt(0) || 'A').toUpperCase();
+    $('h-name').textContent = nombre;
+    $('h-sub').textContent = ((rol === 'asistencia_estudiante' ? 'Asistencia al Estudiante' : 'Administración') + ' · Atención').toUpperCase();
+    if (rol !== 'asistencia_estudiante') $('h-panel').hidden = false;
+
+    $('mes').innerHTML = '<option value="">Otro mes…</option>' + MESES.map((m, i) => '<option value="' + (i + 1) + '">' + m + '</option>').join('');
+
+    let t;
+    $('q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(buscar, 350); });
+
+    const c = await llamar(A().catalogos());
+    if (c) cat = c;
+    actualizarContadores();
+});
+
+async function actualizarContadores() {
+    const h = await A().cumpleanos('hoy').catch(() => null);
+    const nh = h && h.ok !== false ? (h.cumpleaneros || []).length : 0;
+    $('n-hoy').textContent = nh; $('n-hoy').hidden = !nh;
+    const q = await A().listarQuejas({ estado: 'registrada' }).catch(() => null);
+    const nq = q && q.ok !== false ? (q.total || 0) : 0;
+    $('n-quejas').textContent = nq; $('n-quejas').hidden = !nq;
+}
+
+// ═══ ESTUDIANTE ═══
+async function buscar() {
+    const q = $('q').value.trim();
+    const box = $('resultados');
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    const d = await llamar(A().buscar(q));
+    if (!d) return;
+    if (q !== $('q').value.trim()) return;   // el texto cambió mientras se buscaba
+    if (!d.estudiantes.length) { box.innerHTML = '<div class="empty">Sin resultados.</div>'; return; }
+    box.innerHTML = d.estudiantes.map(e => '<button class="result" onclick="abrirFicha(\'' + esc(e.cedula) + '\')"><span><b>' + esc(e.nombre) + '</b><small>C.I. ' + esc(e.cedula) + ' · ' + esc(e.carrera || 'Sin carrera') + ' · ' + esc(e.seccion || '-') + '</small></span><i class="bi bi-chevron-right"></i></button>').join('')
+        + (d.total > d.estudiantes.length ? '<div class="muted">Se muestran ' + d.estudiantes.length + ' de ' + d.total + '. Escribe más para afinar.</div>' : '');
+}
+
+// Abre la ficha leyendo la credencial QR dinámica del estudiante (el código se consume al leerlo).
+function escanearFicha() {
+    CvQrLector.abrir({
+        titulo: 'Escanear credencial',
+        continuo: false,
+        alLeer: async (codigo) => {
+            const d = await CvQrLector.verificar(codigo);
+            abrirFicha(d.cedula);
+            return { ok: true, mensaje: 'Credencial válida: ' + d.nombre };
+        }
+    });
+}
+
+async function abrirFicha(cedula) {
+    irTab('estudiante');
+    const d = await llamar(A().ficha(cedula));
+    if (!d) return;
+    fichaActual = d;
+    $('resultados').innerHTML = '';
+    renderFicha();
+    $('ficha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderFicha() {
+    const d = fichaActual, x = d.datos, ac = d.academico, n = d.nacimiento;
+    const nombre = (x.nombre + ' ' + x.apellido).trim() || x.cedula;
+    const pend = ac.asignaturas_pendientes.length
+        ? ac.asignaturas_pendientes.map(a => '<span class="chip">' + esc(a) + '</span>').join('')
+        : (ac.tiene_matricula ? '<span class="badge b-ok">Sin asignaturas pendientes</span>' : '<span class="muted">Sin matrícula cargada: no hay dato.</span>');
+    const beca = ac.becado
+        ? '<span class="badge b-gold">BECADO</span><ul style="margin:8px 0 0 16px;font-size:.68rem;color:var(--txt3)">' + ac.beca_detalle.map(b => '<li>' + esc(b) + '</li>').join('') + '</ul>'
+        : '<span class="badge b-mute">No registra beca</span>';
+    const cumple = n
+        ? '<dl class="kv"><dt>Fecha</dt><dd>' + fechaLarga(n.fecha) + '</dd><dt>Edad</dt><dd>' + n.edad + ' años</dd><dt>Cumpleaños</dt><dd>' + esc(n.proximo) + ' — ' + (n.hoy ? '<span class="badge b-gold">HOY cumple ' + n.cumple_anios + '</span>' : textoDias(n.dias_para)) + '</dd></dl>'
+          + '<div style="margin-top:10px"><button class="btn btn-gold btn-sm" onclick="abrirBeneficio(\'' + esc(x.cedula) + '\')"><i class="bi bi-gift"></i> Otorgar beneficio</button></div>'
+        : '<span class="muted">Sin fecha de nacimiento cargada (se toma del formulario de matrícula).</span>';
+    const benef = d.beneficios.length
+        ? '<div class="table-wrap"><table><thead><tr><th>Año</th><th>Beneficio</th><th>Vence</th><th>Estado</th><th></th></tr></thead><tbody>' + d.beneficios.map(b =>
+            '<tr><td>' + esc(b.anio) + '</td><td>' + esc(textoBeneficio(b)) + '</td><td>' + fechaLarga(b.vence) + (b.vencido ? ' <span class="badge b-bad">vencido</span>' : '') + '</td><td>' + badgeEstado(b.estado) + '</td><td>'
+            + (b.estado === 'otorgado' ? '<div class="acciones"><button class="btn btn-primary btn-sm" onclick="estadoBeneficio(\'' + esc(b.id) + '\',\'canjear\')">Canjear</button><button class="btn btn-danger btn-sm" onclick="estadoBeneficio(\'' + esc(b.id) + '\',\'anular\')">Anular</button></div>' : '') + '</td></tr>').join('') + '</tbody></table></div>'
+        : '<div class="muted">Todavía no se le otorgó ningún beneficio.</div>';
+    $('ficha').hidden = false;
+    $('ficha').innerHTML =
+        '<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><div><div style="font-size:1.05rem;font-weight:800">' + esc(nombre) + '</div>'
+        + '<div class="muted">C.I. ' + esc(x.cedula) + ' · ' + esc(x.carrera || 'Sin carrera') + ' · ' + esc(x.grado || '-') + ' · Sección ' + esc(x.seccion || '-') + '</div></div>'
+        + '<div class="acciones">' + (x.estado ? '<span class="badge ' + (x.estado === 'activo' ? 'b-ok' : 'b-warn') + '">' + esc(x.estado) + '</span>' : '')
+        + '<button class="btn btn-secondary btn-sm" onclick="abrirQueja(\'' + esc(x.cedula) + '\')"><i class="bi bi-chat-left-text"></i> Registrar queja</button></div></div></div>'
+        + '<div class="grid2" style="margin-bottom:16px">'
+        + '<div class="card"><h3><i class="bi bi-person-lines-fill"></i> Datos</h3><dl class="kv"><dt>Correo</dt><dd>' + esc(x.email || '-') + '</dd><dt>Teléfono</dt><dd>' + esc(x.telefono || '-') + '</dd><dt>Grado</dt><dd>' + esc(x.grado || '-') + '</dd><dt>Carrera</dt><dd>' + esc(x.carrera || '-') + '</dd><dt>Sección</dt><dd>' + esc(x.seccion || '-') + '</dd></dl></div>'
+        + '<div class="card"><h3><i class="bi bi-cake2"></i> Nacimiento</h3>' + cumple + '</div></div>'
+        + '<div class="card"><h3><i class="bi bi-mortarboard"></i> Situación académica</h3><div class="grid2" style="gap:24px"><div><dl class="kv"><dt>Beca</dt><dd>' + beca + '</dd><dt>Matrícula</dt><dd>' + esc(ac.matricula_estado || '-') + (ac.matricula_fecha ? ' <span class="muted">(' + fechaLarga(ac.matricula_fecha) + ')</span>' : '') + '</dd><dt>Tipo de alumno</dt><dd>' + esc(ac.tipo_alumno || '-') + '</dd><dt>Plan de pago</dt><dd>' + esc(ac.plan_pago || '-') + '</dd></dl></div>'
+        + '<div><div class="muted" style="font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Asignaturas pendientes' + (ac.semestres_pendientes ? ' · semestres pendientes: ' + esc(ac.semestres_pendientes) : '') + '</div>' + pend + '</div></div></div>'
+        + '<div class="card"><h3><i class="bi bi-gift"></i> Beneficios de cumpleaños</h3>' + benef + '</div>'
+        + '<div class="card"><h3><i class="bi bi-chat-left-text"></i> Quejas (' + d.quejas.length + ')</h3>' + (d.quejas.length ? d.quejas.map(quejaHtml).join('') : '<div class="muted">Sin quejas registradas.</div>') + '</div>';
+}
+
+// ═══ CUMPLEAÑOS ═══
+async function cargarCumples(p) {
+    periodoCumples = p;
+    document.querySelectorAll('#seg-cumples .btn').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+    const mes = p === 'mes' ? Number($('mes').value) || undefined : undefined;
+    if (p !== 'mes') $('mes').value = '';
+    $('cumples-lista').innerHTML = '<div class="empty">Cargando...</div>';
+    const d = await llamar(A().cumpleanos(p, mes));
+    if (!d) { $('cumples-lista').innerHTML = ''; return; }
+    $('cumples-info').textContent = (p === 'mes' ? 'Mes de ' + MESES[d.mes - 1] + '. ' : '') + d.cumpleaneros.length + ' estudiante(s)'
+        + (d.sin_fecha ? ' · ' + d.sin_fecha + ' sin fecha de nacimiento cargada' : '') + '.';
+    if (!d.cumpleaneros.length) { $('cumples-lista').innerHTML = '<div class="empty"><i class="bi bi-cake2"></i>Nadie cumple años en este período.</div>'; return; }
+    $('cumples-lista').innerHTML = '<table><thead><tr><th>Cuándo</th><th>Estudiante</th><th>Carrera</th><th>Cumple</th><th>Beneficios</th><th></th></tr></thead><tbody>' + d.cumpleaneros.map(c =>
+        '<tr><td><b>' + esc(c.proximo) + '</b><br><span class="muted">' + (c.hoy ? '<span class="badge b-gold">HOY</span>' : textoDias(c.dias_para)) + '</span></td>'
+        + '<td><b>' + esc(c.nombre) + '</b><br><span class="muted">C.I. ' + esc(c.cedula) + '</span></td><td>' + esc(c.carrera || '-') + '<br><span class="muted">' + esc(c.seccion || '-') + '</span></td><td>' + c.cumple_anios + ' años</td>'
+        + '<td>' + (c.beneficios.length ? c.beneficios.map(b => '<span class="badge ' + (b.estado === 'canjeado' ? 'b-ok' : 'b-gold') + '" title="' + esc(b.estado) + '">' + esc(textoBeneficio(b).split(' — ')[0]) + '</span>').join(' ') : '<span class="muted">-</span>') + '</td>'
+        + '<td><div class="acciones"><button class="btn btn-gold btn-sm" onclick="abrirBeneficio(\'' + esc(c.cedula) + '\',\'' + esc(c.nombre) + '\')"><i class="bi bi-gift"></i> Beneficio</button><button class="btn btn-secondary btn-sm" onclick="abrirFicha(\'' + esc(c.cedula) + '\')">Ficha</button></div></td></tr>').join('') + '</tbody></table>';
+}
+
+// ═══ MODALES ═══
+function abrirModal(html) {
+    cerrarModal();
+    const o = document.createElement('div');
+    o.className = 'overlay'; o.id = 'modal';
+    o.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + '</div>';
+    o.addEventListener('mousedown', (e) => { if (e.target === o) cerrarModal(); });
+    document.body.appendChild(o);
+    const f = o.querySelector('input,select,textarea'); if (f) f.focus();
+}
+function cerrarModal() { const m = $('modal'); if (m) m.remove(); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarModal(); });
+
+function abrirBeneficio(cedula, nombre) {
+    const nom = nombre || (fichaActual && fichaActual.datos.cedula === cedula ? (fichaActual.datos.nombre + ' ' + fichaActual.datos.apellido).trim() : cedula);
+    abrirModal('<h4><i class="bi bi-gift"></i> Otorgar beneficio</h4><div class="sub">Para ' + esc(nom) + ' · el alumno lo verá en su mensaje de cumpleaños.</div>'
+        + '<div class="form-group"><label for="bf-tipo">Beneficio</label><select id="bf-tipo" onchange="bfTipo()">' + cat.tipos_beneficio.map(t => '<option>' + esc(t) + '</option>').join('') + '</select></div>'
+        + '<div class="form-group" id="bf-pct-g" hidden><label for="bf-pct">Porcentaje de descuento (%)</label><input type="number" id="bf-pct" min="1" max="100" value="10"></div>'
+        + '<div class="form-group"><label for="bf-det">Detalle <span id="bf-req" class="muted"></span></label><input type="text" id="bf-det" maxlength="200" placeholder="Ej.: en la cantina, en la cuota de octubre"></div>'
+        + '<div class="form-group"><label for="bf-vence">Válido hasta</label><input type="date" id="bf-vence"></div>'
+        + '<div class="pie"><button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" id="bf-ok" onclick="otorgarBeneficio(\'' + esc(cedula) + '\')"><i class="bi bi-check-lg"></i> Otorgar</button></div>');
+    const d = new Date(Date.now() + 30 * 864e5); $('bf-vence').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    bfTipo();
+}
+function bfTipo() {
+    const t = $('bf-tipo').value;
+    $('bf-pct-g').hidden = t !== 'Descuento';
+    $('bf-req').textContent = t === 'Otro' ? '(obligatorio)' : '(opcional)';
+}
+async function otorgarBeneficio(cedula) {
+    const tipo = $('bf-tipo').value;
+    $('bf-ok').disabled = true;
+    const d = await llamar(A().otorgarBeneficio({ cedula, tipo, porcentaje: tipo === 'Descuento' ? $('bf-pct').value : 0, detalle: $('bf-det').value, vence: $('bf-vence').value }));
+    $('bf-ok') && ($('bf-ok').disabled = false);
+    if (!d) return;
+    cerrarModal(); toast(d.mensaje || 'Beneficio otorgado.');
+    if (fichaActual && fichaActual.datos.cedula === cedula) abrirFicha(cedula);
+    if ($('sec-cumples').classList.contains('active')) cargarCumples(periodoCumples);
+}
+async function estadoBeneficio(id, accion) {
+    if (accion === 'anular' && !confirm('¿Anular este beneficio?')) return;
+    const d = await llamar(A().estadoBeneficio(id, accion));
+    if (!d) return;
+    toast(accion === 'canjear' ? 'Beneficio canjeado.' : 'Beneficio anulado.');
+    abrirFicha(fichaActual.datos.cedula);
+}
+
+// ═══ QUEJAS ═══
+function quejaHtml(q, conAcciones) {
+    const abierta = q.estado === 'registrada' || q.estado === 'enviada';
+    return '<div class="queja ' + esc(q.prioridad) + '"><div class="top"><div><b>' + esc(q.nombre) + '</b> <span class="muted">C.I. ' + esc(q.cedula) + (q.carrera ? ' · ' + esc(q.carrera) : '') + '</span></div><div class="acciones">'
+        + '<span class="badge b-mute">' + esc(q.categoria) + '</span><span class="badge ' + (q.prioridad === 'alta' ? 'b-bad' : q.prioridad === 'media' ? 'b-warn' : 'b-ok') + '">' + esc(q.prioridad) + '</span>' + badgeEstado(q.estado) + '</div></div>'
+        + '<p>' + esc(q.descripcion) + '</p><div class="muted">Registrada ' + esc(q.fecha) + (q.destino ? ' · Enviada a <b>' + esc(q.destino) + '</b> (' + esc(q.fecha_envio) + ')' : '') + '</div>'
+        + (q.respuesta ? '<div style="margin-top:8px;font-size:.72rem"><span class="badge b-ok">Respuesta</span> ' + esc(q.respuesta) + '</div>' : '')
+        + (abierta ? '<div class="acciones" style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="abrirEnviar(\'' + esc(q.id) + '\')"><i class="bi bi-send"></i> ' + (q.estado === 'enviada' ? 'Reenviar' : 'Enviar') + '</button><button class="btn btn-gold btn-sm" onclick="abrirResolver(\'' + esc(q.id) + '\')"><i class="bi bi-check2-circle"></i> Resolver</button><button class="btn btn-danger btn-sm" onclick="anularQueja(\'' + esc(q.id) + '\')">Anular</button></div>' : '')
+        + '</div>';
+}
+
+async function cargarQuejas(estado) {
+    filtroQuejas = estado || '';
+    document.querySelectorAll('#seg-quejas .btn[data-e]').forEach(b => b.classList.toggle('on', b.dataset.e === filtroQuejas));
+    $('quejas-lista').innerHTML = '<div class="empty">Cargando...</div>';
+    const d = await llamar(A().listarQuejas({ estado: filtroQuejas }));
+    if (!d) { $('quejas-lista').innerHTML = ''; return; }
+    $('quejas-lista').innerHTML = d.quejas.length ? d.quejas.map(quejaHtml).join('') + (d.total > d.quejas.length ? '<div class="muted">Se muestran las ' + d.quejas.length + ' más recientes de ' + d.total + '.</div>' : '')
+        : '<div class="empty"><i class="bi bi-inbox"></i>No hay quejas en esta vista.</div>';
+    actualizarContadores();
+}
+
+function refrescarQuejas() {
+    if ($('sec-quejas').classList.contains('active')) cargarQuejas(filtroQuejas);
+    if (fichaActual && !$('ficha').hidden) abrirFicha(fichaActual.datos.cedula);
+    actualizarContadores();
+}
+
+let qEstudiante = null;
+function abrirQueja(cedula) {
+    qEstudiante = null;
+    abrirModal('<h4><i class="bi bi-chat-left-text"></i> Registrar queja</h4><div class="sub">Anota lo que el estudiante plantea. Después podrás enviarla al área que corresponda.</div>'
+        + '<div class="form-group"><label for="qj-buscar">Estudiante</label><input type="search" id="qj-buscar" placeholder="Cédula o nombre" autocomplete="off"><div id="qj-res"></div><div id="qj-sel" class="muted"></div></div>'
+        + '<div class="form-row"><div class="form-group"><label for="qj-cat">Categoría</label><select id="qj-cat">' + cat.categorias.map(c => '<option>' + esc(c) + '</option>').join('') + '</select></div>'
+        + '<div class="form-group"><label for="qj-pri">Prioridad</label><select id="qj-pri">' + cat.prioridades.map(p => '<option' + (p === 'media' ? ' selected' : '') + '>' + esc(p) + '</option>').join('') + '</select></div></div>'
+        + '<div class="form-group"><label for="qj-desc">Queja</label><textarea id="qj-desc" maxlength="2000" placeholder="Qué pasó, cuándo y con quién (mínimo 10 caracteres)"></textarea></div>'
+        + '<div class="pie"><button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" id="qj-ok" onclick="guardarQueja()"><i class="bi bi-check-lg"></i> Registrar</button></div>');
+    let t;
+    $('qj-buscar').addEventListener('input', () => { clearTimeout(t); t = setTimeout(buscarParaQueja, 350); });
+    if (cedula) elegirParaQueja(cedula);
+}
+async function buscarParaQueja() {
+    const q = $('qj-buscar').value.trim();
+    if (q.length < 2) { $('qj-res').innerHTML = ''; return; }
+    const d = await llamar(A().buscar(q));
+    if (!d || !$('qj-res')) return;
+    $('qj-res').innerHTML = d.estudiantes.slice(0, 6).map(e => '<button class="result" type="button" onclick="elegirParaQueja(\'' + esc(e.cedula) + '\',\'' + esc(e.nombre) + '\')"><span><b>' + esc(e.nombre) + '</b><small>C.I. ' + esc(e.cedula) + ' · ' + esc(e.carrera || '-') + '</small></span></button>').join('') || '<div class="muted">Sin resultados.</div>';
+}
+function elegirParaQueja(cedula, nombre) {
+    qEstudiante = cedula;
+    $('qj-res').innerHTML = '';
+    const n = nombre || (fichaActual && fichaActual.datos.cedula === cedula ? (fichaActual.datos.nombre + ' ' + fichaActual.datos.apellido).trim() : '');
+    $('qj-sel').innerHTML = '<span class="badge b-gold">' + esc(n || cedula) + ' · C.I. ' + esc(cedula) + '</span>';
+    $('qj-buscar').value = '';
+}
+async function guardarQueja() {
+    if (!qEstudiante) { toast('Elige al estudiante.', 'err'); return; }
+    $('qj-ok').disabled = true;
+    const d = await llamar(A().registrarQueja({ cedula: qEstudiante, categoria: $('qj-cat').value, prioridad: $('qj-pri').value, descripcion: $('qj-desc').value }));
+    if ($('qj-ok')) $('qj-ok').disabled = false;
+    if (!d) return;
+    cerrarModal(); toast(d.mensaje || 'Queja registrada.'); refrescarQuejas();
+}
+
+function abrirEnviar(id) {
+    abrirModal('<h4><i class="bi bi-send"></i> Enviar queja</h4><div class="sub">Se deriva al área elegida y, si tiene correo configurado, se le avisa por mail.</div>'
+        + '<div class="form-group"><label for="en-dest">Enviar a</label><select id="en-dest">' + cat.destinos.map(x => '<option>' + esc(x) + '</option>').join('') + '</select></div>'
+        + '<div class="form-group"><label for="en-nota">Nota para el área (opcional)</label><textarea id="en-nota" maxlength="500"></textarea></div>'
+        + '<div class="pie"><button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" id="en-ok" onclick="enviarQueja(\'' + esc(id) + '\')"><i class="bi bi-send"></i> Enviar</button></div>');
+}
+async function enviarQueja(id) {
+    $('en-ok').disabled = true;
+    const d = await llamar(A().enviarQueja(id, $('en-dest').value, $('en-nota').value));
+    if ($('en-ok')) $('en-ok').disabled = false;
+    if (!d) return;
+    cerrarModal(); toast(d.mensaje || 'Queja enviada.'); refrescarQuejas();
+}
+function abrirResolver(id) {
+    abrirModal('<h4><i class="bi bi-check2-circle"></i> Resolver queja</h4><div class="sub">Deja constancia de cómo se resolvió.</div>'
+        + '<div class="form-group"><label for="rs-txt">Respuesta / resolución</label><textarea id="rs-txt" maxlength="1000"></textarea></div>'
+        + '<div class="pie"><button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" id="rs-ok" onclick="resolverQueja(\'' + esc(id) + '\')"><i class="bi bi-check-lg"></i> Marcar resuelta</button></div>');
+}
+async function resolverQueja(id) {
+    $('rs-ok').disabled = true;
+    const d = await llamar(A().cerrarQueja(id, 'resolver', $('rs-txt').value));
+    if ($('rs-ok')) $('rs-ok').disabled = false;
+    if (!d) return;
+    cerrarModal(); toast('Queja resuelta.'); refrescarQuejas();
+}
+async function anularQueja(id) {
+    if (!confirm('¿Anular esta queja? Quedará cerrada sin resolución.')) return;
+    const d = await llamar(A().cerrarQueja(id, 'anular', ''));
+    if (!d) return;
+    toast('Queja anulada.'); refrescarQuejas();
+}
+</script>
+</body>
+</html>

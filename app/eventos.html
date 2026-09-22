@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- v08.5.3: Módulo de Eventos (calendario + asistencia por QR) -->
+    <script src="./js/session-guard.js?v=5"></script>
+    <script>
+    // Cualquier usuario con sesión puede ver un evento. Gestionar u operar lo decide el servidor (rol de gestión o código de activación).
+    CenturiaSession.protect();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos — Instituto Superior Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        :root{--verde-oscuro:#0d2c16;--verde-medio:#16813D;--dorado:#d4a843;--txt3:rgba(255,255,255,.55);--rojo:#ff8a87;--ok:#3ddc6e;--naranja:#fbbf24}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Montserrat',sans-serif;min-height:100vh;color:#fff;position:relative;overflow-x:hidden;background:#060f09}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(22,129,61,.12) 0%,transparent 60%),linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%);z-index:-2}
+        .wrap{width:100%;max-width:1200px;margin:0 auto;padding:20px 20px 56px}
+        [hidden]{display:none !important}
+        a{color:var(--dorado)}
+        :focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+
+        .lib-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);margin-bottom:20px}
+        .lib-header-left{display:flex;align-items:center;gap:16px;min-width:0}
+        .lib-avatar{width:56px;height:56px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:2px solid var(--dorado)}
+        .lib-header-name{font-size:1.1rem;font-weight:700}
+        .lib-header-sub{font-size:.7rem;color:var(--dorado);letter-spacing:1px}
+        .lib-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .lib-btn{padding:8px 16px;border-radius:12px;font-size:.7rem;font-family:'Montserrat';font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+        .lib-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+
+        .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:20px;backdrop-filter:blur(20px);margin-bottom:16px}
+        .card h3{font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .card h3 i{color:var(--dorado)}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .grid2>.card{margin-bottom:0}
+
+        .form-group{margin-bottom:10px}
+        .form-group label{display:block;font-size:.6rem;font-weight:700;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:.75rem;font-family:'Montserrat';font-weight:600;color:#fff;background:rgba(255,255,255,.06);color-scheme:dark}
+        .form-group input::placeholder,.form-group textarea::placeholder{color:rgba(255,255,255,.3)}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.18)}
+        .form-group textarea{resize:vertical;min-height:90px}
+        .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+        .btn{padding:9px 16px;border:none;border-radius:12px;font-size:.7rem;font-weight:700;font-family:'Montserrat';cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+        .btn:disabled{opacity:.45;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,var(--verde-medio),#0f6a31);color:#fff;border:1px solid rgba(212,168,67,.45)}.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#1a9448,var(--verde-medio))}
+        .btn-gold{background:rgba(212,168,67,.18);color:var(--dorado);border:1px solid rgba(212,168,67,.4)}.btn-gold:hover:not(:disabled){background:rgba(212,168,67,.3)}
+        .btn-secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15)}.btn-secondary:hover:not(:disabled){background:rgba(255,255,255,.14);color:#fff}
+        .btn-danger{background:rgba(239,83,80,.15);color:var(--rojo);border:1px solid rgba(239,83,80,.35)}.btn-danger:hover:not(:disabled){background:rgba(239,83,80,.25)}
+        .btn-lg{padding:14px 22px;font-size:.85rem;border-radius:14px}
+        .btn-sm{padding:6px 12px;font-size:.62rem}
+        .acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+        .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.6rem;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+        .b-ok{background:rgba(0,177,64,.2);color:var(--ok)}.b-warn{background:rgba(251,191,36,.18);color:var(--naranja)}.b-bad{background:rgba(239,83,80,.18);color:var(--rojo)}.b-gold{background:rgba(212,168,67,.2);color:var(--dorado)}.b-mute{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+        .muted{color:var(--txt3);font-size:.68rem}
+        .empty{text-align:center;padding:28px;color:var(--txt3);font-size:.75rem}
+        .empty i{font-size:2rem;display:block;margin-bottom:6px;color:rgba(255,255,255,.2)}
+
+        .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+        .seg .btn.on{background:rgba(0,177,64,.22);color:var(--ok);border-color:rgba(0,177,64,.4)}
+
+        .evcard{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px;margin-bottom:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px}
+        .evcard:hover{border-color:rgba(212,168,67,.5)}
+        .evcard b{font-size:.85rem}
+        .evcard .meta{font-size:.66rem;color:var(--txt3);margin-top:3px;line-height:1.5}
+        .evcount{text-align:center;min-width:64px}.evcount b{display:block;font-size:1.3rem;color:var(--dorado)}.evcount span{font-size:.55rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px}
+
+        .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:.74rem;align-items:start}
+        .kv dt{color:var(--txt3);font-size:.62rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding-top:2px}
+        .kv dd{font-weight:600;word-break:break-word}
+        .info-txt{white-space:pre-wrap;font-size:.75rem;line-height:1.55;margin-top:6px}
+        .contacto{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:.72rem;line-height:1.6}
+        .contacto b{font-size:.78rem}
+        #mapa-ver,#mapa-form{height:260px;border-radius:14px;border:1px solid rgba(255,255,255,.15);z-index:0}
+
+        .kpis{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+        .kpi{padding:16px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);text-align:center}
+        .kpi b{display:block;font-size:1.9rem;line-height:1.1;color:#fff}
+        .kpi.grande{background:linear-gradient(135deg,rgba(22,129,61,.35),rgba(13,44,22,.6));border-color:rgba(212,168,67,.5)}
+        .kpi.grande b{font-size:3.4rem;color:var(--dorado)}
+        .kpi span{font-size:.6rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px}
+
+        details.gr{margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.04)}
+        details.gr>summary{list-style:none;cursor:pointer;padding:10px 14px;display:grid;grid-template-columns:1fr auto 120px;gap:12px;align-items:center;font-size:.76rem;font-weight:700}
+        details.gr>summary::-webkit-details-marker{display:none}
+        details.gr>summary::before{content:'\F285';font-family:'bootstrap-icons';font-size:.7rem;margin-right:6px;color:var(--dorado);display:inline-block;transition:transform .15s}
+        details.gr[open]>summary::before{transform:rotate(90deg)}
+        details.gr .sub{padding:0 12px 10px 20px}
+        details.gr details.gr{background:rgba(255,255,255,.03)}
+        .fila-sec{display:grid;grid-template-columns:1fr auto 120px;gap:12px;align-items:center;padding:6px 14px 6px 28px;font-size:.7rem;color:rgba(255,255,255,.85)}
+        .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+        .num em{font-style:normal;color:var(--txt3);font-weight:500}
+        .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--verde-medio),var(--ok));border-radius:6px}
+        .ult div{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,.04);font-size:.68rem}
+        .ult span{color:var(--txt3);white-space:nowrap}
+
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+        .modal{background:#0d2c16;border:1px solid rgba(212,168,67,.4);border-radius:18px;padding:22px;width:100%;max-width:460px;max-height:92vh;overflow-y:auto}
+        .modal h4{font-size:.85rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px}.modal h4 i{color:var(--dorado)}
+        .modal p{font-size:.72rem;line-height:1.55;color:rgba(255,255,255,.8);margin-bottom:10px}
+        .codigo-grande{font-size:2rem;font-weight:800;letter-spacing:6px;text-align:center;color:var(--dorado);padding:14px;border:2px dashed rgba(212,168,67,.6);border-radius:14px;margin:12px 0;user-select:all}
+        .modal .pie{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:12px;font-size:.72rem;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:340px}
+        .toast.ok{background:rgba(13,44,22,.96);color:var(--ok);border:1px solid rgba(0,177,64,.5)}
+        .toast.err{background:rgba(60,15,15,.96);color:var(--rojo);border:1px solid rgba(239,83,80,.5)}
+        .footer{position:fixed;bottom:0;left:0;right:0;z-index:10;text-align:center;padding:10px 20px;font-size:.55rem;color:rgba(255,255,255,.6);background:rgba(0,61,25,.9);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.08)}
+        .contacto-fila{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.2fr auto;gap:6px;margin-bottom:6px;align-items:center}
+        .contacto-fila input{padding:8px 10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:.7rem;font-family:'Montserrat';color:#fff;background:rgba(255,255,255,.06);width:100%;color-scheme:dark}
+
+        @media print{body{background:#fff !important;color:#000 !important}body::before{display:none}.lib-header-actions,.acciones,.footer,.btn,.seg,#caja-codigo{display:none !important}.card,.lib-header,.kpi{background:#fff;border:1px solid #ccc;color:#000}.kpi b{color:#000 !important}.muted,.kv dt{color:#444}}
+        @media(max-width:820px){.wrap{padding:12px 12px 64px}.lib-header{flex-direction:column;align-items:flex-start}.grid2,.row2,.row3{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi.grande{grid-column:1/-1}.kv{grid-template-columns:1fr}.contacto-fila{grid-template-columns:1fr 1fr}details.gr>summary,.fila-sec{grid-template-columns:1fr auto}.bar{display:none}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="lib-header">
+        <div class="lib-header-left">
+            <div class="lib-avatar" id="h-avatar">E</div>
+            <div>
+                <div class="lib-header-name" id="h-name">Eventos</div>
+                <div class="lib-header-sub" id="h-sub">EVENTOS Y ASISTENCIA</div>
+            </div>
+        </div>
+        <div class="lib-header-actions">
+            <a class="lib-btn" href="calendario.html"><i class="bi bi-calendar3"></i> Calendario</a>
+            <button class="lib-btn" id="btn-lista" onclick="irLista()" hidden><i class="bi bi-list-ul"></i> Todos los eventos</button>
+            <a class="lib-btn" href="dashboard.html"><i class="bi bi-house"></i> Inicio</a>
+            <button class="lib-btn" onclick="centuriaLogout(true)"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </div>
+    </div>
+
+    <!-- ═══ LISTA (gestión) ═══ -->
+    <div id="v-lista" hidden>
+        <div class="card">
+            <h3><i class="bi bi-calendar-event"></i> Eventos</h3>
+            <div class="seg" id="seg-lista">
+                <button class="btn btn-secondary btn-sm on" data-f="proximos" onclick="cargarLista('proximos')">Próximos</button>
+                <button class="btn btn-secondary btn-sm" data-f="hoy" onclick="cargarLista('hoy')">Hoy</button>
+                <button class="btn btn-secondary btn-sm" data-f="pasados" onclick="cargarLista('pasados')">Pasados</button>
+                <button class="btn btn-secondary btn-sm" data-f="todos" onclick="cargarLista('todos')">Todos</button>
+                <button class="btn btn-primary btn-sm" onclick="abrirForm()" style="margin-left:auto"><i class="bi bi-plus-lg"></i> Nuevo evento</button>
+            </div>
+            <div id="lista"></div>
+        </div>
+    </div>
+
+    <!-- ═══ ACCESO POR CÓDIGO (organizador sin rol de gestión) ═══ -->
+    <div id="v-acceso" hidden>
+        <div class="card" style="max-width:520px;margin:0 auto">
+            <h3><i class="bi bi-key"></i> Entrar a un evento</h3>
+            <p class="muted" style="margin-bottom:12px;line-height:1.5">Si eres organizador, usa el enlace que te pasó la administración e ingresa el código de activación. También puedes escribir el identificador del evento.</p>
+            <div class="form-group"><label for="ac-id">Identificador del evento</label><input id="ac-id" placeholder="EVT-…" autocomplete="off"></div>
+            <button class="btn btn-primary" onclick="irEvento(document.getElementById('ac-id').value.trim())"><i class="bi bi-box-arrow-in-right"></i> Abrir</button>
+        </div>
+    </div>
+
+    <!-- ═══ FORMULARIO (gestión) ═══ -->
+    <div id="v-form" hidden>
+        <form id="form-evento" onsubmit="guardarEvento(event)" novalidate>
+            <div class="card">
+                <h3 id="form-titulo"><i class="bi bi-calendar-plus"></i> Nuevo evento</h3>
+                <input type="hidden" id="f-id">
+                <div class="form-group"><label for="f-nombre">Nombre del evento *</label><input id="f-nombre" maxlength="120" required></div>
+                <div class="row3">
+                    <div class="form-group"><label for="f-fecha">Fecha *</label><input type="date" id="f-fecha" required></div>
+                    <div class="form-group"><label for="f-hi">Hora de inicio</label><input type="time" id="f-hi"></div>
+                    <div class="form-group"><label for="f-hf">Hora de fin</label><input type="time" id="f-hf"></div>
+                </div>
+                <div class="row2">
+                    <div class="form-group"><label for="f-lugar">Lugar</label><input id="f-lugar" maxlength="150" placeholder="Ej.: Auditorio Central"></div>
+                    <div class="form-group"><label for="f-dir">Dirección</label><input id="f-dir" maxlength="200" placeholder="Calle, ciudad"></div>
+                </div>
+                <div class="form-group"><label for="f-info">Información del evento</label><textarea id="f-info" maxlength="2000" placeholder="De qué trata, a quién va dirigido, qué llevar, costo, etc."></textarea></div>
+            </div>
+            <div class="grid2" style="margin-bottom:16px">
+                <div class="card">
+                    <h3><i class="bi bi-geo-alt"></i> Ubicación en el mapa</h3>
+                    <p class="muted" style="margin-bottom:8px">Toca el mapa para marcar dónde es el evento, o escribe las coordenadas.</p>
+                    <div id="mapa-form"></div>
+                    <div class="row2" style="margin-top:10px">
+                        <div class="form-group"><label for="f-lat">Latitud</label><input id="f-lat" inputmode="decimal" placeholder="-25.2867"></div>
+                        <div class="form-group"><label for="f-lng">Longitud</label><input id="f-lng" inputmode="decimal" placeholder="-57.6470"></div>
+                    </div>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="miUbicacion()"><i class="bi bi-crosshair"></i> Usar mi ubicación</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="quitarUbicacion()">Quitar marca</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="bi bi-telephone"></i> Contacto del evento</h3>
+                    <div class="form-group"><label for="f-tel">Teléfono</label><input id="f-tel" maxlength="40" placeholder="+595 21 000 000"></div>
+                    <div class="form-group"><label for="f-mail">Correo</label><input id="f-mail" type="email" maxlength="100" placeholder="eventos@institucion.edu.py"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3><i class="bi bi-people"></i> Personas de contacto</h3>
+                <div id="contactos"></div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="agregarContacto()"><i class="bi bi-plus-lg"></i> Agregar persona</button>
+            </div>
+            <div class="acciones">
+                <button class="btn btn-primary btn-lg" id="btn-guardar" type="submit"><i class="bi bi-check-lg"></i> Guardar y publicar en el calendario</button>
+                <button class="btn btn-secondary btn-lg" type="button" onclick="cancelarForm()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ═══ EVENTO ═══ -->
+    <div id="v-evento" hidden>
+        <div class="card" id="ev-cab"></div>
+
+        <div class="card" id="caja-codigo" hidden>
+            <h3><i class="bi bi-key"></i> Soy organizador de este evento</h3>
+            <p class="muted" style="margin-bottom:10px;line-height:1.5">Ingresa el código de activación para activar el evento, leer las credenciales QR y ver el panel de asistencia.</p>
+            <div class="acciones">
+                <input id="cod-in" class="cod-input" placeholder="XXXX-XXXX" maxlength="9" autocomplete="off" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-weight:700;letter-spacing:3px;text-transform:uppercase;width:170px" aria-label="Código de activación">
+                <button class="btn btn-primary" onclick="entrarConCodigo()"><i class="bi bi-unlock"></i> Entrar</button>
+            </div>
+        </div>
+
+        <div id="operar" hidden>
+            <div class="card">
+                <h3><i class="bi bi-qr-code-scan"></i> Registro de asistencia</h3>
+                <div class="acciones" id="ev-acciones"></div>
+                <div id="manual" hidden style="margin-top:14px">
+                    <div class="row3">
+                        <div class="form-group" style="margin:0"><label for="m-ced">Cédula</label><input id="m-ced" inputmode="numeric" autocomplete="off"></div>
+                        <div class="form-group" style="margin:0"><label for="m-nom">Nombre (solo si no es estudiante)</label><input id="m-nom" autocomplete="off"></div>
+                        <div style="display:flex;align-items:flex-end"><button class="btn btn-gold" onclick="registrarManual()"><i class="bi bi-check2"></i> Registrar</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpis" id="kpis"></div>
+
+            <div class="card">
+                <h3><i class="bi bi-diagram-3"></i> Asistencia por curso activo <span class="muted" style="text-transform:none;letter-spacing:0;margin-left:auto;font-weight:500"><label style="cursor:pointer"><input type="checkbox" id="ver-todos" onchange="renderCursos()"> ver también los cursos sin asistentes</label></span></h3>
+                <div id="cursos"></div>
+            </div>
+            <div class="card">
+                <h3><i class="bi bi-clock-history"></i> Últimos registros</h3>
+                <div class="ult" id="ultimos"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="footer">Instituto Superior Centuria — Eventos &copy; 2026</div>
+
+<!-- Firebase SDK Compat (requerido por api.js: window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="console.error('Firebase app-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="console.error('Firebase firestore-compat failed to load')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
+<script>
+  /* Fallback modular si los scripts compat no cargan */
+  if(!window.firebase||!window.firebase.apps||window.firebase.apps.length===0){
+    (function(){
+      var loaded=false;
+      function onAllLoaded(){
+        if(loaded)return;loaded=true;
+        try{
+          window.firebase={apps:[],initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);this.firestore=function(){return{collection:function(c){return{doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return{}})}}}}},where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]})}}}}};return a;},firestore:function(){return{collection:function(){},doc:function(){},collectionGroup:function(){}}},auth:function(){return{}}};
+          window.__firebaseFallback=true;
+          console.warn('[Firebase] Fallback modular inicializado');
+        }catch(e){console.error('[Firebase] Fallback falló',e);}
+      }
+      var s1=document.createElement('script');s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      var s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+      var s3=document.createElement('script');s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+      s1.onload=function(){s2.onload();};
+      s2.onload=function(){s3.onload=onAllLoaded;document.head.appendChild(s3);};
+      s1.onerror=s2.onerror=s3.onerror=onAllLoaded;
+      document.head.appendChild(s1);
+    })();
+  }
+  /* Verificar que Firebase se cargó correctamente */
+  window._fbCheck = function(){
+    if(!window.firebase){
+      console.error('[Firebase] window.firebase is UNDEFINED after loading Firebase SDK scripts');
+      console.error('[Firebase] Script sources:', [...document.querySelectorAll('script[src*="firebase"]')].map(s => s.src + ' (' + (s.readyState || 'loaded') + ')'));
+    } else if(!window.firebase.apps || window.firebase.apps.length === 0){
+      console.warn('[Firebase] window.firebase exists but no apps initialized');
+    } else {
+      console.log('[Firebase] Successfully loaded, apps:', window.firebase.apps.length);
+    }
+  };
+  window._fbCheck();
+</script>
+<script>
+  /* Firebase inicializado en api.js */
+  // Shim para api.js v100 que usa require('firebase-firestore') en browser
+  window.require = window.require || function(mod){
+    if(mod==='firebase-firestore'){
+      return {
+        collection: (db,coll)=> db.collection(coll),
+        doc: (db,coll,id)=> db.collection(coll).doc(id),
+        getDocs: (q)=> q.get().then(snap=>({empty:snap.empty, size:snap.size, docs:snap.docs.map(d=>({id:d.id, data:()=>d.data(), exists:true})), forEach: snap.forEach.bind(snap)})),
+        getDoc: (ref)=> ref.get().then(s=>({exists:s.exists, id:s.id, data:()=>s.data()})),
+        setDoc: (ref,data)=> ref.set(data),
+        updateDoc: (ref,data)=> ref.update(data),
+        deleteDoc: (ref)=> ref.delete(),
+        query: (q,...conds)=>{
+          let qq=q;
+          for(const c of conds){
+            if(!c) continue;
+            if(c && c.field && c.op) qq=qq.where(c.field,c.op,c.value);
+            else if(c && c.fieldPath) qq=qq.orderBy(c.fieldPath, c.order==='ASCENDING'?'asc':'desc');
+            else if(typeof c==='number') qq=qq.limit(c);
+          }
+          return qq;
+        },
+        where: (field,op,value)=>({field,op,value}),
+        limit: (n)=> n,
+        orderBy: (field,dir)=>({fieldPath:field, order:dir})
+      };
+    }
+    throw new Error('Cannot find module '+mod);
+  };
+</script>
+<script src="js/api.js?v=21"></script>
+<script src="js/logout.js?v=2"></script>
+<script src="js/qr-lector.js?v=2"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const E = () => CenturiaAPI.eventos;
+const GESTION = ['admin', 'administrador', 'administrador_plataforma', 'admin_plataforma', 'admin_filial', 'academico', 'academic'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+let esGestor = false;          // el servidor confirma con evt_info / evt_listar; esto solo decide qué mostrar
+let evId = '';
+let ev = null;                 // evento actual (datos públicos)
+let codigoAct = '';            // código de activación del organizador (solo en esta pestaña)
+let puedeOperar = false;
+let panel = null;
+let timer = null;
+let filtroLista = 'proximos';
+let mapaVer = null, mapaForm = null, marcaForm = null;
+const abiertos = new Set();
+
+function toast(msg, tipo) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (tipo === 'err' ? 'err' : 'ok');
+    t.setAttribute('role', tipo === 'err' ? 'alert' : 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4200);
+}
+async function llamar(promesa, silencioso) {
+    let d;
+    try { d = await promesa; } catch (e) { if (!silencioso) toast('No se pudo conectar con el servidor.', 'err'); return null; }
+    if (!d || d.ok !== true) {
+        const m = (d && (d.error || d.mensaje)) || 'El servidor no respondió como se esperaba.';
+        if (!silencioso) toast(/no reconocida/i.test(m) ? 'El servidor todavía no tiene el módulo de eventos: falta publicar la nueva versión del script.' : m, 'err');
+        return { _error: m };
+    }
+    return d;
+}
+const fallo = (d) => !d || d._error;
+
+function fechaLarga(iso) {
+    const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return iso || '';
+    const d = new Date(+m[1], +m[2] - 1, +m[3], 12);
+    return DIAS[d.getDay()] + ' ' + (+m[3]) + ' de ' + MESES[+m[2] - 1] + ' de ' + m[1];
+}
+function badgeEstado(e) {
+    const m = { programado: ['b-gold', 'Programado'], activo: ['b-ok', 'Activo · registrando'], cerrado: ['b-mute', 'Cerrado'], cancelado: ['b-bad', 'Cancelado'] }[e] || ['b-mute', e];
+    return '<span class="badge ' + m[0] + '">' + esc(m[1]) + '</span>';
+}
+function claveSesion(id) { return 'evt_cod_' + id; }
+function soloDigitosTel(t) { return String(t || '').replace(/[^0-9+]/g, ''); }
+
+// ═══ INICIO ═══
+document.addEventListener('DOMContentLoaded', async () => {
+    const u = CenturiaAPI.getCurrentUser() || {};
+    const rol = ((window.CenturiaSession && CenturiaSession.getRole()) || '').toLowerCase();
+    esGestor = GESTION.indexOf(rol) >= 0;
+    const nombre = [u.nombre, u.apellido].filter(Boolean).join(' ') || u.username || 'Usuario';
+    $('h-avatar').textContent = (nombre.charAt(0) || 'E').toUpperCase();
+    $('h-name').textContent = nombre;
+    $('h-sub').textContent = (esGestor ? 'GESTIÓN DE EVENTOS' : 'EVENTOS Y ASISTENCIA');
+    $('btn-lista').hidden = !esGestor;
+    $('cod-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') entrarConCodigo(); });
+    $('cod-in').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
+    $('m-ced').addEventListener('keydown', (e) => { if (e.key === 'Enter') registrarManual(); });
+
+    const id = new URLSearchParams(location.search).get('id');
+    if (id) abrirEvento(id);
+    else if (esGestor) irLista();
+    else mostrar('v-acceso');
+});
+
+function mostrar(vista) {
+    ['v-lista', 'v-acceso', 'v-form', 'v-evento'].forEach(v => { $(v).hidden = v !== vista; });
+    if (vista !== 'v-evento') { clearInterval(timer); timer = null; }
+    window.scrollTo(0, 0);
+}
+function irLista() {
+    history.replaceState(null, '', location.pathname);
+    evId = ''; ev = null;
+    mostrar('v-lista');
+    cargarLista(filtroLista);
+}
+function irEvento(id) {
+    if (!id) { toast('Escribe el identificador del evento.', 'err'); return; }
+    history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(id));
+    abrirEvento(id);
+}
+
+// ═══ LISTA ═══
+async function cargarLista(f) {
+    filtroLista = f;
+    document.querySelectorAll('#seg-lista .btn[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+    $('lista').innerHTML = '<div class="empty">Cargando…</div>';
+    const d = await llamar(E().listar({}));
+    if (fallo(d)) { $('lista').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i>' + esc(d ? d._error : 'Sin conexión') + '</div>'; return; }
+    esGestor = true;
+    const hoy = d.hoy;
+    let lista = d.eventos;
+    if (f === 'proximos') lista = lista.filter(e => e.fecha >= hoy && e.estado !== 'cancelado').sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
+    else if (f === 'hoy') lista = lista.filter(e => e.fecha === hoy);
+    else if (f === 'pasados') lista = lista.filter(e => e.fecha < hoy);
+    if (!lista.length) { $('lista').innerHTML = '<div class="empty"><i class="bi bi-calendar-x"></i>No hay eventos en esta vista.</div>'; return; }
+    $('lista').innerHTML = lista.map(e =>
+        '<div class="evcard"><div style="min-width:0;flex:1"><b>' + esc(e.nombre) + '</b> ' + badgeEstado(e.estado)
+        + '<div class="meta"><i class="bi bi-calendar3"></i> ' + esc(fechaLarga(e.fecha)) + (e.hora_inicio ? ' · ' + esc(e.hora_inicio) + (e.hora_fin ? '–' + esc(e.hora_fin) : '') : '')
+        + (e.lugar ? '<br><i class="bi bi-geo-alt"></i> ' + esc(e.lugar) : '') + '</div></div>'
+        + '<div class="evcount"><b>' + e.asistentes + '</b><span>asistentes</span></div>'
+        + '<div class="acciones"><button class="btn btn-primary btn-sm" onclick="irEvento(\'' + esc(e.id) + '\')"><i class="bi bi-qr-code-scan"></i> Abrir</button>'
+        + '<button class="btn btn-secondary btn-sm" onclick="abrirForm(\'' + esc(e.id) + '\')"><i class="bi bi-pencil"></i> Editar</button></div></div>').join('');
+}
+
+// ═══ EVENTO ═══
+async function abrirEvento(id) {
+    evId = id;
+    puedeOperar = false; panel = null; ev = null;
+    try { codigoAct = sessionStorage.getItem(claveSesion(id)) || ''; } catch (e) { codigoAct = ''; }
+    mostrar('v-evento');
+    $('ev-cab').innerHTML = '<div class="empty">Cargando…</div>';
+    $('operar').hidden = true; $('caja-codigo').hidden = true;
+    const d = await llamar(E().info(id));
+    if (fallo(d)) { $('ev-cab').innerHTML = '<div class="empty"><i class="bi bi-exclamation-circle"></i>' + esc(d ? d._error : 'Sin conexión') + '</div>'; return; }
+    ev = d.evento;
+    if (d.gestor) { esGestor = true; $('btn-lista').hidden = false; }
+    renderCabecera();
+    if (esGestor || codigoAct) await cargarPanel(true);
+    if (!puedeOperar) $('caja-codigo').hidden = false;
+}
+
+function renderCabecera() {
+    const e = ev;
+    const mapaOk = e.latitud != null && e.longitud != null;
+    const gm = mapaOk ? 'https://www.google.com/maps/search/?api=1&query=' + e.latitud + ',' + e.longitud : '';
+    const ruta = mapaOk ? 'https://www.google.com/maps/dir/?api=1&destination=' + e.latitud + ',' + e.longitud : '';
+    const contactos = e.contactos.map(c =>
+        '<div class="contacto"><b>' + esc(c.nombre) + '</b>' + (c.cargo ? ' <span class="muted">· ' + esc(c.cargo) + '</span>' : '')
+        + (c.telefono ? '<br><i class="bi bi-telephone"></i> <a href="tel:' + esc(soloDigitosTel(c.telefono)) + '">' + esc(c.telefono) + '</a>' : '')
+        + (c.email ? '<br><i class="bi bi-envelope"></i> <a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '') + '</div>').join('');
+    $('ev-cab').innerHTML =
+        '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px"><div style="min-width:0"><div style="font-size:1.25rem;font-weight:800">' + esc(e.nombre) + '</div>'
+        + '<div class="muted" style="margin-top:4px">' + esc(fechaLarga(e.fecha)) + (e.hora_inicio ? ' · ' + esc(e.hora_inicio) + (e.hora_fin ? ' a ' + esc(e.hora_fin) : '') : '') + '</div></div><div>' + badgeEstado(e.estado) + '</div></div>'
+        + '<div class="grid2"><div>'
+        + '<dl class="kv"><dt>Lugar</dt><dd>' + esc(e.lugar || '-') + '</dd><dt>Dirección</dt><dd>' + esc(e.direccion || '-') + '</dd>'
+        + '<dt>Teléfono</dt><dd>' + (e.telefono ? '<a href="tel:' + esc(soloDigitosTel(e.telefono)) + '">' + esc(e.telefono) + '</a>' : '-') + '</dd>'
+        + '<dt>Correo</dt><dd>' + (e.email ? '<a href="mailto:' + esc(e.email) + '">' + esc(e.email) + '</a>' : '-') + '</dd></dl>'
+        + (e.informacion ? '<div style="margin-top:14px"><div class="muted" style="font-weight:700;letter-spacing:.5px;text-transform:uppercase">Información</div><div class="info-txt">' + esc(e.informacion) + '</div></div>' : '')
+        + (contactos ? '<div style="margin-top:14px"><div class="muted" style="font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Personas de contacto</div>' + contactos + '</div>' : '')
+        + '</div><div>'
+        + (mapaOk ? '<div id="mapa-ver"></div><div class="acciones" style="margin-top:8px"><a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="' + gm + '"><i class="bi bi-map"></i> Abrir en Google Maps</a><a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="' + ruta + '"><i class="bi bi-signpost-2"></i> Cómo llegar</a></div>'
+            : '<div class="empty" style="padding:40px 10px"><i class="bi bi-geo-alt"></i>Sin ubicación en el mapa</div>')
+        + '</div></div>';
+    if (mapaOk) setTimeout(() => dibujarMapaVer(e.latitud, e.longitud), 50);
+}
+
+function dibujarMapaVer(lat, lng) {
+    const c = $('mapa-ver');
+    if (!c) return;
+    if (typeof L === 'undefined') { c.innerHTML = '<div class="empty">No se pudo cargar el mapa. Usa «Abrir en Google Maps».</div>'; return; }
+    if (mapaVer) { mapaVer.remove(); mapaVer = null; }
+    mapaVer = L.map(c, { scrollWheelZoom: false }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(mapaVer);
+    L.marker([lat, lng]).addTo(mapaVer);
+}
+
+async function entrarConCodigo() {
+    const c = $('cod-in').value.trim();
+    if (c.replace(/[^A-Z0-9]/gi, '').length < 8) { toast('El código tiene 8 caracteres (XXXX-XXXX).', 'err'); return; }
+    codigoAct = c;
+    await cargarPanel(false);
+    if (puedeOperar) {
+        try { sessionStorage.setItem(claveSesion(evId), c); } catch (e) {}
+        $('caja-codigo').hidden = true;
+        toast('Código correcto: ya puedes operar el evento.');
+    } else codigoAct = '';
+}
+
+async function cargarPanel(silencioso) {
+    const d = await llamar(E().panel(evId, codigoAct), silencioso);
+    if (fallo(d)) {
+        if (codigoAct && !esGestor) { try { sessionStorage.removeItem(claveSesion(evId)); } catch (e) {} codigoAct = ''; }
+        puedeOperar = false; $('operar').hidden = true;
+        return;
+    }
+    panel = d; ev = d.evento; puedeOperar = true;
+    $('operar').hidden = false;
+    renderAcciones(); renderKpis(); renderCursos(); renderUltimos();
+    $('ev-cab').querySelector('.badge') && renderCabeceraEstado();
+    clearInterval(timer);
+    timer = setInterval(() => { if (!document.hidden && puedeOperar) cargarPanel(true); }, 8000);
+}
+
+function renderCabeceraEstado() {
+    const b = $('ev-cab').querySelector('.badge');
+    if (b) b.outerHTML = badgeEstado(ev.estado);
+}
+
+function renderAcciones() {
+    const est = ev.estado;
+    const b = [];
+    if (est === 'programado' || est === 'cerrado') b.push('<button class="btn btn-primary btn-lg" onclick="cambiarEstado(\'activar\')"><i class="bi bi-play-circle"></i> ' + (est === 'cerrado' ? 'Reabrir registro' : 'Activar evento') + '</button>');
+    if (est === 'activo') {
+        b.push('<button class="btn btn-primary btn-lg" onclick="abrirLector()"><i class="bi bi-qr-code-scan"></i> Escanear credenciales QR</button>');
+        b.push('<button class="btn btn-gold" onclick="$(\'manual\').hidden=!$(\'manual\').hidden"><i class="bi bi-keyboard"></i> Registro manual</button>');
+        b.push('<button class="btn btn-secondary" onclick="cambiarEstado(\'cerrar\')"><i class="bi bi-stop-circle"></i> Cerrar registro</button>');
+    }
+    b.push('<button class="btn btn-secondary" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar CSV</button>');
+    b.push('<button class="btn btn-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>');
+    if (esGestor) {
+        b.push('<button class="btn btn-secondary" onclick="copiarEnlace()"><i class="bi bi-link-45deg"></i> Copiar enlace</button>');
+        b.push('<button class="btn btn-gold" onclick="codigoNuevo()"><i class="bi bi-key"></i> Código de activación</button>');
+        b.push('<button class="btn btn-secondary" onclick="abrirForm(evId)"><i class="bi bi-pencil"></i> Editar</button>');
+        b.push('<button class="btn btn-danger" onclick="cancelarEvento()"><i class="bi bi-x-octagon"></i> Cancelar evento</button>');
+    }
+    $('ev-acciones').innerHTML = b.join('');
+    if (est !== 'activo') $('manual').hidden = true;
+    if (est === 'cancelado') $('ev-acciones').innerHTML = '<span class="muted">El evento está cancelado.</span>' + (esGestor ? ' <button class="btn btn-gold" onclick="reprogramar()"><i class="bi bi-arrow-counterclockwise"></i> Reprogramar</button>' : '');
+}
+
+async function cambiarEstado(accion) {
+    const d = await llamar(E().estado(evId, accion, codigoAct));
+    if (fallo(d)) return;
+    toast(d.mensaje || 'Listo.');
+    await cargarPanel(true);
+}
+async function reprogramar() {
+    const d = await llamar(E().estado(evId, 'reprogramar', codigoAct));
+    if (fallo(d)) return;
+    toast(d.mensaje); await cargarPanel(true);
+}
+async function cancelarEvento() {
+    if (!confirm('¿Cancelar este evento? Se retira del calendario; la asistencia ya registrada se conserva.')) return;
+    const d = await llamar(E().estado(evId, 'cancelar', ''));
+    if (fallo(d)) return;
+    toast(d.mensaje); await abrirEvento(evId);
+}
+function copiarEnlace() {
+    const url = location.origin + location.pathname + '?id=' + encodeURIComponent(evId);
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Enlace copiado.'), () => prompt('Copia el enlace:', url));
+}
+
+function modal(html) {
+    cerrarModal();
+    const o = document.createElement('div');
+    o.className = 'overlay'; o.id = 'modal';
+    o.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + '</div>';
+    document.body.appendChild(o);
+}
+function cerrarModal() { const m = $('modal'); if (m) m.remove(); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarModal(); });
+
+function mostrarCodigo(codigo, id, titulo) {
+    const url = location.origin + location.pathname + '?id=' + encodeURIComponent(id);
+    modal('<h4><i class="bi bi-key"></i> ' + esc(titulo) + '</h4><p>Este es el <b>código de activación</b>. Se muestra ahora y no se puede volver a ver: si se pierde, genera uno nuevo. Pásalo, junto con el enlace, a quien organiza el evento.</p>'
+        + '<div class="codigo-grande" id="cod-txt">' + esc(codigo) + '</div>'
+        + '<p class="muted" style="word-break:break-all">' + esc(url) + '</p>'
+        + '<div class="pie"><button class="btn btn-secondary" onclick="copiarTexto(document.getElementById(\'cod-txt\').textContent)">Copiar código</button><button class="btn btn-secondary" onclick="copiarTexto(\'' + esc(url) + '\')">Copiar enlace</button><button class="btn btn-primary" onclick="cerrarModal()">Listo</button></div>');
+}
+function copiarTexto(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Copiado.'), () => prompt('Copia:', t)); }
+async function codigoNuevo() {
+    if (!confirm('Se generará un código nuevo y el anterior dejará de servir. ¿Continuar?')) return;
+    const d = await llamar(E().codigoNuevo(evId));
+    if (fallo(d)) return;
+    mostrarCodigo(d.codigo_activacion, evId, 'Código de activación nuevo');
+}
+
+// ═══ REGISTRO ═══
+function abrirLector() {
+    CvQrLector.abrir({
+        titulo: 'Asistencia — ' + ev.nombre,
+        multi: true,
+        alLeerLote: async (codigos) => {
+            const d = await E().marcar(evId, { qr: codigos }, codigoAct);
+            if (!d || d.ok !== true) throw new Error((d && (d.error || d.mensaje)) || 'No se pudo registrar.');
+            cargarPanel(true);
+            return d.resultados;
+        }
+    });
+}
+async function registrarManual() {
+    const ced = $('m-ced').value.trim();
+    if (!ced) { toast('Escribe la cédula.', 'err'); return; }
+    const d = await llamar(E().marcar(evId, { cedula: ced, nombre: $('m-nom').value.trim() }, codigoAct));
+    if (fallo(d)) return;
+    const r = (d.resultados || [])[0] || {};
+    toast(r.mensaje || 'Listo.', r.ok ? 'ok' : 'err');
+    if (r.ok) { $('m-ced').value = ''; $('m-nom').value = ''; $('m-ced').focus(); }
+    cargarPanel(true);
+}
+
+// ═══ PANEL ═══
+function pct(p, m) { return m > 0 ? Math.min(100, Math.round(p / m * 100)) : 0; }
+function renderKpis() {
+    const p = panel;
+    $('kpis').innerHTML =
+        '<div class="kpi grande"><b>' + p.total + '</b><span>personas asistentes</span></div>'
+        + '<div class="kpi"><b>' + p.estudiantes + '</b><span>estudiantes</span></div>'
+        + '<div class="kpi"><b>' + p.otros + '</b><span>personal / otros</span></div>'
+        + '<div class="kpi"><b>' + pct(p.estudiantes, p.matriculados) + '%</b><span>de ' + p.matriculados + ' matriculados activos</span></div>';
+}
+function nodoHtml(clave, titulo, presentes, matriculados, hijos, esOtros) {
+    const barra = esOtros ? '<span></span>' : '<div class="bar" aria-hidden="true"><i style="width:' + pct(presentes, matriculados) + '%"></i></div>';
+    const num = '<span class="num"><b>' + presentes + '</b> <em>' + (esOtros ? '' : '/ ' + matriculados + ' (' + pct(presentes, matriculados) + '%)') + '</em></span>';
+    if (!hijos) return '<div class="fila-sec"><span>' + esc(titulo) + '</span>' + num + barra + '</div>';
+    return '<details class="gr" data-k="' + esc(clave) + '"' + (abiertos.has(clave) ? ' open' : '') + '><summary><span>' + esc(titulo) + '</span>' + num + barra + '</summary><div class="sub">' + hijos + '</div></details>';
+}
+function renderCursos() {
+    if (!panel) return;
+    const todos = $('ver-todos').checked;
+    const visible = (n) => todos || n.presentes > 0;
+    let ocultos = 0;
+    const html = panel.por_curso.map(g => {
+        const esOtros = g.grado === 'Personal / otros';
+        if (!visible(g)) { ocultos++; return ''; }
+        const cars = g.carreras.filter(visible).map(c => {
+            const secs = c.secciones.filter(visible).map(s => nodoHtml('', s.seccion, s.presentes, s.matriculados, null, esOtros)).join('');
+            return nodoHtml(g.grado + '|' + c.carrera, c.carrera, c.presentes, c.matriculados, secs, esOtros);
+        }).join('');
+        return nodoHtml(g.grado, (esOtros ? '' : 'Grado ') + g.grado, g.presentes, g.matriculados, cars, esOtros);
+    }).join('');
+    $('cursos').innerHTML = html || '<div class="empty"><i class="bi bi-people"></i>Todavía no hay asistentes registrados.</div>';
+    if (ocultos && !todos) $('cursos').insertAdjacentHTML('beforeend', '<div class="muted" style="margin-top:6px">' + ocultos + ' grado(s) sin asistentes están ocultos.</div>');
+    $('cursos').querySelectorAll('details[data-k]').forEach(d => d.addEventListener('toggle', () => { d.open ? abiertos.add(d.dataset.k) : abiertos.delete(d.dataset.k); }));
+}
+function renderUltimos() {
+    const u = panel.ultimos;
+    $('ultimos').innerHTML = u.length ? u.map(a => '<div><b>' + esc(a.nombre) + '</b><span>' + esc([a.grado, a.carrera, a.seccion].filter(Boolean).join(' · ') || a.rol) + '</span><span>' + esc(String(a.hora).substring(0, 5)) + (a.origen === 'manual' ? ' · manual' : '') + '</span></div>').join('')
+        : '<div class="muted">Sin registros todavía.</div>';
+}
+
+async function exportarCSV() {
+    const d = await llamar(E().asistentes(evId, codigoAct));
+    if (fallo(d)) return;
+    const celda = (v) => { let s = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+    const filas = [['Cédula', 'Nombre', 'Rol', 'Grado', 'Carrera', 'Sección', 'Fecha', 'Hora', 'Origen'].map(celda).join(',')]
+        .concat(d.asistentes.map(a => [a.cedula, a.nombre, a.rol, a.grado, a.carrera, a.seccion, a.fecha, a.hora, a.origen].map(celda).join(',')));
+    const blob = new Blob(['﻿' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Asistencia_' + (ev.nombre || 'evento').replace(/[^\w\-]+/g, '_').slice(0, 40) + '_' + ev.fecha + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ═══ FORMULARIO ═══
+function agregarContacto(c) {
+    c = c || {};
+    const cont = $('contactos');
+    if (cont.children.length >= 10) { toast('Máximo 10 personas de contacto.', 'err'); return; }
+    const f = document.createElement('div');
+    f.className = 'contacto-fila';
+    f.innerHTML = '<input placeholder="Nombre *" maxlength="80" aria-label="Nombre de la persona de contacto"><input placeholder="Cargo" maxlength="60" aria-label="Cargo"><input placeholder="Teléfono" maxlength="40" aria-label="Teléfono"><input placeholder="Correo" maxlength="100" aria-label="Correo">'
+        + '<button type="button" class="btn btn-danger btn-sm" aria-label="Quitar persona" onclick="this.parentNode.remove()"><i class="bi bi-trash"></i></button>';
+    const ins = f.querySelectorAll('input');
+    ins[0].value = c.nombre || ''; ins[1].value = c.cargo || ''; ins[2].value = c.telefono || ''; ins[3].value = c.email || '';
+    cont.appendChild(f);
+}
+function leerContactos() {
+    return [...$('contactos').children].map(f => { const i = f.querySelectorAll('input'); return { nombre: i[0].value.trim(), cargo: i[1].value.trim(), telefono: i[2].value.trim(), email: i[3].value.trim() }; })
+        .filter(c => c.nombre || c.cargo || c.telefono || c.email);
+}
+
+async function abrirForm(id) {
+    $('form-evento').reset();
+    $('contactos').innerHTML = '';
+    $('f-id').value = '';
+    $('form-titulo').innerHTML = '<i class="bi bi-calendar-plus"></i> Nuevo evento';
+    let datos = null;
+    if (id) {
+        const d = await llamar(E().info(id));
+        if (fallo(d)) return;
+        datos = d.evento;
+        $('f-id').value = datos.id;
+        $('form-titulo').innerHTML = '<i class="bi bi-pencil-square"></i> Editar evento';
+        $('f-nombre').value = datos.nombre; $('f-fecha').value = datos.fecha; $('f-hi').value = datos.hora_inicio; $('f-hf').value = datos.hora_fin;
+        $('f-lugar').value = datos.lugar; $('f-dir').value = datos.direccion; $('f-info').value = datos.informacion;
+        $('f-tel').value = datos.telefono; $('f-mail').value = datos.email;
+        $('f-lat').value = datos.latitud == null ? '' : datos.latitud; $('f-lng').value = datos.longitud == null ? '' : datos.longitud;
+        datos.contactos.forEach(agregarContacto);
+    } else {
+        $('f-fecha').value = new Date().toISOString().slice(0, 10);
+        agregarContacto();
+    }
+    mostrar('v-form');
+    setTimeout(iniciarMapaForm, 60);
+}
+function cancelarForm() { if (evId && $('f-id').value) mostrar('v-evento'); else irLista(); }
+
+function iniciarMapaForm() {
+    const c = $('mapa-form');
+    if (typeof L === 'undefined') { c.innerHTML = '<div class="empty">No se pudo cargar el mapa. Escribe las coordenadas a mano.</div>'; return; }
+    if (mapaForm) { mapaForm.remove(); mapaForm = null; marcaForm = null; }
+    const lat = parseFloat($('f-lat').value), lng = parseFloat($('f-lng').value);
+    const tiene = !isNaN(lat) && !isNaN(lng);
+    mapaForm = L.map(c).setView(tiene ? [lat, lng] : [-25.2867, -57.647], tiene ? 16 : 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(mapaForm);
+    if (tiene) marcaForm = L.marker([lat, lng]).addTo(mapaForm);
+    mapaForm.on('click', (e) => ponerMarca(e.latlng.lat, e.latlng.lng));
+    ['f-lat', 'f-lng'].forEach(i => $(i).oninput = () => {
+        const a = parseFloat($('f-lat').value), b = parseFloat($('f-lng').value);
+        if (!isNaN(a) && !isNaN(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180) { ponerMarca(a, b, true); mapaForm.setView([a, b], Math.max(mapaForm.getZoom(), 15)); }
+    });
+}
+function ponerMarca(lat, lng, sinCampos) {
+    if (!sinCampos) { $('f-lat').value = lat.toFixed(6); $('f-lng').value = lng.toFixed(6); }
+    if (marcaForm) marcaForm.setLatLng([lat, lng]); else marcaForm = L.marker([lat, lng]).addTo(mapaForm);
+}
+function quitarUbicacion() { $('f-lat').value = ''; $('f-lng').value = ''; if (marcaForm && mapaForm) { mapaForm.removeLayer(marcaForm); marcaForm = null; } }
+function miUbicacion() {
+    if (!navigator.geolocation) { toast('Este navegador no ofrece ubicación.', 'err'); return; }
+    navigator.geolocation.getCurrentPosition(p => { ponerMarca(p.coords.latitude, p.coords.longitude); if (mapaForm) mapaForm.setView([p.coords.latitude, p.coords.longitude], 17); }, () => toast('No se pudo obtener tu ubicación.', 'err'), { enableHighAccuracy: true, timeout: 10000 });
+}
+
+async function guardarEvento(e) {
+    e.preventDefault();
+    if (!$('f-nombre').value.trim()) { toast('Escribe el nombre del evento.', 'err'); $('f-nombre').focus(); return; }
+    if (!$('f-fecha').value) { toast('Elige la fecha del evento.', 'err'); $('f-fecha').focus(); return; }
+    $('btn-guardar').disabled = true;
+    const id = $('f-id').value;
+    const d = await llamar(E().guardar({
+        id: id || undefined, nombre: $('f-nombre').value, fecha: $('f-fecha').value, hora_inicio: $('f-hi').value, hora_fin: $('f-hf').value,
+        lugar: $('f-lugar').value, direccion: $('f-dir').value, informacion: $('f-info').value, telefono: $('f-tel').value, email: $('f-mail').value,
+        latitud: $('f-lat').value, longitud: $('f-lng').value, contactos: leerContactos()
+    }));
+    $('btn-guardar').disabled = false;
+    if (fallo(d)) return;
+    toast(d.mensaje || 'Guardado.');
+    history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(d.evento.id));
+    await abrirEvento(d.evento.id);
+    if (d.codigo_activacion) mostrarCodigo(d.codigo_activacion, d.evento.id, 'Evento creado');
+}
+</script>
+</body>
+</html>

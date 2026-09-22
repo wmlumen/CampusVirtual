@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>
     // Panel de personal (v08.5.6): Acceso Académico, Administrador, Filial, Administrativo y Docente.
     // Un alumno solo entra con ?code= (QR del evento) y ve únicamente el registro con código.
@@ -312,6 +312,10 @@
                 </div>
 
                 <div id="reg-fields" style="display:none">
+                    <div id="scan-box" style="margin-bottom:12px;text-align:center">
+                        <button type="button" class="btn btn-primary" onclick="escanearCredencial()"><i class="bi bi-qr-code-scan"></i> Escanear credencial QR</button>
+                        <p style="font-size:.58rem;color:var(--txt3);margin-top:5px">El QR del alumno cambia cada pocos segundos y sirve una sola vez. También puedes cargar los datos a mano.</p>
+                    </div>
                     <div class="form-group">
                         <label>Cédula *</label>
                         <input type="text" id="reg-cedula" placeholder="Cédula" oninput="this.value=this.value.replace(/\./g,'')">
@@ -393,7 +397,8 @@
 
 <div class="footer">Instituto Superior Centuria — Sistema de Asistencia &copy; 2026</div>
 
-<script src="js/api.js?v=13"></script>
+<script src="js/api.js?v=21"></script>
+<script src="js/qr-lector.js?v=2"></script>
 <script>
 // ═══════════════════════════════════════════════════════
 // ESTADO
@@ -694,7 +699,7 @@ async function registerAttendance() {
 
     if (!code || !cedula || !nombre) {
         showRegMsg('Completa código, cédula y nombre', 'error');
-        return;
+        return { ok: false, mensaje: 'Completa código, cédula y nombre' };
     }
 
     const body = {
@@ -719,10 +724,32 @@ async function registerAttendance() {
             document.getElementById('reg-cedula').value = '';
             document.getElementById('reg-nombre').value = '';
             document.getElementById('reg-obs').value = '';
-        } else {
-            showRegMsg(d.error || d.mensaje || 'Error al registrar', 'error');
+            return { ok: true, mensaje: `${nombre} — asistencia registrada (${evNombre})` };
         }
-    } catch(e) { showRegMsg('Error de conexión con el Servidor Cloud', 'error'); }
+        showRegMsg(d.error || d.mensaje || 'Error al registrar', 'error');
+        return { ok: false, mensaje: `${nombre}: ${d.error || d.mensaje || 'error al registrar'}` };
+    } catch(e) {
+        showRegMsg('Error de conexión con el Servidor Cloud', 'error');
+        return { ok: false, mensaje: 'Error de conexión con el Servidor Cloud' };
+    }
+}
+
+// Asistencia con la credencial QR dinámica: verifica el código (un solo uso) y registra al alumno en el evento elegido.
+function escanearCredencial() {
+    if (!document.getElementById('reg-code').value.trim()) { showRegMsg('Primero ingresa el código del evento', 'error'); return; }
+    CvQrLector.abrir({
+        titulo: 'Asistencia por credencial',
+        continuo: true,
+        alLeer: async (codigo) => {
+            const d = await CvQrLector.verificar(codigo);
+            document.getElementById('reg-cedula').value = d.cedula || '';
+            document.getElementById('reg-nombre').value = String(d.nombre || '').toUpperCase();
+            const sel = document.getElementById('reg-carrera');
+            if (d.carrera && [...sel.options].some(o => o.value === d.carrera)) sel.value = d.carrera;
+            document.getElementById('reg-seccion').value = d.seccion || '';
+            return registerAttendance();
+        }
+    });
 }
 
 function showRegMsg(msg, type) {

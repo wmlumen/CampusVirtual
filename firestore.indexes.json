@@ -1,0 +1,119 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "notas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cedula", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "carrera", "order": "ASCENDING" },
+        { "fieldPath": "seccion", "order": "ASCENDING" },
+        { "fieldPath": "asignatura", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "asistencia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cedula", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "asistencia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cedula", "order": "ASCENDING" },
+        { "fieldPath": "asignatura", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "eventos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "eventos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "eventos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "creado_por", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "formularios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cedula_alumno", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "pagos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cedula", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "rol", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "carrera", "order": "ASCENDING" },
+        { "fieldPath": "seccion", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "rol", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "asignaturas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "carrera", "order": "ASCENDING" },
+        { "fieldPath": "grado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "asignaturas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docente_cedula", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

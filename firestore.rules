@@ -47,18 +47,26 @@ service cloud.firestore {
       // Lectura autenticada (propietario o staff)
       allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
       
-      // 🔓 Lectura SIN autenticación Firebase para login/getRoles por cédula
-      // Permite query: where('cedula', '==', 'valor') con limit(1)
-      // Solo si el documento coincide con la cédula consultada
-      allow read: if request.auth == null 
-        && request.query.limit <= 1
-        && request.query.where.size() == 1
-        && request.query.where[0].field == 'cedula'
-        && request.query.where[0].op == '=='
-        && resource.data.cedula == request.query.where[0].value;
+      // 🔒 Login bootstrap SIN auth: SOLO query filtrada por cédula y con LIMIT 1.
+      // Prohibida la lectura de la colección completa o por ID sin autenticación.
+      allow list: if request.auth == null
+                  && request.query.where.size() == 1
+                  && request.query.where[0].field == 'cedula'
+                  && request.query.limit <= 1;
       
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
-      allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
+      // Cambio de contraseña SIN auth (login provisorio → definitiva):
+      // exige current_password == password actual (prueba de identidad) y solo permite
+      // tocar password/updated_at/must_change_password/current_password sin cambiar cedula.
+      // Un segundo update (sin auth) permite borrar el campo current_password del doc.
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform())
+                 || (request.auth == null
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password','updated_at','must_change_password','current_password'])
+                     && request.resource.data.cedula == resource.data.cedula
+                     && request.resource.data.current_password == resource.data.password)
+                 || (request.auth == null
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['current_password'])
+                     && !('current_password' in request.resource.data));
+       allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
       allow delete: if isAdminOrPlatform();
 
       match /roles/{rolId} {

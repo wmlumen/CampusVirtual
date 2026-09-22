@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="./js/session-guard.js?v=2"></script>
+    <script src="./js/session-guard.js?v=5"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -113,6 +113,11 @@
             .form-header{border-top:0;background:var(--verde-oscuro)!important}
             .sec-title{background:none;border-bottom:2px solid var(--dorado)}
         }
+
+        /* v08.5.7: campo "Otro" que se completa a mano */
+        .otro-input{margin-top:6px}
+        .otro-input[hidden]{display:none !important}
+        .field-group select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
     </style>
 </head>
 <body>
@@ -178,6 +183,19 @@
                     <div class="field-group">
                         <label>Cédula / Pasaporte <span class="req">*</span></label>
                         <input type="text" id="cedula" name="cedula" required placeholder="Número de identificación">
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-group">
+                        <label>Nacionalidad</label>
+                        <select id="nacionalidad" name="nacionalidad"></select>
+                        <input type="text" id="nacionalidad_otro" class="otro-input" hidden maxlength="60" placeholder="Escriba su nacionalidad" aria-label="Otra nacionalidad">
+                    </div>
+                    <div class="field-group">
+                        <label>Estado Civil</label>
+                        <select id="estado_civil" name="estado_civil"></select>
+                        <input type="text" id="estado_civil_otro" class="otro-input" hidden maxlength="40" placeholder="Escriba su estado civil" aria-label="Otro estado civil">
                     </div>
                 </div>
 
@@ -406,16 +424,19 @@
                 </div>
                 <div class="field-row">
                     <div class="field-group">
-                        <label>Ciudad</label>
-                        <input type="text" id="ciudad" name="ciudad" placeholder="Ciudad">
+                        <label>Departamento</label>
+                        <select id="departamento" name="departamento"></select>
+                        <input type="text" id="departamento_otro" class="otro-input" hidden maxlength="60" placeholder="Escriba el departamento o provincia" aria-label="Otro departamento">
                     </div>
                     <div class="field-group">
-                        <label>Provincia / Departamento</label>
-                        <input type="text" id="departamento" name="departamento" placeholder="Provincia o Departamento">
+                        <label>Ciudad (Distrito)</label>
+                        <select id="ciudad" name="ciudad"></select>
+                        <input type="text" id="ciudad_otro" class="otro-input" hidden maxlength="80" placeholder="Escriba la ciudad" aria-label="Otra ciudad">
                     </div>
                     <div class="field-group">
                         <label>Barrio / Compañía</label>
-                        <input type="text" id="barrio_compania" name="barrio_compania" placeholder="Barrio o Compañía">
+                        <select id="barrio_compania" name="barrio_compania"></select>
+                        <input type="text" id="barrio_compania_otro" class="otro-input" hidden maxlength="80" placeholder="Escriba el barrio o compañía" aria-label="Otro barrio">
                     </div>
                 </div>
 
@@ -574,7 +595,9 @@
     <div class="loader" id="global-loader"><div class="loader-spinner"></div></div>
     <div class="footer">Instituto Superior Centuria — "Formando líderes con tecnología y excelencia" © 2026</div>
 
-    <script src="js/api.js?v=13"></script>
+    <script src="js/api.js?v=21"></script>
+    <script src="js/localidades-py.js?v=1"></script>
+    <script src="js/catalogos-py.js?v=1"></script>
     <script>
     (function(){
         const token = CenturiaAPI.getToken();
@@ -599,6 +622,146 @@
         if (user.telefono) document.getElementById('telefono_movil').value = user.telefono;
         if (user.grado) document.getElementById('semestre').value = user.grado;
 
+        // ═══ v08.5.7: listas desplegables con "Otro" ═══
+        // Nacionalidad y estado civil: catálogos locales. Departamento → Ciudad → Barrio: API propia (localidades-py, códigos DGEEC).
+        const OTRO = window.CV_OTRO;
+        const COMBOS = ['nacionalidad','estado_civil','departamento','ciudad','barrio_compania'];
+        const GEO = ['departamento','ciudad','barrio_compania'];   // listas cuyo value es el código oficial
+        const $id = (x) => document.getElementById(x);
+        const normTxt = (t) => String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+        LocalidadesPY.configurar({ base: 'data/localidades-py/' });
+
+        function nuevaOpcion(valor, texto) { const o = document.createElement('option'); o.value = valor; o.textContent = texto; return o; }
+
+        function mostrarOtro(id) {
+            const sel = $id(id), inp = $id(id + '_otro');
+            const on = sel.value === OTRO;
+            inp.hidden = !on;
+            if (!on) inp.value = '';
+        }
+
+        // Valor final (texto): lo escrito si eligió "Otro", si no el texto de la opción elegida.
+        function valorCampo(id) {
+            const el = $id(id);
+            if (!el) return '';
+            if (el.value === OTRO) { const o = $id(id + '_otro'); return o ? o.value.trim() : ''; }
+            if (el.value === '') return '';
+            return (el.selectedOptions[0] ? el.selectedOptions[0].textContent : el.value).trim();
+        }
+
+        // Código oficial (solo departamento / ciudad / barrio elegidos de la lista; vacío si eligió "Otro")
+        function codigoCampo(id) {
+            const el = $id(id);
+            return (el && GEO.includes(id) && el.value && el.value !== OTRO) ? el.value : '';
+        }
+
+        // items: texto simple ('X') o {v: valor, t: texto}
+        function llenarLista(id, items, placeholder, etiquetaOtro, deshabilitar) {
+            const sel = $id(id);
+            sel.innerHTML = '';
+            sel.appendChild(nuevaOpcion('', placeholder));
+            items.forEach(x => sel.appendChild(typeof x === 'string' ? nuevaOpcion(x, x) : nuevaOpcion(x.v, x.t)));
+            if (etiquetaOtro) sel.appendChild(nuevaOpcion(OTRO, etiquetaOtro));
+            sel.disabled = !!deshabilitar;
+            sel.value = '';
+            mostrarOtro(id);
+        }
+
+        // Elige un valor guardado (por nombre); si no está en la lista (dato antiguo), lo deja en "Otro" con el texto.
+        function elegirValor(id, valor) {
+            valor = (valor == null ? '' : String(valor)).trim();
+            if (!valor) return;
+            const sel = $id(id);
+            const hallada = Array.from(sel.options).find(o => o.value && o.value !== OTRO && normTxt(o.textContent) === normTxt(valor));
+            if (hallada) { sel.value = hallada.value; }
+            else if (Array.from(sel.options).some(o => o.value === OTRO)) { sel.value = OTRO; $id(id + '_otro').value = valor; }
+            mostrarOtro(id);
+        }
+
+        function soloOtro(id, placeholder) {
+            llenarLista(id, [], placeholder, 'Otro (escribir)');
+            $id(id).value = OTRO;
+            mostrarOtro(id);
+        }
+
+        async function cargarDepartamentos() {
+            try {
+                const deps = await LocalidadesPY.departamentos();
+                llenarLista('departamento', deps.map(d => ({ v: String(d.c), t: d.n })), 'Seleccionar departamento...', 'Otro (escribir)');
+            } catch (e) {
+                console.error(e);
+                soloOtro('departamento', 'No se pudo cargar la lista');
+                showToast('No se pudo cargar la lista de departamentos: escriba el dato en "Otro".', 'error');
+            }
+            await cargarCiudades();
+        }
+
+        async function cargarCiudades() {
+            const dep = $id('departamento').value;
+            if (!dep) { llenarLista('ciudad', [], 'Primero elija el departamento', null, true); }
+            else if (dep === OTRO) { soloOtro('ciudad', 'Otro'); }
+            else {
+                llenarLista('ciudad', [], 'Cargando...', null, true);
+                try {
+                    const lista = await LocalidadesPY.ciudades(dep);
+                    if ($id('departamento').value !== dep) return;   // el usuario cambió de departamento mientras cargaba
+                    llenarLista('ciudad', lista.map(c => ({ v: String(c.c), t: c.n })), 'Seleccionar ciudad...', 'Otro (escribir)');
+                } catch (e) { console.error(e); soloOtro('ciudad', 'No se pudo cargar la lista'); }
+            }
+            await cargarBarrios();
+        }
+
+        async function cargarBarrios() {
+            const dep = $id('departamento').value, ciu = $id('ciudad').value;
+            if (!dep || !ciu) { llenarLista('barrio_compania', [], 'Primero elija la ciudad', null, true); return; }
+            if (dep === OTRO || ciu === OTRO) { soloOtro('barrio_compania', 'Otro'); return; }
+            llenarLista('barrio_compania', [], 'Cargando...', null, true);
+            try {
+                const lista = await LocalidadesPY.barrios(ciu);
+                if ($id('ciudad').value !== ciu) return;
+                llenarLista('barrio_compania', lista.map(b => ({ v: String(b.c), t: b.n })), lista.length ? 'Seleccionar barrio...' : 'Sin barrios cargados: use "Otro"', 'Otro (escribir)');
+            } catch (e) { console.error(e); soloOtro('barrio_compania', 'No se pudo cargar la lista'); }
+        }
+
+        // País de origen ↔ Nacionalidad: son lo mismo, al elegir uno se completa el otro.
+        const NAC_DE_PAIS = {}, PAIS_DE_NAC = {};
+        window.CV_PAISES_GENTILICIOS.forEach(pg => { NAC_DE_PAIS[normTxt(pg[0])] = pg[1]; PAIS_DE_NAC[normTxt(pg[1])] = pg[0]; });
+
+        function nacionalidadDesdePais() {
+            const opt = $id('pais').selectedOptions[0];
+            const gent = opt ? NAC_DE_PAIS[normTxt(opt.textContent)] : '';
+            const nac = $id('nacionalidad');
+            if (gent) { nac.value = gent; }
+            else { nac.value = OTRO; }          // país "Otro": la nacionalidad se escribe a mano
+            mostrarOtro('nacionalidad');
+        }
+
+        function paisDesdeNacionalidad() {
+            const nac = $id('nacionalidad').value;
+            if (!nac) return;
+            const pais = $id('pais');
+            const nombre = nac === OTRO ? 'otro' : normTxt(PAIS_DE_NAC[normTxt(nac)] || '');
+            const opt = Array.from(pais.options).find(o => normTxt(o.textContent) === nombre);
+            if (opt) pais.value = opt.value;
+        }
+
+        llenarLista('nacionalidad', window.CV_NACIONALIDADES, 'Seleccionar...', 'Otra (escribir)');
+        nacionalidadDesdePais();   // País de origen viene con Paraguay: la nacionalidad arranca en Paraguaya
+        llenarLista('estado_civil', window.CV_ESTADOS_CIVILES, 'Seleccionar...', 'Otro (escribir)');
+        llenarLista('departamento', [], 'Cargando...', null, true);
+        llenarLista('ciudad', [], 'Primero elija el departamento', null, true);
+        llenarLista('barrio_compania', [], 'Primero elija la ciudad', null, true);
+        const geoListo = cargarDepartamentos();
+
+        $id('pais').addEventListener('change', nacionalidadDesdePais);
+        $id('nacionalidad').addEventListener('change', paisDesdeNacionalidad);
+
+        COMBOS.forEach(id => $id(id).addEventListener('change', () => {
+            mostrarOtro(id);
+            if (id === 'departamento') cargarCiudades();
+            if (id === 'ciudad') cargarBarrios();
+        }));
+
         // Cargar matrícula existente
         cargarMatriculaExistente();
 
@@ -607,18 +770,32 @@
                 const data = await CenturiaAPI.matricula.my(cedula);
                 if (data && (data.matricula || data.data)) {
                     const m = data.matricula || data.data;
-                    rellenarCampos(m);
-                    mostrarEstado(m.estado || 'completado');
+                    await rellenarCampos(m);
+                    mostrarEstado(m.estado || m.Estado || 'completado');
                 }
             } catch(e) { console.error('Error cargando matrícula:', e); }
         }
 
-        function rellenarCampos(m) {
+        // El servidor devuelve las claves como en la hoja (BarrioCompania, EstadoCivil…): se pasan a snake_case.
+        function claveSnake(k) { return String(k).replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase(); }
+
+        function fechaParaInput(v) {
+            const t = String(v == null ? '' : v);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+            const d = new Date(t);
+            if (isNaN(d)) return '';
+            const z = (n) => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+        }
+
+        async function rellenarCampos(datos) {
+            const m = {};
+            Object.keys(datos || {}).forEach(k => { m[claveSnake(k)] = datos[k]; m[k] = datos[k]; });
             const campos = [
                 'codigo_formulario','legajo_numero','fecha_inscripcion',
                 'nombres','apellidos','cedula',
                 'lugar_nacimiento','fecha_nacimiento','pais',
-                'direccion','ciudad','departamento','barrio_compania',
+                'direccion',
                 'telefono_fijo','telefono_movil','correo_electronico',
                 'titulo_bachiller','institucion_origen','ciudad_pais_estudio','anio_promocion',
                 'semestre','carrera','tipo_alumno',
@@ -631,11 +808,22 @@
                 if (el && m[c] !== undefined && m[c] !== null) {
                     if (el.type === 'checkbox') {
                         el.checked = m[c] == '1' || m[c] === 1;
+                    } else if (c === 'fecha_nacimiento' || c === 'fecha_inscripcion') {
+                        el.value = fechaParaInput(m[c]);
                     } else {
                         el.value = m[c];
                     }
                 }
             });
+            // Listas con "Otro": nacionalidad, estado civil y domicilio en cascada
+            if (m.nacionalidad) { elegirValor('nacionalidad', m.nacionalidad); paisDesdeNacionalidad(); } else { nacionalidadDesdePais(); }
+            elegirValor('estado_civil', m.estado_civil);
+            await geoListo;
+            elegirValor('departamento', m.departamento);
+            await cargarCiudades();
+            elegirValor('ciudad', m.ciudad);
+            await cargarBarrios();
+            elegirValor('barrio_compania', m.barrio_compania);
         }
 
         function mostrarEstado(estado) {
@@ -658,6 +846,12 @@
                 if (el && !el.value.trim()) missing.push(el.previousElementSibling?.textContent?.replace('*','').trim() || f);
             });
 
+            COMBOS.forEach(id => {
+                if ($id(id).value === OTRO && !$id(id + '_otro').value.trim()) {
+                    missing.push('Escriba el valor de "Otro" en ' + ($id(id).previousElementSibling?.textContent?.trim() || id));
+                }
+            });
+
             if (missing.length > 0) {
                 showToast('Campos requeridos: ' + missing.join(', '), 'error');
                 return;
@@ -678,7 +872,7 @@
                     'codigo_formulario','legajo_numero','fecha_inscripcion',
                     'nombres','apellidos','cedula',
                     'lugar_nacimiento','fecha_nacimiento','pais',
-                    'direccion','ciudad','departamento','barrio_compania',
+                    'direccion','ciudad','departamento','barrio_compania','nacionalidad','estado_civil',
                     'telefono_fijo','telefono_movil','correo_electronico',
                     'titulo_bachiller','institucion_origen','ciudad_pais_estudio','anio_promocion',
                     'semestre','carrera','tipo_alumno',
@@ -688,13 +882,16 @@
                 ];
                 campos.forEach(c => {
                     const el = document.getElementById(c);
-                    if (el) fd.append(c, el.value.trim());
+                    if (el) fd.append(c, valorCampo(c));
                 });
                 fd.append('acepta_declaracion', document.getElementById('acepta_declaracion').checked ? '1' : '0');
 
                 // Guardar en el Servidor Cloud mediante CenturiaAPI
                 const datos = {};
-                campos.forEach(c => { datos[c] = document.getElementById(c)?.value || ''; });
+                campos.forEach(c => { datos[c] = valorCampo(c); });
+                datos.departamento_codigo = codigoCampo('departamento');
+                datos.ciudad_codigo = codigoCampo('ciudad');
+                datos.barrio_codigo = codigoCampo('barrio_compania');
                 datos.acepta_declaracion = document.getElementById('acepta_declaracion').checked ? '1' : '0';
                 datos.action = 'guardar_matricula';
 

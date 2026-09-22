@@ -65,7 +65,9 @@ service cloud.firestore {
       // Un segundo update (sin auth) permite borrar el campo current_password del doc.
       // Gestión docente (académico/admin) con auth: permite tocar SOLO claves de asignación,
       // sin cambiar cedula ni password.
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform())
+      // Actualización de perfil: el propio usuario (por getCedulaForUid) o un admin.
+      // isOwner(userId) se mantiene para compatibilidad futura si el doc ID cambia a Firebase UID.
+      allow update: if isAuthenticated() && (isOwner(userId) || getCedulaForUid() == resource.data.cedula || isAdminOrPlatform())
                  || (request.auth == null
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password','updated_at','must_change_password','current_password'])
                      && request.resource.data.cedula == resource.data.cedula
@@ -95,8 +97,10 @@ service cloud.firestore {
     }
 
     match /notas/{notaId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.cedula) || isStaff());
+      // El alumno puede leer sus propias notas; el staff ve todas.
+      allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.cedula || isStaff());
       allow create, update: if isAuthenticated() && (
+
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
       allow delete: if isAdminOrPlatform();

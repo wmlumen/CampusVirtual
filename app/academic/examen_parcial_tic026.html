@@ -718,17 +718,34 @@
         async function llamarApiExamen(datos) {
             const params = new URLSearchParams();
             Object.entries(datos).forEach(([clave, valor]) => params.append(clave, String(valor ?? '')));
-            const urlSinCache = EXAMEN_API_URL + '?t=' + Date.now();
+            const texto = await enviarApiExamen(params, 'POST');
+            let json = parsearRespuestaApi(texto);
+            if (!json) {
+                json = parsearRespuestaApi(await enviarApiExamen(params, 'GET'));
+            }
+            if (!json) {
+                throw new Error('El servidor devolvió una página no válida. Revisa que el Apps Script esté desplegado con acceso público.');
+            }
+            if (json.success !== true) {
+                const error = new Error(json.error || 'Error del servidor.');
+                error.codigo = json.codigo || '';
+                throw error;
+            }
+            return json;
+        }
+
+        async function enviarApiExamen(params, metodo) {
+            const separador = EXAMEN_API_URL.includes('?') ? '&' : '?';
+            const query = params.toString() + '&t=' + Date.now();
+            const urlSinCache = metodo === 'GET' ? EXAMEN_API_URL + separador + query : EXAMEN_API_URL + separador + 't=' + Date.now();
             const controlador = new AbortController();
             const temporizador = setTimeout(() => controlador.abort(), 60000);
             let respuesta;
             try {
-                respuesta = await fetch(urlSinCache, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params,
-                    signal: controlador.signal
-                });
+                const opciones = metodo === 'GET'
+                    ? { method: 'GET', signal: controlador.signal, cache: 'no-store' }
+                    : { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params, signal: controlador.signal, cache: 'no-store' };
+                respuesta = await fetch(urlSinCache, opciones);
             } catch (error) {
                 if (error && error.name === 'AbortError') {
                     throw new Error('El servidor tardó demasiado en responder. Intenta nuevamente.');
@@ -737,19 +754,15 @@
             } finally {
                 clearTimeout(temporizador);
             }
-            const texto = await respuesta.text();
-            let json;
+            return await respuesta.text();
+        }
+
+        function parsearRespuestaApi(texto) {
             try {
-                json = JSON.parse(texto);
+                return JSON.parse(texto);
             } catch (error) {
-                throw new Error('El servidor no devolvió una respuesta válida.');
+                return null;
             }
-            if (!respuesta.ok || json.success !== true) {
-                const error = new Error(json.error || ('Error HTTP ' + respuesta.status));
-                error.codigo = json.codigo || '';
-                throw error;
-            }
-            return json;
         }
 
         function ocultarTodosLosPasos() {

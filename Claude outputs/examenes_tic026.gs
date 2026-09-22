@@ -9,13 +9,18 @@ const TIC026_RESPUESTAS = {
   'TIC026-P2': ['B', 'C', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B']
 };
 
-function doGet() {
-  return tic026Json_({ success: true, servicio: 'TIC026', version: '10.0' });
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  if (!p.accion) return tic026Json_({ success: true, servicio: 'TIC026', version: '10.1' });
+  return tic026ManejarSolicitud_(p);
 }
 
 function doPost(e) {
+  return tic026ManejarSolicitud_((e && e.parameter) || {});
+}
+
+function tic026ManejarSolicitud_(p) {
   try {
-    const p = (e && e.parameter) || {};
     const accion = String(p.accion || 'guardar_examen');
     let resultado;
     if (accion === 'validar_dispositivo') resultado = tic026RegistrarDispositivo_(p);

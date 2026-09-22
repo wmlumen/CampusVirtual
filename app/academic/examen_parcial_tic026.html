@@ -678,11 +678,12 @@
         async function llamarApiExamen(datos) {
             const params = new URLSearchParams();
             Object.entries(datos).forEach(([clave, valor]) => params.append(clave, String(valor ?? '')));
+            const urlSinCache = EXAMEN_API_URL + '?t=' + Date.now();
             const controlador = new AbortController();
             const temporizador = setTimeout(() => controlador.abort(), 30000);
             let respuesta;
             try {
-                respuesta = await fetch(EXAMEN_API_URL, {
+                respuesta = await fetch(urlSinCache, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: params,

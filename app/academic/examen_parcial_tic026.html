@@ -727,7 +727,11 @@
                 throw new Error('El servidor devolvió una página no válida. Revisa que el Apps Script esté desplegado con acceso público.');
             }
             if (json.success !== true) {
-                const error = new Error(json.error || 'Error del servidor.');
+                const mensajeServidor = json.error || 'Error del servidor.';
+                const mensaje = mensajeServidor === 'Acción no admitida.'
+                    ? 'La cédula puede estar en la hoja, pero el Apps Script publicado está desactualizado y todavía no reconoce la consulta por resultados. Despliega el backend TIC026 versión 10.1.'
+                    : mensajeServidor;
+                const error = new Error(mensaje);
                 error.codigo = json.codigo || '';
                 throw error;
             }

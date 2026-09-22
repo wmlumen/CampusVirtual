@@ -813,6 +813,18 @@
                     }, new FormData()))
                 });
 
+                // Verificar respuesta del servidor
+                let respuestaServer = null;
+                try {
+                    respuestaServer = await response.json();
+                } catch (jsonError) {
+                    console.warn('Respuesta no JSON:', jsonError);
+                }
+
+                if (!response.ok || (respuestaServer && respuestaServer.success === false)) {
+                    throw new Error((respuestaServer && respuestaServer.error) || ('HTTP ' + response.status));
+                }
+
                 // Mostrar resultados
                 document.getElementById('paso3').classList.add('hidden');
                 document.getElementById('paso4').classList.remove('hidden');
@@ -875,7 +887,10 @@
                 console.error('Error:', error);
                 btnEnviar.disabled = false;
                 btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
-                alert('Error al enviar el examen. Intenta de nuevo.');
+                const ultimoError = document.getElementById('mensajeError3');
+                ultimoError.classList.remove('hidden');
+                ultimoError.innerHTML = '<i class="bi bi-exclamation-circle"></i> No se pudo guardar el examen. ' +
+                    (error && error.message ? 'Detalle: ' + error.message : 'Intenta de nuevo.');
             }
         }
 

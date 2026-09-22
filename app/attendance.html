@@ -6,7 +6,7 @@
     <script>
     // Panel de personal (v08.5.6): Acceso Académico, Administrador, Filial, Administrativo y Docente.
     // Un alumno solo entra con ?code= (QR del evento) y ve únicamente el registro con código.
-    window.ASISTENCIA_ROLES = ['academico','academic','admin','administrador','administrador_plataforma','admin_filial','administrativo','docente'];
+    window.ASISTENCIA_ROLES = ['academico','academic','admin','administrador','administrador_plataforma','admin_filial','administrativo','administracion_general','admin_general','administracion','docente'];
     window.MODO_QR = new URLSearchParams(location.search).has('code');
     CenturiaSession.protect(window.MODO_QR ? undefined : { allowedRoles: window.ASISTENCIA_ROLES });
     </script>
@@ -414,11 +414,11 @@ const TYPES = {clase:'Clase',seminario:'Seminario',reunion:'Reunión',taller:'Ta
 // ═══════════════════════════════════════════════════════
 const ROLES = {
     academico:'Acceso Académico', academic:'Acceso Académico', admin:'Administrador', administrador:'Administrador',
-    administrador_plataforma:'Administrador de Plataforma', admin_filial:'Filial', administrativo:'Acceso Administrativo',
+    administrador_plataforma:'Administrador de Plataforma', admin_filial:'Filial', administrativo:'Acceso Administrativo', administracion_general:'Administración General',
     docente:'Docente', alumno:'Alumno'
 };
-const PANEL_ROL = { academico:'academic/index.html', academic:'academic/index.html', admin:'admin/index.html', administrador:'admin/index.html',
-    administrador_plataforma:'admin/index.html', admin_filial:'admin/index.html', administrativo:'admin/index.html', docente:'docente.html' };
+const PANEL_ROL = { academico:'academic/index.html', academic:'academic/index.html', admin:'dashboard-admin.html', administrador:'dashboard-admin.html',
+    administrador_plataforma:'dashboard-admin.html', admin_filial:'dashboard-admin.html', administrativo:'dashboard-admin.html', administracion_general:'dashboard-admin.html', admin_general:'dashboard-admin.html', administracion:'dashboard-admin.html', docente:'docente.html' };
 
 document.addEventListener('DOMContentLoaded', async () => {
     const user = CenturiaAPI.getCurrentUser() || {};

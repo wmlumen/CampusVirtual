@@ -934,10 +934,10 @@
             userCarrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
             userSeccion = user.seccion || localStorage.getItem('centuria_seccion') || '';
 
-            if (['teacher','docente','admin','academico','administrador_plataforma'].includes(userRole)) {
+            if (['teacher','docente','admin','academico','administrador_plataforma','administracion_general','admin_general','administracion'].includes(userRole)) {
                 document.getElementById('btn-create').style.display = 'flex';
             }
-            if (['admin','administrador','administrador_plataforma','admin_filial','academico'].includes(userRole)) {
+            if (['admin','administrador','administrador_plataforma','admin_filial','academico','administracion_general','admin_general','administracion'].includes(userRole)) {
                 document.getElementById('btn-eventos-nav').style.display = 'inline-flex';
             }
 
@@ -1256,7 +1256,7 @@
                 }
 
                 // Si es administrador/académico, pasa el resto
-                if (['admin','academico','administrador_plataforma'].includes(userRole)) {
+                if (['admin','academico','administrador_plataforma','administracion_general','admin_general','administracion'].includes(userRole)) {
                     return true;
                 }
 

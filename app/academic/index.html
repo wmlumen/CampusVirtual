@@ -725,7 +725,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             // Solo Acceso Académico (o administración) puede estar acá; si no, se lo manda a su panel o al inicio
-            if (window.CenturiaSession && !CenturiaSession.protect({ allowedRoles: ['academico', 'admin', 'administrador_plataforma'], currentRolePage: 'academic' })) return;
+            if (window.CenturiaSession && !CenturiaSession.protect({ allowedRoles: ['academico', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'], currentRolePage: 'academic' })) return;
             iniciar();
         });
     </script>

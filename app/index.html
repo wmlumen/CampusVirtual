@@ -1203,7 +1203,7 @@ async function verificarCedula(){
         sessionStorage.setItem('rol',role);
         localStorage.setItem('centuria_rol',role);
         if(role==='academico'){window.location.href='academic/index.html';return}
-        if(role==='admin'||role==='administrador_plataforma'||role==='administrador'){window.location.href='dashboard-admin.html';return}
+        if(role==='admin'||role==='administrador_plataforma'||role==='administrador'||role==='administracion_general'||role==='admin_general'||role==='administracion'){window.location.href='dashboard-admin.html';return}
         if(role==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}
         if(role==='docente'){window.location.href='docente.html';return}
         window.location.href='dashboard.html';
@@ -1392,14 +1392,14 @@ function mostrarSelectorRoles(roles){
     let p=document.getElementById('step-2-roles');
     if(!p){p=document.createElement('div');p.id='step-2-roles';p.innerHTML='<div class="greeting"><h2><i class="bi bi-person-gear" style="color:var(--dorado);margin-right:6px"></i>Selecciona tu acceso</h2><p id="roles-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.88rem"></p><p style="font-size:0.68rem;color:#64748b;margin-top:4px">Tu cédula tiene múltiples roles. Elige con cuál deseas ingresar:</p></div><div id="lista-roles" class="d-grid gap-2 mb-3"></div><button class="btn-ghost" onclick="cerrarSesionRoles()"><i class="bi bi-arrow-left me-1"></i>Cambiar de usuario</button>';document.querySelector('.login-body').appendChild(p)}
     p.style.display='block';document.getElementById('roles-nombre-alumno').textContent=sessionStorage.getItem('current_nombre')||'';
-    const colores={alumno:'linear-gradient(135deg,#16813D,#0D5C2A)',docente:'linear-gradient(135deg,#2563EB,#1d4ed8)',admin:'linear-gradient(135deg,#7C3AED,#5B21B6)',academico:'linear-gradient(135deg,#D94172,#9F1239)'};
-    const iconos={alumno:'bi-mortarboard',docente:'bi-easel',admin:'bi-gear-wide-connected',academico:'bi-building'};
-    const etiquetas={alumno:'Alumno',docente:'Docente',admin:'Administrador',academico:'Académico'};
+    const colores={alumno:'linear-gradient(135deg,#16813D,#0D5C2A)',docente:'linear-gradient(135deg,#2563EB,#1d4ed8)',admin:'linear-gradient(135deg,#7C3AED,#5B21B6)',academico:'linear-gradient(135deg,#D94172,#9F1239)',administracion_general:'linear-gradient(135deg,#C28A2C,#8A5A14)'};
+    const iconos={alumno:'bi-mortarboard',docente:'bi-easel',admin:'bi-gear-wide-connected',academico:'bi-building',administracion_general:'bi-shield-lock'};
+    const etiquetas={alumno:'Alumno',docente:'Docente',admin:'Administrador',academico:'Académico',administracion_general:'Administración General'};
     const lista=document.getElementById('lista-roles');lista.innerHTML='';
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
     btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
+function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'||r.rol==='administracion_general'||r.rol==='admin_general'||r.rol==='administracion'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══
@@ -1464,7 +1464,7 @@ window.addEventListener('load',()=>{
             if(role === 'asistencia_estudiante'){ location.replace('atencion-estudiante.html'); return; }
             if(role === 'docente'){ location.replace('docente.html'); return; }
             if(role === 'academico'){ location.replace('academic/index.html'); return; }
-            if(role === 'admin'){ location.replace('dashboard-admin.html'); return; }
+            if(role === 'admin' || role === 'administrador_plataforma' || role === 'administrador' || role === 'administracion_general' || role === 'admin_general' || role === 'administracion'){ location.replace('dashboard-admin.html'); return; }
             location.replace('dashboard.html');
             return;
         }

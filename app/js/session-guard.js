@@ -85,7 +85,10 @@
             case 'academico': return rootUrl('academic/index.html');
             case 'admin':     return rootUrl('dashboard-admin.html');
             case 'administrador_plataforma':
-            case 'administrador': return rootUrl('dashboard-admin.html');
+            case 'administrador':
+            case 'administracion_general':
+            case 'admin_general':
+            case 'administracion': return rootUrl('dashboard-admin.html');
             case 'admin_filial': return rootUrl('dashboard-admin.html');
             case 'asistencia_estudiante': return rootUrl('atencion-estudiante.html');
             case 'alumno':
@@ -196,7 +199,7 @@
             // 3. Verificar correspondencia de rol
             const userRole = this.getRole();
             // 🎯 Admin universal: puede navegar por todos los paneles sin re-loguearse
-            const isUniversalAdmin = ['admin','administrador','administrador_plataforma'].includes(userRole);
+            const isUniversalAdmin = ['admin','administrador','administrador_plataforma','administracion_general','admin_general','administracion'].includes(userRole);
             if (isUniversalAdmin) {
                 console.log('[SessionGuard] universal admin bypass for role', userRole, 'allowed', allowedRoles);
             } else if (allowedRoles && allowedRoles.length > 0) {

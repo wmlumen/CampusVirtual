@@ -233,7 +233,7 @@
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
-        const PUEDO = ['docente', 'teacher', 'admin', 'administrador_plataforma', 'academico', 'academic'].includes(MI_ROL);
+        const PUEDO = ['docente', 'teacher', 'admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion'].includes(MI_ROL);
         let cur = null; // borrador actual completo
 
         function toast(m, err) {
@@ -679,9 +679,9 @@
             const est = cur.draft.Estado || 'borrador';
             document.getElementById('flujo-estado').innerHTML = 'Estado: ' + badge(est);
             const B = (t, fn, cls) => `<button class="btn ${cls}" onclick="${fn}()">${t}</button>`;
-            const esDoc = ['docente', 'teacher', 'admin', 'administrador_plataforma'].includes(MI_ROL);
-            const esRev = ['academico', 'academic', 'admin', 'administrador_plataforma'].includes(MI_ROL);
-            const esPub = ['admin', 'administrador_plataforma'].includes(MI_ROL);
+            const esDoc = ['docente', 'teacher', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(MI_ROL);
+            const esRev = ['academico', 'academic', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(MI_ROL);
+            const esPub = ['admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(MI_ROL);
             let h = '';
             if (['borrador', 'observado', 'corregido'].includes(est) && esDoc) h += B('Enviar a revisión', 'flujoEnviar', 'btn-a');
             if (est === 'en_revision' && esRev) h += B('Aprobar', 'flujoAprobar', 'btn-p') + B('Observar', 'flujoObservar', 'btn-r');

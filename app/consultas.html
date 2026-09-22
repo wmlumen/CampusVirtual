@@ -236,7 +236,7 @@ function fechaHora(s) {
     return m ? m[3] + '/' + m[2] + '/' + m[1] + ' ' + m[4] + ':' + m[5] : String(s || '');
 }
 function rolEtiqueta(r) {
-    return { asistencia_estudiante: 'Atención al Estudiante', academico: 'Académico', admin: 'Administración', administrador: 'Administración', administrador_plataforma: 'Administración', admin_filial: 'Filial', tesoreria: 'Tesorería', docente: 'Docente', alumno: 'Estudiante' }[r] || r || '';
+    return { asistencia_estudiante: 'Atención al Estudiante', academico: 'Académico', admin: 'Administración', administrador: 'Administración', administrador_plataforma: 'Administración', administracion_general: 'Administración General', admin_general: 'Administración General', administracion: 'Administración General', admin_filial: 'Filial', tesoreria: 'Tesorería', docente: 'Docente', alumno: 'Estudiante' }[r] || r || '';
 }
 
 // ═══ INICIO ═══

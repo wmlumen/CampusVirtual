@@ -20,6 +20,9 @@
         docente: 'docente.html',
         admin: 'dashboard-admin.html',
         administrador_plataforma: 'dashboard-admin.html',
+        administracion_general: 'dashboard-admin.html',
+        admin_general: 'dashboard-admin.html',
+        administracion: 'dashboard-admin.html',
         administrador: 'dashboard-admin.html',
         admin_filial: 'dashboard-admin.html',
         academico: 'academic/index.html',
@@ -31,11 +34,12 @@
         alumno: ['#10b981', '#0891b2'],
         docente: ['#2563eb', '#1d4ed8'],
         admin: ['#8b5cf6', '#5b21b6'],
+        administracion_general: ['#c28a2c', '#8a5a14'],
         academico: ['#ec4899', '#9f1239'],
         asistencia_estudiante: ['#f59e0b', '#b45309']
     };
-    var ICONOS = { alumno: 'bi-mortarboard-fill', docente: 'bi-person-badge-fill', admin: 'bi-gear-fill', academico: 'bi-building', asistencia_estudiante: 'bi-headset' };
-    var ETIQ = { alumno: 'Alumno', docente: 'Docente', admin: 'Administrador', academico: 'Académico', asistencia_estudiante: 'Atención' };
+    var ICONOS = { alumno: 'bi-mortarboard-fill', docente: 'bi-person-badge-fill', admin: 'bi-gear-fill', administracion_general: 'bi-shield-lock-fill', academico: 'bi-building', asistencia_estudiante: 'bi-headset' };
+    var ETIQ = { alumno: 'Alumno', docente: 'Docente', admin: 'Administrador', administracion_general: 'Administración General', academico: 'Académico', asistencia_estudiante: 'Atención' };
 
     function rootOf(page) {
         var scripts = document.getElementsByTagName('script');
@@ -63,6 +67,7 @@
         var html = '<span style="font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.85;margin-right:8px;color:#cbd5e1"><i class="bi bi-person-gear me-1"></i>Roles</span>';
         roles.forEach(function (r) {
             var key = String(r.rol || '').toLowerCase();
+            if (key === 'admin_general' || key === 'administracion') key = 'administracion_general';
             var col = COLORES[key] || ['#64748b', '#334155'];
             var label = ETIQ[key] || key;
             var meta = (r.asignatura ? esc(r.asignatura) + ' · ' : '') + (r.seccion ? 'Secc. ' + esc(r.seccion) : (r.carrera ? esc(r.carrera) : ''));

@@ -460,13 +460,13 @@
 
         async function tieneAcceso() {
             const r = rol();
-            if (['admin', 'administrador_plataforma', 'academico', 'academic'].includes(r)) return true;
+            if (['admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion'].includes(r)) return true;
             try {
                 const ced = sessionStorage.getItem('current_cedula') || '';
                 if (!ced) return false;
                 const d = await CenturiaAPI.usuarios.get(ced);
                 const p = d.permisos || [];
-                return p.includes('*') || p.includes('ver_tesoreria') || p.includes('gestionar_usuarios') || (d.roles && d.roles.some(rl => ['admin', 'administrador_plataforma', 'academico'].includes(rl.rol)));
+                return p.includes('*') || p.includes('ver_tesoreria') || p.includes('gestionar_usuarios') || (d.roles && d.roles.some(rl => ['admin', 'administrador_plataforma', 'academico', 'administracion_general', 'admin_general', 'administracion'].includes(rl.rol)));
             } catch (e) { return false; }
         }
 

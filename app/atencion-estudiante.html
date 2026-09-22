@@ -5,7 +5,7 @@
     <script src="./js/session-guard.js?v=5"></script>
     <script>
     // Solo el rol Asistencia al Estudiante (y administración). El servidor vuelve a comprobarlo en cada llamada.
-    window.ATENCION_ROLES = ['asistencia_estudiante', 'admin', 'administrador_plataforma'];
+    window.ATENCION_ROLES = ['asistencia_estudiante', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'];
     CenturiaSession.protect({ allowedRoles: window.ATENCION_ROLES });
     </script>
     <meta charset="UTF-8">

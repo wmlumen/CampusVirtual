@@ -480,8 +480,8 @@
         }catch(e){ alert('No se pudo guardar: '+(e.message||e)); }
     }
     window.addEventListener('load',()=>{ if(!sessionStorage.getItem('current_cedula')) location.replace('../index.html'); loadSystemData(); calcularNota(); });
-    function isDocente(){ const r=(sessionStorage.getItem('rol')||'').toLowerCase(); return ['docente','teacher','admin','administrador','academico','academic'].includes(r); }
-    function rolEtiqueta(){ const r=(sessionStorage.getItem('rol')||'alumno').toLowerCase(); const m={alumno:'Alumno',student:'Alumno',docente:'Docente',teacher:'Docente',admin:'Admin',administrador:'Admin',academico:'Académico',academic:'Académico'}; return m[r]||'Alumno'; }
+    function isDocente(){ const r=(sessionStorage.getItem('rol')||'').toLowerCase(); return ['docente','teacher','admin','administrador','academico','academic','administracion_general','admin_general','administracion'].includes(r); }
+    function rolEtiqueta(){ const r=(sessionStorage.getItem('rol')||'alumno').toLowerCase(); const m={alumno:'Alumno',student:'Alumno',docente:'Docente',teacher:'Docente',admin:'Admin',administrador:'Admin',admin_general:'Administración General',administracion_general:'Administración General',administracion:'Administración General',academico:'Académico',academic:'Académico'}; return m[r]||'Alumno'; }
     function actualizarBadgeRol(){ const b=document.getElementById('badge-rol'); if(b){ b.textContent='Rol: '+rolEtiqueta(); b.className=isDocente()?'badge bg-danger':'badge bg-success'; } const r=document.getElementById('btn-docente'); const l=document.querySelector('label[for="btn-docente"]'); if(!isDocente()&&r){ r.disabled=true; if(l){ l.style.display='none'; } } if(isDocente()){ document.getElementById('btn-docente').checked=true; toggleView('docente'); } }
     function poblarSecciones(rows){
         const sel=document.getElementById('filtro-seccion'); if(!sel) return;

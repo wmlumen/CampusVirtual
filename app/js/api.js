@@ -374,7 +374,7 @@ function callGas(action, data, method) {
                 if (data.aprobar) {
                     update.estado = 'activo';
                     const rolCur = String(cur.rol || '').toLowerCase();
-                    if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(rolCur)) update.rol = 'docente';
+                    if (!['admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion'].includes(rolCur)) update.rol = 'docente';
                 }
                 await doc.ref.update(update);
                 return {
@@ -409,7 +409,7 @@ function callGas(action, data, method) {
                 if (data.decision === 'aprobar') {
                     update.estado = 'activo'; update.es_docente = true;
                     const rolCur = String(cur.rol || '').toLowerCase();
-                    if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(rolCur)) update.rol = 'docente';
+                    if (!['admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion'].includes(rolCur)) update.rol = 'docente';
                 } else {
                     update.estado = 'inactivo';
                 }

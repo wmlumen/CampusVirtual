@@ -1325,7 +1325,7 @@
         }
 
         async function cargarDashboard() {
-            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno','docente','admin','academico','administrador_plataforma','admin_filial'], currentRolePage: 'dashboard' })) return;
+            if (typeof CenturiaSession !== 'undefined' && !CenturiaSession.protect({ allowedRoles: ['alumno','docente','admin','academico','administrador_plataforma','admin_filial','administracion_general','admin_general','administracion'], currentRolePage: 'dashboard' })) return;
 
             if (location.hash === '#perfil') cambiarPestana('perfil');
             if (location.hash === '#qr') cambiarPestana('qr');
@@ -1340,12 +1340,12 @@
                 let roleFromStorage = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || 'alumno').toLowerCase();
                 
                 // Sincronizar roles desde el servidor y detectar si posee rol administrativo o carrera ADMIN
-                const esAdminPorCedulaOTexto = String(cedula).replace(/[\.\s]/g, '') === '1340130' || String(user.carrera || '').toUpperCase() === 'ADMIN' || String(user.seccion || '').toUpperCase() === 'ADMIN' || ['admin', 'administrador', 'administrador_plataforma'].includes(roleFromStorage);
+                const esAdminPorCedulaOTexto = String(cedula).replace(/[\.\s]/g, '') === '1340130' || String(user.carrera || '').toUpperCase() === 'ADMIN' || String(user.seccion || '').toUpperCase() === 'ADMIN' || ['admin', 'administrador', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(roleFromStorage);
 
                 try {
                     const rolesData = await CenturiaAPI.getRoles(cedula);
                     const rolesList = (rolesData && rolesData.roles) ? rolesData.roles.filter(r => r.estado === 'activo') : [];
-                    const adminRoleItem = rolesList.find(r => ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'].includes(String(r.rol || '').toLowerCase()));
+                    const adminRoleItem = rolesList.find(r => ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial', 'administracion_general', 'admin_general', 'administracion'].includes(String(r.rol || '').toLowerCase()));
                     
                     if (adminRoleItem) {
                         const higherRole = String(adminRoleItem.rol).toLowerCase();
@@ -1429,7 +1429,7 @@
 
                 // Si es administrador general, abrir por defecto el panel de Áreas del Sistema
                 const realRoleInit = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || '').toLowerCase();
-                const esAdminInit = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'].includes(realRoleInit);
+                const esAdminInit = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial', 'administracion_general', 'admin_general', 'administracion'].includes(realRoleInit);
                 const urlParams = new URLSearchParams(window.location.search);
                 const modoEstudianteExplicito = urlParams.get('modo') === 'estudiante' || sessionStorage.getItem('admin_preview_mode') === '1';
                 
@@ -1651,7 +1651,7 @@
 
             // ═══ ÁREAS DEL SISTEMA (EXCLUSIVO ADMINISTRADOR GENERAL) ═══
             const realRole = (user.role || user.rol || sessionStorage.getItem('rol') || localStorage.getItem('centuria_rol') || '').toLowerCase();
-            const esAdmin = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial'].includes(realRole);
+            const esAdmin = ['admin', 'administrador', 'administrador_plataforma', 'academico', 'admin_filial', 'administracion_general', 'admin_general', 'administracion'].includes(realRole);
             const btnSuite = document.getElementById('btn-admin-suite');
             const adminBanner = document.getElementById('admin-mode-banner');
 

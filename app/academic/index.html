@@ -396,6 +396,7 @@
     <script src="../js/api.js?v=21"></script>
     <script src="../js/session-guard.js?v=5"></script>
     <script src="../js/logout.js?v=2"></script>
+        <script src="../js/role-tabs.js?v=1"></script>
     <script>
         // ═══ ACCESO ACADÉMICO v08.2 ═══
         // Docentes: cola de cuentas pendientes + asignación de asignatura y grupos.  Exámenes: aprobación previa.
@@ -513,6 +514,7 @@
                 pedir(function () { return CenturiaAPI.catalogos.getSecciones(); }, ['secciones', 'items'])
             ]);
             AC.cat.asignaturas = res[0].map(function (a) { return { v: a.codigo || a.id, t: (a.codigo || a.id) + (a.nombre ? ' — ' + a.nombre : ''), carrera: a.carrera || '' }; }).filter(function (a) { return a.v; });
+            if (!AC.cat.asignaturas.some(function (a) { return String(a.v).toUpperCase() === 'TIC'; })) AC.cat.asignaturas.unshift({ v: 'TIC', t: 'TIC — Tecnologías de la Información y Comunicación', carrera: '' });
             var vc = {};
             AC.cat.carreras = res[1].map(function (c) { return { v: c.nombre, t: c.nombre, grado: c.grado || '' }; }).filter(function (c) { if (!c.v || vc[c.v]) return false; vc[c.v] = 1; return true; });
             var vs = {};
@@ -547,11 +549,25 @@
             var tb = $('tbodyDoc');
             if (!vis.length) { tb.innerHTML = '<tr><td colspan="5" class="vacio">' + (L.length ? 'Ningún docente coincide con el filtro.' : 'Todavía no hay docentes registrados.') + '</td></tr>'; return; }
             tb.innerHTML = vis.map(function (d) {
-                var decl = [d.declarado.carrera, d.declarado.seccion].filter(Boolean).join(' · ') || '—';
-                var chips = d.asignaciones.map(function (a) {
-                    var off = a.estado === 'inactivo';
-                    return '<span class="chip' + (off ? ' off' : '') + '" title="' + (off ? 'Revocada' : 'Asignada por ' + esc(a.asignado_por)) + '">' + esc(a.asignatura) + ' · ' + esc(a.carrera) + ' · ' + esc(a.seccion) +
-                        (off ? '' : '<button type="button" data-act="revocar" data-ced="' + esc(d.cedula) + '" data-fila="' + a.fila + '" title="Quitar este grupo" aria-label="Quitar grupo">&times;</button>') + '</span>';
+                var dcj = d.declarado || {};
+                var decl = [dcj.carrera, dcj.seccion].filter(Boolean).join(' · ') || '—';
+                var porCurso = {};
+                (d.asignaciones || []).forEach(function (a) {
+                    var k = (a.asignatura || '') + '|' + (a.seccion || '');
+                    if (!porCurso[k]) porCurso[k] = { asignatura: a.asignatura, seccion: a.seccion, filas: [], carreras: [] };
+                    porCurso[k].filas.push(a.fila);
+                    porCurso[k].carreras.push(a.carrera);
+                });
+                var chips = Object.keys(porCurso).map(function (k) {
+                    var c = porCurso[k];
+                    var off = c.filas.every(function (f) {
+                        var a = (d.asignaciones || []).filter(function (x) { return x.fila === f; })[0];
+                        return a && a.estado === 'inactivo';
+                    });
+                    var con = c.carreras.filter(Boolean);
+                    return '<span class="chip' + (off ? ' off' : '') + '" title="' + (off ? 'Curso revocado' : 'Asignado por ' + esc((d.asignaciones || []).filter(function (x) { return x.fila === c.filas[0]; })[0]?.asignado_por)) + '">' + esc(c.asignatura) + ' · Curso ' + esc(c.seccion) +
+                        (con.length ? ' <span style="opacity:.72;font-weight:500">(' + esc(con.join(' · ')) + ')</span>' : '') +
+                        (off ? '' : '<button type="button" data-act="revocar" data-ced="' + esc(d.cedula) + '" data-fila="' + esc(c.filas.join(',')) + '" title="Quitar este curso" aria-label="Quitar curso">&times;</button>') + '</span>';
                 }).join('') || '<span class="muted">Sin grupos</span>';
                 var acc = d.pendiente
                     ? '<button class="b g" data-act="asignar" data-ced="' + esc(d.cedula) + '">Aprobar y asignar</button><button class="b r" data-act="rechazar" data-ced="' + esc(d.cedula) + '">Rechazar</button>'
@@ -567,7 +583,7 @@
             AC.docente = d; AC.grupos = [];
             $('mdAsigTitulo').textContent = (d.pendiente ? 'Aprobar y asignar · ' : 'Asignar grupos · ') + (d.nombre || d.cedula);
             $('mdAsigSub').textContent = 'C.I. ' + d.cedula;
-            var dc = d.declarado, txt = [dc.grado, dc.carrera, dc.seccion].filter(Boolean).join(' · ');
+            var dc = d.declarado || {}, txt = [dc.grado, dc.carrera, dc.seccion].filter(Boolean).join(' · ');
             $('mdAsigDecl').style.display = txt ? 'block' : 'none';
             $('mdAsigDecl').innerHTML = txt ? 'El docente indicó al registrarse: <b>' + esc(txt) + '</b> <button class="b n" type="button" id="btnUsarDecl">Usar como grupo</button>' : '';
             $('asigAsignaturaBox').innerHTML = selectOTexto('asigAsignatura', AC.cat.asignaturas, 'Elegí la asignatura...');
@@ -666,7 +682,7 @@
                 });
                 if (act === 'revocar') {
                     var fila = b.getAttribute('data-fila');
-                    confirmar('Quitar grupo', 'El docente dejará de ver este grupo. Podés volver a asignarlo cuando quieras.', false, 'Quitar', 'r', async function () {
+                    confirmar('Quitar curso', 'El docente dejará de ver este curso (todas sus carreras). Podés volver a asignarlo cuando quieras.', false, 'Quitar', 'r', async function () {
                         var r = chk(await CenturiaAPI.academico.revokeAssignment({ academico_cedula: AC.cedula, docente_cedula: ced, fila: fila })); await cargarDocentes(); return r;
                     });
                 }

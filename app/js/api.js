@@ -35,7 +35,17 @@ if(typeof window.firebase==='undefined'||!window.firebase.apps||window.firebase.
     function onAllLoaded(){
       if(loaded)return;loaded=true;
       try{
-        window.firebase={apps:[],initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);return a;},firestore:function(){return{collection:function(c){return{doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return{}})}}}}},where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]})}}}}}},auth:function(){return{}}};
+        window.firebase={
+          apps:[],
+          initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);return a;},
+          firestore:function(){return{
+            collection:function(c){return{
+              doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return {};}});}};},
+              where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]});}};}
+            };},
+          };},
+          auth:function(){return {};}
+        };
         window.__firebaseFallback=true;
       }catch(e){}
     }
@@ -61,6 +71,25 @@ function getDb() {
     if (!fb.apps || fb.apps.length === 0) fb.initializeApp(FIREBASE_CONFIG);
     _firestoreDb = fb.firestore();
     return _firestoreDb;
+}
+
+// ── Autenticación anónima por dispositivo (habilita escrituras y lecturas de staff) ──
+function ensureAnonAuth() {
+    return Promise.resolve().then(function () {
+        const fb = window.firebase;
+        if (!fb || !fb.auth) throw new Error('Firebase Auth no disponible');
+        const auth = fb.auth();
+        if (auth.currentUser) return auth.currentUser;
+        return auth.signInAnonymously().then(function (cred) { return cred.user; }).catch(function (e) {
+            if (auth.currentUser) return auth.currentUser;
+            const code = (e && e.code) || '';
+            if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found' || /CONFIGURATION_NOT_FOUND/.test((e && e.message) || '')) {
+                const err = new Error('Auth de Firebase no configurado: activá en la consola Firebase → Authentication → Sign-in method → Anonymous.');
+                err.code = code; throw err;
+            }
+            throw e;
+        });
+    });
 }
 
 // Configuración central institucional
@@ -122,13 +151,12 @@ function callGas(action, data, method) {
                     if (snap.empty) { console.warn('[Firestore login] ced='+ced+' no encontrado'); return { ok: false, error: 'Cédula o contraseña incorrecta.' }; }
                     const doc = snap.docs[0];
                     const d = doc.data();
-                    console.log('[Firestore login] ced='+ced+' input='+JSON.stringify(pass)+' stored='+JSON.stringify(d.password)+' match='+(d.password===pass));
                     if (d.password && d.password !== pass) return { ok: false, error: 'Cédula o contraseña incorrecta.' };
                     const token = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
                     const user = Object.assign({}, d, { id: doc.id });
                     return { ok: true, token: token, user: user, must_change_password: d.must_change_password ? 1 : 0 };
                 }).catch(e => {
-                    console.error('[Firestore login] ced='+ced+' pass='+pass+' err=', e.code, e.message);
+                    console.error('[Firestore login] ced='+ced+' err=', e.code, e.message);
                     return { ok: false, error: 'Firestore: ' + (e.code || '') + ' ' + e.message };
                 });
             }
@@ -205,22 +233,22 @@ function callGas(action, data, method) {
             case 'listar_usuarios': return db.collection('usuarios').get().then(snap => ({
                 ok: true, usuarios: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, usuarios: [] }));
-            case 'listar_asignaturas': case 'materias.listar': return db.collection('asignaturas').get().then(snap => ({
+            case 'listar_asignaturas': case 'materias.listar': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, asignaturas: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, asignaturas: [] }));
-            case 'listar_carreras': return db.collection('asignaturas').get().then(snap => {
-                const carreras = new Set();
-                snap.docs.forEach(doc => { const c = doc.data().carrera; if (c) carreras.add(c); });
+            }))).catch(() => ({ ok: true, asignaturas: [] }));
+            case 'listar_carreras': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => {
+                const carreras = new Set(['Aduanera', 'Gestión Pública', 'Administración de Empresa']);
+                snap.docs.forEach(doc => { const c = doc.data().carrera; if (c) carreras.add(String(c)); });
                 return { ok: true, carreras: [...carreras].map(nombre => ({ nombre })) };
-            }).catch(() => ({ ok: true, carreras: [] }));
-            case 'listar_secciones': return Promise.resolve({ ok: true, secciones: ['A','B','C','D','E','ÚNICA','S026'].map(c => ({ codigo: c })) });
+            })).catch(() => ({ ok: true, carreras: [] }));
+            case 'listar_secciones': return Promise.resolve({ ok: true, secciones: ['A','B','C','D','E','ÚNICA','S026','LV026'].map(c => ({ codigo: c })) });
             case 'listar_grados': return Promise.resolve({ ok: true, grados: ['GRADO','ESPECIALIZACIÓN','MAESTRÍA','DOCTORADO'].map(g => ({ nombre: g })) });
             case 'listar_filiales': return db.collection('filiales').get().then(snap => ({
                 ok: true, filiales: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, filiales: [] }));
-            case 'listar_cursos': return db.collection('asignaturas').get().then(snap => ({
+            case 'listar_cursos': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, cursos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, cursos: [] }));
+            }))).catch(() => ({ ok: true, cursos: [] }));
             case 'mis_cursos': return db.collection('asignaturas').get().then(snap => ({
                 ok: true, cursos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, cursos: [] }));
@@ -278,12 +306,146 @@ function callGas(action, data, method) {
                 ok: true, total_recaudado: snap.docs.filter(d => d.data().estado === 'pagado').length,
                 total_pendiente: snap.docs.filter(d => d.data().estado !== 'pagado').length, pagos: snap.docs.map(d => Object.assign({ id: d.id }, d.data()))
             })).catch(() => ({ ok: true, total_recaudado: 0, total_pendiente: 0, pagos: [] }));
-            case 'asignaciones_docentes': return db.collection('usuarios').where('rol', '==', 'docente').get().then(snap => ({
-                ok: true, docentes: snap.docs.map(doc => {
-                    const d = doc.data();
-                    return { cedula: d.cedula || doc.id, nombre: (d.nombre || '') + ' ' + (d.apellido || ''), email: d.email || '', estado: d.estado || 'activo', pendiente: d.estado === 'pendiente' };
-                })
-            })).catch(() => ({ ok: true, docentes: [] }));
+            case 'asignaciones_docentes': return ensureAnonAuth().then(function () {
+                const qs = [
+                    db.collection('usuarios').where('rol', '==', 'docente').limit(500).get(),
+                    db.collection('usuarios').where('es_docente', '==', true).limit(500).get()
+                ];
+                return Promise.all(qs.map(p => p.catch(() => ({ docs: [] })))).then(function (resps) {
+                    const mapa = {};
+                    resps.forEach(snap => snap.docs.forEach(doc => { mapa[doc.id] = doc.data(); }));
+                    const docentes = Object.keys(mapa).map(function (id) {
+                        const d = mapa[id];
+                        const asgs = Array.isArray(d.asignaciones) ? d.asignaciones : [];
+                        const activas = asgs.filter(a => a && a.estado === 'activo');
+                        return {
+                            cedula: d.cedula || id,
+                            nombre: ((d.nombre || '') + ' ' + (d.apellido || '')).trim() || d.nombre_completo || d.cedula || id,
+                            email: d.email || '',
+                            estado: d.estado || 'activo',
+                            pendiente: d.estado === 'pendiente',
+                            declarado: { grado: d.grado || '', carrera: d.carrera || '', seccion: d.seccion || '' },
+                            asignaciones: asgs.map(a => ({
+                                fila: a.fila, asignatura: a.asignatura, carrera: a.carrera, seccion: a.seccion,
+                                grado: a.grado || '', estado: a.estado, asignado_por: a.asignado_por || ''
+                            })),
+                            activas: activas.length
+                        };
+                    });
+                    return {
+                        ok: true, docentes: docentes,
+                        pendientes: docentes.filter(d => d.pendiente).length,
+                        sin_asignar: docentes.filter(d => !d.pendiente && d.activas === 0).length
+                    };
+                });
+            }).catch(e => ({ ok: true, docentes: [], error: e.message }));
+            case 'asignacion_guardar': return (async () => {
+                await ensureAnonAuth();
+                const ced = String(data.docente_cedula || '').trim();
+                const asig = String(data.asignatura || '').trim();
+                if (!ced || !asig) return { ok: false, error: 'Faltan datos: docente y asignatura.' };
+                const grupos = Array.isArray(data.grupos) ? data.grupos : [];
+                if (!grupos.length) return { ok: false, error: 'Agregá al menos un grupo.' };
+                const snap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (snap.empty) return { ok: false, error: 'No se encontró al docente con cédula ' + ced + '.' };
+                const doc = snap.docs[0], cur = doc.data();
+                const curArr = (Array.isArray(cur.asignaciones) ? cur.asignaciones : []).filter(Boolean);
+                const vivos = curArr.filter(a => a.estado === 'activo');
+                const ahora = new Date().toISOString();
+                const quemados = {};
+                vivos.forEach(a => { quemados[(a.asignatura || '') + '|' + (a.carrera || '') + '|' + (a.seccion || '')] = 1; });
+                const nuevos = [];
+                grupos.forEach(g => {
+                    const carrera = String(g.carrera || '').trim();
+                    const seccion = String(g.seccion || '').trim().toUpperCase();
+                    if (!carrera || !seccion) return;
+                    const k = asig + '|' + carrera + '|' + seccion;
+                    if (quemados[k]) return;
+                    quemados[k] = 1;
+                    nuevos.push({
+                        fila: 'ASG-' + Date.now().toString(36) + '-' + (nuevos.length + 1) + Math.random().toString(36).substring(2, 4).toUpperCase(),
+                        asignatura: asig, carrera: carrera, seccion: seccion,
+                        grado: String(g.grado || '').trim(),
+                        estado: 'activo', asignado_por: String(data.academico_cedula || '').trim(), asignado_en: ahora
+                    });
+                });
+                if (!nuevos.length) return { ok: false, error: 'Esos grupos ya están asignados al docente.' };
+                const update = { asignaciones: vivos.concat(nuevos), es_docente: true, updated_at: ahora };
+                if (data.aprobar) {
+                    update.estado = 'activo';
+                    const rolCur = String(cur.rol || '').toLowerCase();
+                    if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(rolCur)) update.rol = 'docente';
+                }
+                await doc.ref.update(update);
+                return {
+                    ok: true, mensaje: 'Asignación guardada (' + nuevos.length + ' grupo(s) en ' + asig + ').',
+                    asignaciones: update.asignaciones.length, activas: vivos.length + nuevos.length
+                };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'asignacion_revocar': return (async () => {
+                await ensureAnonAuth();
+                const ced = String(data.docente_cedula || '').trim();
+                if (!ced) return { ok: false, error: 'Falta la cédula del docente.' };
+                const filas = String(data.fila || '').split(',').map(f => f.trim()).filter(Boolean);
+                if (!filas.length) return { ok: false, error: 'Falta el grupo a quitar.' };
+                const snap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (snap.empty) return { ok: false, error: 'Docente no encontrado.' };
+                const doc = snap.docs[0], cur = doc.data();
+                const arr = (Array.isArray(cur.asignaciones) ? cur.asignaciones : []).map(a => {
+                    if (a.fila && filas.indexOf(String(a.fila)) >= 0 && a.estado === 'activo') return Object.assign({}, a, { estado: 'inactivo', revocado_por: String(data.academico_cedula || ''), revocado_en: new Date().toISOString() });
+                    return a;
+                });
+                await doc.ref.update({ asignaciones: arr, updated_at: new Date().toISOString() });
+                return { ok: true, mensaje: 'Grupo(s) quitado(s).' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'asignacion_docente_decidir': return (async () => {
+                await ensureAnonAuth();
+                const ced = String(data.docente_cedula || '').trim();
+                if (!ced) return { ok: false, error: 'Falta la cédula del docente.' };
+                const snap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (snap.empty) return { ok: false, error: 'Docente no encontrado.' };
+                const doc = snap.docs[0], cur = doc.data();
+                const update = { updated_at: new Date().toISOString() };
+                if (data.decision === 'aprobar') {
+                    update.estado = 'activo'; update.es_docente = true;
+                    const rolCur = String(cur.rol || '').toLowerCase();
+                    if (!['admin', 'administrador_plataforma', 'academico', 'academic'].includes(rolCur)) update.rol = 'docente';
+                } else {
+                    update.estado = 'inactivo';
+                }
+                await doc.ref.update(update);
+                return { ok: true, mensaje: data.decision === 'aprobar' ? 'Docente aprobado.' : 'Docente rechazado.' };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'mis_cursos_docente': return (async () => {
+                const ced = String(data.cedula || '').trim();
+                await ensureAnonAuth();
+                const [asigSnap, usrSnap] = await Promise.all([
+                    db.collection('asignaturas').get(),
+                    ced ? db.collection('usuarios').where('cedula', '==', ced).limit(1).get() : Promise.resolve({ empty: true, docs: [] })
+                ]);
+                const asigs = {};
+                asigSnap.docs.forEach(d => { const dd = d.data(); asigs[String(dd.codigo || d.id).toUpperCase()] = dd; });
+                let asignaciones = [];
+                if (!usrSnap.empty) {
+                    const dd = usrSnap.docs[0].data();
+                    asignaciones = (Array.isArray(dd.asignaciones) ? dd.asignaciones : []).filter(a => a && a.estado === 'activo');
+                }
+                const subjects = asignaciones.map(a => {
+                    const base = asigs[String(a.asignatura || '').toUpperCase()] || {};
+                    return {
+                        id: a.asignatura, codigo: a.asignatura,
+                        nombre: base.nombre_completo || base.nombre || a.asignatura,
+                        seccion_asignada: a.seccion, seccion: a.seccion,
+                        carrera: a.carrera || base.carrera || '',
+                        color: base.color || '#2563EB', icono: base.icono || 'bi-book',
+                        semestre: base.semestre || '', carga_horaria: base.carga_horaria || 0, unidades: base.unidades || 10
+                    };
+                });
+                return {
+                    ok: true, subjects: subjects,
+                    assignments: asignaciones.map(a => ({ asignatura: a.asignatura, rol: 'docente', estado: 'activo', carrera: a.carrera || '', seccion: a.seccion || '' }))
+                };
+            })().catch(e => ({ ok: false, subjects: [], assignments: [], error: e.message }));
             case 'docente_pendientes': return db.collection('usuarios').where('rol', '==', 'docente').where('estado', '==', 'pendiente').get().then(snap => ({
                 ok: true, pendientes: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, pendientes: [] }));
@@ -772,16 +934,11 @@ API.catalogos = {
 };
 
 API.docente = {
-    getMySubjects: (cedula) => callGas('listar_cursos', { cedula: cedula, rol: 'docente' }, 'GET').then(r => ({
+    getMySubjects: (cedula) => callGas('mis_cursos_docente', { cedula: cedula || '' }, 'GET').then(r => ({
         ok: true,
-        subjects: r.cursos || [],
-        assignments: (r.cursos || []).map(c => ({
-            asignatura: c.codigo || c.id,
-            rol: 'docente',
-            estado: 'activo',
-            carrera: c.carrera || '',
-            seccion: c.seccion || ''
-        }))
+        subjects: r.subjects || [],
+        assignments: r.assignments || [],
+        subjectsCount: (r.subjects || []).length
     })),
     getStudents: (carrera, seccion) => callGas('mis_alumnos', { carrera: carrera || '', seccion: seccion || '' }, 'GET'),
     getPendingRequests: () => callGas('docente_pendientes', {}, 'POST'),
@@ -1104,7 +1261,6 @@ API.filiales = {
     toggle: (id) => callGas('toggle_filial', { id }, 'POST'),
     adminsByFilial: (filial) => callGas('admins_por_filial', { filial }, 'GET'),
     assignAdmin: (data) => callGas('asignar_admin_filial', data, 'POST'),
-    create: (data) => callGas('crear_filial', data, 'POST'),
     update: (data) => callGas('actualizar_filial', data, 'POST'),
     delete: (id) => callGas('eliminar_filial', { id }, 'POST')
 };

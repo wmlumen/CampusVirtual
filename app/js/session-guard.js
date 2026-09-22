@@ -83,7 +83,7 @@
         switch (role) {
             case 'docente':   return rootUrl('docente.html');
             case 'academico': return rootUrl('academic/index.html');
-            case 'admin':     return rootUrl('admin/index.html');
+            case 'admin':     return rootUrl('dashboard-admin.html');
             case 'administrador_plataforma':
             case 'administrador': return rootUrl('dashboard-admin.html');
             case 'admin_filial': return rootUrl('dashboard-admin.html');

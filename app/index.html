@@ -1089,6 +1089,7 @@ async function entrarOffline(cedula){
         if(typeof gasGetRoles==='function'){
             const gr=await gasGetRoles(cedula);
             const active=((gr&&gr.roles)||[]).filter(r=>r.estado==='activo');
+            if(active.length) sessionStorage.setItem('centuria_roles',JSON.stringify(active));
             if(active.length>1){hideLoadingGlobal();mostrarSelectorRoles(active);return}
             if(active.length===1){hideLoadingGlobal();seleccionarRol(active[0]);return}
         }
@@ -1189,6 +1190,7 @@ async function verificarCedula(){
         let activeRoles = [];
         if(rolesResult&&rolesResult.roles){
             activeRoles = rolesResult.roles.filter(r=>r.estado==='activo');
+            if(activeRoles.length) sessionStorage.setItem('centuria_roles',JSON.stringify(activeRoles));
             if(activeRoles.length>1){mostrarSelectorRoles(activeRoles);return}
         }
 
@@ -1201,7 +1203,7 @@ async function verificarCedula(){
         sessionStorage.setItem('rol',role);
         localStorage.setItem('centuria_rol',role);
         if(role==='academico'){window.location.href='academic/index.html';return}
-        if(role==='admin'||role==='administrador_plataforma'||role==='administrador'){window.location.href='admin/index.html';return}
+        if(role==='admin'||role==='administrador_plataforma'||role==='administrador'){window.location.href='dashboard-admin.html';return}
         if(role==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}
         if(role==='docente'){window.location.href='docente.html';return}
         window.location.href='dashboard.html';
@@ -1397,7 +1399,7 @@ function mostrarSelectorRoles(roles){
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
     btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'){window.location.href='admin/index.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
+function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══
@@ -1462,7 +1464,7 @@ window.addEventListener('load',()=>{
             if(role === 'asistencia_estudiante'){ location.replace('atencion-estudiante.html'); return; }
             if(role === 'docente'){ location.replace('docente.html'); return; }
             if(role === 'academico'){ location.replace('academic/index.html'); return; }
-            if(role === 'admin'){ location.replace('admin/index.html'); return; }
+            if(role === 'admin'){ location.replace('dashboard-admin.html'); return; }
             location.replace('dashboard.html');
             return;
         }
@@ -1566,7 +1568,7 @@ function cerrarInfo(){document.getElementById('modal-info').style.display='none'
 </script>
 
 <script>
-(function(){const p=new URLSearchParams(window.location.search);if(p.get('view_as')==='admin'){var b=document.createElement('div');b.innerHTML='<a href="admin/index.html" style="position:fixed;top:12px;right:12px;z-index:99999;background:linear-gradient(135deg,var(--dorado),#92400E);color:#fff;padding:10px 18px;border-radius:12px;font-family:Montserrat;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(184,148,31,0.4);transition:all 0.2s"><i class="bi bi-arrow-left-circle"></i> Volver al Admin</a>';document.body.appendChild(b)}})();
+(function(){const p=new URLSearchParams(window.location.search);if(p.get('view_as')==='admin'){var b=document.createElement('div');b.innerHTML='<a href="dashboard-admin.html" style="position:fixed;top:12px;right:12px;z-index:99999;background:linear-gradient(135deg,var(--dorado),#92400E);color:#fff;padding:10px 18px;border-radius:12px;font-family:Montserrat;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(184,148,31,0.4);transition:all 0.2s"><i class="bi bi-arrow-left-circle"></i> Volver al Admin</a>';document.body.appendChild(b)}})();
 </script>
 </body>
 </html>

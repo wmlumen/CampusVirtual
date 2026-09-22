@@ -106,7 +106,7 @@ const BANK=[
  opts:['A) Extranet','B) Internet','C) Intranet'],ok:2},
 ];
 
-const TOTAL=BANK.length, PESO=20, MIN=60, STORE='examen_P2_';
+const TOTAL=BANK.length, PESO=20, MIN=60;
 let seg=MIN*60, timer=null, fin=false;
 
 function render(){
@@ -143,28 +143,16 @@ async function finalizar(){
  const pct=Math.round(pts/TOTAL*100), aporte=(pts/TOTAL*PESO).toFixed(1);
  document.getElementById('resultado').style.display='block';
  document.getElementById('resultado').innerHTML='<div class="res">'+pts+' / '+TOTAL+' ('+pct+'%)</div><p><small class="mut">Aporte a la nota final: '+aporte+' / '+PESO+'</small></p><p id="guardadoEstado"><small class="mut">Guardando resultado…</small></p><table><tr><th>N°</th><th>Indicador</th><th>R</th><th>Pts</th></tr>'+rows+'</table>';
- try{localStorage.setItem(STORE+sessionStorage.getItem('current_cedula'),JSON.stringify({pts,total:TOTAL,pct,fecha:new Date().toISOString()}));}catch(e){}
  const cedula=sessionStorage.getItem('current_cedula')||'';
- const nombre=sessionStorage.getItem('current_nombre')||'';
  const estadoEl=document.getElementById('guardadoEstado');
  try{
-  const [guardadoNota,guardadoResp]=await Promise.all([
-   window.CenturiaAPI.grades.recordSubject({
-    asignatura:'TIC',
-    carrera:sessionStorage.getItem('current_carrera')||'',
-    seccion:sessionStorage.getItem('current_seccion')||'',
-    notas:[{cedula:cedula,nombre:nombre,parcial2:pts}]
-   }),
-   window.CenturiaAPI.exams.saveAnswers({
-    cedula:cedula,nombre:nombre,asignatura:'TIC',evaluacion:'parcial2',respuestas:detalle
-   })
-  ]);
-  const notaOk=guardadoNota&&(guardadoNota.ok||guardadoNota.status);
-  const respOk=guardadoResp&&(guardadoResp.ok||guardadoResp.status);
-  if(notaOk&&respOk){
-   if(estadoEl)estadoEl.innerHTML='<small style="color:#007A33">✓ Resultado y respuestas guardados en el servidor.</small>';
+  const resp=await window.CenturiaAPI.exams.saveAnswers({
+   cedula:cedula,nombre:sessionStorage.getItem('current_nombre')||'',asignatura:'TIC',evaluacion:'parcial2',respuestas:detalle
+  });
+  if(resp&&(resp.ok||resp.status)){
+   if(estadoEl)estadoEl.innerHTML='<small style="color:#007A33">✓ Resultado y respuestas guardados en el servidor. Lo podés ver de nuevo en tu historial.</small>';
   }else{
-   throw new Error((!notaOk&&(guardadoNota&&(guardadoNota.error||guardadoNota.mensaje)))||(!respOk&&(guardadoResp&&(guardadoResp.error||guardadoResp.mensaje)))||'respuesta sin confirmar');
+   throw new Error((resp&&(resp.error||resp.mensaje))||'respuesta sin confirmar');
   }
  }catch(e){
   if(estadoEl)estadoEl.innerHTML='<small style="color:#dc3545">⚠ No se pudo guardar el resultado en el servidor ('+(e&&e.message?e.message:'sin conexión')+'). Avisá a tu docente o administración con este puntaje: '+pts+'/'+TOTAL+'.</small>';

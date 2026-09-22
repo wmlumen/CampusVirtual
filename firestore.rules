@@ -245,5 +245,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated() && isStaff();
     }
+
+     // Intentos/resultados de exámenes por alumno (doc por examen + cédula: "examen__cedula").
+     // La lectura es pública (requerida para el historial del alumno mientras no exista
+     // Firebase Auth anónimo). La escritura se limita a que la cédula del documento coincida
+     // con la cédula del ID, evitando que un alumno sobrescriba las de otro.
+     match /intentos/{intentoId} {
+       allow read: if true;
+       allow create, update: if request.resource.data.alumno_cedula == intentoId.split('__')[1];
+       allow delete: if false;
+     }
    }
  }

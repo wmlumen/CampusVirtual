@@ -658,6 +658,59 @@ function callGas(action, data, method) {
                 await db.collection('notas').doc(id).set(Object.assign({}, data, { updated_at: new Date().toISOString() }));
                 return { ok: true };
             })();
+            case 'examen_guardar_intento': case 'guardar_respuestas_examen': return (async () => {
+                const ced = String(data.alumno_cedula || data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                // Normaliza el id del examen para que coincida con el historial del alumno (dashboard).
+                const mapaEv = { parcial1: 'examen_parcial_1', parcial2: 'examen_parcial_2', virtual: 'examen_virtual', final_virtual: 'examen_final_virtual', final_escrito: 'examen_final_escrito' };
+                const ev = String(data.evaluacion || '').toLowerCase().trim();
+                const examId = data.examen_id || mapaEv[ev] || (ev ? 'examen_' + ev : 'examen_generico');
+                const resp = Array.isArray(data.respuestas) ? data.respuestas : [];
+                let puntaje = Number(data.puntaje);
+                let total = Number(data.total);
+                let pct = Number(data.pct);
+                if (!Number.isFinite(puntaje)) puntaje = resp.filter(r => r && r.correcta === true).length;
+                if (!Number.isFinite(total)) total = resp.length;
+                if (!Number.isFinite(pct)) pct = total ? Math.round(puntaje / total * 100) : 0;
+                const intento = {
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    puntaje: puntaje,
+                    total: total,
+                    pct: pct,
+                    correctas: data.correctas !== undefined ? data.correctas : resp.filter(r => r && r.correcta === true).length,
+                    respuestas: resp
+                };
+                const docId = examId + '__' + ced;
+                const ref = db.collection('intentos').doc(docId);
+                const curr = await ref.get();
+                let intentos = [];
+                if (curr.exists) {
+                    const d = curr.data() || {};
+                    intentos = Array.isArray(d.intentos) ? d.intentos : [];
+                }
+                intentos.push(intento);
+                const mejor = intentos.reduce((m, i) => Math.max(m, Number(i.puntaje) || 0), 0);
+                await ref.set({
+                    examen_id: examId,
+                    alumno_cedula: ced,
+                    nombre: data.nombre || '',
+                    asignatura: data.asignatura || '',
+                    evaluacion: ev,
+                    intentos: intentos,
+                    mejor_intento: mejor,
+                    updated_at: new Date().toISOString()
+                });
+                return { ok: true, intentos: intentos, mejor_intento: mejor };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'examen_obtener_intentos': return (async () => {
+                const ced = String(data.alumno_cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: true, intentos: [], mejor_intento: null };
+                const docId = String(data.examen_id || '') + '__' + ced;
+                const snap = await db.collection('intentos').doc(docId).get();
+                if (!snap.exists) return { ok: true, intentos: [], mejor_intento: null };
+                const d = snap.data() || {};
+                return { ok: true, intentos: Array.isArray(d.intentos) ? d.intentos : [], mejor_intento: d.mejor_intento || null };
+            })().catch(e => ({ ok: true, intentos: [], mejor_intento: null, error: e.message }));
             case 'cumple_mio': return Promise.resolve({ ok: true, cumpleano: false });
             case 'diagnostico': return Promise.resolve({ ok: true, diagnostico: {} });
             case 'qr_credencial': {
@@ -1265,6 +1318,9 @@ API.exams = {
         alumno_cedula: data.alumno_cedula,
         respuestas: data.respuestas,
         puntaje: data.puntaje,
+        total: data.total,
+        pct: data.pct,
+        correctas: data.correctas,
         timestamp: new Date().toISOString()
     }, 'POST'),
     

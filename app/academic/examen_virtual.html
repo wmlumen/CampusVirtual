@@ -870,6 +870,20 @@
         guardarEstado();
 
         mostrarResultados(ex.tipo, puntos, maxPts, porcentaje, correctas, ex.preguntas.length);
+
+        // Guarda el intento en la base de datos (historial de resultados del alumno).
+        try {
+            const mapa = { parcial1: 'examen_parcial_1', parcial2: 'examen_parcial_2', final: 'examen_final_virtual' };
+            window.CenturiaAPI.exams.saveAttempt({
+                examen_id: mapa[ex.tipo] || ('examen_' + ex.tipo),
+                alumno_cedula: ALUMNO_CI || '',
+                respuestas: ex.respuestas.map((r, i) => {
+                    const p = ex.preguntas[i] || {};
+                    return { indicador: p.ind || '', pregunta: p.pregunta || '', respuesta: (r >= 0 ? (p.opciones || [])[r] : null) || 'Sin responder', correcta: r === p.correcta, puntaje: r === p.correcta ? 1 : 0 };
+                }),
+                puntaje: puntos, total: maxPts, pct: porcentaje, correctas: correctas
+            });
+        } catch (e) {}
     }
 
     function mostrarResultados(tipo, puntos, maxPts, porcentaje, correctas, total) {

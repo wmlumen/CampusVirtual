@@ -57,7 +57,7 @@ function actualizarResultadoFinal(cedula, nombre, apellido, carrera, seccion, co
 
     let filaExistente = -1;
     for (let i = 1; i < datos.length; i++) {
-      if (datos[i][0] == cedula && datos[i][4] == codigo_examen) {
+      if (datos[i][0] == cedula && datos[i][5] == codigo_examen) {
         filaExistente = i;
         break;
       }

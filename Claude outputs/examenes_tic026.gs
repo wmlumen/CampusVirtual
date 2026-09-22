@@ -98,7 +98,13 @@ function tic026ValidarDispositivo_(p, registrar, ss) {
   const respuestas = ss.getSheetByName('RespuestasAlumnos');
   const intentos = tic026Intentos_(respuestas.getDataRange().getValues(), cedula, codigoExamen);
   if (intentos >= TIC026_MAX_INTENTOS) return tic026Fallo_('INTENTOS_AGOTADOS', 'Ya completaste los dos intentos permitidos.');
-  if (registrar && !filas.some(function(fila, i) { return i > 0 && String(fila[0]).trim() === cedula && String(fila[2]).trim() === ip && String(fila[3]).trim() === huella; })) {
+  if (registrar && !filas.some(function(fila, i) {
+    return i > 0 &&
+      String(fila[0]).trim() === cedula &&
+      String(fila[1]).trim() === codigoExamen &&
+      String(fila[2]).trim() === ip &&
+      String(fila[3]).trim() === huella;
+  })) {
     dispositivos.appendRow([cedula, codigoExamen, ip, huella, new Date()]);
   }
   return { success: true, siguiente_intento: intentos + 1 };
@@ -134,26 +140,51 @@ function tic026ConsultarResultados_(p) {
   const codigoExamen = tic026CodigoExamen_(p.codigo_examen);
   const ss = SpreadsheetApp.openById(TIC026_SPREADSHEET_ID);
   const hoja = ss.getSheetByName('RespuestasAlumnos');
-  if (!hoja) return tic026Fallo_('SIN_RESULTADOS', 'No se encontraron resultados para esta cédula.');
-  const filas = hoja.getDataRange().getValues();
-  const propias = filas.slice(1)
+  const filas = hoja ? hoja.getDataRange().getValues() : [];
+  const propias = filas.length ? filas.slice(1)
     .filter(function(fila) { return String(fila[0]).trim() === cedula && String(fila[5]).trim() === codigoExamen; })
-    .sort(function(a, b) { return Number(a[6]) - Number(b[6]); });
-  if (!propias.length) return tic026Fallo_('SIN_RESULTADOS', 'No se encontraron resultados para esta cédula y parcial.');
+    .sort(function(a, b) { return Number(a[6]) - Number(b[6]); }) : [];
+  if (propias.length) {
+    return tic026RespuestaConsultaDesdeIntentos_(propias, codigoExamen);
+  }
 
-  const primera = propias[0];
-  const segunda = propias.find(function(fila) { return Number(fila[6]) === 2; });
-  const puntajes = propias.map(function(fila) { return Number(fila[8]); }).filter(function(valor) { return Number.isFinite(valor); });
+  const finales = ss.getSheetByName('ResultadosFinal');
+  if (!finales) return tic026Fallo_('SIN_RESULTADOS', 'No se encontraron resultados para esta cédula y parcial.');
+  const datosFinales = finales.getDataRange().getValues();
+  const resumen = datosFinales.slice(1).find(function(fila) {
+    return String(fila[0]).trim() === cedula && String(fila[5]).trim() === codigoExamen;
+  });
+  if (!resumen) return tic026Fallo_('SIN_RESULTADOS', 'No se encontraron resultados para esta cédula y parcial.');
   return {
     success: true,
-    cedula: String(primera[0]).trim(),
-    nombre: String(primera[1] || '').trim(),
-    carrera: String(primera[3] || '').trim(),
-    seccion: String(primera[4] || '').trim(),
+    cedula: String(resumen[0]).trim(),
+    nombre: String(resumen[1] || '').trim(),
+    carrera: String(resumen[3] || '').trim(),
+    seccion: String(resumen[4] || '').trim(),
+    codigo_examen: codigoExamen,
+    intentos_realizados: Number(resumen[6]) || 0,
+    primer_puntaje: '',
+    segundo_puntaje: '',
+    puntaje_definitivo: tic026Puntaje_(resumen[8]),
+    revision_disponible: (Number(resumen[6]) || 0) >= TIC026_MAX_INTENTOS
+  };
+}
+
+function tic026RespuestaConsultaDesdeIntentos_(propias, codigoExamen) {
+  const primera = propias.find(function(fila) { return Number(fila[6]) === 1; }) || propias[0];
+  const segunda = propias.find(function(fila) { return Number(fila[6]) === 2; });
+  const identidad = propias[propias.length - 1];
+  const puntajes = propias.map(function(fila) { return tic026Puntaje_(fila[8]); }).filter(function(valor) { return Number.isFinite(valor); });
+  return {
+    success: true,
+    cedula: String(identidad[0]).trim(),
+    nombre: String(identidad[1] || '').trim(),
+    carrera: String(identidad[3] || '').trim(),
+    seccion: String(identidad[4] || '').trim(),
     codigo_examen: codigoExamen,
     intentos_realizados: propias.length,
-    primer_puntaje: Number(primera[8]),
-    segundo_puntaje: segunda ? Number(segunda[8]) : '',
+    primer_puntaje: tic026Puntaje_(primera[8]),
+    segundo_puntaje: segunda ? tic026Puntaje_(segunda[8]) : '',
     puntaje_definitivo: puntajes.length ? Math.max.apply(null, puntajes) : '',
     revision_disponible: propias.length >= TIC026_MAX_INTENTOS
   };
@@ -241,6 +272,11 @@ function tic026Texto_(valor, maximo) {
   const texto = String(valor || '').trim();
   if (!texto || texto.length > maximo || /^[=+\-@]/.test(texto)) throw new Error('Dato obligatorio inválido.');
   return texto;
+}
+
+function tic026Puntaje_(valor) {
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : '';
 }
 
 function tic026Ip_(valor) {

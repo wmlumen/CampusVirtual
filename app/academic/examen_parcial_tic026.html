@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Examen Parcial TIC026 — Campus Virtual</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -417,7 +420,7 @@
                 <i class="bi bi-search"></i> Consulta de Resultados
             </h2>
             <p style="color: #64748b; margin-bottom: 20px;">
-                Consulta el primer puntaje, segundo puntaje y puntaje definitivo por cédula.
+                Consulta el puntaje de cada intento y el puntaje definitivo (el mejor) por cédula.
             </p>
 
             <div class="form-group">
@@ -595,18 +598,22 @@
 
     <div class="footer">
         Instituto Superior Centuria — Examen Parcial TIC026<br>
-        <span>Versión V01 · <time datetime="2026-09-22T13:18:57-03:00">22/09/2026 · 13:18</time></span>
+        <span>Versión V02 (cliente 11) · <time datetime="2026-09-30T12:00:00-03:00">30/09/2026</time></span>
     </div>
 
     <!-- SCRIPTS -->
 
     <script>
+        // ===== CONFIGURACIÓN =====
+        const VERSION_CLIENTE = 11;
+        const INTENTOS_BASE = 2;
+        const EXAMEN_API_URL = 'https://script.google.com/macros/s/AKfycbz2KuKF01QIZmuSdcUhqqEKHoNrXvy0lWMCVU9dJxym8GmGYI-Szuhx0DJNObAhSvk_/exec';
         // ===== ESTADO GLOBAL =====
         let estadoExamen = {
             codigoValido: false,
             paso: 1,
             intento: 1,
-            maxIntentos: 2,
+            intentosPermitidos: INTENTOS_BASE,
             parcial: 1,
             preguntaActual: 1,
             totalPreguntas: 10,
@@ -615,10 +622,9 @@
             puntaje: 0,
             preguntas: [],
             ipPublica: '',
-            huellaDispositivo: ''
+            huellaDispositivo: '',
+            idEnvio: ''
         };
-
-        const EXAMEN_API_URL = 'https://script.google.com/macros/s/AKfycbyFQTov9SwRCn163MP3cn_X3OJD35Em7soZkavetm3XXiSaNfPCEoxfwFr3v0qXRsEQ/exec';
 
         // Banco completo de 20 preguntas. Parcial 1 = 1 a 10, Parcial 2 = 11 a 20.
         let preguntasData = [
@@ -644,12 +650,29 @@
             {id: 20, texto: "¿Cuál es la importancia de las TIC en la educación?", opciones: ["Ninguna importancia", "Facilitan el acceso a información y mejoran el aprendizaje", "Solo para entretenimiento", "Son obligatorias"]}
         ];
 
-        // ===== FUNCIONES PRINCIPALES =====
+        // ===== UTILIDADES =====
+        function nuevoIdEnvio() {
+            return crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12));
+        }
+        function normalizarCedula(valor) {
+            return String(valor || '').replace(/[.\s-]/g, '').toUpperCase();
+        }
+        function esperar(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        function escaparHtml(valor) {
+            const nodo = document.createElement('div');
+            nodo.textContent = String(valor ?? '');
+            return nodo.innerHTML;
+        }
+        function etiquetaIntento(numero) {
+            return Number(numero) > INTENTOS_BASE ? `Intento ${numero} (adicional)` : `Intento ${numero}`;
+        }
 
+        // ===== FUNCIONES PRINCIPALES =====
         function validarCodigo() {
             const codigo = document.getElementById('codigoAcceso').value.toUpperCase();
             const mensajeError = document.getElementById('mensajeError');
-
             if (codigo === 'TIC026') {
                 estadoExamen.codigoValido = true;
                 document.getElementById('paso1').classList.add('hidden');
@@ -662,111 +685,140 @@
                 document.getElementById('codigoAcceso').value = '';
             }
         }
-
+        function obtenerCedulaSesion() {
+            try {
+                const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_remember_cedula') || '';
+                return normalizarCedula(cedula);
+            } catch (error) {
+                return '';
+            }
+        }
         function seleccionarParcial(numero) {
             if (!estadoExamen.codigoValido) return;
-
             seleccionarPreguntasParcial(numero);
-
             document.getElementById('parcialSel').textContent = numero;
             document.getElementById('estadoExamen').textContent = 'PARCIAL ' + numero + ' · LISTO';
             document.getElementById('pasoSelector').classList.add('hidden');
             document.getElementById('paso2').classList.remove('hidden');
             estadoExamen.paso = 2;
         }
-
         function volverPaso1() {
             document.getElementById('paso1').classList.remove('hidden');
             document.getElementById('pasoSelector').classList.add('hidden');
             document.getElementById('paso2').classList.add('hidden');
             estadoExamen.paso = 1;
         }
-
         function volverPasoSelector() {
             document.getElementById('pasoSelector').classList.remove('hidden');
             document.getElementById('paso2').classList.add('hidden');
             estadoExamen.paso = 2;
         }
 
+        // La IP es solo informativa: si el servicio no responde (bloqueadores, Safari), se rinde igual.
         async function obtenerIdentidadDispositivo() {
-            if (estadoExamen.ipPublica && estadoExamen.huellaDispositivo) return;
-
+            if (estadoExamen.huellaDispositivo) return;
             const controlador = new AbortController();
-            const temporizador = setTimeout(() => controlador.abort(), 6000);
+            const temporizador = setTimeout(() => controlador.abort(), 5000);
             try {
-                const respuestaIp = await fetch('https://api.ipify.org?format=json', {
-                    cache: 'no-store',
-                    signal: controlador.signal
-                });
-                if (!respuestaIp.ok) throw new Error('No se pudo consultar la IP pública.');
-                const datosIp = await respuestaIp.json();
-                estadoExamen.ipPublica = String(datosIp.ip || '').trim();
+                const respuestaIp = await fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: controlador.signal });
+                if (respuestaIp.ok) {
+                    const datosIp = await respuestaIp.json();
+                    estadoExamen.ipPublica = String(datosIp.ip || '').trim();
+                }
+            } catch (error) {
+                estadoExamen.ipPublica = '';
             } finally {
                 clearTimeout(temporizador);
             }
-
-            let idLocal = localStorage.getItem('tic026_dispositivo_id');
-            if (!idLocal) {
-                idLocal = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
-                localStorage.setItem('tic026_dispositivo_id', idLocal);
+            let idLocal = '';
+            try {
+                idLocal = localStorage.getItem('tic026_dispositivo_id') || '';
+                if (!idLocal) {
+                    idLocal = nuevoIdEnvio();
+                    localStorage.setItem('tic026_dispositivo_id', idLocal);
+                }
+            } catch (error) {
+                idLocal = 'sin-almacenamiento';
             }
             const material = [idLocal, navigator.userAgent, navigator.language, screen.width, screen.height, screen.colorDepth].join('|');
             const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material));
             estadoExamen.huellaDispositivo = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
         }
 
-        async function llamarApiExamen(datos) {
+        // ===== COMUNICACIÓN CON EL SERVIDOR =====
+        // Todas las acciones del servidor son seguras de repetir (el envío usa id_envio),
+        // por eso se reintenta automáticamente ante red lenta, respuesta inválida o servidor ocupado.
+        const SECUENCIA_REINTENTOS = [
+            { metodo: 'POST', espera: 0 },
+            { metodo: 'GET', espera: 1500 },
+            { metodo: 'POST', espera: 4000 },
+            { metodo: 'GET', espera: 8000 }
+        ];
+
+        async function llamarApiExamen(datos, alReintentar) {
             const params = new URLSearchParams();
-            Object.entries(datos).forEach(([clave, valor]) => params.append(clave, String(valor ?? '')));
-            const texto = await enviarApiExamen(params, 'POST');
-            let json = parsearRespuestaApi(texto);
-            if (!json) {
-                json = parsearRespuestaApi(await enviarApiExamen(params, 'GET'));
+            Object.entries(Object.assign({ version_cliente: VERSION_CLIENTE }, datos))
+                .forEach(([clave, valor]) => params.append(clave, String(valor ?? '')));
+            let ultimoError = null;
+            for (let i = 0; i < SECUENCIA_REINTENTOS.length; i++) {
+                const paso = SECUENCIA_REINTENTOS[i];
+                if (i > 0) {
+                    if (typeof alReintentar === 'function') alReintentar(i + 1, SECUENCIA_REINTENTOS.length);
+                    await esperar(paso.espera);
+                }
+                let json = null;
+                try {
+                    json = parsearRespuestaApi(await enviarApiExamen(params, paso.metodo));
+                } catch (error) {
+                    ultimoError = error;
+                    continue;
+                }
+                if (!json) {
+                    ultimoError = new Error('El servidor no devolvió una respuesta válida.');
+                    continue;
+                }
+                if (json.success !== true) {
+                    if (json.codigo === 'OCUPADO') {
+                        ultimoError = new Error(json.error || 'Servidor ocupado.');
+                        continue;
+                    }
+                    const mensajeServidor = json.error || 'Error del servidor.';
+                    const esAccionNoAdmitida = /acci[oó]n no admitida/i.test(mensajeServidor);
+                    const error = new Error(esAccionNoAdmitida
+                        ? 'El servidor publicado no reconoce esta operación. Contacta al administrador para revisar la versión del backend.'
+                        : mensajeServidor);
+                    error.codigo = json.codigo || '';
+                    error.datos = json;
+                    throw error;
+                }
+                return json;
             }
-            if (!json) {
-                throw new Error('El servidor devolvió una página no válida. Revisa que el Apps Script esté desplegado con acceso público.');
-            }
-            if (json.success !== true) {
-                const mensajeServidor = json.error || 'Error del servidor.';
-                const mensaje = mensajeServidor === 'Acción no admitida.'
-                    ? 'La cédula puede estar en la hoja, pero el Apps Script publicado está desactualizado y todavía no reconoce la consulta por resultados. Despliega el backend TIC026 versión 10.1.'
-                    : mensajeServidor;
-                const error = new Error(mensaje);
-                error.codigo = json.codigo || '';
-                throw error;
-            }
-            return json;
+            throw new Error((ultimoError && ultimoError.message ? ultimoError.message + ' ' : '') +
+                'No hubo respuesta luego de varios intentos. Revisa tu conexión y vuelve a presionar el botón: tus respuestas NO se pierden y no se cuenta un intento extra.');
         }
 
         async function enviarApiExamen(params, metodo) {
             const separador = EXAMEN_API_URL.includes('?') ? '&' : '?';
-            const query = params.toString() + '&t=' + Date.now();
-            const urlSinCache = metodo === 'GET' ? EXAMEN_API_URL + separador + query : EXAMEN_API_URL + separador + 't=' + Date.now();
+            const url = metodo === 'GET'
+                ? EXAMEN_API_URL + separador + params.toString() + '&t=' + Date.now()
+                : EXAMEN_API_URL + separador + 't=' + Date.now();
             const controlador = new AbortController();
-            const temporizador = setTimeout(() => controlador.abort(), 60000);
-            let respuesta;
+            const temporizador = setTimeout(() => controlador.abort(), 45000);
             try {
                 const opciones = metodo === 'GET'
                     ? { method: 'GET', signal: controlador.signal, cache: 'no-store' }
                     : { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params, signal: controlador.signal, cache: 'no-store' };
-                respuesta = await fetch(urlSinCache, opciones);
+                const respuesta = await fetch(url, opciones);
+                return await respuesta.text();
             } catch (error) {
-                if (error && error.name === 'AbortError') {
-                    throw new Error('El servidor tardó demasiado en responder. Intenta nuevamente.');
-                }
-                throw error;
+                if (error && error.name === 'AbortError') throw new Error('El servidor tardó demasiado en responder.');
+                throw new Error('Sin conexión con el servidor.');
             } finally {
                 clearTimeout(temporizador);
             }
-            return await respuesta.text();
         }
-
         function parsearRespuestaApi(texto) {
-            try {
-                return JSON.parse(texto);
-            } catch (error) {
-                return null;
-            }
+            try { return JSON.parse(texto); } catch (error) { return null; }
         }
 
         function ocultarTodosLosPasos() {
@@ -775,13 +827,91 @@
                 if (nodo) nodo.classList.add('hidden');
             });
         }
-
         function seleccionarPreguntasParcial(numero) {
             estadoExamen.parcial = Number(numero) === 2 ? 2 : 1;
             estadoExamen.preguntas = estadoExamen.parcial === 1 ? preguntasData.slice(0, 10) : preguntasData.slice(10, 20);
             estadoExamen.totalPreguntas = estadoExamen.preguntas.length;
         }
 
+        // ===== INTENTOS ADICIONALES CON CÓDIGO DEL PROFESOR =====
+        // contexto: 'inicio' (datos personales), 'envio' (ya respondió todo), 'resultado' (pantalla final)
+        function crearBloqueHabilitar(contexto) {
+            return `
+                <div class="bloque-habilitar" data-contexto="${contexto}" style="margin-top: 14px; padding: 14px; border: 1px solid rgba(212,168,67,0.35); border-radius: 12px; color: inherit;">
+                    <p style="margin-bottom: 10px; font-size: 0.86rem;">
+                        <i class="bi bi-key"></i> ¿El profesor te habilitó otro intento? Ingresa su código:
+                    </p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="password" autocomplete="off" placeholder="Código de habilitación" class="input-habilitar"
+                            style="flex: 1 1 170px; min-width: 0; padding: 10px 12px; border: 1px solid rgba(212,168,67,0.35); border-radius: 8px;">
+                        <button type="button" class="btn-exam btn-primary-exam btn-habilitar" style="width: auto; margin: 0;" onclick="habilitarIntento(this)">
+                            <i class="bi bi-unlock"></i> HABILITAR
+                        </button>
+                    </div>
+                    <div class="mensaje-habilitar hidden" style="margin-top: 10px; font-size: 0.82rem;"></div>
+                </div>
+            `;
+        }
+
+        async function habilitarIntento(boton) {
+            const bloque = boton.closest('.bloque-habilitar');
+            const contexto = bloque.dataset.contexto;
+            const input = bloque.querySelector('.input-habilitar');
+            const mensaje = bloque.querySelector('.mensaje-habilitar');
+            const codigo = input.value.trim();
+            if (!codigo) { input.focus(); return; }
+            boton.disabled = true;
+            boton.innerHTML = '<i class="bi bi-hourglass-split"></i> VALIDANDO...';
+            try {
+                await obtenerIdentidadDispositivo();
+                const r = await llamarApiExamen({
+                    accion: 'habilitar_intento',
+                    cedula: estadoExamen.datosPersonales.cedula,
+                    codigo_examen: 'TIC026-P' + estadoExamen.parcial,
+                    codigo_habilitar: codigo,
+                    ip: estadoExamen.ipPublica,
+                    huella_dispositivo: estadoExamen.huellaDispositivo
+                });
+                estadoExamen.intento = Number(r.siguiente_intento);
+                estadoExamen.intentosPermitidos = Number(r.intentos_permitidos || estadoExamen.intento);
+                estadoExamen.idEnvio = nuevoIdEnvio();
+                if (contexto === 'envio') {
+                    // Ya respondió todas las preguntas: conserva las respuestas y solo debe volver a ENVIAR.
+                    bloque.remove();
+                    actualizarInfoProgreso();
+                    const aviso = document.getElementById('mensajeError3');
+                    aviso.classList.remove('hidden');
+                    aviso.innerHTML = '<i class="bi bi-check-circle"></i> ' + etiquetaIntento(estadoExamen.intento) + ' habilitado. Presiona <strong>ENVIAR</strong>.';
+                } else {
+                    comenzarIntento();
+                }
+            } catch (error) {
+                mensaje.classList.remove('hidden');
+                mensaje.style.color = '#f8a09b';
+                mensaje.textContent = error.message || 'No se pudo habilitar el intento.';
+                input.value = '';
+            } finally {
+                boton.disabled = false;
+                boton.innerHTML = '<i class="bi bi-unlock"></i> HABILITAR';
+            }
+        }
+
+        function comenzarIntento() {
+            ocultarTodosLosPasos();
+            document.getElementById('paso3').classList.remove('hidden');
+            document.getElementById('mensajeError3').classList.add('hidden');
+            const btnEnviar = document.getElementById('btnEnviar');
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
+            estadoExamen.paso = 3;
+            estadoExamen.respuestas = {};
+            estadoExamen.preguntaActual = 1;
+            if (!estadoExamen.idEnvio) estadoExamen.idEnvio = nuevoIdEnvio();
+            document.getElementById('estadoExamen').textContent = 'PARCIAL ' + estadoExamen.parcial + ' · ' + etiquetaIntento(estadoExamen.intento).toUpperCase();
+            mostrarPregunta(1);
+        }
+
+        // ===== CONSULTA DE RESULTADOS =====
         function mostrarConsultaResultados() {
             ocultarTodosLosPasos();
             document.getElementById('pasoConsulta').classList.remove('hidden');
@@ -789,18 +919,16 @@
             document.getElementById('mensajeConsulta').classList.add('hidden');
             document.getElementById('resultadoConsulta').classList.add('hidden');
         }
-
         function volverDesdeConsulta() {
             ocultarTodosLosPasos();
             document.getElementById('paso1').classList.remove('hidden');
             document.getElementById('estadoExamen').textContent = 'INICIANDO...';
         }
-
         function formatearPuntaje(valor) {
+            if (valor === '' || valor === null || valor === undefined) return 'Pendiente';
             const numero = Number(valor);
             return Number.isFinite(numero) ? numero + ' / 10' : 'Pendiente';
         }
-
         function crearBloqueRevisionProtegida() {
             return `
                 <div id="accesoRevision" style="margin-top: 20px; padding: 16px; border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;">
@@ -825,24 +953,20 @@
                 </div>
             `;
         }
-
         async function consultarResultadosCedula() {
-            const cedula = document.getElementById('consultaCedula').value.trim();
+            const cedula = normalizarCedula(document.getElementById('consultaCedula').value);
             const parcial = Number(document.getElementById('consultaParcial').value || 2);
             const mensaje = document.getElementById('mensajeConsulta');
             const resultado = document.getElementById('resultadoConsulta');
             const boton = document.getElementById('btnConsultarResultado');
-
             mensaje.classList.add('hidden');
             resultado.classList.add('hidden');
             resultado.innerHTML = '';
-
-            if (cedula.length < 6 || cedula.length > 20) {
+            if (cedula.length < 5 || cedula.length > 20) {
                 mensaje.classList.remove('hidden');
                 mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> Ingresa una cédula válida.';
                 return;
             }
-
             boton.disabled = true;
             boton.innerHTML = '<i class="bi bi-hourglass-split"></i> CONSULTANDO...';
             try {
@@ -850,8 +974,7 @@
                     accion: 'consultar_resultados',
                     cedula,
                     codigo_examen: 'TIC026-P' + parcial
-                });
-
+                }, (n, total) => { boton.innerHTML = `<i class="bi bi-arrow-repeat"></i> REINTENTANDO (${n}/${total})...`; });
                 seleccionarPreguntasParcial(parcial);
                 estadoExamen.datosPersonales = {
                     nombre: datos.nombre || '',
@@ -859,14 +982,23 @@
                     carrera: datos.carrera || '',
                     seccion: datos.seccion || ''
                 };
-
                 const revisionHtml = datos.revision_disponible ? crearBloqueRevisionProtegida() : `
                     <div class="alert-exam alert-warning" style="margin-top: 16px;">
                         <i class="bi bi-exclamation-triangle"></i>
                         La revisión protegida se habilita después de completar los dos intentos.
                     </div>
                 `;
-
+                let filasIntentos;
+                if (Array.isArray(datos.puntajes) && datos.puntajes.length) {
+                    filasIntentos = datos.puntajes.map(x => `
+                        <div class="resumen-item"><span><strong>${escaparHtml(etiquetaIntento(x.intento))}:</strong></span><span>${formatearPuntaje(x.puntaje)}</span></div>
+                    `).join('');
+                } else {
+                    filasIntentos = `
+                        <div class="resumen-item"><span><strong>Primer puntaje:</strong></span><span>${formatearPuntaje(datos.primer_puntaje)}</span></div>
+                        <div class="resumen-item"><span><strong>Segundo puntaje:</strong></span><span>${formatearPuntaje(datos.segundo_puntaje)}</span></div>
+                    `;
+                }
                 resultado.innerHTML = `
                     <div class="resumen">
                         <div class="resumen-item"><span><strong>Nombre:</strong></span><span>${escaparHtml(datos.nombre || 'No registrado')}</span></div>
@@ -874,10 +1006,8 @@
                         <div class="resumen-item"><span><strong>Carrera:</strong></span><span>${escaparHtml(datos.carrera || 'No registrada')}</span></div>
                         <div class="resumen-item"><span><strong>Sección:</strong></span><span>${escaparHtml(datos.seccion || 'No registrada')}</span></div>
                         <div class="resumen-item"><span><strong>Examen:</strong></span><span>Parcial ${parcial}</span></div>
-                        <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
-                            <span><strong>Primer puntaje:</strong></span><span>${formatearPuntaje(datos.primer_puntaje)}</span>
-                        </div>
-                        <div class="resumen-item"><span><strong>Segundo puntaje:</strong></span><span>${formatearPuntaje(datos.segundo_puntaje)}</span></div>
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;"></div>
+                        ${filasIntentos}
                         <div class="resumen-item"><span><strong>Puntaje definitivo:</strong></span><span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${formatearPuntaje(datos.puntaje_definitivo)}</span></div>
                     </div>
                     ${revisionHtml}
@@ -886,44 +1016,51 @@
                 document.getElementById('estadoExamen').textContent = 'RESULTADO CONSULTADO';
             } catch (error) {
                 mensaje.classList.remove('hidden');
-                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + (error.message || 'No se pudo consultar el resultado.');
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + escaparHtml(error.message || 'No se pudo consultar el resultado.');
             } finally {
                 boton.disabled = false;
                 boton.innerHTML = '<i class="bi bi-search"></i> CONSULTAR';
             }
         }
 
+        // ===== INICIO DEL EXAMEN =====
         async function irPaso3() {
-            const nombre = document.getElementById('nombre').value.trim();
-            const cedula = document.getElementById('cedula').value.trim();
+            const nombre = document.getElementById('nombre').value.trim().replace(/\s+/g, ' ');
+            const cedulaSesion = obtenerCedulaSesion();
+            const cedula = normalizarCedula(document.getElementById('cedula').value || cedulaSesion);
             const carrera = document.getElementById('carrera').value;
             const seccion = document.querySelector('input[name="seccion"]:checked')?.value;
-
             const mensajeError = document.getElementById('mensajeError2');
-
+            mensajeError.classList.add('hidden');
             if (!nombre || !cedula || !carrera || !seccion) {
                 mensajeError.classList.remove('hidden');
                 mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Completa todos los campos obligatorios.';
                 return;
             }
-
-            if (cedula.length < 6 || cedula.length > 20) {
+            if (nombre.split(' ').length < 2) {
                 mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> La cédula debe tener entre 6 y 20 caracteres.';
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Ingresa nombre y apellido completos.';
                 return;
             }
-
-            estadoExamen.datosPersonales = {
-                nombre,
-                cedula,
-                carrera,
-                seccion
-            };
-
+            if (cedula.length < 5 || cedula.length > 20) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> La cédula debe tener entre 5 y 20 caracteres (sin puntos).';
+                return;
+            }
+            if (cedulaSesion && cedula !== cedulaSesion) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> La cédula debe coincidir con la sesión activa del Campus Virtual.';
+                return;
+            }
+            if (!cedulaSesion) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> Inicia sesión en el Campus Virtual y abre el examen desde la aplicación.';
+                return;
+            }
+            estadoExamen.datosPersonales = { nombre, cedula, carrera, seccion };
             const botonComenzar = document.querySelector('#paso2 .btn-primary-exam');
             botonComenzar.disabled = true;
-            botonComenzar.innerHTML = '<i class="bi bi-shield-check"></i> VERIFICANDO DISPOSITIVO...';
-
+            botonComenzar.innerHTML = '<i class="bi bi-shield-check"></i> VERIFICANDO...';
             try {
                 await obtenerIdentidadDispositivo();
                 const validacion = await llamarApiExamen({
@@ -932,139 +1069,93 @@
                     codigo_examen: 'TIC026-P' + estadoExamen.parcial,
                     ip: estadoExamen.ipPublica,
                     huella_dispositivo: estadoExamen.huellaDispositivo
-                });
+                }, (n, total) => { botonComenzar.innerHTML = `<i class="bi bi-arrow-repeat"></i> REINTENTANDO (${n}/${total})...`; });
                 estadoExamen.intento = Number(validacion.siguiente_intento || 1);
+                estadoExamen.intentosPermitidos = Number(validacion.intentos_permitidos || INTENTOS_BASE);
             } catch (error) {
                 mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> ' +
-                    (error.codigo === 'DISPOSITIVO_DUPLICADO'
-                        ? 'Esta IP o dispositivo ya fue utilizado por otro alumno. Intenta desde otro dispositivo.'
-                        : error.message);
+                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> ' + escaparHtml(error.message) +
+                    (error.codigo === 'INTENTOS_AGOTADOS' ? crearBloqueHabilitar('inicio') : '');
+                return;
+            } finally {
                 botonComenzar.disabled = false;
                 botonComenzar.innerHTML = '<i class="bi bi-arrow-right"></i> COMENZAR';
-                return;
             }
+            estadoExamen.idEnvio = nuevoIdEnvio();
+            comenzarIntento();
+        }
 
-            if (nombre.split(/\s+/).length < 2) {
-                mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Ingresa nombre y apellido completos.';
-                return;
-            }
-
-            botonComenzar.disabled = false;
-            botonComenzar.innerHTML = '<i class="bi bi-arrow-right"></i> COMENZAR';
-
-            document.getElementById('paso2').classList.add('hidden');
-            document.getElementById('paso3').classList.remove('hidden');
-            estadoExamen.paso = 3;
-            estadoExamen.respuestas = {};
-            estadoExamen.preguntaActual = 1;
-
-            mostrarPregunta(1);
+        function actualizarInfoProgreso() {
+            document.getElementById('infoProgreso').textContent =
+                `Parcial ${estadoExamen.parcial} · ${etiquetaIntento(estadoExamen.intento)} · Pregunta ${estadoExamen.preguntaActual} de ${estadoExamen.totalPreguntas}`;
         }
 
         function mostrarPregunta(numero) {
             if (numero < 1 || numero > estadoExamen.totalPreguntas) return;
-
             estadoExamen.preguntaActual = numero;
             const pregunta = estadoExamen.preguntas[numero - 1];
-
-            // Actualizar progreso
-            document.getElementById('infoProgreso').textContent = `Parcial ${estadoExamen.parcial} · Pregunta ${numero} de ${estadoExamen.totalPreguntas}`;
+            actualizarInfoProgreso();
             const porcentaje = (numero / estadoExamen.totalPreguntas) * 100;
             document.getElementById('barraProgreso').style.width = porcentaje + '%';
-
-            // Mostrar pregunta
             let html = `
                 <h3 style="color: var(--verde-dark); margin-bottom: 20px; font-size: 1.1rem;">
                     ${pregunta.texto}
                 </h3>
                 <div class="radio-group">
             `;
-
             const opciones = ['A', 'B', 'C', 'D'];
             const respuestaGuardada = estadoExamen.respuestas[numero];
-
             pregunta.opciones.forEach((opcion, index) => {
                 const letra = opciones[index];
                 const checked = respuestaGuardada === letra ? 'checked' : '';
                 html += `
                     <label class="radio-item">
-                        <input
-                            type="radio"
-                            name="respuesta"
-                            value="${letra}"
-                            onchange="guardarRespuesta(${numero}, '${letra}')"
-                            ${checked}
-                        >
+                        <input type="radio" name="respuesta" value="${letra}" onchange="guardarRespuesta(${numero}, '${letra}')" ${checked}>
                         <span><strong>${letra})</strong> ${opcion}</span>
                     </label>
                 `;
             });
-
             html += '</div>';
-
             document.getElementById('contenidoPregunta').innerHTML = html;
-
-            // Actualizar botones
             const btnAnterior = document.getElementById('btnAnterior');
             const btnSiguiente = document.getElementById('btnSiguiente');
             const btnEnviar = document.getElementById('btnEnviar');
-
-            if (numero === 1) {
-                btnAnterior.style.display = 'none';
-                btnSiguiente.style.display = 'block';
-                btnEnviar.style.display = 'none';
-            } else if (numero === estadoExamen.totalPreguntas) {
-                btnAnterior.style.display = 'block';
-                btnSiguiente.style.display = 'none';
-                btnEnviar.style.display = 'block';
-            } else {
-                btnAnterior.style.display = 'block';
-                btnSiguiente.style.display = 'block';
-                btnEnviar.style.display = 'none';
-            }
+            btnAnterior.style.display = numero === 1 ? 'none' : 'block';
+            btnSiguiente.style.display = numero === estadoExamen.totalPreguntas ? 'none' : 'block';
+            btnEnviar.style.display = numero === estadoExamen.totalPreguntas ? 'block' : 'none';
         }
-
         function guardarRespuesta(numero, respuesta) {
             estadoExamen.respuestas[numero] = respuesta;
         }
-
         function preguntaAnterior() {
-            if (estadoExamen.preguntaActual > 1) {
-                mostrarPregunta(estadoExamen.preguntaActual - 1);
-            }
+            if (estadoExamen.preguntaActual > 1) mostrarPregunta(estadoExamen.preguntaActual - 1);
         }
-
         function preguntaSiguiente() {
-            if (estadoExamen.preguntaActual < estadoExamen.totalPreguntas) {
-                mostrarPregunta(estadoExamen.preguntaActual + 1);
-            }
+            if (estadoExamen.preguntaActual < estadoExamen.totalPreguntas) mostrarPregunta(estadoExamen.preguntaActual + 1);
         }
 
+        // ===== ENVÍO =====
         async function enviarExamen() {
             const btnEnviar = document.getElementById('btnEnviar');
-
-            // Asegurar que todas las respuestas estén guardadas
+            const mensaje = document.getElementById('mensajeError3');
             const sinResponder = [];
             for (let i = 1; i <= estadoExamen.totalPreguntas; i++) {
                 if (!estadoExamen.respuestas[i]) sinResponder.push(i);
             }
             if (sinResponder.length > 0) {
-                const mensaje = document.getElementById('mensajeError3');
                 mensaje.classList.remove('hidden');
                 mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> Aún te faltan ' + sinResponder.length +
                     ' pregunta(s) por responder: ' + sinResponder.join(', ');
                 return;
             }
-            document.getElementById('mensajeError3').classList.add('hidden');
-
+            mensaje.classList.add('hidden');
             btnEnviar.disabled = true;
             btnEnviar.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
-
+            if (!estadoExamen.idEnvio) estadoExamen.idEnvio = nuevoIdEnvio();
             try {
                 // El servidor calcula el puntaje; la clave de respuestas no se publica en el navegador.
-                const datos = {
+                // id_envio identifica este intento: si hay que reintentar, el servidor no cuenta un intento extra.
+                const respuestaServer = await llamarApiExamen({
                     accion: 'guardar_examen',
                     cedula: estadoExamen.datosPersonales.cedula,
                     nombre: estadoExamen.datosPersonales.nombre,
@@ -1073,110 +1164,81 @@
                     seccion: estadoExamen.datosPersonales.seccion,
                     codigo_examen: 'TIC026-P' + estadoExamen.parcial,
                     intento: estadoExamen.intento,
+                    id_envio: estadoExamen.idEnvio,
                     respuestas: JSON.stringify(estadoExamen.respuestas),
                     ip: estadoExamen.ipPublica,
                     huella_dispositivo: estadoExamen.huellaDispositivo,
                     timestamp: new Date().toISOString()
-                };
+                }, (n, total) => { btnEnviar.innerHTML = `<i class="bi bi-arrow-repeat"></i> Reintentando (${n}/${total})...`; });
 
-                const respuestaServer = await llamarApiExamen(datos);
                 const puntaje = Number(respuestaServer.puntaje);
                 estadoExamen.puntaje = puntaje;
                 estadoExamen.intento = Number(respuestaServer.intentos_realizados || estadoExamen.intento);
-
-                // Mostrar resultados
-                document.getElementById('paso3').classList.add('hidden');
-                document.getElementById('paso4').classList.remove('hidden');
-
-                let mensajeResultado = `
-                    <div class="resumen">
-                        <div class="resumen-item">
-                            <span><strong>Nombre:</strong></span>
-                            <span>${estadoExamen.datosPersonales.nombre}</span>
-                        </div>
-                        <div class="resumen-item">
-                            <span><strong>Cédula:</strong></span>
-                            <span>${estadoExamen.datosPersonales.cedula}</span>
-                        </div>
-                        <div class="resumen-item">
-                            <span><strong>Carrera:</strong></span>
-                            <span>${estadoExamen.datosPersonales.carrera}</span>
-                        </div>
-                        <div class="resumen-item">
-                            <span><strong>Sección:</strong></span>
-                            <span>${estadoExamen.datosPersonales.seccion}</span>
-                        </div>
-                        <div class="resumen-item">
-                            <span><strong>Examen:</strong></span>
-                            <span>Parcial ${estadoExamen.parcial}</span>
-                        </div>
-                        <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
-                            <span><strong>Puntaje Obtenido:</strong></span>
-                            <span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${puntaje} / 10</span>
-                        </div>
-                        <div class="resumen-item">
-                            <span><strong>Intento:</strong></span>
-                            <span>${estadoExamen.intento} / ${estadoExamen.maxIntentos}</span>
-                        </div>
-                    </div>
-                `;
-
-                // La opción aparece únicamente después de completar los dos intentos.
-                let revisionHtml = respuestaServer.revision_disponible ? crearBloqueRevisionProtegida() : '';
-
-                mensajeResultado += revisionHtml;
-
-                if (respuestaServer.puede_reintentar) {
-                    mensajeResultado += `
-                        <div class="alert-exam alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            Tienes un intento más. <strong>Puedes intentar nuevamente</strong> para mejorar tu puntaje.
-                        </div>
-                        <button class="btn-exam btn-primary-exam" style="margin-top: 20px;" onclick="intentarDeNuevo()">
-                            <i class="bi bi-arrow-clockwise"></i> INTENTAR DE NUEVO
-                        </button>
-                    `;
-                } else {
-                    mensajeResultado += `
-                        <div class="alert-exam alert-success">
-                            <i class="bi bi-check-circle"></i>
-                            Examen finalizado. Se guardará tu mejor puntaje.
-                        </div>
-                    `;
-                }
-
-                document.getElementById('contenidoResultados').innerHTML = mensajeResultado;
-
+                estadoExamen.intentosPermitidos = Number(respuestaServer.intentos_permitidos || estadoExamen.intentosPermitidos);
+                estadoExamen.idEnvio = '';
+                mostrarResultado(respuestaServer, puntaje);
             } catch (error) {
                 console.error('Error:', error);
                 btnEnviar.disabled = false;
                 btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
-                const ultimoError = document.getElementById('mensajeError3');
-                ultimoError.classList.remove('hidden');
-                ultimoError.innerHTML = '<i class="bi bi-exclamation-circle"></i> No se pudo guardar el examen. ' +
-                    (error && error.message ? 'Detalle: ' + error.message : 'Intenta de nuevo.');
+                mensaje.classList.remove('hidden');
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> No se pudo guardar el examen. ' +
+                    escaparHtml(error && error.message ? 'Detalle: ' + error.message : 'Intenta de nuevo.') +
+                    (error.codigo === 'INTENTOS_AGOTADOS' ? crearBloqueHabilitar('envio') : '');
             }
+        }
+
+        function mostrarResultado(respuestaServer, puntaje) {
+            const d = estadoExamen.datosPersonales;
+            ocultarTodosLosPasos();
+            document.getElementById('paso4').classList.remove('hidden');
+            estadoExamen.paso = 4;
+            document.getElementById('estadoExamen').textContent = 'PARCIAL ' + estadoExamen.parcial + ' · ENVIADO';
+            const intentoTexto = estadoExamen.intento > INTENTOS_BASE
+                ? `${estadoExamen.intento} <span style="color: var(--dorado); font-size: 0.8rem;">(adicional)</span>`
+                : `${estadoExamen.intento} / ${INTENTOS_BASE}`;
+            let html = `
+                <div class="resumen">
+                    <div class="resumen-item"><span><strong>Nombre:</strong></span><span>${escaparHtml(d.nombre)}</span></div>
+                    <div class="resumen-item"><span><strong>Cédula:</strong></span><span>${escaparHtml(d.cedula)}</span></div>
+                    <div class="resumen-item"><span><strong>Carrera:</strong></span><span>${escaparHtml(d.carrera)}</span></div>
+                    <div class="resumen-item"><span><strong>Sección:</strong></span><span>${escaparHtml(d.seccion)}</span></div>
+                    <div class="resumen-item"><span><strong>Examen:</strong></span><span>Parcial ${estadoExamen.parcial}</span></div>
+                    <div class="resumen-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;">
+                        <span><strong>Puntaje Obtenido:</strong></span>
+                        <span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${puntaje} / 10</span>
+                    </div>
+                    <div class="resumen-item"><span><strong>Intento:</strong></span><span>${intentoTexto}</span></div>
+                </div>
+            `;
+            if (respuestaServer.revision_disponible) html += crearBloqueRevisionProtegida();
+            if (respuestaServer.puede_reintentar) {
+                const siguiente = estadoExamen.intento + 1;
+                html += `
+                    <div class="alert-exam alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Tienes otro intento regular disponible (${escaparHtml(etiquetaIntento(siguiente))}).
+                    </div>
+                    <button class="btn-exam btn-primary-exam" style="margin-top: 20px;" onclick="intentarDeNuevo()">
+                        <i class="bi bi-arrow-clockwise"></i> INTENTAR DE NUEVO
+                    </button>
+                `;
+            } else {
+                html += `
+                    <div class="alert-exam alert-success">
+                        <i class="bi bi-check-circle"></i>
+                        Examen finalizado. Tu mejor puntaje quedó guardado.
+                    </div>
+                    ${crearBloqueHabilitar('resultado')}
+                `;
+            }
+            document.getElementById('contenidoResultados').innerHTML = html;
         }
 
         function intentarDeNuevo() {
             estadoExamen.intento++;
-            estadoExamen.preguntaActual = 1;
-            estadoExamen.respuestas = {};
-
-            const btnEnviar = document.getElementById('btnEnviar');
-            btnEnviar.disabled = false;
-            btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
-
-            document.getElementById('paso4').classList.add('hidden');
-            document.getElementById('paso3').classList.remove('hidden');
-
-            mostrarPregunta(1);
-        }
-
-        function escaparHtml(valor) {
-            const nodo = document.createElement('div');
-            nodo.textContent = String(valor ?? '');
-            return nodo.innerHTML;
+            estadoExamen.idEnvio = nuevoIdEnvio();
+            comenzarIntento();
         }
 
         async function validarCodigoRevision() {
@@ -1185,7 +1247,6 @@
             const revision = document.getElementById('revisionDetallada');
             const acceso = document.getElementById('accesoRevision');
             if (!input || !mensaje || !revision || !acceso) return;
-
             const boton = acceso.querySelector('button');
             boton.disabled = true;
             boton.innerHTML = '<i class="bi bi-hourglass-split"></i> VALIDANDO...';
@@ -1212,7 +1273,6 @@
                 boton.innerHTML = '<i class="bi bi-unlock"></i> MOSTRAR REVISIÓN';
             }
         }
-
         function renderizarRevision(detalle) {
             const contenedor = document.getElementById('contenidoRevision');
             contenedor.innerHTML = detalle.map(item => {
@@ -1240,15 +1300,12 @@
         function irAlDashboard() {
             window.location.href = '../alumno/index.html';
         }
-
-        // Inicializar al cargar
         window.addEventListener('load', () => {
             document.getElementById('estadoExamen').textContent = 'LISTO';
         });
-
         // Prevenir cierre accidental
         window.addEventListener('beforeunload', (e) => {
-            if (estadoExamen.paso >= 3 && Object.keys(estadoExamen.respuestas).length > 0) {
+            if (estadoExamen.paso === 3 && Object.keys(estadoExamen.respuestas).length > 0) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -1256,3 +1313,4 @@
     </script>
 </body>
 </html>
+

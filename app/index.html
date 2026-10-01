@@ -1100,8 +1100,8 @@ async function entrarOffline(cedula){
 
 function guardarSesionExamen(cedula,rol){
     const rolNormalizado=String(rol||'').toLowerCase();
-    if(!['alumno','estudiante'].includes(rolNormalizado)){try{localStorage.removeItem('centuria_exam_session')}catch(e){};return}
-    try{localStorage.setItem('centuria_exam_session',JSON.stringify({cedula:String(cedula||'').replace(/[.\s-]/g,''),rol:rolNormalizado,expira:Date.now()+12*60*60*1000}))}catch(e){}
+    if(!['alumno','estudiante','student'].includes(rolNormalizado)){try{localStorage.removeItem('centuria_exam_session')}catch(e){};return}
+    try{localStorage.setItem('centuria_exam_session',JSON.stringify({cedula:String(cedula||'').replace(/[.\s-]/g,''),rol:'alumno',expira:Date.now()+12*60*60*1000}))}catch(e){}
 }
 function showLoading(id){const b=document.getElementById(id);if(b){b.dataset.orig=b.innerHTML;b.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Conectando...';b.disabled=true}}
 function hideLoading(id){const b=document.getElementById(id);if(b&&b.dataset.orig){b.innerHTML=b.dataset.orig;b.disabled=false}}
@@ -1208,6 +1208,7 @@ async function verificarCedula(){
         }
         sessionStorage.setItem('rol',role);
         localStorage.setItem('centuria_rol',role);
+        guardarSesionExamen(cedula,role);
         if(role==='academico'){window.location.href='academic/index.html';return}
         if(role==='admin'||role==='administrador_plataforma'||role==='administrador'||role==='administracion_general'||role==='admin_general'||role==='administracion'){window.location.href='dashboard-admin.html';return}
         if(role==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}

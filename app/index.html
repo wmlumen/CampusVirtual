@@ -1094,9 +1094,15 @@ async function entrarOffline(cedula){
             if(active.length===1){hideLoadingGlobal();seleccionarRol(active[0]);return}
         }
     }catch(e){}
-    sessionStorage.setItem('rol',rol);hideLoadingGlobal();mostrarCursos(null);
+    sessionStorage.setItem('rol',rol);guardarSesionExamen(cedula,rol);hideLoadingGlobal();mostrarCursos(null);
 }
 
+
+function guardarSesionExamen(cedula,rol){
+    const rolNormalizado=String(rol||'').toLowerCase();
+    if(!['alumno','estudiante'].includes(rolNormalizado)){try{localStorage.removeItem('centuria_exam_session')}catch(e){};return}
+    try{localStorage.setItem('centuria_exam_session',JSON.stringify({cedula:String(cedula||'').replace(/[.\s-]/g,''),rol:rolNormalizado,expira:Date.now()+12*60*60*1000}))}catch(e){}
+}
 function showLoading(id){const b=document.getElementById(id);if(b){b.dataset.orig=b.innerHTML;b.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Conectando...';b.disabled=true}}
 function hideLoading(id){const b=document.getElementById(id);if(b&&b.dataset.orig){b.innerHTML=b.dataset.orig;b.disabled=false}}
 function showLoadingGlobal(t){try{document.getElementById('global-loading-text').textContent=t||'Conectando con el servidor... espera';document.getElementById('global-loading').style.display='flex'}catch(e){}}
@@ -1399,8 +1405,8 @@ function mostrarSelectorRoles(roles){
     roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
     btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
     btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'||r.rol==='administracion_general'||r.rol==='admin_general'||r.rol==='administracion'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
-function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
+function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);guardarSesionExamen(sessionStorage.getItem('current_cedula'),r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'||r.rol==='administracion_general'||r.rol==='admin_general'||r.rol==='administracion'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
+function cerrarSesionRoles(){sessionStorage.clear();localStorage.removeItem('centuria_exam_session');localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══
 async function mostrarCursos(cursosDirectos,rolFiltro,carreraFiltro){
@@ -1452,7 +1458,7 @@ function renderCursos(cursos){const l=document.getElementById('lista-cursos');l.
 cursos.forEach(c=>{const b=document.createElement('button');b.className='curso-btn';
 b.innerHTML='<div class="curso-icon" style="background:linear-gradient(135deg,'+(c.color||'#16813D')+','+(c.color||'#0D5C2A')+')"><i class="bi '+(c.icono||'bi-book')+'"></i></div><div class="curso-info"><div class="curso-name">'+c.nombre+'</div><div class="curso-meta">'+(c.codigo||'')+(c.seccion?' • Sec. '+c.seccion:'')+(c.semestre?' • '+c.semestre:'')+(c.carrera?' • '+c.carrera:'')+'</div>'+(c.carga_horaria?'<div class="curso-meta"><i class="bi bi-clock me-1"></i>'+c.carga_horaria+'h • '+c.unidades+' unidades</div>':'')+'</div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';b.onclick=()=>seleccionarCurso(c);l.appendChild(b)})}
 function seleccionarCurso(c){sessionStorage.setItem('curso_actual',c.id);sessionStorage.setItem('curso_nombre',c.nombre);sessionStorage.setItem('curso_codigo',c.codigo||'');if(c.rol)sessionStorage.setItem('rol',c.rol);window.location.href='Materiales_Clases/programa.html?curso='+encodeURIComponent(c.id)}
-function cerrarSesionCursos(){sessionStorage.clear();localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');document.getElementById('step-3-cursos').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
+function cerrarSesionCursos(){sessionStorage.clear();localStorage.removeItem('centuria_exam_session');localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');document.getElementById('step-3-cursos').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 window.addEventListener('load',()=>{
     // Si ya tiene sesión activa válida y token, redirigir al panel correspondiente

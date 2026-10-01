@@ -1288,7 +1288,17 @@
                     <div class="resumen-item"><span><strong>Intento:</strong></span><span>${intentoTexto}</span></div>
                 </div>
             `;
-            if (respuestaServer.revision_disponible) html += crearBloqueRevisionProtegida();
+            if (Array.isArray(respuestaServer.detalle_alumno) && respuestaServer.detalle_alumno.length) {
+                html += `
+                <div style="margin-top: 20px;">
+                    <h3 style="color: var(--dorado); margin-bottom: 16px; border-bottom: 1px solid rgba(212,168,67,0.3); padding-bottom: 8px;">
+                        <i class="bi bi-clipboard-check"></i> Revisión de tu examen (intento ${estadoExamen.intento})
+                    </h3>
+                    <div id="contenidoRevisionAlumno" style="max-height: 420px; overflow-y: auto; padding-right: 8px;"></div>
+                </div>`;
+            } else if (respuestaServer.revision_disponible) {
+                html += crearBloqueRevisionProtegida();
+            }
             if (respuestaServer.puede_reintentar) {
                 const siguiente = estadoExamen.intento + 1;
                 html += `
@@ -1310,6 +1320,9 @@
                 `;
             }
             document.getElementById('contenidoResultados').innerHTML = html;
+            if (Array.isArray(respuestaServer.detalle_alumno) && respuestaServer.detalle_alumno.length) {
+                renderizarRevision(respuestaServer.detalle_alumno, 'contenidoRevisionAlumno');
+            }
         }
 
         function intentarDeNuevo() {

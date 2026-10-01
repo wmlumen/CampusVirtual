@@ -594,7 +594,7 @@
 
     <div class="footer">
         Instituto Superior Centuria — Examen Parcial TIC026<br>
-        <span>Versión V05 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
+        <span>Versión V06 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
     </div>
 
     <!-- SCRIPTS -->
@@ -619,7 +619,8 @@
             preguntas: [],
             ipPublica: '',
             huellaDispositivo: '',
-            idEnvio: ''
+            idEnvio: '',
+            completarAlResponder: false
         };
 
         // Banco completo de 20 preguntas. Parcial 1 = 1 a 10, Parcial 2 = 11 a 20.
@@ -931,6 +932,7 @@
             btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
             estadoExamen.paso = 3;
             estadoExamen.respuestas = {};
+            estadoExamen.completarAlResponder = false;
             estadoExamen.preguntaActual = 1;
             if (!estadoExamen.idEnvio) estadoExamen.idEnvio = nuevoIdEnvio();
             document.getElementById('estadoExamen').textContent = 'PARCIAL ' + estadoExamen.parcial + ' · ' + etiquetaIntento(estadoExamen.intento).toUpperCase();
@@ -1173,6 +1175,27 @@
         }
         function guardarRespuesta(numero, respuesta) {
             estadoExamen.respuestas[numero] = respuesta;
+            if (!estadoExamen.completarAlResponder) return;
+            const faltantes = [];
+            for (let i = 1; i <= estadoExamen.totalPreguntas; i++) {
+                if (!estadoExamen.respuestas[i]) faltantes.push(i);
+            }
+            const mensaje = document.getElementById('mensajeError3');
+            if (faltantes.length) {
+                mostrarPregunta(faltantes[0]);
+                const textoFaltantes = faltantes.length === 1 ? 'Aún falta 1 pregunta' : 'Aún faltan ' + faltantes.length + ' preguntas';
+                mensaje.innerHTML = '<i class="bi bi-info-circle"></i> ' + textoFaltantes +
+                    '. Te mostramos la pregunta ' + faltantes[0] + '; al responder todas, el examen se enviará automáticamente.';
+                mensaje.classList.remove('hidden');
+                document.getElementById('contenidoPregunta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const primeraOpcion = document.querySelector('#contenidoPregunta input[name="respuesta"]');
+                if (primeraOpcion) primeraOpcion.focus({ preventScroll: true });
+                return;
+            }
+            estadoExamen.completarAlResponder = false;
+            mensaje.classList.add('hidden');
+            mostrarPregunta(estadoExamen.totalPreguntas);
+            enviarExamen();
         }
         function preguntaAnterior() {
             if (estadoExamen.preguntaActual > 1) mostrarPregunta(estadoExamen.preguntaActual - 1);
@@ -1190,9 +1213,16 @@
                 if (!estadoExamen.respuestas[i]) sinResponder.push(i);
             }
             if (sinResponder.length > 0) {
+                estadoExamen.completarAlResponder = true;
+                mostrarPregunta(sinResponder[0]);
+                const textoFaltantes = sinResponder.length === 1 ? 'Aún falta 1 pregunta' : 'Aún faltan ' + sinResponder.length + ' preguntas';
                 mensaje.classList.remove('hidden');
-                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> Aún te faltan ' + sinResponder.length +
-                    ' pregunta(s) por responder: ' + sinResponder.join(', ');
+                mensaje.innerHTML = '<i class="bi bi-info-circle"></i> ' + textoFaltantes +
+                    ' por responder: ' + sinResponder.join(', ') + '. Te llevamos a la pregunta ' + sinResponder[0] +
+                    '; al responder las pendientes, el examen se enviará automáticamente.';
+                document.getElementById('contenidoPregunta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const primeraOpcion = document.querySelector('#contenidoPregunta input[name="respuesta"]');
+                if (primeraOpcion) primeraOpcion.focus({ preventScroll: true });
                 return;
             }
             mensaje.classList.add('hidden');
@@ -1365,5 +1395,4 @@
     </script>
 </body>
 </html>
-
 

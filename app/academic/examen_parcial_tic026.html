@@ -435,12 +435,8 @@
                 >
             </div>
 
-            <div class="form-group">
-                <label for="consultaParcial">Examen *</label>
-                <select id="consultaParcial" class="form-select">
-                    <option value="1">Parcial 1</option>
-                    <option value="2" selected>Parcial 2</option>
-                </select>
+            <div class="alert-exam alert-warning" style="margin-bottom:20px;">
+                Se mostrarán los resultados de <strong>Parcial 1 y Parcial 2</strong> en una sola consulta.
             </div>
 
             <div id="mensajeConsulta" class="alert-exam alert-error hidden"></div>
@@ -451,7 +447,7 @@
                     <i class="bi bi-arrow-left"></i> ATRÁS
                 </button>
                 <button id="btnConsultarResultado" class="btn-exam btn-primary-exam" onclick="consultarResultadosCedula()">
-                    <i class="bi bi-search"></i> CONSULTAR
+                    <i class="bi bi-search"></i> CONSULTAR AMBOS
                 </button>
             </div>
         </div>
@@ -696,15 +692,22 @@
 
                 const cedulaPestana = sessionStorage.getItem('current_cedula') || '';
                 const rolPestana = (sessionStorage.getItem('rol') || '').toLowerCase();
-                if (cedulaPestana && ['alumno', 'estudiante'].includes(rolPestana) && (!expiracion || token)) return normalizarCedula(cedulaPestana);
+                const rolesAlumno = ['alumno', 'estudiante'];
+                if (cedulaPestana && rolesAlumno.includes(rolPestana) && (!expiracion || token)) {
+                    return normalizarCedula(cedulaPestana);
+                }
 
-                // Sesión offline corta: habilita examen en otra pestaña del mismo dominio.
+                // Offline GitHub login uses tab-scoped sessionStorage. The portal
+                // writes this short-lived marker so a same-origin exam opened in a
+                // separate tab can recover the student identity.
                 const sesionExamenRaw = localStorage.getItem('centuria_exam_session') || '';
                 if (sesionExamenRaw) {
                     const sesionExamen = JSON.parse(sesionExamenRaw);
                     const vence = Number(sesionExamen.expira || 0);
                     const rol = String(sesionExamen.rol || '').toLowerCase();
-                    if (sesionExamen.cedula && vence > Date.now() && ['alumno', 'estudiante'].includes(rol)) return normalizarCedula(sesionExamen.cedula);
+                    if (sesionExamen.cedula && vence > Date.now() && ['alumno', 'estudiante'].includes(rol)) {
+                        return normalizarCedula(sesionExamen.cedula);
+                    }
                     localStorage.removeItem('centuria_exam_session');
                 }
 
@@ -943,6 +946,12 @@
             document.getElementById('estadoExamen').textContent = 'CONSULTA';
             document.getElementById('mensajeConsulta').classList.add('hidden');
             document.getElementById('resultadoConsulta').classList.add('hidden');
+            const cedulaSesion = obtenerCedulaSesion();
+            const campoCedula = document.getElementById('consultaCedula');
+            if (cedulaSesion) {
+                campoCedula.value = cedulaSesion;
+                consultarResultadosCedula();
+            }
         }
         function volverDesdeConsulta() {
             ocultarTodosLosPasos();
@@ -954,33 +963,34 @@
             const numero = Number(valor);
             return Number.isFinite(numero) ? numero + ' / 10' : 'Pendiente';
         }
-        function crearBloqueRevisionProtegida() {
+        function crearBloqueRevisionProtegida(parcialRevision) {
+            const parcialActual = Number(parcialRevision || estadoExamen.parcial);
+            const sufijo = String(parcialActual);
             return `
-                <div id="accesoRevision" style="margin-top: 20px; padding: 16px; border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;">
+                <div id="accesoRevision${sufijo}" style="margin-top: 20px; padding: 16px; border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;">
                     <h3 style="color: var(--dorado); margin-bottom: 10px;">
                         <i class="bi bi-lock"></i> Revisión protegida
                     </h3>
                     <p style="margin-bottom: 12px; font-size: 0.86rem;">Completaste los dos intentos. Ingresa el código del profesor para mostrar los resultados detallados.</p>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input id="codigoRevision" type="password" autocomplete="off" placeholder="Código de revisión"
+                        <input id="codigoRevision${sufijo}" type="password" autocomplete="off" placeholder="Código de revisión"
                             style="flex: 1 1 190px; min-width: 0; padding: 10px 12px; border: 1px solid rgba(212,168,67,0.35); border-radius: 8px;">
-                        <button type="button" class="btn-exam btn-primary-exam" style="width: auto; margin: 0;" onclick="validarCodigoRevision()">
+                        <button type="button" class="btn-exam btn-primary-exam" style="width: auto; margin: 0;" onclick="validarCodigoRevision(${parcialActual})">
                             <i class="bi bi-unlock"></i> MOSTRAR REVISIÓN
                         </button>
                     </div>
-                    <div id="mensajeRevision" class="hidden" style="margin-top: 10px; color: #f8a09b; font-size: 0.82rem;"></div>
+                    <div id="mensajeRevision${sufijo}" class="hidden" style="margin-top: 10px; color: #f8a09b; font-size: 0.82rem;"></div>
                 </div>
-                <div id="revisionDetallada" class="hidden" style="margin-top: 20px;">
+                <div id="revisionDetallada${sufijo}" class="hidden" style="margin-top: 20px;">
                     <h3 style="color: var(--dorado); margin-bottom: 16px; border-bottom: 1px solid rgba(212,168,67,0.3); padding-bottom: 8px;">
                         <i class="bi bi-clipboard-check"></i> Revisión de tu examen
                     </h3>
-                    <div id="contenidoRevision" style="max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
+                    <div id="contenidoRevision${sufijo}" style="max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
                 </div>
             `;
         }
         async function consultarResultadosCedula() {
             const cedula = normalizarCedula(document.getElementById('consultaCedula').value);
-            const parcial = Number(document.getElementById('consultaParcial').value || 2);
             const mensaje = document.getElementById('mensajeConsulta');
             const resultado = document.getElementById('resultadoConsulta');
             const boton = document.getElementById('btnConsultarResultado');
@@ -993,50 +1003,66 @@
                 return;
             }
             boton.disabled = true;
-            boton.innerHTML = '<i class="bi bi-hourglass-split"></i> CONSULTANDO...';
+            boton.innerHTML = '<i class="bi bi-hourglass-split"></i> CONSULTANDO AMBOS...';
             try {
-                const datos = await llamarApiExamen({
-                    accion: 'consultar_resultados',
-                    cedula,
-                    codigo_examen: 'TIC026-P' + parcial
-                }, (n, total) => { boton.innerHTML = `<i class="bi bi-arrow-repeat"></i> REINTENTANDO (${n}/${total})...`; });
-                seleccionarPreguntasParcial(parcial);
+                const resultados = await Promise.all([1, 2].map(async parcial => {
+                    try {
+                        const datos = await llamarApiExamen({
+                            accion: 'consultar_resultados',
+                            cedula,
+                            codigo_examen: 'TIC026-P' + parcial
+                        }, (n, total) => { boton.innerHTML = `<i class="bi bi-arrow-repeat"></i> PARCIAL ${parcial}: REINTENTANDO (${n}/${total})...`; });
+                        return { parcial, datos, error: null };
+                    } catch (error) {
+                        return { parcial, datos: null, error };
+                    }
+                }));
+                const disponibles = resultados.filter(x => x.datos);
+                if (!disponibles.length) throw new Error('No se encontraron resultados para esta cédula en Parcial 1 ni Parcial 2.');
+                const datosBase = disponibles[0].datos;
                 estadoExamen.datosPersonales = {
-                    nombre: datos.nombre || '',
-                    cedula: datos.cedula || cedula,
-                    carrera: datos.carrera || '',
-                    seccion: datos.seccion || ''
+                    nombre: datosBase.nombre || '',
+                    cedula: datosBase.cedula || cedula,
+                    carrera: datosBase.carrera || '',
+                    seccion: datosBase.seccion || ''
                 };
-                const revisionHtml = datos.revision_disponible ? crearBloqueRevisionProtegida() : `
-                    <div class="alert-exam alert-warning" style="margin-top: 16px;">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        La revisión protegida se habilita después de completar los dos intentos.
-                    </div>
-                `;
-                let filasIntentos;
-                if (Array.isArray(datos.puntajes) && datos.puntajes.length) {
-                    filasIntentos = datos.puntajes.map(x => `
-                        <div class="resumen-item"><span><strong>${escaparHtml(etiquetaIntento(x.intento))}:</strong></span><span>${formatearPuntaje(x.puntaje)}</span></div>
-                    `).join('');
-                } else {
-                    filasIntentos = `
-                        <div class="resumen-item"><span><strong>Primer puntaje:</strong></span><span>${formatearPuntaje(datos.primer_puntaje)}</span></div>
-                        <div class="resumen-item"><span><strong>Segundo puntaje:</strong></span><span>${formatearPuntaje(datos.segundo_puntaje)}</span></div>
-                    `;
-                }
-                resultado.innerHTML = `
-                    <div class="resumen">
-                        <div class="resumen-item"><span><strong>Nombre:</strong></span><span>${escaparHtml(datos.nombre || 'No registrado')}</span></div>
-                        <div class="resumen-item"><span><strong>Cédula:</strong></span><span>${escaparHtml(datos.cedula || cedula)}</span></div>
-                        <div class="resumen-item"><span><strong>Carrera:</strong></span><span>${escaparHtml(datos.carrera || 'No registrada')}</span></div>
-                        <div class="resumen-item"><span><strong>Sección:</strong></span><span>${escaparHtml(datos.seccion || 'No registrada')}</span></div>
-                        <div class="resumen-item"><span><strong>Examen:</strong></span><span>Parcial ${parcial}</span></div>
-                        <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd;"></div>
-                        ${filasIntentos}
-                        <div class="resumen-item"><span><strong>Puntaje definitivo:</strong></span><span style="color: var(--verde); font-size: 1.2rem; font-weight: 700;">${formatearPuntaje(datos.puntaje_definitivo)}</span></div>
-                    </div>
-                    ${revisionHtml}
-                `;
+                resultado.innerHTML = resultados.map(({ parcial, datos, error }) => {
+                    if (!datos) return `
+                        <div class="resumen" style="margin-bottom:18px;">
+                            <h3 style="color:var(--dorado);margin-bottom:14px;">Parcial ${parcial}</h3>
+                            <div class="alert-exam alert-warning"><i class="bi bi-info-circle"></i> ${escaparHtml(error.message || 'Todavía no hay resultados registrados.')}</div>
+                        </div>`;
+                    let filasIntentos;
+                    if (Array.isArray(datos.puntajes) && datos.puntajes.length) {
+                        filasIntentos = datos.puntajes.map(x => `
+                            <div class="resumen-item"><span><strong>${escaparHtml(etiquetaIntento(x.intento))}:</strong></span><span>${formatearPuntaje(x.puntaje)}</span></div>
+                        `).join('');
+                    } else {
+                        const puntajesResumen = `
+                            <div class="resumen-item"><span><strong>Intento 1:</strong></span><span>${formatearPuntaje(datos.primer_puntaje)}</span></div>
+                            <div class="resumen-item"><span><strong>Intento 2:</strong></span><span>${formatearPuntaje(datos.segundo_puntaje)}</span></div>
+                        `;
+                        filasIntentos = puntajesResumen;
+                        if (Number(datos.intentos_realizados || 0) > 0 && (datos.primer_puntaje === '' || datos.primer_puntaje == null) && (datos.segundo_puntaje === '' || datos.segundo_puntaje == null)) {
+                            filasIntentos = `<div class="resumen-item"><span><strong>Intentos registrados:</strong></span><span>${Number(datos.intentos_realizados)}</span></div><div class="alert-exam alert-warning"><i class="bi bi-info-circle"></i> El servidor no devuelve el puntaje individual de cada intento para este registro.</div>`;
+                        }
+                    }
+                    const revisionHtml = datos.revision_disponible ? crearBloqueRevisionProtegida(parcial) : `
+                        <div class="alert-exam alert-warning" style="margin-top:16px;">
+                            <i class="bi bi-exclamation-triangle"></i> La revisión protegida de este parcial se habilita después de completar los dos intentos.
+                        </div>`;
+                    return `
+                        <div class="resumen" style="margin-bottom:18px;">
+                            <h3 style="color:var(--dorado);margin-bottom:14px;">Parcial ${parcial}</h3>
+                            <div class="resumen-item"><span><strong>Nombre:</strong></span><span>${escaparHtml(datos.nombre || 'No registrado')}</span></div>
+                            <div class="resumen-item"><span><strong>Cédula:</strong></span><span>${escaparHtml(datos.cedula || cedula)}</span></div>
+                            <div class="resumen-item"><span><strong>Carrera:</strong></span><span>${escaparHtml(datos.carrera || 'No registrada')}</span></div>
+                            <div class="resumen-item"><span><strong>Sección:</strong></span><span>${escaparHtml(datos.seccion || 'No registrada')}</span></div>
+                            ${filasIntentos}
+                            <div class="resumen-item"><span><strong>Mejor puntaje:</strong></span><span style="color:var(--verde);font-size:1.2rem;font-weight:700;">${formatearPuntaje(datos.puntaje_definitivo)}</span></div>
+                        </div>
+                        ${revisionHtml}`;
+                }).join('');
                 resultado.classList.remove('hidden');
                 document.getElementById('estadoExamen').textContent = 'RESULTADO CONSULTADO';
             } catch (error) {
@@ -1266,11 +1292,13 @@
             comenzarIntento();
         }
 
-        async function validarCodigoRevision() {
-            const input = document.getElementById('codigoRevision');
-            const mensaje = document.getElementById('mensajeRevision');
-            const revision = document.getElementById('revisionDetallada');
-            const acceso = document.getElementById('accesoRevision');
+        async function validarCodigoRevision(parcialRevision) {
+            const parcial = Number(parcialRevision || estadoExamen.parcial);
+            const sufijo = parcialRevision ? String(parcial) : '';
+            const input = document.getElementById('codigoRevision' + sufijo);
+            const mensaje = document.getElementById('mensajeRevision' + sufijo);
+            const revision = document.getElementById('revisionDetallada' + sufijo);
+            const acceso = document.getElementById('accesoRevision' + sufijo);
             if (!input || !mensaje || !revision || !acceso) return;
             const boton = acceso.querySelector('button');
             boton.disabled = true;
@@ -1279,12 +1307,13 @@
                 const resultado = await llamarApiExamen({
                     accion: 'obtener_revision',
                     cedula: estadoExamen.datosPersonales.cedula,
-                    codigo_examen: 'TIC026-P' + estadoExamen.parcial,
+                    codigo_examen: 'TIC026-P' + parcial,
                     codigo_docente: input.value.trim(),
                     ip: estadoExamen.ipPublica,
                     huella_dispositivo: estadoExamen.huellaDispositivo
                 });
-                renderizarRevision(resultado.detalle || []);
+                seleccionarPreguntasParcial(parcial);
+                renderizarRevision(resultado.detalle || [], 'contenidoRevision' + sufijo);
                 mensaje.classList.add('hidden');
                 acceso.classList.add('hidden');
                 revision.classList.remove('hidden');
@@ -1298,8 +1327,8 @@
                 boton.innerHTML = '<i class="bi bi-unlock"></i> MOSTRAR REVISIÓN';
             }
         }
-        function renderizarRevision(detalle) {
-            const contenedor = document.getElementById('contenidoRevision');
+        function renderizarRevision(detalle, contenedorId) {
+            const contenedor = document.getElementById(contenedorId || 'contenidoRevision');
             contenedor.innerHTML = detalle.map(item => {
                 const pregunta = estadoExamen.preguntas[item.numero - 1];
                 const opciones = ['A', 'B', 'C', 'D'];

@@ -687,8 +687,22 @@
         }
         function obtenerCedulaSesion() {
             try {
-                const cedula = sessionStorage.getItem('current_cedula') || localStorage.getItem('centuria_remember_cedula') || '';
-                return normalizarCedula(cedula);
+                const token = sessionStorage.getItem('centuria_auth_token') || localStorage.getItem('centuria_auth_token') || '';
+                const expiracion = sessionStorage.getItem('centuria_token_expires') || localStorage.getItem('centuria_token_expires') || '';
+                if (expiracion) {
+                    const expiraEn = Date.parse(expiracion);
+                    if (Number.isFinite(expiraEn) && Date.now() > expiraEn) return '';
+                }
+
+                const cedulaPestana = sessionStorage.getItem('current_cedula') || '';
+                if (cedulaPestana && (!expiracion || token)) return normalizarCedula(cedulaPestana);
+
+                // sessionStorage is tab-scoped. Recover the authenticated user in another tab
+                // on this same origin from the shared localStorage session.
+                const usuarioRaw = sessionStorage.getItem('centuria_user') || localStorage.getItem('centuria_user') || '';
+                if (!token || !usuarioRaw) return '';
+                const usuario = JSON.parse(usuarioRaw);
+                return normalizarCedula(usuario.cedula || usuario.username || '');
             } catch (error) {
                 return '';
             }
@@ -1054,7 +1068,7 @@
             }
             if (!cedulaSesion) {
                 mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> Inicia sesión en el Campus Virtual y abre el examen desde la aplicación.';
+                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> No encontramos una sesión activa en este dominio. <a href="../index.html" style="color:var(--dorado-claro);font-weight:700">Abre el Campus Virtual aquí</a>, inicia sesión y vuelve al examen desde el panel del estudiante.';
                 return;
             }
             estadoExamen.datosPersonales = { nombre, cedula, carrera, seccion };

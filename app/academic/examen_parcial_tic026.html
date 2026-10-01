@@ -594,7 +594,7 @@
 
     <div class="footer">
         Instituto Superior Centuria — Examen Parcial TIC026<br>
-        <span>Versión V06 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
+        <span>Versión V07 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
     </div>
 
     <!-- SCRIPTS -->
@@ -899,8 +899,12 @@
                     ip: estadoExamen.ipPublica,
                     huella_dispositivo: estadoExamen.huellaDispositivo
                 });
-                estadoExamen.intento = Number(r.siguiente_intento);
-                estadoExamen.intentosPermitidos = Number(r.intentos_permitidos || estadoExamen.intento);
+                const siguiente = Number(r.siguiente_intento);
+                if (!Number.isFinite(siguiente) || siguiente < 1) {
+                    throw new Error('El servidor no confirmó el intento adicional. No se habilitó ningún intento; avisa al profesor.');
+                }
+                estadoExamen.intento = siguiente;
+                estadoExamen.intentosPermitidos = Number(r.intentos_permitidos) || siguiente;
                 estadoExamen.idEnvio = nuevoIdEnvio();
                 if (contexto === 'envio') {
                     // Ya respondió todas las preguntas: conserva las respuestas y solo debe volver a ENVIAR.
@@ -1135,8 +1139,10 @@
         }
 
         function actualizarInfoProgreso() {
+            const alumno = estadoExamen.datosPersonales || {};
+            const quien = alumno.nombre ? `${alumno.nombre} (CI ${alumno.cedula}) · ` : '';
             document.getElementById('infoProgreso').textContent =
-                `Parcial ${estadoExamen.parcial} · ${etiquetaIntento(estadoExamen.intento)} · Pregunta ${estadoExamen.preguntaActual} de ${estadoExamen.totalPreguntas}`;
+                `${quien}Parcial ${estadoExamen.parcial} · ${etiquetaIntento(estadoExamen.intento)} · Pregunta ${estadoExamen.preguntaActual} de ${estadoExamen.totalPreguntas}`;
         }
 
         function mostrarPregunta(numero) {

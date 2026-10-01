@@ -410,7 +410,7 @@
             </button>
 
             <button class="btn-exam btn-secondary-exam" style="margin-top: 12px;" onclick="mostrarConsultaResultados()">
-                <i class="bi bi-search"></i> CONSULTAR RESULTADOS POR CÉDULA
+                <i class="bi bi-search"></i> VER RESULTADOS DE PARCIAL 1 Y 2
             </button>
         </div>
 
@@ -594,7 +594,7 @@
 
     <div class="footer">
         Instituto Superior Centuria — Examen Parcial TIC026<br>
-        <span>Versión V03 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
+        <span>Versión V04 (cliente 11) · <time datetime="2026-10-01T12:00:00-03:00">01/10/2026</time></span>
     </div>
 
     <!-- SCRIPTS -->
@@ -946,10 +946,11 @@
             document.getElementById('resultadoConsulta').classList.add('hidden');
             const cedulaSesion = obtenerCedulaSesion();
             const campoCedula = document.getElementById('consultaCedula');
+            document.getElementById('pasoConsulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (cedulaSesion) {
                 campoCedula.value = cedulaSesion;
                 consultarResultadosCedula();
-            }
+            } else campoCedula.focus({ preventScroll: true });
         }
         function volverDesdeConsulta() {
             ocultarTodosLosPasos();
@@ -1101,11 +1102,8 @@
                 mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> La cédula debe coincidir con la sesión activa del Campus Virtual.';
                 return;
             }
-            if (!cedulaSesion) {
-                mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-shield-exclamation"></i> No encontramos una sesión activa en este dominio. <a href="../index.html" style="color:var(--dorado-claro);font-weight:700">Abre el Campus Virtual aquí</a>, inicia sesión y vuelve al examen desde el panel del estudiante.';
-                return;
-            }
+            // Sin sesión del Campus: la cédula se verifica en el backend contra
+            // la hoja InscriptosTIC026 (examenes_tic026.gs 11.2).
             estadoExamen.datosPersonales = { nombre, cedula, carrera, seccion };
             const botonComenzar = document.querySelector('#paso2 .btn-primary-exam');
             botonComenzar.disabled = true;

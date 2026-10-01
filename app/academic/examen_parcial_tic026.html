@@ -671,7 +671,7 @@
 
         // ===== FUNCIONES PRINCIPALES =====
         function validarCodigo() {
-            const codigo = document.getElementById('codigoAcceso').value.toUpperCase();
+            const codigo = document.getElementById('codigoAcceso').value.trim().toUpperCase();
             const mensajeError = document.getElementById('mensajeError');
             if (codigo === 'TIC026') {
                 estadoExamen.codigoValido = true;

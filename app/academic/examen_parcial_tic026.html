@@ -695,7 +695,18 @@
                 }
 
                 const cedulaPestana = sessionStorage.getItem('current_cedula') || '';
-                if (cedulaPestana && (!expiracion || token)) return normalizarCedula(cedulaPestana);
+                const rolPestana = (sessionStorage.getItem('rol') || '').toLowerCase();
+                if (cedulaPestana && ['alumno', 'estudiante'].includes(rolPestana) && (!expiracion || token)) return normalizarCedula(cedulaPestana);
+
+                // Sesión offline corta: habilita examen en otra pestaña del mismo dominio.
+                const sesionExamenRaw = localStorage.getItem('centuria_exam_session') || '';
+                if (sesionExamenRaw) {
+                    const sesionExamen = JSON.parse(sesionExamenRaw);
+                    const vence = Number(sesionExamen.expira || 0);
+                    const rol = String(sesionExamen.rol || '').toLowerCase();
+                    if (sesionExamen.cedula && vence > Date.now() && ['alumno', 'estudiante'].includes(rol)) return normalizarCedula(sesionExamen.cedula);
+                    localStorage.removeItem('centuria_exam_session');
+                }
 
                 // sessionStorage is tab-scoped. Recover the authenticated user in another tab
                 // on this same origin from the shared localStorage session.

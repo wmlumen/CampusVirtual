@@ -15,6 +15,7 @@ function centuriaLogout(confirmar) {
 
     // Limpiar toda la sesión y tokens
     try { sessionStorage.clear(); } catch (e) {}
+    try { localStorage.removeItem('centuria_exam_session'); } catch (e) {}
     try {
         localStorage.removeItem('centuria_auth_token');
         localStorage.removeItem('centuria_token');

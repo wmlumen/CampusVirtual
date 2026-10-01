@@ -685,6 +685,18 @@
             try {
                 const token = sessionStorage.getItem('centuria_auth_token') || localStorage.getItem('centuria_auth_token') || '';
                 const expiracion = sessionStorage.getItem('centuria_token_expires') || localStorage.getItem('centuria_token_expires') || '';
+                // La sesión corta creada al autenticar es válida aunque haya quedado
+                // un token anterior vencido en el almacenamiento del navegador.
+                const sesionExamenRaw = localStorage.getItem('centuria_exam_session') || '';
+                if (sesionExamenRaw) {
+                    const sesionExamen = JSON.parse(sesionExamenRaw);
+                    const vence = Number(sesionExamen.expira || 0);
+                    const rol = String(sesionExamen.rol || '').toLowerCase();
+                    if (sesionExamen.cedula && vence > Date.now() && ['alumno', 'estudiante', 'student'].includes(rol)) {
+                        return normalizarCedula(sesionExamen.cedula);
+                    }
+                    localStorage.removeItem('centuria_exam_session');
+                }
                 if (expiracion) {
                     const expiraEn = Date.parse(expiracion);
                     if (Number.isFinite(expiraEn) && Date.now() > expiraEn) return '';
@@ -692,23 +704,9 @@
 
                 const cedulaPestana = sessionStorage.getItem('current_cedula') || '';
                 const rolPestana = (sessionStorage.getItem('rol') || '').toLowerCase();
-                const rolesAlumno = ['alumno', 'estudiante'];
+                const rolesAlumno = ['alumno', 'estudiante', 'student'];
                 if (cedulaPestana && rolesAlumno.includes(rolPestana) && (!expiracion || token)) {
                     return normalizarCedula(cedulaPestana);
-                }
-
-                // Offline GitHub login uses tab-scoped sessionStorage. The portal
-                // writes this short-lived marker so a same-origin exam opened in a
-                // separate tab can recover the student identity.
-                const sesionExamenRaw = localStorage.getItem('centuria_exam_session') || '';
-                if (sesionExamenRaw) {
-                    const sesionExamen = JSON.parse(sesionExamenRaw);
-                    const vence = Number(sesionExamen.expira || 0);
-                    const rol = String(sesionExamen.rol || '').toLowerCase();
-                    if (sesionExamen.cedula && vence > Date.now() && ['alumno', 'estudiante'].includes(rol)) {
-                        return normalizarCedula(sesionExamen.cedula);
-                    }
-                    localStorage.removeItem('centuria_exam_session');
                 }
 
                 // sessionStorage is tab-scoped. Recover the authenticated user in another tab

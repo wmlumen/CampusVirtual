@@ -389,7 +389,7 @@
                 <i class="bi bi-lock"></i> Validación de Acceso
             </h2>
             <p style="color: #64748b; margin-bottom: 20px;">
-                Ingresa el código de acceso proporcionado por tu docente para comenzar el examen.
+                Ingresa el código correspondiente al examen que vas a rendir: <strong>TIC026</strong> para el Examen 1 o <strong>TICO26</strong> para el Examen 2.
             </p>
 
             <div class="form-group">
@@ -398,7 +398,7 @@
                     type="password"
                     id="codigoAcceso"
                     class="form-control"
-                    placeholder="Ej: TIC026"
+                    placeholder="TIC026 o TICO26"
                     maxlength="10"
                 >
             </div>
@@ -670,15 +670,22 @@
         function validarCodigo() {
             const codigo = document.getElementById('codigoAcceso').value.trim().toUpperCase();
             const mensajeError = document.getElementById('mensajeError');
-            if (codigo === 'TIC026') {
+            const parcialesPorCodigo = { TIC026: [1], TICO26: [2] };
+            const parcialesPermitidos = parcialesPorCodigo[codigo];
+            if (parcialesPermitidos) {
                 estadoExamen.codigoValido = true;
+                estadoExamen.parcialesPermitidos = parcialesPermitidos;
                 document.getElementById('paso1').classList.add('hidden');
                 document.getElementById('pasoSelector').classList.remove('hidden');
+                document.querySelectorAll('#pasoSelector button[onclick^="seleccionarParcial("]').forEach(boton => {
+                    const parcial = Number(boton.getAttribute('onclick').match(/\d+/)?.[0]);
+                    boton.classList.toggle('hidden', !parcialesPermitidos.includes(parcial));
+                });
                 mensajeError.classList.add('hidden');
                 estadoExamen.paso = 2;
             } else {
                 mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Código incorrecto. Intenta de nuevo.';
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Código incorrecto. Usa <strong>TIC026</strong> para el Examen 1 o <strong>TICO26</strong> para el Examen 2.';
                 document.getElementById('codigoAcceso').value = '';
             }
         }
@@ -721,7 +728,7 @@
             }
         }
         function seleccionarParcial(numero) {
-            if (!estadoExamen.codigoValido) return;
+            if (!estadoExamen.codigoValido || !estadoExamen.parcialesPermitidos.includes(Number(numero))) return;
             seleccionarPreguntasParcial(numero);
             document.getElementById('parcialSel').textContent = numero;
             document.getElementById('estadoExamen').textContent = 'PARCIAL ' + numero + ' · LISTO';

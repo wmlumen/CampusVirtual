@@ -28,67 +28,106 @@ const FIREBASE_CONFIG = {
 
 let _firestoreDb = null;
 
-// Fallback: si Firebase SDK no cargó, intentar con SDK modular
-if(typeof window.firebase==='undefined'||!window.firebase.apps||window.firebase.apps.length===0){
-  (function(){
-    var loaded=false;
-    function onAllLoaded(){
-      if(loaded)return;loaded=true;
-      try{
-        window.firebase={
-          apps:[],
-          initializeApp:function(c){var a={name:'[DEFAULT]',options:c};this.apps.push(a);return a;},
-          firestore:function(){return{
-            collection:function(c){return{
-              doc:function(id){return{get:function(){return Promise.resolve({exists:false,id:id,data:function(){return {};}});}};},
-              where:function(){return{get:function(){return Promise.resolve({empty:true,docs:[]});}};}
-            };},
-          };},
-          auth:function(){return {};}
-        };
-        window.__firebaseFallback=true;
-      }catch(e){}
-    }
-    var s1=document.createElement('script');s1.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    var s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    var s3=document.createElement('script');s3.src='https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    s1.onload=function(){s2.onload();};
-    s2.onload=function(){s3.onload=onAllLoaded;document.head.appendChild(s3);};
-    s1.onerror=s2.onerror=s3.onerror=onAllLoaded;
-    document.head.appendChild(s1);
-  })();
-}
-
 function getDb() {
     if (_firestoreDb) return _firestoreDb;
     const fb = window.firebase;
-    if (!fb) {
+    if (!fb || !fb.firestore || !fb.initializeApp || !Array.isArray(fb.apps)) {
         if (typeof window._fbCheck === 'function') window._fbCheck();
-        console.warn('[getDb] window.firebase is undefined. Firebase SDK scripts may have failed to load.');
+        console.error('[getDb] Firebase compat SDK no está disponible; se rechaza la consulta para no informar falsamente que una cuenta no existe.');
         console.warn('[getDb] Script sources:', [...document.querySelectorAll('script[src*="firebase"]')].map(s => s.src + ' -> ' + (s.onerror ? 'has onerror' : 'no onerror')));
-        throw new Error('Firebase SDK no cargado');
+        throw new Error('No se pudo conectar con el servicio de cuentas. Recarga la página e inténtalo nuevamente.');
     }
-    if (!fb.apps || fb.apps.length === 0) fb.initializeApp(FIREBASE_CONFIG);
-    _firestoreDb = fb.firestore();
+    try {
+        if (fb.apps.length === 0) fb.initializeApp(FIREBASE_CONFIG);
+        _firestoreDb = fb.firestore();
+    } catch (error) {
+        console.error('[getDb] No se pudo inicializar Firebase:', error);
+        throw new Error('No se pudo iniciar el servicio de cuentas. Inténtalo más tarde.');
+    }
+    if (!_firestoreDb || typeof _firestoreDb.collection !== 'function') {
+        _firestoreDb = null;
+        throw new Error('El servicio de cuentas no está disponible. Recarga la página e inténtalo nuevamente.');
+    }
     return _firestoreDb;
 }
 
-// ── Autenticación anónima por dispositivo (habilita escrituras y lecturas de staff) ──
-function ensureAnonAuth() {
-    return Promise.resolve().then(function () {
-        const fb = window.firebase;
-        if (!fb || !fb.auth) throw new Error('Firebase Auth no disponible');
-        const auth = fb.auth();
-        if (auth.currentUser) return auth.currentUser;
-        return auth.signInAnonymously().then(function (cred) { return cred.user; }).catch(function (e) {
-            if (auth.currentUser) return auth.currentUser;
-            const code = (e && e.code) || '';
-            if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found' || /CONFIGURATION_NOT_FOUND/.test((e && e.message) || '')) {
-                const err = new Error('Auth de Firebase no configurado: activá en la consola Firebase → Authentication → Sign-in method → Anonymous.');
-                err.code = code; throw err;
-            }
-            throw e;
+// ── Firebase Authentication (Email/Contraseña) — v2026-10-06 ──
+// Cada cuenta del Campus es un usuario de Firebase Auth con correo interno <cedula>@campus-centuria.local.
+// La contraseña la verifica Firebase (nunca viaja ni se guarda en Firestore) y las reglas
+// identifican al usuario por ese correo (o por el claim "cedula" que pone la migración).
+const CV_AUTH_DOMINIO = 'campus-centuria.local';
+// Secciones del Instituto (v2026-10-07). Cualquier otra se escribe a mano ("Otra").
+const CV_SECCIONES = ['LV026', 'MJ026', 'S026'];
+window.CV_SECCIONES = CV_SECCIONES;
+// Servicio de recuperación de contraseña (Apps Script recuperar_campus.gs). Vacío = desactivado.
+const RECUPERAR_URL = 'https://script.google.com/macros/s/AKfycbx8wwKp9sQ-KO_ieB9Og5QT_U4UgnGKSlheeHSDOmRgDNIW3R-3wDAbH5lRDr1jdvUnOA/exec';
+function cvEmailDeCedula(ced) {
+    return String(ced || '').replace(/[\.\s\-]/g, '').trim().toLowerCase() + '@' + CV_AUTH_DOMINIO;
+}
+let _cvAuthSdk = null;
+// Carga los módulos compat que falten (app → firestore → auth), para páginas que no incluyen el SDK.
+function cvCargarAuthSdk() {
+    const fb = function () { return window.firebase || {}; };
+    if (fb().initializeApp && fb().firestore && fb().auth) return Promise.resolve();
+    if (_cvAuthSdk) return _cvAuthSdk;
+    const cargar = function (modulo) {
+        return new Promise(function (resolve, reject) {
+            const version = fb().SDK_VERSION || '10.12.0';
+            const s = document.createElement('script');
+            s.src = 'https://www.gstatic.com/firebasejs/' + version + '/firebase-' + modulo + '-compat.js';
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error('No se pudo cargar Firebase (' + modulo + ').')); };
+            document.head.appendChild(s);
         });
+    };
+    _cvAuthSdk = Promise.resolve()
+        .then(function () { if (!fb().initializeApp) return cargar('app'); })
+        .then(function () { if (!fb().firestore) return cargar('firestore'); })
+        .then(function () { if (!fb().auth) return cargar('auth'); })
+        .catch(function (e) { _cvAuthSdk = null; throw e; });
+    return _cvAuthSdk;
+}
+// Espera a que Firebase restaure la sesión guardada antes de consultar Firestore.
+let _cvAuthListo = null;
+function authListo() {
+    if (_cvAuthListo) return _cvAuthListo;
+    _cvAuthListo = cvCargarAuthSdk().then(function () {
+        getDb();
+        return new Promise(function (resolve) {
+            const off = window.firebase.auth().onAuthStateChanged(function (u) { off(); resolve(u); });
+        });
+    }).catch(function (e) { console.warn('[auth]', e && e.message); _cvAuthListo = null; return null; });
+    return _cvAuthListo;
+}
+// Nombre histórico: antes iniciaba sesión anónima. Ahora devuelve el usuario con sesión iniciada.
+function ensureAnonAuth() {
+    return authListo().then(function () {
+        const u = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+        if (u) return u;
+        const err = new Error('Tu sesión expiró. Volvé a ingresar con tu cédula y contraseña.');
+        err.code = 'SIN_SESION';
+        throw err;
+    });
+}
+function cvErrorAuth(e, contexto) {
+    const c = (e && e.code) || '';
+    if (['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email'].indexOf(c) >= 0)
+        return contexto === 'cambio' ? 'Contraseña actual incorrecta.' : 'Cédula o contraseña incorrecta.';
+    if (c === 'auth/user-disabled') return 'Cuenta inactiva. Contactá a la administración.';
+    if (c === 'auth/too-many-requests') return 'Demasiados intentos fallidos. Esperá unos minutos e intentá de nuevo.';
+    if (c === 'auth/weak-password') return 'La contraseña debe tener al menos 6 caracteres.';
+    if (c === 'auth/requires-recent-login') return 'Por seguridad, ingresá tu contraseña actual.';
+    if (c === 'auth/operation-not-allowed' || c === 'auth/configuration-not-found')
+        return 'El acceso con contraseña no está activado en Firebase (Authentication → Email/Contraseña).';
+    if (c === 'auth/network-request-failed') return 'Sin conexión. Revisá tu internet e intentá de nuevo.';
+    return 'Error: ' + (c || (e && e.message) || 'desconocido');
+}
+// Ficha del usuario logueado: primero por ID (= uid tras la migración), si no, por cédula.
+function cvCargarFicha(db, authUser, ced) {
+    return db.collection('usuarios').doc(authUser.uid).get().then(function (snap) {
+        if (snap.exists && String(snap.data().cedula || '') === ced) return snap;
+        return db.collection('usuarios').where('cedula', '==', ced).limit(1).get()
+            .then(function (q) { return q.empty ? null : q.docs[0]; });
     });
 }
 
@@ -137,6 +176,10 @@ function appUrl(relativePath) {
 // ══════════════════════════════════════════════════════════════
 
 function callGas(action, data, method) {
+    return authListo().then(function () { return callGasCore(action, data, method); });
+}
+
+function callGasCore(action, data, method) {
     data = data || {};
     method = (method || 'GET').toUpperCase();
     try {
@@ -147,68 +190,98 @@ function callGas(action, data, method) {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
                 const pass = String(data.password || '').trim();
                 if (!ced || !pass) return Promise.resolve({ ok: false, error: 'Cédula y contraseña requeridas.' });
-                return db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(function(snap) {
-                    if (snap.empty) return { ok: false, error: 'Cédula o contraseña incorrecta.' };
-                    const doc = snap.docs[0];
-                    const d = doc.data();
-                    if (d.password && d.password !== pass) return { ok: false, error: 'Cédula o contraseña incorrecta.' };
-                    if (d.estado === 'inactivo' || d.estado === 'baja') return { ok: false, error: 'Cuenta inactiva. Contactá a la administración.' };
-                    // ── Sesión con expiración de 8 h, sin depender de Firebase Auth anónimo ──
-                    // Pseudo-JWT compatible con parseJwt()/isExpired() de session-guard.js.
-                    const now = Math.floor(Date.now() / 1000);
-                    var b64u = function(obj) {
-                        return btoa(JSON.stringify(obj))
-                            .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-                    };
-                    var token = b64u({ alg: 'none', typ: 'JWT' }) + '.' +
-                                b64u({ cedula: ced, rol: d.rol || 'alumno',
-                                       exp: now + 8 * 3600, iat: now }) + '.' +
-                                ced.replace(/[^0-9]/g, '').substring(0, 8);
-                    // ── Mapeo uid_cedula (no bloqueante) ──────────────────────────────
-                    // Si Firebase Auth anónimo está activo, deja que getCedulaForUid() en las
-                    // reglas resuelva la propiedad del alumno (notas, pagos, asistencia, etc.).
-                    // Si no está configurado, se omite sin romper el login.
-                    ensureAnonAuth().then(function(authUser) {
-                        return db.collection('uid_cedula').doc(authUser.uid).set({
-                            cedula: ced, rol: d.rol || 'alumno',
-                            updated_at: new Date().toISOString()
-                        });
-                    }).catch(function() {});
-                    var user = Object.assign({}, d, { id: doc.id });
-                    return { ok: true, token: token, user: user,
-                             token_expires: new Date((now + 8 * 3600) * 1000).toISOString(),
-                             must_change_password: d.must_change_password ? 1 : 0 };
-                }).catch(function(e) {
-                    return { ok: false, error: 'Error de conexión: ' + (e.code || e.message || 'desconocido') };
+                const auth = window.firebase.auth();
+                return auth.signInWithEmailAndPassword(cvEmailDeCedula(ced), pass).then(function (cred) {
+                    return cvCargarFicha(db, cred.user, ced).then(function (doc) {
+                        const salir = function (msg) { return auth.signOut().then(function () { return { ok: false, error: msg }; }); };
+                        if (!doc) return salir('Tu cuenta existe pero no se encontró tu ficha. Contactá a la administración.');
+                        const d = doc.data();
+                        if (d.estado === 'pendiente' && (d.rol === 'docente' || d.solicitud_rol_docente)) return salir('Tu solicitud de acceso docente está pendiente de aprobación por Administración.');
+                        if (d.estado === 'inactivo' || d.estado === 'baja') return salir('Cuenta inactiva. Contactá a la administración.');
+                        // Sesión de 8 h (pseudo-JWT compatible con parseJwt()/isExpired() de session-guard.js).
+                        const now = Math.floor(Date.now() / 1000);
+                        const b64u = function (obj) {
+                            return btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+                                .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+                        };
+                        const token = b64u({ alg: 'none', typ: 'JWT' }) + '.' +
+                                      b64u({ cedula: ced, rol: d.rol || 'alumno', exp: now + 8 * 3600, iat: now }) + '.' +
+                                      ced.replace(/[^0-9]/g, '').substring(0, 8);
+                        const user = Object.assign({}, d, { id: doc.id });
+                        delete user.password; delete user.current_password;
+                        return { ok: true, token: token, user: user,
+                                 token_expires: new Date((now + 8 * 3600) * 1000).toISOString(),
+                                 must_change_password: d.must_change_password ? 1 : 0 };
+                    });
+                }).catch(function (e) {
+                    console.error('[login]', e && e.code, e && e.message);
+                    return { ok: false, error: cvErrorAuth(e, 'login'), codigo: (e && e.code) || '' };
                 });
             }
 
             case 'register': return (async () => {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
                 if (!ced) return { ok: false, error: 'Cédula requerida.' };
-                const exists = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
-                if (!exists.empty) return { ok: false, error: 'Ya existe un usuario con esta cédula.' };
-                const id = 'USR-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+                if (ced.length < 5 || ced.length > 20) return { ok: false, error: 'La cédula debe tener entre 5 y 20 caracteres.' };
+                const rol = data.rol === 'docente' ? 'docente' : 'alumno';
+                const email = String(data.email || '').trim().toLowerCase();
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'Correo electrónico válido requerido.' };
+                if (!data.password || String(data.password).length < 6) return { ok: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+                if (rol === 'alumno') {
+                    if (!data.grado) return { ok: false, error: 'Grado académico es obligatorio para estudiantes.' };
+                    if (!data.carrera) return { ok: false, error: 'Carrera/Programa es obligatorio para estudiantes.' };
+                    if (!data.seccion) return { ok: false, error: 'Sección es obligatorio para estudiantes.' };
+                }
+                const indice = await db.collection('cedulas').doc(ced).get();
+                // Un alumno pre-registrado (cargado desde planillas, sin cuenta) puede completar su registro.
+                const preRegistro = indice.exists && indice.data().estado === 'pre_registro' && rol === 'alumno';
+                if (indice.exists && !preRegistro) return { ok: false, error: 'Ya existe un usuario con esta cédula.' };
+                const auth = window.firebase.auth();
+                let cred;
+                try {
+                    cred = await auth.createUserWithEmailAndPassword(cvEmailDeCedula(ced), String(data.password));
+                } catch (e) {
+                    if (e && e.code === 'auth/email-already-in-use') return { ok: false, error: 'Ya existe un usuario con esta cédula.' };
+                    return { ok: false, error: cvErrorAuth(e, 'registro') };
+                }
+                const uid = cred.user.uid;
+                // Alumnos: ficha con ID = cédula (contrato existente). Docentes: ID = uid.
+                const docId = rol === 'docente' ? uid : ced;
                 const userData = {
-                    id: id, cedula: ced,
-                    nombre: data.nombre || '', apellido: data.apellido || '',
-                    email: (data.email || '').toLowerCase().trim(),
-                    password: data.password || '',
-                    rol: data.rol || 'alumno',
-                    grado: data.grado || '', carrera: data.carrera || '',
-                    seccion: data.seccion || '', telefono: data.telefono || '',
-                    foto: data.foto || data.foto_url || '',
-                    estado: data.requiere_aprobacion ? 'pendiente' : 'activo',
+                    id: docId, cedula: ced,
+                    nombre: String(data.nombre || '').trim(), apellido: String(data.apellido || '').trim(),
+                    email: email,
+                    rol: rol,
+                    grado: rol === 'alumno' ? String(data.grado || '') : '',
+                    carrera: rol === 'alumno' ? String(data.carrera || '') : '',
+                    seccion: rol === 'alumno' ? String(data.seccion || '') : '',
+                    carrera_grado: rol === 'alumno' ? String(data.carrera || '') + '-' + String(data.grado || '') : '',
+                    telefono: String(data.telefono || ''), foto: data.foto || data.foto_url || '',
+                    estado: rol === 'docente' ? 'pendiente' : 'activo',
+                    solicitud_rol_docente: rol === 'docente',
                     created_at: new Date().toISOString()
                 };
-                await db.collection('usuarios').doc(id).set(userData);
-                return { ok: true, user: userData, token: Date.now().toString(36) };
+                try {
+                    // Una ficha anterior a la migración con la misma cédula no se pisa.
+                    const previa = await db.collection('usuarios').doc(docId).get().catch(() => null);
+                    if (previa && previa.exists) throw Object.assign(new Error('Ya existe un usuario con esta cédula.'), { code: 'YA_EXISTE' });
+                    await db.collection('usuarios').doc(docId).set(userData);
+                    await db.collection('cedulas').doc(ced).set({
+                        cedula: ced, nombre: userData.nombre, apellido: userData.apellido,
+                        estado: userData.estado, rol: rol, uid: docId, actualizado: userData.created_at
+                    });
+                } catch (e) {
+                    try { await cred.user.delete(); } catch (_) {}
+                    return { ok: false, error: e && e.code === 'YA_EXISTE' ? e.message : 'No se pudo completar el registro: ' + ((e && (e.code || e.message)) || 'error') };
+                }
+                if (rol === 'docente') { try { await auth.signOut(); } catch (_) {} }
+                return { ok: true, user: userData, token: rol === 'docente' ? '' : Date.now().toString(36) };
             })();
             case 'validar_sesion': {
                 let u = null; try{ const s = localStorage.getItem('centuria_user') || sessionStorage.getItem('centuria_user'); if(s) u = JSON.parse(s); }catch(e){}
                 return Promise.resolve({ ok: true, valid: true, user: u });
             }
-            case 'logout': return Promise.resolve({ ok: true });
+            case 'logout': return (window.firebase && window.firebase.auth ? window.firebase.auth().signOut() : Promise.resolve()).then(() => ({ ok: true }), () => ({ ok: true }));
             case 'actualizar_perfil': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
                 if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
                 const ref = snap.docs[0].ref;
@@ -217,30 +290,58 @@ function callGas(action, data, method) {
                  'contacto_emergencia','fecha_nacimiento','lugar_nacimiento','nacionalidad','pais',
                  'direccion_calle','barrio','ciudad','departamento','direccion','latitud','longitud',
                  'estado_civil','foto','foto_url','grupo_sanguineo','alergias','seguro_medico',
-                  'rol','estado','carrera','seccion','grado','password','must_change_password'
+                  'rol','estado','carrera','seccion','grado','must_change_password'
                 ].forEach(k => { if (data[k] !== undefined) updates[k] = data[k]; });
                 updates.updated_at = new Date().toISOString();
                 return ref.update(updates).then(() => ({ ok: true, user: Object.assign({}, snap.docs[0].data(), updates) }));
             }).catch(e => ({ ok: false, error: e.message }));
-            case 'cambiar_password': {
+            case 'cambiar_password': return (async () => {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
-                const oldP = data.old_password || '';
-                const newP = data.new_password || '';
-                if (!ced || !newP) return Promise.resolve({ ok: false, error: 'Datos incompletos.' });
-                return db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(snap => {
-                    if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
-                    const d = snap.docs[0].data();
-                    if (oldP && d.password !== oldP) return { ok: false, error: 'Contraseña actual incorrecta.' };
-                    return snap.docs[0].ref.update({ password: newP, updated_at: new Date().toISOString(), must_change_password: false })
-                        .then(() => ({ ok: true }));
-                });
+                const oldP = String(data.old_password || '');
+                const newP = String(data.new_password || '');
+                if (!ced || !newP) return { ok: false, error: 'Datos incompletos.' };
+                if (newP.length < 6) return { ok: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+                const auth = window.firebase.auth();
+                const email = cvEmailDeCedula(ced);
+                try {
+                    let u = auth.currentUser;
+                    if (!u || String(u.email || '').toLowerCase() !== email) {
+                        if (!oldP) return { ok: false, error: 'Ingresá tu contraseña actual.' };
+                        u = (await auth.signInWithEmailAndPassword(email, oldP)).user;
+                    } else if (oldP) {
+                        await u.reauthenticateWithCredential(window.firebase.auth.EmailAuthProvider.credential(email, oldP));
+                    }
+                    await u.updatePassword(newP);
+                    const doc = await cvCargarFicha(db, u, ced).catch(() => null);
+                    if (doc) await doc.ref.update({ must_change_password: false, updated_at: new Date().toISOString() }).catch(() => {});
+                    return { ok: true };
+                } catch (e) {
+                    return { ok: false, error: cvErrorAuth(e, 'cambio') };
+                }
+            })();
+            // Las cuentas usan un correo interno: el enlace oficial de Firebase lo envía al correo real
+            // el servicio de Apps Script recuperar_campus.gs (RECUPERAR_URL).
+            case 'recuperar_acceso': {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                const correo = String(data.email || '').trim();
+                if (!ced || !correo) return Promise.resolve({ ok: false, error: 'Ingresá tu cédula y el correo con el que te registraste.' });
+                if (!RECUPERAR_URL) return Promise.resolve({ ok: false, error: 'La recuperación automática todavía no está disponible. Pedí a la administración del Instituto que restablezca tu contraseña.' });
+                return fetch(RECUPERAR_URL, {
+                    method: 'POST', redirect: 'follow', cache: 'no-store',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ accion: 'recuperar', cedula: ced, email: correo })
+                }).then(r => r.json()).catch(() => ({ ok: false, error: 'No se pudo conectar con el servicio de recuperación. Intentá de nuevo.' }));
             }
-            case 'recuperar_acceso': return Promise.resolve({ ok: true, message: 'Si existe una cuenta con ese email, se enviará recuperación.' });
-            case 'verificar_alumno': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
-                if (snap.empty) return { ok: true, existe: false, estado: 'no_existe' };
-                const d = snap.docs[0].data();
-                return { ok: true, existe: true, estado: d.estado || 'activo', estudiante: Object.assign({ id: snap.docs[0].id }, d) };
-            }).catch(() => ({ ok: true, existe: false }));
+            case 'verificar_alumno': {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return Promise.resolve({ ok: false, existe: false, error: 'Ingresa una cédula válida.', codigo: 'CEDULA_REQUERIDA' });
+                return db.collection('cedulas').doc(ced).get().then(snap => {
+                    if (!snap.exists) return { ok: true, existe: false, estado: 'no_existe' };
+                    const d = snap.data();
+                    return { ok: true, existe: true, estado: d.estado || 'activo',
+                             estudiante: { cedula: ced, nombre: d.nombre || '', apellido: d.apellido || '', estado: d.estado || 'activo', rol: d.rol || '' } };
+                }).catch(error => ({ ok: false, existe: false, error: error && error.message ? error.message : 'No se pudo consultar el registro.', codigo: error && error.code ? error.code : 'ERROR_CONSULTA' }));
+            }
             case 'verificar_roles': return (data.cedula
                 ? db.collection('usuarios').where('cedula', '==', data.cedula).limit(1).get()
                 : db.collection('usuarios').get()
@@ -269,23 +370,90 @@ function callGas(action, data, method) {
                 return { ok: true, roles: users.map(u => ({ cedula: u.cedula, nombre: u.nombre, rol: u.rol, estado: u.estado })), usuarios: users };
             }).catch(() => ({ ok: true, roles: [] }));
 
-            case 'listar_usuarios': return db.collection('usuarios').get().then(snap => ({
-                ok: true, usuarios: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, usuarios: [] }));
-            case 'listar_asignaturas': case 'materias.listar': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => ({
+            case 'listar_usuarios': return db.collection('usuarios').get().then(async snap => {
+                const usuarios = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
+                // Alumnos pre-registrados (con asistencia cargada, sin cuenta todavía). Solo el personal puede listarlos.
+                const conFicha = new Set(usuarios.map(u => String(u.cedula || u.id)));
+                const pre = await db.collection('cedulas').where('estado', '==', 'pre_registro').get().catch(() => null);
+                if (pre) pre.docs.forEach(d => {
+                    if (conFicha.has(d.id)) return;
+                    const x = d.data();
+                    usuarios.push({ id: d.id, cedula: d.id, nombre: x.nombre || '', apellido: x.apellido || '', rol: 'alumno', estado: 'pre_registro', sin_cuenta: true });
+                });
+                return { ok: true, usuarios: usuarios };
+            }).catch(() => ({ ok: true, usuarios: [] }));
+            case 'listar_asignaturas': case 'materias.listar': return Promise.resolve().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, asignaturas: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             }))).catch(() => ({ ok: true, asignaturas: [] }));
-            case 'listar_carreras': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => {
-                const carreras = new Set(['Aduanera', 'Gestión Pública', 'Administración de Empresa']);
-                snap.docs.forEach(doc => { const c = doc.data().carrera; if (c) carreras.add(String(c)); });
-                return { ok: true, carreras: [...carreras].map(nombre => ({ nombre })) };
+case 'listar_carreras': return Promise.resolve().then(() => db.collection('config_carreras').get().then(snap => {
+                // Catálogo público (sin sesión): se usa en el registro y en "Solicitar Asignatura".
+                const normG = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                const filtro = normG(data.grado || '');
+                const CATALOGO_DEFAULT = [
+                    { nombre: 'Licenciatura en Administración de Empresas', grado: 'GRADO' },
+                    { nombre: 'Licenciatura en Administración Aduanera', grado: 'GRADO' },
+                    { nombre: 'Licenciatura en Administración y Gestión Pública', grado: 'GRADO' },
+                    { nombre: 'Licenciatura en Ciencias Contables', grado: 'GRADO' },
+                    { nombre: 'Licenciatura en Comercio Internacional', grado: 'GRADO' },
+                    { nombre: 'Ingeniería Comercial', grado: 'GRADO' },
+                    { nombre: 'Ciencias Sociales', grado: 'GRADO' },
+                    { nombre: 'Especialización en Didáctica Superior Universitaria', grado: 'ESPECIALIZACIÓN' },
+                    { nombre: 'Especialización en Gestión de Políticas Públicas', grado: 'ESPECIALIZACIÓN' },
+                    { nombre: 'Especialización en Gestión de Proyectos', grado: 'ESPECIALIZACIÓN' },
+                    { nombre: 'Especialización en Auditoría y Control de Gestión', grado: 'ESPECIALIZACIÓN' },
+                    { nombre: 'Especialización en Administración Financiera', grado: 'ESPECIALIZACIÓN' },
+                    { nombre: 'Maestría en Administración de Empresas (MBA)', grado: 'MAESTRÍA' },
+                    { nombre: 'Maestría en Gestión Pública y Desarrollo', grado: 'MAESTRÍA' },
+                    { nombre: 'Maestría en Ciencias de la Educación y Docencia Superior', grado: 'MAESTRÍA' },
+                    { nombre: 'Maestría en Auditoría Integral y Gestión de Riesgos', grado: 'MAESTRÍA' },
+                    { nombre: 'Maestría en Finanzas y Negocios Internacionales', grado: 'MAESTRÍA' },
+                    { nombre: 'Doctorado en Ciencias Administrativas y Gestión', grado: 'DOCTORADO' },
+                    { nombre: 'Doctorado en Ciencias de la Educación', grado: 'DOCTORADO' },
+                    { nombre: 'Doctorado en Políticas Públicas y Gobernanza', grado: 'DOCTORADO' },
+                    { nombre: 'Doctorado en Economía y Desarrollo Social', grado: 'DOCTORADO' }
+                ];
+
+                const vistas = new Map();
+                if (snap && !snap.empty) {
+                    snap.docs.forEach(doc => {
+                        const d = doc.data(); const c = String(d.nombre || '').trim(); if (!c) return;
+                        const g = String(d.grado || '').trim();
+                        if (filtro && g && normG(g) !== filtro) return;
+                        if (!vistas.has(c)) vistas.set(c, { nombre: c, grado: g });
+                    });
+                }
+                if (vistas.size === 0) {
+                    CATALOGO_DEFAULT.forEach(item => {
+                        if (filtro && normG(item.grado) !== filtro) return;
+                        vistas.set(item.nombre, item);
+                    });
+                }
+                return { ok: true, carreras: [...vistas.values()] };
             })).catch(() => ({ ok: true, carreras: [] }));
-            case 'listar_secciones': return Promise.resolve({ ok: true, secciones: ['A','B','C','D','E','ÚNICA','S026','LV026'].map(c => ({ codigo: c })) });
+            case 'agregar_carrera': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                const rol = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(snap => {
+                    if (snap.empty) return '';
+                    return snap.docs[0].data().rol || '';
+                });
+                const allowedRoles = ['admin','administrador_plataforma','administracion_general','admin_general','administracion'];
+                if (!allowedRoles.includes(rol)) return { ok: false, error: 'Solo administradores pueden agregar carreras.' };
+                const id = 'CAR-' + Date.now().toString(36);
+                await db.collection('config_carreras').doc(id).set({
+                    nombre: String(data.nombre || '').trim(),
+                    grado: String(data.grado || 'GRADO').trim().toUpperCase(),
+                    activo: data.activo !== false,
+                    creado_en: new Date().toISOString()
+                });
+                return { ok: true, carrera: { id, nombre: data.nombre || '' } };
+            })();
+            case 'listar_secciones': return Promise.resolve({ ok: true, secciones: CV_SECCIONES.map(c => ({ codigo: c })) });
             case 'listar_grados': return Promise.resolve({ ok: true, grados: ['GRADO','ESPECIALIZACIÓN','MAESTRÍA','DOCTORADO'].map(g => ({ nombre: g })) });
             case 'listar_filiales': return db.collection('filiales').get().then(snap => ({
                 ok: true, filiales: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, filiales: [] }));
-            case 'listar_cursos': return ensureAnonAuth().then(() => db.collection('asignaturas').get().then(snap => ({
+            case 'listar_cursos': return Promise.resolve().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, cursos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             }))).catch(() => ({ ok: true, cursos: [] }));
             case 'mis_cursos': return (async () => {
@@ -449,12 +617,7 @@ function callGas(action, data, method) {
                 const pendientes = pagos.filter(p => p.estado !== 'pagado').length;
                 return { ok: true, total, pagados, pendientes };
             }).catch(() => ({ ok: true, total: 0, pagados: 0, pendientes: 0 }));
-            case 'registrar_alumno': return (async () => {
-                const id = 'USR-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
-                const userData = Object.assign({}, data, { id, created_at: new Date().toISOString(), estado: data.estado || 'activo' });
-                await db.collection('usuarios').doc(id).set(userData);
-                return { ok: true, user: userData };
-            })();
+            case 'registrar_alumno': return { ok: false, error: 'El alta directa está deshabilitada. Usa el registro público o el servicio administrativo autorizado.' };
             case 'subir_csv': return Promise.resolve({ ok: true, imported: 0 });
             case 'tesoreria_listar_estudiantes': return db.collection('usuarios').get().then(snap => ({
                 ok: true, estudiantes: snap.docs.map(doc => {
@@ -613,20 +776,50 @@ function callGas(action, data, method) {
                     assignments: asignaciones.map(a => ({ asignatura: a.asignatura, rol: 'docente', estado: 'activo', carrera: a.carrera || '', seccion: a.seccion || '' }))
                 };
             })().catch(e => ({ ok: false, subjects: [], assignments: [], error: e.message }));
-            case 'docente_pendientes': return db.collection('usuarios').where('rol', '==', 'docente').where('estado', '==', 'pendiente').get().then(snap => ({
-                ok: true, pendientes: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
+            case 'docente_pendientes': return ensureAnonAuth().then(() => db.collection('usuarios').where('rol', '==', 'docente').where('estado', '==', 'pendiente').limit(500).get()).then(snap => ({
+                ok: true, pendientes: snap.docs.map(doc => {
+                    const d = doc.data();
+                    return { id: doc.id, cedula: d.cedula || '', nombre: d.nombre || '', apellido: d.apellido || '', email: d.email || '', telefono: d.telefono || '', estado: d.estado || 'pendiente', created_at: d.created_at || '' };
+                })
             })).catch(() => ({ ok: true, pendientes: [] }));
-            case 'docente_aprobar': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
-                if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
-                return snap.docs[0].ref.update({ estado: 'activo' }).then(() => ({ ok: true }));
-            });
-            case 'docente_rechazar': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
-                if (snap.empty) return { ok: false, error: 'Usuario no encontrado.' };
-                return snap.docs[0].ref.update({ estado: 'inactivo' }).then(() => ({ ok: true }));
-            });
-            case 'usuarios_pendientes': return db.collection('usuarios').where('estado', '==', 'pendiente').get().then(snap => ({
-                ok: true, pendientes: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
-            })).catch(() => ({ ok: true, pendientes: [] }));
+            case 'docente_aprobar': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                // Verificar que el solicitante sea administrador
+                // v2026-10-07: se verifica el rol de QUIEN aprueba (antes se miraba el del usuario aprobado).
+                const authUser = await ensureAnonAuth();
+                const miCed = String(authUser.email || '').split('@')[0];
+                const miFicha = await cvCargarFicha(db, authUser, miCed).catch(() => null);
+                const allowedRoles = ['admin','administrador_plataforma','administracion_general','admin_general','administracion'];
+                if (!miFicha || !allowedRoles.includes(String(miFicha.data().rol || '').toLowerCase())) return { ok: false, error: 'No tenés permisos de administrador (tu rol en la base: ' + ((miFicha && miFicha.data().rol) || 'desconocido') + ').' };
+                const uSnap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (uSnap.empty) return { ok: false, error: 'Usuario no encontrado.' };
+                await db.collection('cedulas').doc(ced).set({ estado: 'activo' }, { merge: true }).catch(() => {});
+                await uSnap.docs[0].ref.update({ estado: 'activo', updated_at: new Date().toISOString() });
+                return { ok: true, mensaje: 'Usuario aprobado y habilitado.' };
+            })().catch(e => ({ ok: false, error: e.message || 'Error interno.' }));
+            case 'docente_rechazar': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                // Verificar que el solicitante sea administrador
+                // v2026-10-07: se verifica el rol de QUIEN aprueba (antes se miraba el del usuario aprobado).
+                const authUser = await ensureAnonAuth();
+                const miCed = String(authUser.email || '').split('@')[0];
+                const miFicha = await cvCargarFicha(db, authUser, miCed).catch(() => null);
+                const allowedRoles = ['admin','administrador_plataforma','administracion_general','admin_general','administracion'];
+                if (!miFicha || !allowedRoles.includes(String(miFicha.data().rol || '').toLowerCase())) return { ok: false, error: 'No tenés permisos de administrador (tu rol en la base: ' + ((miFicha && miFicha.data().rol) || 'desconocido') + ').' };
+                const uSnap = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (uSnap.empty) return { ok: false, error: 'Usuario no encontrado.' };
+                await uSnap.docs[0].ref.update({ estado: 'inactivo', updated_at: new Date().toISOString() });
+                await db.collection('cedulas').doc(ced).set({ estado: 'inactivo' }, { merge: true }).catch(() => {});
+                return { ok: true, mensaje: 'Docente rechazado.' };
+            })().catch(e => ({ ok: false, error: e.message || 'Error interno.' }));
+            case 'usuarios_pendientes': return ensureAnonAuth().then(() => db.collection('usuarios').where('rol', '==', 'docente').where('estado', '==', 'pendiente').limit(500).get()).then(snap => ({
+                ok: true, pendientes: snap.docs.map(doc => {
+                    const d = doc.data();
+                    return { id: doc.id, cedula: d.cedula || '', nombre: d.nombre || '', apellido: d.apellido || '', email: d.email || '', telefono: d.telefono || '', rol: d.rol || '', estado: d.estado || 'pendiente', carrera: d.carrera || '', seccion: d.seccion || '', created_at: d.created_at || '' };
+                })
+            })).catch(() => ({ ok: false, pendientes: [], error: 'No fue posible cargar solicitudes. Verifica el acceso administrativo.' }));
             case 'listar_eventos_calendario': return db.collection('eventos').get().then(snap => ({
                 ok: true, eventos: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             })).catch(() => ({ ok: true, eventos: [] }));
@@ -923,12 +1116,469 @@ function callGas(action, data, method) {
                 if (sig !== cvQrSig(ced, w)) return { ok: true, valido: false, motivo: 'Firma no válida.' };
                 return { ok: true, valido: true, alumno: { cedula: ced } };
             }
+
+            // ── Asistencia (v2026-10-07): cada marca se guarda en 'asistencia' con fecha y hora de Asunción ──
+            case 'marcar_asistencia': case 'registrar_asistencia_codigo': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                const momento = cvFechaHoraPy(new Date());
+                const estado = cvEstadoAsistencia(data.estado);
+                const id = 'ASI-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+                const registro = {
+                    id: id, cedula: ced, user_id: ced,
+                    nombre: String(data.nombre || ''), carrera: String(data.carrera || ''), seccion: String(data.seccion || ''),
+                    asignatura: String(data.asignatura || ''),
+                    codigo: String(data.codigo || data.code || ''), evento_id: String(data.evento_id || ''),
+                    estado: estado.es, status: estado.en,
+                    observacion: String(data.observacion || data.observaciones || ''),
+                    fecha: momento.fecha, hora: momento.hora,
+                    timestamp: momento.iso, created_at: momento.iso,
+                    origen: action === 'marcar_asistencia' ? 'presencial' : 'codigo'
+                };
+                await db.collection('asistencia').doc(id).set(registro);
+                return { ok: true, status: 'Éxito', id: id, fecha: momento.fecha, hora: momento.hora, registro: registro };
+            })().catch(e => ({ ok: false, error: cvErrorAsistencia(e) }));
+
+            // Autorregistro del alumno desde la clase: hora del servidor, una sola marca por unidad.
+            case 'autoregistro_asistencia': return (async () => {
+                const u = window.firebase.auth().currentUser;
+                const ced = cvCedulaDeAuth(u);
+                if (!ced) return { ok: false, error: 'Tu sesión expiró. Volvé a ingresar con tu cédula y contraseña.' };
+                const asig = String(data.asignatura || '').trim();
+                const unidad = String(data.unidad || '').trim();
+                if (!asig || !unidad) return { ok: false, error: 'Falta la asignatura o la unidad.' };
+                const previa = await cvAsistenciaClase(db, ced, asig, unidad);
+                if (previa) return { ok: true, ya_registrada: true, fecha: previa.fecha, hora: previa.hora, registro: previa };
+                const id = 'ASI-' + ced + '-' + asig.replace(/[^A-Za-z0-9]/g, '') + '-U' + unidad;
+                const ficha = cvFichaSesion();
+                await db.collection('asistencia').doc(id).set({
+                    id: id, cedula: ced, user_id: ced,
+                    nombre: ficha.nombre, carrera: ficha.carrera, seccion: ficha.seccion,
+                    asignatura: asig, unidad: unidad,
+                    estado: 'presente', status: 'present', observacion: '',
+                    origen: 'autoregistro', server_ts: F.FieldValue.serverTimestamp()
+                });
+                const guardada = await cvAsistenciaClase(db, ced, asig, unidad);
+                return { ok: true, fecha: guardada && guardada.fecha, hora: guardada && guardada.hora, registro: guardada };
+            })().catch(e => ({ ok: false, error: cvErrorAsistencia(e) }));
+
+            case 'estado_asistencia_clase': return (async () => {
+                const ced = cvCedulaDeAuth(window.firebase.auth().currentUser);
+                if (!ced) return { ok: false, error: 'Sin sesión.' };
+                const reg = await cvAsistenciaClase(db, ced, String(data.asignatura || ''), String(data.unidad || ''));
+                return { ok: true, registrada: !!reg, fecha: reg && reg.fecha, hora: reg && reg.hora };
+            })().catch(e => ({ ok: false, error: cvErrorAsistencia(e) }));
+
+            // ── Facturas del alumno (v2026-10-07): datos en 'facturas', foto privada en 'facturas_fotos' ──
+            // Mismas reglas que el antiguo 09_Facturas (Apps Script); los permisos los hace cumplir firestore.rules.
+            case 'fac_crear': case 'fac_editar': return (async () => {
+                const ced = cvCedulaDeAuth((await ensureAnonAuth()));
+                if (!ced) return { ok: false, error: 'Tu sesión expiró. Volvé a ingresar.' };
+                const v = cvFacValidar(data);
+                if (v.error) return { ok: false, error: v.error };
+                const propias = (await db.collection('facturas').where('cedula', '==', ced).get()).docs.map(d => Object.assign({ id: d.id }, d.data()));
+                const editando = action === 'fac_editar';
+                const previa = editando ? propias.find(f => f.id === String(data.id)) : null;
+                if (editando && !previa) return { ok: false, error: 'No se encontró la factura.' };
+                if (previa && previa.estado === 'verificada') return { ok: false, error: 'La factura ya fue verificada: no se puede cambiar. Si hay un error, consulta en Atención al Alumno.' };
+                if (previa && previa.estado === 'anulada') return { ok: false, error: 'La factura está anulada.' };
+                if (propias.some(f => f.id !== (previa && previa.id) && f.estado !== 'anulada' && f.numero_clave === v.numero_clave))
+                    return { ok: false, error: 'Ya registraste ' + (editando ? 'otra factura' : 'una factura') + ' con el número ' + v.numero + '.' };
+                let foto = null;
+                if (data.foto) { foto = cvFacFoto(data.foto); if (foto.error) return { ok: false, error: foto.error }; }
+                else if (!editando) return { ok: false, error: 'Falta la foto de la factura.' };
+                const ahora = new Date().toISOString();
+                if (!editando) {
+                    const hoy = cvFechaHoraPy(new Date()).fecha;
+                    if (propias.filter(f => String(f.creada || '').slice(0, 10) === hoy).length >= 30) return { ok: false, error: 'Registraste muchas facturas hoy. Vuelve más tarde.' };
+                    const id = 'FAC-' + ced + '-' + Date.now().toString(36);
+                    const ficha = cvFichaSesion();
+                    // La foto primero: si falla, no queda una factura sin imagen.
+                    await db.collection('facturas_fotos').doc(id).set({ cedula: ced, imagen: foto.imagen });
+                    await db.collection('facturas').doc(id).set(Object.assign({
+                        id: id, cedula: ced, nombre: ficha.nombre, carrera: ficha.carrera, grado: ficha.grado, seccion: ficha.seccion,
+                        tiene_foto: true, estado: 'registrada', observacion: '', revisado_por: '', fecha_revision: '', creada: ahora, actualizada: ahora
+                    }, v.campos));
+                    return { ok: true, id: id, mensaje: 'Factura registrada.' };
+                }
+                const cambios = Object.assign({ estado: 'registrada', actualizada: ahora }, v.campos);
+                if (previa.estado === 'observada') Object.assign(cambios, { observacion: '', revisado_por: '', fecha_revision: '' });
+                if (foto) await db.collection('facturas_fotos').doc(previa.id).set({ cedula: ced, imagen: foto.imagen });
+                await db.collection('facturas').doc(previa.id).update(cambios);
+                return { ok: true, mensaje: 'Factura actualizada.' };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_mias': return (async () => {
+                const ced = cvCedulaDeAuth((await ensureAnonAuth()));
+                const snap = await db.collection('facturas').where('cedula', '==', ced).get();
+                const lista = snap.docs.map(d => cvFacPublico(Object.assign({ id: d.id }, d.data())))
+                    .sort((a, b) => a.fecha === b.fecha ? String(b.creada).localeCompare(String(a.creada)) : String(b.fecha).localeCompare(String(a.fecha)));
+                const total = lista.reduce((s, f) => s + (f.estado !== 'anulada' && f.monto ? f.monto : 0), 0);
+                return { ok: true, facturas: lista, total_monto: total, conceptos: CV_FAC_CONCEPTOS };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_anular': return (async () => {
+                const u = await ensureAnonAuth();
+                const ced = cvCedulaDeAuth(u);
+                const ref = db.collection('facturas').doc(String(data.id || ''));
+                const doc = await ref.get();
+                if (!doc.exists) return { ok: false, error: 'No se encontró la factura.' };
+                const f = doc.data();
+                if (f.estado === 'anulada') return { ok: false, error: 'La factura ya está anulada.' };
+                const propia = f.cedula === ced;
+                const cambios = { estado: 'anulada', actualizada: new Date().toISOString() };
+                if (!propia) Object.assign(cambios, { revisado_por: cvNombreSesion(), fecha_revision: cambios.actualizada });
+                await ref.update(cambios);
+                return { ok: true, mensaje: 'Factura anulada.' };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_foto': return (async () => {
+                await ensureAnonAuth();
+                const doc = await db.collection('facturas_fotos').doc(String(data.id || '')).get();
+                if (!doc.exists) return { ok: false, error: 'La factura no tiene foto.' };
+                return { ok: true, imagen: doc.data().imagen };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_permisos': return (async () => {
+                await ensureAnonAuth();
+                // Las reglas deciden: si la consulta general se permite, la persona es personal habilitado.
+                const prueba = (q) => q.limit(1).get().then(() => true, () => false);
+                const [ver, accesos] = await Promise.all([prueba(db.collection('facturas')), prueba(db.collection('facturas_accesos'))]);
+                return { ok: true, puede_ver: ver, puede_accesos: accesos };
+            })().catch(() => ({ ok: true, puede_ver: false, puede_accesos: false }));
+
+            case 'fac_listar': return (async () => {
+                await ensureAnonAuth();
+                const todas = (await db.collection('facturas').get()).docs.map(d => Object.assign({ id: d.id }, d.data()));
+                const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+                const estado = norm(data.estado), txt = norm(data.q), desde = String(data.desde || ''), hasta = String(data.hasta || '');
+                const cuenta = {};
+                todas.forEach(f => { if (f.estado !== 'anulada') cuenta[f.numero_clave] = (cuenta[f.numero_clave] || 0) + 1; });
+                const conteo = { registrada: 0, verificada: 0, observada: 0, anulada: 0, total: todas.length };
+                todas.forEach(f => { if (conteo[f.estado] != null) conteo[f.estado]++; });
+                const lista = todas.filter(f => (!estado || f.estado === estado) && (!desde || f.fecha >= desde) && (!hasta || f.fecha <= hasta) &&
+                        (!txt || norm([f.nombre, f.cedula, f.numero, f.concepto, f.carrera].join(' ')).indexOf(txt) >= 0))
+                    .sort((a, b) => String(b.creada).localeCompare(String(a.creada)));
+                const total = lista.reduce((s, f) => s + (f.estado !== 'anulada' && f.monto ? f.monto : 0), 0);
+                return { ok: true, conteo: conteo, total_monto: total, total: lista.length,
+                         facturas: lista.slice(0, 300).map(f => cvFacPublico(f, { repetida: f.estado !== 'anulada' && cuenta[f.numero_clave] > 1 })) };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_revisar': return (async () => {
+                await ensureAnonAuth();
+                const estado = String(data.estado || '').toLowerCase();
+                if (['verificada', 'observada', 'registrada'].indexOf(estado) < 0) return { ok: false, error: 'Estado no válido.' };
+                const obs = String(data.observacion || '').trim().slice(0, 300);
+                if (estado === 'observada' && obs.length < 3) return { ok: false, error: 'Explica qué debe corregir el alumno.' };
+                const ref = db.collection('facturas').doc(String(data.id || ''));
+                const doc = await ref.get();
+                if (!doc.exists) return { ok: false, error: 'No se encontró la factura.' };
+                if (doc.data().estado === 'anulada') return { ok: false, error: 'La factura está anulada.' };
+                const ahora = new Date().toISOString();
+                await ref.update({ estado: estado, observacion: estado === 'observada' ? obs : '', revisado_por: estado === 'registrada' ? '' : cvNombreSesion(),
+                                   fecha_revision: estado === 'registrada' ? '' : ahora, actualizada: ahora });
+                return { ok: true, mensaje: estado === 'verificada' ? 'Factura verificada.' : (estado === 'observada' ? 'Factura observada: el alumno verá tu comentario.' : 'Factura devuelta a «registrada».') };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_accesos': return (async () => {
+                await ensureAnonAuth();
+                const snap = await db.collection('facturas_accesos').get();
+                return { ok: true, accesos: snap.docs.map(d => d.data()).filter(a => a.estado !== 'inactivo')
+                    .map(a => ({ cedula: a.cedula, nombre: a.nombre || '', habilitado_por: a.habilitado_por || '', fecha: a.fecha || '' })) };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_habilitar': return (async () => {
+                await ensureAnonAuth();
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Escribe la cédula de la persona.' };
+                const p = await db.collection('cedulas').doc(ced).get();
+                if (!p.exists) return { ok: false, error: 'No hay ningún usuario con la cédula ' + ced + '.' };
+                const nombre = [p.data().nombre, p.data().apellido].filter(Boolean).join(' ') || ced;
+                const ref = db.collection('facturas_accesos').doc(ced);
+                const previo = await ref.get();
+                if (previo.exists && previo.data().estado !== 'inactivo') return { ok: false, error: nombre + ' ya tiene acceso.' };
+                await ref.set({ cedula: ced, nombre: nombre, habilitado_por: cvNombreSesion(), fecha: new Date().toISOString(), estado: 'activo' });
+                return { ok: true, mensaje: nombre + ' ya puede ver las facturas.' };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            case 'fac_quitar_acceso': return (async () => {
+                await ensureAnonAuth();
+                const ref = db.collection('facturas_accesos').doc(String(data.cedula || '').replace(/[\.\s\-]/g, '').trim() || '-');
+                const previo = await ref.get();
+                if (!previo.exists || previo.data().estado === 'inactivo') return { ok: false, error: 'Esa persona no tenía acceso.' };
+                await ref.update({ estado: 'inactivo' });
+                return { ok: true, mensaje: 'Acceso quitado.' };
+            })().catch(e => ({ ok: false, error: cvErrorFacturas(e) }));
+
+            // ── Trabajos prácticos en PDF (v2026-10-07) ──
+            // Firebase Storage no está habilitado: el PDF se guarda en Firestore en partes (trabajos/{id}/partes/{n}).
+            case 'trab_entregar': return (async () => {
+                const ced = cvCedulaDeAuth(await ensureAnonAuth());
+                if (!ced) return { ok: false, error: 'Tu sesión expiró. Volvé a ingresar.' };
+                const asig = String(data.asignatura || '').replace(/[^A-Za-z0-9]/g, '');
+                const unidad = String(parseInt(data.unidad, 10) || '');
+                if (!asig || !unidad) return { ok: false, error: 'Elegí la unidad del trabajo.' };
+                const m = /^data:application\/pdf;base64,([A-Za-z0-9+/=]+)$/.exec(String(data.archivo || ''));
+                if (!m || m[1].indexOf('JVBERi0') !== 0) return { ok: false, error: 'El archivo debe ser un PDF.' };
+                const b64 = m[1];
+                if (b64.length * 0.75 > CV_TRAB_MAX_BYTES) return { ok: false, error: 'El PDF supera los 8 MB. Comprimilo e intentá de nuevo.' };
+                const id = 'TRA-' + ced + '-' + asig + '-U' + unidad;
+                const ref = db.collection('trabajos').doc(id);
+                const previo = await ref.get();
+                if (previo.exists && previo.data().estado === 'calificado') return { ok: false, error: 'Este trabajo ya fue calificado: no se puede reemplazar.' };
+                const partes = [];
+                for (let i = 0; i < b64.length; i += CV_TRAB_PARTE) partes.push(b64.slice(i, i + CV_TRAB_PARTE));
+                for (let i = 0; i < partes.length; i++) {
+                    await ref.collection('partes').doc(String(i)).set({ cedula: ced, datos: partes[i] });
+                }
+                const ficha = cvFichaSesion();
+                await ref.set({
+                    id: id, cedula: ced, nombre: ficha.nombre, carrera: ficha.carrera, seccion: ficha.seccion,
+                    asignatura: asig, unidad: unidad, titulo: String(data.titulo || '').trim().slice(0, 120),
+                    archivo_nombre: String(data.nombre_archivo || 'trabajo.pdf').slice(0, 120), tamano: Math.round(b64.length * 0.75),
+                    partes: partes.length, estado: 'entregado', calificacion: null, puntaje_max: null, comentario: '',
+                    calificado_por: '', calificado_en: '', entregado_ts: F.FieldValue.serverTimestamp()
+                });
+                return { ok: true, id: id, mensaje: previo.exists ? 'Trabajo reemplazado.' : 'Trabajo entregado.' };
+            })().catch(e => ({ ok: false, error: cvErrorTrabajos(e) }));
+
+            case 'trab_mios': case 'trab_listar': return (async () => {
+                const ced = cvCedulaDeAuth(await ensureAnonAuth());
+                const q = action === 'trab_mios' ? db.collection('trabajos').where('cedula', '==', ced) : db.collection('trabajos');
+                const lista = (await q.get()).docs.map(cvTrabPublico)
+                    .filter(t => !data.asignatura || t.asignatura === String(data.asignatura))
+                    .sort((a, b) => action === 'trab_mios' ? (+a.unidad - +b.unidad) : String(b.entregado).localeCompare(String(a.entregado)));
+                return { ok: true, trabajos: lista };
+            })().catch(e => ({ ok: false, trabajos: [], error: cvErrorTrabajos(e) }));
+
+            case 'trab_pdf': return (async () => {
+                await ensureAnonAuth();
+                const ref = db.collection('trabajos').doc(String(data.id || ''));
+                const doc = await ref.get();
+                if (!doc.exists) return { ok: false, error: 'No se encontró el trabajo.' };
+                const n = doc.data().partes || 0;
+                const partes = await Promise.all(Array.from({ length: n }, (_, i) => ref.collection('partes').doc(String(i)).get()));
+                if (partes.some(p => !p.exists)) return { ok: false, error: 'El archivo está incompleto. Pedí al alumno que lo vuelva a subir.' };
+                return { ok: true, nombre: doc.data().archivo_nombre, base64: partes.map(p => p.data().datos).join('') };
+            })().catch(e => ({ ok: false, error: cvErrorTrabajos(e) }));
+
+            case 'trab_calificar': return (async () => {
+                await ensureAnonAuth();
+                const max = Number(data.puntaje_max);
+                const nota = Number(String(data.calificacion).replace(',', '.'));
+                if (!(max > 0 && max <= 100)) return { ok: false, error: 'El puntaje máximo debe estar entre 1 y 100.' };
+                if (!(nota >= 0 && nota <= max)) return { ok: false, error: 'La calificación debe estar entre 0 y ' + max + '.' };
+                await db.collection('trabajos').doc(String(data.id || '')).update({
+                    estado: 'calificado', calificacion: Math.round(nota * 100) / 100, puntaje_max: max,
+                    comentario: String(data.comentario || '').trim().slice(0, 500),
+                    calificado_por: cvNombreSesion(), calificado_en: new Date().toISOString()
+                });
+                return { ok: true, mensaje: 'Calificación guardada.' };
+            })().catch(e => ({ ok: false, error: cvErrorTrabajos(e) }));
+
+            // ── Justificación de ausencias (v2026-10-07): 'justificaciones' + comprobante en partes ──
+            case 'justificar_ausencia': return (async () => {
+                const ced = cvCedulaDeAuth(await ensureAnonAuth());
+                if (!ced) return { ok: false, error: 'Tu sesión expiró. Volvé a ingresar.' };
+                const fecha = String(data.fechaAusencia || '').slice(0, 10);
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { ok: false, error: 'Elegí la fecha de la ausencia.' };
+                if (fecha > cvFechaHoraPy(new Date(Date.now() + 30 * 86400000)).fecha) return { ok: false, error: 'La fecha es demasiado lejana.' };
+                const motivo = String(data.motivo || '');
+                if (CV_JUS_MOTIVOS.indexOf(motivo) < 0) return { ok: false, error: 'Elegí el motivo de la inasistencia.' };
+                let partes = [], tipo = '';
+                if (data.fileData) {
+                    const m = /^data:(application\/pdf|image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(data.fileData));
+                    if (!m) return { ok: false, error: 'El comprobante debe ser PDF, JPG, PNG o WEBP.' };
+                    if (m[2].length * 0.75 > 4 * 1024 * 1024) return { ok: false, error: 'El comprobante no debe superar 4 MB.' };
+                    tipo = m[1];
+                    for (let i = 0; i < m[2].length; i += CV_TRAB_PARTE) partes.push(m[2].slice(i, i + CV_TRAB_PARTE));
+                }
+                const id = 'JUS-' + ced + '-' + Date.now().toString(36);
+                const ref = db.collection('justificaciones').doc(id);
+                for (let i = 0; i < partes.length; i++) await ref.collection('partes').doc(String(i)).set({ cedula: ced, datos: partes[i] });
+                await ref.set({
+                    id: id, cedula: ced, nombre: cvFichaSesion().nombre || String(data.nombre || ''),
+                    fecha_ausencia: fecha, motivo: motivo, observacion: String(data.observacion || '').trim().slice(0, 1000),
+                    archivo_nombre: partes.length ? String(data.fileName || 'comprobante').slice(0, 120) : '', archivo_tipo: tipo,
+                    partes: partes.length, estado: 'Pendiente', creada: F.FieldValue.serverTimestamp()
+                });
+                return { ok: true, id: id, mensaje: 'Justificación enviada.' };
+            })().catch(e => ({ ok: false, error: cvErrorAsistencia(e) }));
+
+            case 'mis_justificaciones': return (async () => {
+                const ced = cvCedulaDeAuth(await ensureAnonAuth());
+                const snap = await db.collection('justificaciones').where('cedula', '==', ced).get();
+                const lista = snap.docs.map(d => {
+                    const j = d.data();
+                    const ts = j.creada && typeof j.creada.toDate === 'function' ? j.creada.toDate().toISOString() : '';
+                    return { id: d.id, fechaAusencia: j.fecha_ausencia, motivo: j.motivo, observacion: j.observacion || '',
+                             estado: j.estado || 'Pendiente', archivo: j.archivo_nombre || '', MarcaTemporal: ts };
+                }).sort((a, b) => String(b.MarcaTemporal).localeCompare(String(a.MarcaTemporal)));
+                return { ok: true, justificaciones: lista };
+            })().catch(e => ({ ok: false, justificaciones: [], error: cvErrorAsistencia(e) }));
+
+            case 'listar_eventos_asistencia': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                const q = ced ? db.collection('asistencia').where('cedula', '==', ced) : db.collection('asistencia');
+                const snap = await q.get();
+                const igual = (a, b) => !b || String(a || '').toLowerCase() === String(b).toLowerCase();
+                const regs = snap.docs.map(cvRegAsistencia)
+                    .filter(r => igual(r.fecha, data.fecha) && igual(r.carrera, data.carrera) &&
+                                 igual(r.seccion, data.seccion) && igual(r.asignatura, data.asignatura))
+                    .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+                return { ok: true, data: regs, records: regs, asistencias: regs };
+            })().catch(e => ({ ok: false, data: [], records: [], asistencias: [], error: cvErrorAsistencia(e) }));
+
             default: return Promise.resolve({ ok: true, data: data || {} });
         }
     } catch (err) {
         console.error('[Firestore] Error en action=' + action + ':', err.code || '', err.message);
         return Promise.resolve({ ok: false, error: 'Firestore: ' + (err.code || '') + ' ' + err.message });
     }
+}
+
+// ── Asistencia: fecha/hora oficial (America/Asuncion) y estado normalizado ─────
+function cvFechaHoraPy(d) {
+    const p = {};
+    new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Asuncion', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    }).formatToParts(d).forEach(x => { p[x.type] = x.value; });
+    return { fecha: p.year + '-' + p.month + '-' + p.day, hora: p.hour + ':' + p.minute + ':' + p.second, iso: d.toISOString() };
+}
+
+function cvEstadoAsistencia(e) {
+    const v = String(e || 'presente').toLowerCase();
+    if (v === 'late' || v === 'tarde' || v === 'tardanza') return { es: 'tarde', en: 'late' };
+    if (v === 'absent' || v === 'ausente' || v === 'ausencia') return { es: 'ausente', en: 'absent' };
+    if (v === 'justified' || v === 'justificado') return { es: 'justificado', en: 'justified' };
+    return { es: 'presente', en: 'present' };
+}
+
+// Cédula de la sesión Firebase: claim o parte local de <cedula>@campus-centuria.local (igual que las reglas).
+function cvCedulaDeAuth(u) {
+    if (!u) return '';
+    const m = /^([^@]+)@campus-centuria\.local$/i.exec(u.email || '');
+    return m ? m[1] : '';
+}
+
+function cvFichaSesion() {
+    let user = {};
+    try { user = JSON.parse(sessionStorage.getItem('centuria_user') || localStorage.getItem('centuria_user') || '{}') || {}; } catch (_) {}
+    const nombre = [user.nombre, user.apellido].filter(Boolean).join(' ') || sessionStorage.getItem('current_nombre') || '';
+    return {
+        nombre: String(nombre),
+        carrera: String(user.carrera || sessionStorage.getItem('current_carrera') || ''),
+        grado: String(user.grado || ''),
+        seccion: String(user.seccion || sessionStorage.getItem('current_seccion') || '')
+    };
+}
+
+// Normaliza un documento de 'asistencia': si tiene marca del servidor, fecha/hora salen de ahí.
+function cvRegAsistencia(doc) {
+    const r = Object.assign({ id: doc.id }, doc.data());
+    const ts = r.server_ts && typeof r.server_ts.toDate === 'function' ? r.server_ts.toDate() : null;
+    if (ts) {
+        const m = cvFechaHoraPy(ts);
+        r.fecha = m.fecha; r.hora = m.hora; r.timestamp = m.iso; r.created_at = r.created_at || m.iso;
+        delete r.server_ts;
+    }
+    return r;
+}
+
+function cvAsistenciaClase(db, ced, asig, unidad) {
+    return db.collection('asistencia').where('cedula', '==', ced).get().then(snap => {
+        const doc = snap.docs.find(d => {
+            const x = d.data();
+            return String(x.asignatura) === asig && String(x.unidad) === unidad;
+        });
+        return doc ? cvRegAsistencia(doc) : null;
+    });
+}
+
+// ── Facturas del alumno ──────────────────────────────────────────────────────
+const CV_FAC_CONCEPTOS = ['Matrícula', 'Cuota mensual', 'Derecho de examen', 'Certificado / Constancia', 'Material de estudio', 'Otro'];
+const CV_FAC_FOTO_MAX = 950000;   // caracteres del dataURL: entra en un documento de Firestore (límite 1 MiB)
+
+function cvFacValidar(d) {
+    const fecha = String(d.fecha || '').slice(0, 10);
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+    const f = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+    if (!f || f.getUTCMonth() !== +m[2] - 1 || f.getUTCDate() !== +m[3]) return { error: 'Elige la fecha de la factura.' };
+    const h = cvFechaHoraPy(new Date()).fecha.split('-');
+    const dif = Math.round((f - Date.UTC(+h[0], +h[1] - 1, +h[2])) / 86400000);
+    if (dif > 1) return { error: 'La fecha de la factura no puede ser futura.' };
+    if (dif < -1100) return { error: 'La fecha de la factura es demasiado antigua.' };
+    const numero = String(d.numero || '').trim().slice(0, 30);
+    const clave = numero.toLowerCase().replace(/[^0-9a-z]/g, '');
+    if (numero.length < 3 || !/^[0-9A-Za-z\-\/\. ]+$/.test(numero) || clave.length < 3) return { error: 'Escribe el número de factura (ej.: 001-001-0001234).' };
+    const concepto = String(d.concepto || '').trim().slice(0, 120);
+    if (concepto.length < 3) return { error: 'Escribe el concepto del pago.' };
+    const ms = String(d.monto == null ? '' : d.monto).replace(/[.\s]/g, '').replace(',', '.');
+    let monto = null;
+    if (ms !== '') {
+        monto = Number(ms);
+        if (isNaN(monto) || monto < 0 || monto > 1000000000) return { error: 'El monto no es válido.' };
+        monto = Math.round(monto);
+    }
+    return { numero: numero, numero_clave: clave, campos: { fecha: fecha, numero: numero, numero_clave: clave, concepto: concepto, monto: monto } };
+}
+
+function cvFacFoto(foto) {
+    const s = String(foto || '');
+    if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s)) return { error: 'La foto debe ser una imagen JPG, PNG o WEBP.' };
+    if (s.length < 700) return { error: 'La foto está vacía o dañada.' };
+    if (s.length > CV_FAC_FOTO_MAX) return { error: 'La foto es muy pesada. Intenta con otra o sácala con menos resolución.' };
+    return { imagen: s };
+}
+
+function cvFacPublico(f, extra) {
+    return Object.assign({
+        id: f.id, cedula: f.cedula, nombre: f.nombre || '', carrera: f.carrera || '', grado: f.grado || '', seccion: f.seccion || '',
+        fecha: f.fecha || '', numero: f.numero || '', concepto: f.concepto || '', monto: f.monto == null ? null : Number(f.monto),
+        tiene_foto: !!f.tiene_foto, estado: f.estado || 'registrada', observacion: f.observacion || '', revisado_por: f.revisado_por || '',
+        fecha_revision: f.fecha_revision || '', creada: f.creada || ''
+    }, extra || {});
+}
+
+function cvNombreSesion() {
+    const f = cvFichaSesion();
+    return f.nombre || cvCedulaDeAuth(window.firebase.auth().currentUser) || 'Personal';
+}
+
+function cvErrorFacturas(e) {
+    if (e && e.code === 'permission-denied') return 'No tienes permiso para esta acción con las facturas.';
+    if (e && e.code === 'SIN_SESION') return e.message;
+    return (e && e.message) || 'Error al procesar la factura.';
+}
+
+// ── Trabajos prácticos en PDF ────────────────────────────────────────────────
+const CV_TRAB_MAX_BYTES = 8 * 1024 * 1024;
+const CV_TRAB_PARTE = 700000;      // caracteres base64 por documento (Firestore admite 1 MiB)
+const CV_JUS_MOTIVOS = ['salud', 'laboral', 'familiar', 'academico', 'otro'];
+
+function cvTrabPublico(doc) {
+    const t = doc.data();
+    const ts = t.entregado_ts && typeof t.entregado_ts.toDate === 'function' ? cvFechaHoraPy(t.entregado_ts.toDate()) : null;
+    return {
+        id: doc.id, cedula: t.cedula, nombre: t.nombre || '', carrera: t.carrera || '', seccion: t.seccion || '',
+        asignatura: t.asignatura || '', unidad: t.unidad || '', titulo: t.titulo || '', archivo_nombre: t.archivo_nombre || '',
+        tamano: t.tamano || 0, estado: t.estado || 'entregado', calificacion: t.calificacion == null ? null : Number(t.calificacion),
+        puntaje_max: t.puntaje_max == null ? null : Number(t.puntaje_max), comentario: t.comentario || '',
+        calificado_por: t.calificado_por || '', calificado_en: t.calificado_en || '',
+        entregado: ts ? ts.iso : '', entregado_fecha: ts ? ts.fecha : '', entregado_hora: ts ? ts.hora.slice(0, 5) : ''
+    };
+}
+
+function cvErrorTrabajos(e) {
+    if (e && e.code === 'permission-denied') return 'No tienes permiso para esta acción con los trabajos.';
+    if (e && e.code === 'SIN_SESION') return e.message;
+    return (e && e.message) || 'Error al procesar el trabajo.';
+}
+
+function cvErrorAsistencia(e) {
+    if (e && e.code === 'permission-denied') return 'Sin permiso para registrar o leer asistencia con esta cuenta.';
+    return (e && e.message) || 'Error al procesar la asistencia.';
 }
 
 // ── Credencial QR dinámico (código por ventana de tiempo) ─────────────────────
@@ -1463,8 +2113,14 @@ const API = {
 // ESPACIOS DE NOMBRES MODULARES (Zero-PHP)
 // ══════════════════════════════════════════════════════════════
 
+API.checkStudent = (cedula) => {
+    const normalized = String(cedula || '').replace(/[\.\s\-]/g, '').trim();
+    return callGas('verificar_alumno', { cedula: normalized }, 'GET');
+};
+
 API.auth = {
     register: (d) => API.authRegister(d),
+    verify: (cedula) => API.checkStudent(cedula).then(result => Object.assign({}, result, { valid: !!(result && result.ok && result.existe), user: result && result.estudiante ? mapUser(result.estudiante) : null })),
     login: (c, p) => API.authLogin(c, p),
     validateSession: () => API.validateSession(),
     logout: () => API.logout(),
@@ -1519,6 +2175,7 @@ API.academico = {
 };
 
 API.grades = {
+    // Listado existente (mantenemos compatibilidad)
     list: (params) => callGas('listar_notas', params || {}, 'GET'),
     save: (data) => {
         if (data && (Array.isArray(data.notas) || data.notas)) {
@@ -1526,7 +2183,28 @@ API.grades = {
         }
         return callGas('guardar_nota', data, 'POST');
     },
-    recordSubject: (data) => callGas('guardar_notas_asignatura', data, 'POST')
+    recordSubject: (data) => callGas('guardar_notas_asignatura', data, 'POST'),
+    
+    // NUEVO: Panel de gestión completo
+    
+    // Listar todas las notas (admin/doctor ve todo, alumno solo las suyas)
+    listAll: (params = {}) => callGas('listar_notas', params || {}, 'GET'),
+    
+    // Listar notas por curso/asignatura específico
+    listByCourse: (courseId, params = {}) => 
+        callGas('listar_notas', { curso: courseId, ...params }, 'GET'),
+    
+    // Obtener estadísticas generales del curso
+    getStats: (courseId) => callGas('obtener_estadisticas_notas', { curso: courseId }, 'GET'),
+    
+    // Exportar calificaciones a formato CSV
+    exportGrades: (courseId) => callGas('exportar_notas', { curso: courseId }, 'GET'),
+    
+    // Obtener promedio de un alumno específico en un curso
+    getStudentAverage: (cedula, courseId) => callGas('obtener_promedio_alumno', { cedula, curso: courseId }, 'GET'),
+    
+    // Listar estudiantes aprobados/desaprobados
+    listByStatus: (courseId, status) => callGas('listar_notas_por_estado', { curso: courseId, status }, 'GET'),
 };
 
 API.exams = {
@@ -1672,6 +2350,8 @@ API.attendance = {
     mark: (data) => callGas('registrar_asistencia_codigo', data, 'POST'),
     getEvent: (id) => callGas('detalle_evento_asistencia', { evento_id: id }, 'GET'),
     closeEvent: (id) => callGas('cerrar_evento_asistencia', { evento_id: id }, 'POST'),
+    selfMark: (asignatura, unidad) => callGas('autoregistro_asistencia', { asignatura, unidad }, 'POST'),
+    classStatus: (asignatura, unidad) => callGas('estado_asistencia_clase', { asignatura, unidad }, 'GET'),
     getByCourseAndDate: (c, f) => API._attByDate(c, f),
     markAttendance: (a, b, c, d) => API._attMark(a, b, c, d)
 };
@@ -1777,6 +2457,14 @@ API.consultas = {
 };
 
 // Facturas del alumno: fecha, número, concepto y foto. Las ve el personal habilitado (foto privada: se pide aparte con foto()).
+API.trabajos = {
+    entregar: (datos) => callGas('trab_entregar', datos, 'POST'),   // { asignatura, unidad, titulo, archivo (dataURL PDF), nombre_archivo }
+    mios: (asignatura) => callGas('trab_mios', { asignatura: asignatura || '' }, 'GET'),
+    listar: (asignatura) => callGas('trab_listar', { asignatura: asignatura || '' }, 'GET'),
+    pdf: (id) => callGas('trab_pdf', { id }, 'GET'),                 // { nombre, base64 }
+    calificar: (id, calificacion, puntaje_max, comentario) => callGas('trab_calificar', { id, calificacion, puntaje_max, comentario }, 'POST')
+};
+
 API.facturas = {
     _p: (accion, datos) => callGas(accion, Object.assign({ token: API.getToken() }, datos || {}), 'POST'),
     crear: (datos) => API.facturas._p('fac_crear', datos),               // { fecha, numero, concepto, monto?, foto (dataURL) }

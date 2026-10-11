@@ -740,7 +740,7 @@
                     </div>
 
                     <label class="lbl" for="inp-cedula">Cédula de Identidad</label>
-                    <input type="text" class="inp text-center" id="inp-cedula" placeholder="SIN PUNTOS"
+                    <input type="text" class="inp text-center" id="inp-cedula" placeholder="SIN PUNTOS" name="username" autocomplete="username"
                         style="font-size:1rem;letter-spacing:3px;"
                         aria-label="Número de cédula de identidad"
                         oninput="this.value=this.value.replace(/\./g,'');if(loginFase==='pass')resetLoginFase()">
@@ -748,7 +748,7 @@
                     <div id="password-section" style="display:none">
                         <label class="lbl" for="inp-password" style="margin-top:14px">Contraseña</label>
                         <div style="position:relative">
-                            <input type="password" class="inp" id="inp-password" placeholder="Tu contraseña"
+                            <input type="password" class="inp" id="inp-password" placeholder="Tu contraseña" name="password" autocomplete="current-password"
                                 style="font-size:0.88rem;letter-spacing:0.5px;padding-right:42px"
                                 aria-label="Contraseña de acceso"
                                 onkeydown="if(event.key==='Enter')verificarCedula()">
@@ -760,7 +760,7 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
                             <input type="checkbox" id="chk-recordar" style="accent-color:var(--verde-medio);width:15px;height:15px;cursor:pointer">
-                            <label for="chk-recordar" style="color:#64748b;font-size:0.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Recordar mi cédula y contraseña</label>
+                            <label for="chk-recordar" style="color:#64748b;font-size:0.7rem;cursor:pointer;font-family:Montserrat;font-weight:500">Recordar mi cédula en este dispositivo</label>
                         </div>
                     </div>
 
@@ -788,17 +788,24 @@
                     <!-- 2A: Parte 1 - Datos Personales -->
                     <div id="reg-paso-1">
                         <div class="sec-wrap">
-                            <div class="sec-head"><span class="num">1</span> Datos Personales (Estudiante)</div>
+                            <div class="sec-head"><span class="num">1</span> Datos Personales</div>
                             <input type="hidden" id="reg-rol" value="alumno">
-                            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:0.75rem;color:#166534">
-                                <i class="bi bi-mortarboard me-1"></i> Formulario de registro exclusivo para <strong>Estudiantes</strong>. (Los Docentes son habilitados directamente por Administración).
+                            <div class="mb-3">
+                                <label class="lbl" for="reg-tipo-usuario">Tipo de registro</label>
+                                <select class="inp-select" id="reg-tipo-usuario" onchange="cambiarTipoRegistro(this.value)">
+                                    <option value="alumno" selected>Estudiante</option>
+                                    <option value="docente">Docente</option>
+                                </select>
+                            </div>
+                            <div id="reg-tipo-aviso" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:0.75rem;color:#166534">
+                                <i class="bi bi-mortarboard me-1"></i> Registro de <strong>estudiante</strong>. El acceso se habilita al completar el registro.
                             </div>
                             <div class="mb-2"><label class="lbl" for="reg-cedula">Cédula <span style="color:#DC2626">*</span></label><input type="text" class="inp text-center" id="reg-cedula" placeholder="SIN PUNTOS" style="font-size:0.92rem;letter-spacing:3px" oninput="this.value=this.value.replace(/\./g,'')"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="lbl" for="reg-nombre">Nombre <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-nombre" placeholder="Ej: JUAN" style="text-transform:uppercase;font-size:0.82rem" required></div>
                                 <div class="col-6"><label class="lbl" for="reg-apellido">Apellido <span style="color:#DC2626">*</span></label><input type="text" class="inp" id="reg-apellido" placeholder="Ej: PÉREZ" style="text-transform:uppercase;font-size:0.82rem" required></div>
                             </div>
-                            <div class="mb-2"><label class="lbl" for="reg-email">Correo electrónico</label><input type="email" class="inp" id="reg-email" placeholder="ejemplo@gmail.com" style="font-size:0.82rem"></div>
+                            <div class="mb-2"><label class="lbl" for="reg-email">Correo electrónico <span style="color:#DC2626">*</span></label><input type="email" class="inp" id="reg-email" placeholder="ejemplo@gmail.com" required style="font-size:0.82rem"></div>
                             <div class="mb-2"><label class="lbl" for="reg-telefono">Teléfono</label><input type="text" class="inp" id="reg-telefono" placeholder="0981 123456" style="font-size:0.82rem"></div>
                         </div>
                         <div class="d-flex gap-2 mt-2">
@@ -866,10 +873,16 @@
                     <!-- 2C: Datos Académicos -->
                     <div id="reg-paso-2" style="display:none">
                         <div class="sec-wrap">
-                            <div class="sec-head"><span class="num">3</span> Datos Académicos</div>
-                            <div class="mb-2"><label class="lbl" for="reg-grado">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
-                            <div class="mb-2"><label class="lbl" for="reg-carrera">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled onchange="cargarSecciones()"><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
-                            <div class="mb-2"><label class="lbl" for="reg-seccion">Sección</label><select class="inp-select" id="reg-seccion"><option value="" selected disabled>Cargando secciones...</option></select></div>
+                            <div class="sec-head"><span class="num">3</span> <span id="reg-academico-titulo">Datos Académicos</span></div>
+                            <div id="reg-academico-estudiante">
+                                <div class="mb-2"><label class="lbl" for="reg-grado">Grado Académico</label><select class="inp-select" id="reg-grado" onchange="cargarCarrerasPorGrado()"><option value="" selected disabled>Seleccionar...</option></select></div>
+                                <div id="reg-carrera-select-wrap" class="mb-2"><label class="lbl" for="reg-carrera">Carrera / Programa</label><select class="inp-select" id="reg-carrera" disabled onchange="cargarSecciones()"><option value="" selected disabled>Primero selecciona un grado...</option></select></div>
+                                <div id="reg-carrera-manual-wrap" class="mb-2" style="display:none"><label class="lbl" for="reg-carrera-manual">Carrera / Programa</label><input class="inp" id="reg-carrera-manual" maxlength="120" placeholder="Escribe tu carrera o programa" oninput="cargarSecciones()"></div>
+                                <div class="mb-2"><label class="lbl" for="reg-seccion">Sección</label><select class="inp-select" id="reg-seccion"><option value="LV026">LV026</option><option value="MJ026">MJ026</option><option value="S026" selected>S026</option><option value="__otra">Otra…</option></select></div>
+                            </div>
+                            <div id="reg-academico-docente" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px;color:#1E3A8A;font-size:0.8rem;line-height:1.5">
+                                <i class="bi bi-info-circle me-1"></i> La solicitud se guardará con estado pendiente. El ingreso como docente requiere validación administrativa.
+                            </div>
                         </div>
                         <div class="d-flex gap-2 mt-2"><button class="btn-ghost" onclick="regPaso1b()" style="flex:1"><i class="bi bi-arrow-left me-1"></i>Atrás</button><button class="btn-main" onclick="regPaso3()" style="flex:2"><i class="bi bi-arrow-right me-2"></i>Revisar</button></div>
                     </div>
@@ -975,13 +988,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="console.error('Firebase auth-compat failed to load')"></script>
 <script>
   window._fbCheck = function(){
-    if(!window.firebase){
-      console.error('[Firebase] window.firebase is UNDEFINED after loading Firebase SDK scripts');
-    } else if(!window.firebase.apps || window.firebase.apps.length === 0){
-      console.warn('[Firebase] window.firebase exists but no apps initialized');
-    } else {
-      console.log('[Firebase] Successfully loaded, apps:', window.firebase.apps.length);
-    }
+    if(!window.firebase || typeof window.firebase.firestore!=='function' || typeof window.firebase.initializeApp!=='function')
+      console.error('[Firebase] Firebase compat SDK no cargó; no se debe simular una consulta vacía.');
+    else console.log('[Firebase] SDK compat disponible; api.js inicializará el proyecto al consultar.');
   };
   window._fbCheck();
 </script>
@@ -1016,7 +1025,7 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=21"></script>
+<script src="js/api.js?v=24"></script>
 <script>
 // ═══ ACCESIBILIDAD ═══
 let a11yFontLevel = 0;
@@ -1032,10 +1041,176 @@ function a11yContrast() {
 
 <script>
 // ═══ CATÁLOGOS (Servidor Cloud / Base de Datos) ═══
-async function cargarCatalogos(){try{const d=await CenturiaAPI.catalogos.getGrados();const g=d.grados||d.items||[];try{localStorage.setItem('centuria_cache_grados',JSON.stringify(g))}catch(x){}pintarGrados(g)}catch(e){pintarGrados(await catalogoConRespaldo('grados','centuria_cache_grados',[{nombre:'GRADO'}]))}}
-function pintarGrados(g){const s=document.getElementById('reg-grado');if(s)s.innerHTML='<option value="" selected disabled>Seleccionar...</option>'+g.map(x=>'<option value="'+x.nombre+'">'+x.nombre+'</option>').join('')}
-async function cargarCarrerasPorGrado(){const grado=document.getElementById('reg-grado').value;const s=document.getElementById('reg-carrera');if(!grado){s.innerHTML='<option value="" selected disabled>Primero selecciona un grado...</option>';s.disabled=true;return}let lista=null;try{const d=await CenturiaAPI.catalogos.getCarreras(grado);lista=d.carreras||d.items||[];try{localStorage.setItem('centuria_cache_carreras',JSON.stringify(lista))}catch(x){}}catch(e){lista=await catalogoConRespaldo('carreras','centuria_cache_carreras',[{nombre:'ADMINISTRACIÓN DE LA GESTIÓN PUBLICA',codigo:'G-AGP',grado:'GRADO'},{nombre:'ADMINISTRACION DE EMPRESAS',codigo:'G-AE',grado:'GRADO'},{nombre:'ADMINISTRACIÓN ADUANERA',codigo:'G-AD',grado:'GRADO'}])}let c=(lista||[]).filter(x=>!x.grado||x.grado===grado);if(!c.length)c=lista||[];s.innerHTML='<option value="" selected disabled>Selecciona tu carrera...</option>';c.forEach(x=>{const o=document.createElement('option');o.value=x.nombre;o.textContent=x.nombre;s.appendChild(o)});s.disabled=c.length===0;if(s.disabled)s.innerHTML='<option value="" selected disabled>No hay carreras para este grado</option>'}
-async function cargarSecciones(){const s=document.getElementById('reg-seccion');let sec=null;try{const d=await CenturiaAPI.catalogos.getSecciones();sec=d.secciones||d.items||[];try{localStorage.setItem('centuria_cache_secciones',JSON.stringify(sec))}catch(x){}}catch(e){sec=await catalogoConRespaldo('secciones','centuria_cache_secciones',[{codigo:'S026',nombre:'SABADO',grado:'GRADO'},{codigo:'LV026',nombre:'LUNES - VIERNES',grado:'GRADO'}])}const carrera=(document.getElementById('reg-carrera').value||'').trim();let filtradas=sec;if(carrera){const f=sec.filter(x=>!x.carrera||x.carrera===carrera);if(f.length)filtradas=f}const vistos={};const unicas=[];filtradas.forEach(x=>{const c=String(x.codigo||x.nombre||'').trim();if(c&&!vistos[c]){vistos[c]=true;unicas.push(Object.assign({},x,{codigo:c}))}});s.innerHTML='<option value="" selected disabled>Selecciona tu sección...</option>';unicas.forEach(x=>{const o=document.createElement('option');o.value=x.codigo;o.textContent=x.codigo;s.appendChild(o)});if(s.options.length<=1)s.innerHTML='<option value="" selected disabled>No hay secciones creadas aún</option>'}
+// ═══ CATÁLOGOS INSTITUCIONALES (GRADO, ESPECIALIZACIÓN, MAESTRÍA, DOCTORADO) ═══
+const CATALOGO_CARRERAS_CENTURIA = {
+    'GRADO': [
+        'Licenciatura en Administración de Empresas',
+        'Licenciatura en Administración Aduanera',
+        'Licenciatura en Administración y Gestión Pública',
+        'Licenciatura en Ciencias Contables',
+        'Licenciatura en Comercio Internacional',
+        'Ingeniería Comercial',
+        'Ciencias Sociales'
+    ],
+    'ESPECIALIZACIÓN': [
+        'Especialización en Didáctica Superior Universitaria',
+        'Especialización en Gestión de Políticas Públicas',
+        'Especialización en Gestión de Proyectos',
+        'Especialización en Auditoría y Control de Gestión',
+        'Especialización en Administración Financiera'
+    ],
+    'MAESTRÍA': [
+        'Maestría en Administración de Empresas (MBA)',
+        'Maestría en Gestión Pública y Desarrollo',
+        'Maestría en Ciencias de la Educación y Docencia Superior',
+        'Maestría en Auditoría Integral y Gestión de Riesgos',
+        'Maestría en Finanzas y Negocios Internacionales'
+    ],
+    'DOCTORADO': [
+        'Doctorado en Ciencias Administrativas y Gestión',
+        'Doctorado en Ciencias de la Educación',
+        'Doctorado en Políticas Públicas y Gobernanza',
+        'Doctorado en Economía y Desarrollo Social'
+    ]
+};
+
+function normalizarTextoGrado(g) {
+    return String(g || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+}
+
+async function cargarCatalogos(){
+    const gradosBase = [
+        { nombre: 'GRADO' },
+        { nombre: 'ESPECIALIZACIÓN' },
+        { nombre: 'MAESTRÍA' },
+        { nombre: 'DOCTORADO' }
+    ];
+    let grados = [];
+    try {
+        const d = await CenturiaAPI.catalogos.getGrados();
+        grados = d.grados || d.items || [];
+    } catch(e) {
+        grados = await catalogoConRespaldo('grados', 'centuria_cache_grados', gradosBase);
+    }
+    if (!grados.length) grados = gradosBase;
+    try { localStorage.setItem('centuria_cache_grados', JSON.stringify(grados)); } catch(e) {}
+    pintarGrados(grados);
+    const grado = document.getElementById('reg-grado');
+    if (grado && !grado.value) {
+        grado.value = grados[0].nombre;
+        cargarCarrerasPorGrado();
+    }
+    cargarSecciones();
+}
+
+function pintarGrados(grados){
+    const s = document.getElementById('reg-grado');
+    if (!s) return;
+    s.innerHTML = '<option value="" disabled>Seleccionar...</option>' + grados.map(x => {
+        const nom = x.nombre || x;
+        return '<option value="' + escaparAtributo(nom) + '">' + escaparHtml(nom) + '</option>';
+    }).join('');
+}
+
+function escaparAtributo(valor){return String(valor||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escaparHtml(valor){return escaparAtributo(valor).replace(/'/g,'&#39;')}
+
+async function cargarCarrerasPorGrado(){
+    const grado = document.getElementById('reg-grado').value;
+    const select = document.getElementById('reg-carrera');
+    if (document.getElementById('reg-rol').value === 'docente') {
+        select.innerHTML = '<option value="" selected disabled>Las carreras se asignan al aprobar la solicitud</option>';
+        select.disabled = true;
+        document.getElementById('reg-carrera-select-wrap').style.display = 'none';
+        document.getElementById('reg-carrera-manual-wrap').style.display = 'none';
+        await cargarSecciones();
+        return;
+    }
+
+    const gradoNorm = normalizarTextoGrado(grado);
+    let lista = [];
+    try {
+        const d = await CenturiaAPI.catalogos.getCarreras(grado);
+        lista = d.carreras || d.items || [];
+    } catch(e) {
+        try { lista = JSON.parse(localStorage.getItem('centuria_cache_carreras') || '[]'); } catch(x) { lista = []; }
+    }
+
+    // Filtrar carreras obtenidas del backend que correspondan al grado
+    let carreras = lista.filter(x => !x.grado || normalizarTextoGrado(x.grado) === gradoNorm).map(x => typeof x === 'string' ? x : x.nombre);
+
+    // Si el backend no devolvió carreras para este grado o está vacío, usar el catálogo oficial de Centuria
+    if (carreras.length === 0 && CATALOGO_CARRERAS_CENTURIA[gradoNorm]) {
+        carreras = CATALOGO_CARRERAS_CENTURIA[gradoNorm].slice();
+    }
+
+    select.innerHTML = '<option value="" selected disabled>Selecciona tu carrera / programa...</option>';
+    carreras.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        select.appendChild(option);
+    });
+
+    // Opción para escribir otra carrera si no figura en el listado
+    const optOtra = document.createElement('option');
+    optOtra.value = '__otra';
+    optOtra.textContent = 'Otra carrera o programa…';
+    select.appendChild(optOtra);
+
+    select.disabled = false;
+    document.getElementById('reg-carrera-select-wrap').style.display = 'block';
+    document.getElementById('reg-carrera-manual-wrap').style.display = 'none';
+    document.getElementById('reg-carrera-manual').value = '';
+
+    // Manejar cambio a opción manual si elige "Otra..."
+    select.onchange = function() {
+        const esOtra = select.value === '__otra';
+        document.getElementById('reg-carrera-manual-wrap').style.display = esOtra ? 'block' : 'none';
+        if (esOtra) {
+            document.getElementById('reg-carrera-manual').focus();
+        }
+        cargarSecciones();
+    };
+
+    cargarSecciones();
+}
+// v2026-10-07: secciones fijas LV026 / MJ026 / S026 + "Otra" (se escribe a mano).
+async function cargarSecciones(){
+    const select=document.getElementById('reg-seccion');
+    if(!select||document.getElementById('reg-rol').value==='docente')return;
+    const codigos=(window.CV_SECCIONES||['LV026','MJ026','S026']).slice();
+    const anterior=select.value;
+    select.innerHTML=codigos.map(c=>'<option value="'+c+'">'+c+'</option>').join('')+'<option value="__otra">Otra…</option>';
+    select.value=(codigos.includes(anterior)||anterior==='__otra')?anterior:'S026';
+    let otra=document.getElementById('reg-seccion-otra');
+    if(!otra){
+        otra=document.createElement('input');otra.id='reg-seccion-otra';otra.className='inp';otra.maxLength=20;
+        otra.placeholder='Escribí la sección';otra.style.cssText='margin-top:6px;text-transform:uppercase;font-size:0.82rem;display:none';
+        select.insertAdjacentElement('afterend',otra);
+        select.addEventListener('change',()=>{otra.style.display=select.value==='__otra'?'block':'none';if(select.value==='__otra')otra.focus();});
+    }
+    otra.style.display=select.value==='__otra'?'block':'none';
+}
+function seccionRegistro(){
+    const v=(document.getElementById('reg-seccion')||{}).value||'';
+    if(v==='__otra')return ((document.getElementById('reg-seccion-otra')||{}).value||'').trim().toUpperCase();
+    return v;
+}
+function cambiarTipoRegistro(tipo){
+    const docente=tipo==='docente';
+    document.getElementById('reg-rol').value=docente?'docente':'alumno';
+    document.querySelector('#reg-paso-1 .sec-head').textContent='1  Datos Personales ('+(docente?'Docente':'Estudiante')+')';
+    document.getElementById('reg-tipo-aviso').innerHTML=docente
+        ?'<i class="bi bi-person-workspace me-1"></i> Registre su solicitud como <strong>docente</strong>. El acceso requiere validación administrativa.'
+        :'<i class="bi bi-mortarboard me-1"></i> Registro de <strong>estudiante</strong>. El acceso se habilita al completar el registro.';
+    document.getElementById('reg-academico-titulo').textContent=docente?'Solicitud Docente':'Datos Académicos';
+    document.getElementById('reg-academico-estudiante').style.display=docente?'none':'block';
+    document.getElementById('reg-academico-docente').style.display=docente?'block':'none';
+    document.getElementById('reg-clave-alumno-aviso').style.display=docente?'none':'block';
+    document.getElementById('reg-clave-docente-wrap').style.display='none';
+    cargarCarrerasPorGrado();
+}
 // Catálogo con respaldo: Servidor Cloud -> caché -> valores base
 async function catalogoConRespaldo(tipo,cacheKey,defecto){
     try{const g=await CenturiaAPI.catalogos.list(tipo);const items=g[tipo]||g.items||[];if(items&&items.length){try{localStorage.setItem(cacheKey,JSON.stringify(items))}catch(x){}return items}}catch(e){}
@@ -1046,25 +1221,53 @@ document.addEventListener('DOMContentLoaded',cargarCatalogos);
 
 let cedulaActual='';let rolesActuales=[];let loginFase='idle';let loginSource='php';let loginGasUser=null;
 function mostrarPasoPassword(n,a){hideLoadingGlobal();document.getElementById('login-success-text').textContent='Bienvenido(a) '+n+' '+a;showLoginSuccess();document.getElementById('password-section').style.display='block';document.getElementById('inp-password').focus();document.getElementById('btn-buscar-texto').textContent='Ingresar al Portal';document.getElementById('btn-buscar').querySelector('i').className='bi bi-arrow-right-circle me-2';loginFase='pass'}
-// Fallback GitHub Pages (sin PHP): verifica la cédula en la nube y en local
+// GitHub Pages: consulta la cuenta en Firestore. Solo informa "no registrada" cuando el servidor respondió una ausencia real.
 async function verificarCedulaOffline(cedula){
     hideLoading('btn-buscar');
+    const input=document.getElementById('inp-cedula');
+    const boton=document.getElementById('btn-buscar');
     try{
-        if(typeof gasCheckStudent==='function'){
-            const g=await gasCheckStudent(cedula);
-            if(g&&g.existe){
-                const sep=g.nombre_separado||{};const full=(g.nombre||'').trim();
-                const n=(sep.nombre||'').trim()||full.split(/\s+/)[0]||'';
-                const ap=(sep.apellido||'').trim()||full.split(/\s+/).slice(1).join(' ')||'';
-                loginSource='gas';loginGasUser={nombre:n,apellido:ap,completo:full};
-                mostrarPasoPassword(n,ap);return;
-            }
+        if(typeof CenturiaAPI==='undefined'||typeof CenturiaAPI.checkStudent!=='function'){
+            showLoginError('No se pudo conectar al servicio de verificación. Comprueba tu conexión e inténtalo nuevamente.');
+            return;
         }
-    }catch(x){}
-    const u=buscarUsuarioLocal(cedula);
-    if(u){loginSource='local';loginGasUser=null;mostrarPasoPassword(u.nombre||'',u.apellido||'');return}
-    showLoginError('La cédula '+cedula+' no está registrada.');
-    setTimeout(()=>{const e=document.getElementById('login-error');if(e){e.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde-medio);text-decoration:underline;font-weight:600">Registrarse ahora</a>';e.style.display='block'}},100);
+        const respuesta=await CenturiaAPI.checkStudent(cedula);
+        if(!respuesta||respuesta.ok===false){
+            console.error('[login] Error verificando cédula:',respuesta&&respuesta.codigo,respuesta&&respuesta.error);
+            showLoginError('No se pudo verificar tu registro por un problema de conexión. Inténtalo nuevamente o contacta a soporte.');
+            return;
+        }
+        if(respuesta.existe&&respuesta.estudiante){
+            const usuario=respuesta.estudiante;
+            const nombre=usuario.nombre||usuario.firstname||'';
+            const apellido=usuario.apellido||usuario.lastname||'';
+            loginSource='firestore';
+            loginGasUser={nombre,apellido,completo:(nombre+' '+apellido).trim()};
+            mostrarPasoPassword(nombre,apellido);
+            return;
+        }
+        const usuarioLocal=buscarUsuarioLocal(cedula);
+        if(usuarioLocal){
+            loginSource='local';
+            loginGasUser=null;
+            mostrarPasoPassword(usuarioLocal.nombre||'',usuarioLocal.apellido||'');
+            return;
+        }
+        showLoginError('La cédula '+cedula+' no está registrada.');
+        setTimeout(()=>{
+            const error=document.getElementById('login-error');
+            if(error){
+                error.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde-medio);text-decoration:underline;font-weight:600">Registrarse ahora</a>';
+                error.style.display='block';
+            }
+        },100);
+    }catch(error){
+        console.error('[login] Excepción verificando cédula:',error);
+        showLoginError('No se pudo verificar tu registro por un problema de conexión. Inténtalo nuevamente.');
+    }finally{
+        if(boton)boton.disabled=false;
+        hideLoadingGlobal();
+    }
 }
 // Verifica la contraseña institucional sin servidor (GitHub Pages): Nombre(Mayús)+apellido(minús)+cédula+*
 function verificarPasswordOffline(cedula,password){
@@ -1084,7 +1287,7 @@ async function entrarOffline(cedula){
     else{const u=buscarUsuarioLocal(cedula);if(u){n=u.nombre||'';a=u.apellido||'';rol=u.rol||'alumno'}}
     sessionStorage.setItem('current_nombre',(n+' '+a).trim());
     sessionStorage.setItem('current_nombre_separado',JSON.stringify({nombre:n,apellido:a}));
-    if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){localStorage.setItem('centuria_remember',JSON.stringify({cedula:cedula,password:document.getElementById('inp-password').value.trim()}))}else{localStorage.removeItem('centuria_remember')}
+    localStorage.removeItem('centuria_remember');if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){localStorage.setItem('centuria_remember_cedula',cedula)}else{localStorage.removeItem('centuria_remember_cedula')}
     try{
         if(typeof gasGetRoles==='function'){
             const gr=await gasGetRoles(cedula);
@@ -1096,7 +1299,6 @@ async function entrarOffline(cedula){
     }catch(e){}
     sessionStorage.setItem('rol',rol);guardarSesionExamen(cedula,rol);hideLoadingGlobal();mostrarCursos(null);
 }
-
 
 function guardarSesionExamen(cedula,rol){
     const rolNormalizado=String(rol||'').toLowerCase();
@@ -1130,36 +1332,51 @@ async function verificarCedula(){
         document.getElementById('btn-buscar').disabled=true;
         showLoadingGlobal('Verificando cédula...');
         try{
-            // 1) Intento Firestore directo (CenturiaAPI.checkStudent)
-            if(typeof CenturiaAPI !== 'undefined' && CenturiaAPI.checkStudent){
-                const chk = await CenturiaAPI.checkStudent(cedula);
-                if(chk && chk.existe && chk.estudiante){
-                    const u = chk.estudiante;
-                    const n = (u.nombre||u.firstname||'').split(' ')[0]||'';
-                    const a = (u.apellido||u.lastname||'').split(' ')[0]||'';
-                    hideLoadingGlobal();
-                    mostrarPasoPassword(n||u.nombre||'',a||u.apellido||'');
-                    document.getElementById('btn-buscar').disabled=false;
-                    return;
-                }
+            if(typeof CenturiaAPI==='undefined'||typeof CenturiaAPI.checkStudent!=='function'){
+                showLoginError('El servicio de acceso no está disponible. Recarga la página e inténtalo nuevamente.');
+                return;
             }
-            // 2) Fallback auth.verify (también Firestore)
-            if(typeof CenturiaAPI !== 'undefined' && CenturiaAPI.auth && CenturiaAPI.auth.verify){
-                const v = await CenturiaAPI.auth.verify(cedula);
-                if(v && v.valid && v.user){
-                    const u2=v.user;
-                    const n2=(u2.nombre||u2.firstname||'').split(' ')[0]||'';
-                    const a2=(u2.apellido||u2.lastname||'').split(' ')[0]||'';
-                    hideLoadingGlobal();
-                    mostrarPasoPassword(n2||u2.nombre||'',a2||u2.apellido||'');
-                    document.getElementById('btn-buscar').disabled=false;
-                    return;
-                }
+            const respuesta=await CenturiaAPI.checkStudent(cedula);
+            if(!respuesta||respuesta.ok===false){
+                console.error('[login] Error verificando registro:',respuesta&&respuesta.codigo,respuesta&&respuesta.error);
+                showLoginError('No se pudo verificar tu registro por un problema de conexión. Inténtalo nuevamente.');
+                return;
             }
-        }catch(e){ console.warn('checkStudent verify error',e); }
-        hideLoadingGlobal();
-        await verificarCedulaOffline(cedula);
-        document.getElementById('btn-buscar').disabled=false;
+            if(respuesta.existe&&respuesta.estudiante&&respuesta.estudiante.estado==='pre_registro'){
+                invitarRegistro(cedula,respuesta.estudiante.nombre||'');
+                return;
+            }
+            if(respuesta.existe&&respuesta.estudiante){
+                const usuario=respuesta.estudiante;
+                const nombre=(usuario.nombre||usuario.firstname||'').split(' ')[0]||'';
+                const apellido=(usuario.apellido||usuario.lastname||'').split(' ')[0]||'';
+                loginSource='firestore';
+                loginGasUser={nombre:usuario.nombre||usuario.firstname||'',apellido:usuario.apellido||usuario.lastname||'',completo:((usuario.nombre||usuario.firstname||'')+' '+(usuario.apellido||usuario.lastname||'')).trim()};
+                mostrarPasoPassword(nombre,apellido);
+                return;
+            }
+            const usuarioLocal=buscarUsuarioLocal(cedula);
+            if(usuarioLocal){
+                loginSource='local';
+                loginGasUser=null;
+                mostrarPasoPassword(usuarioLocal.nombre||'',usuarioLocal.apellido||'');
+                return;
+            }
+            showLoginError('La cédula '+cedula+' no está registrada.');
+            setTimeout(()=>{
+                const error=document.getElementById('login-error');
+                if(error){
+                    error.innerHTML='<i class="bi bi-exclamation-circle me-1"></i> La cédula <b>'+cedula+'</b> no está registrada. <a href="#" onclick="mostrarRegistro();return false;" style="color:var(--verde-medio);text-decoration:underline;font-weight:600">Registrarse ahora</a>';
+                    error.style.display='block';
+                }
+            },100);
+        }catch(error){
+            console.error('[login] Error buscando cuenta:',error);
+            showLoginError('No se pudo verificar tu registro por un problema de conexión. Inténtalo nuevamente.');
+        }finally{
+            document.getElementById('btn-buscar').disabled=false;
+            hideLoadingGlobal();
+        }
         return;
     }
 
@@ -1184,8 +1401,9 @@ async function verificarCedula(){
 
         // Recordar cédula y contraseña (a pedido del usuario)
         if(document.getElementById('chk-recordar')&&document.getElementById('chk-recordar').checked){
+            // v2026-10-07: solo se recuerda la cédula; la contraseña la guarda (si querés) el navegador.
             localStorage.setItem('centuria_remember_cedula',cedula);
-            try{ localStorage.setItem('centuria_remember', JSON.stringify({cedula, password})); }catch(e){}
+            localStorage.removeItem('centuria_remember');
         }else{
             localStorage.removeItem('centuria_remember_cedula');
             localStorage.removeItem('centuria_remember');
@@ -1229,6 +1447,28 @@ function toggleRegPassword(id,iconId){
     else{el.type='password';if(ic)ic.className='bi bi-eye'}
 }
 
+// Alumno con asistencia cargada pero sin cuenta: se muestra su nombre y se lo invita a completar el registro
+// (el correo es obligatorio; sin correo no se guarda nada).
+function invitarRegistro(cedula,nombreCompleto){
+    const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const box=document.getElementById('login-success-text');
+    box.innerHTML='¡Hola <b>'+esc(nombreCompleto)+'</b>! Encontramos tu cédula en nuestras planillas, pero todavía no activaste tu cuenta.'+
+        '<br><a href="#" id="btn-completar-registro" style="display:inline-block;margin-top:8px;font-weight:700;color:var(--verde-medio);text-decoration:underline">'+
+        '<i class="bi bi-person-check me-1"></i>Completar mi registro</a>';
+    showLoginSuccess();
+    document.getElementById('btn-completar-registro').onclick=function(e){
+        e.preventDefault();
+        mostrarRegistro();
+        // Sugerencia de nombre/apellido a partir del nombre completo (el alumno puede corregirlo).
+        const p=String(nombreCompleto||'').trim().split(/\s+/).filter(Boolean);
+        const nNom=p.length>=4?2:1;
+        document.getElementById('reg-cedula').value=cedula;
+        document.getElementById('reg-nombre').value=p.slice(0,nNom).join(' ').toUpperCase();
+        document.getElementById('reg-apellido').value=p.slice(nNom).join(' ').toUpperCase();
+        document.getElementById('reg-email').focus();
+    };
+}
+
 async function registrarYAcceder(){
     const cedulaForm=document.getElementById('reg-cedula').value.trim().replace(/\./g,'');
     const cedula=cedulaForm||(cedulaActual||'').replace(/\./g,'');
@@ -1237,28 +1477,33 @@ async function registrarYAcceder(){
     const apellido=document.getElementById('reg-apellido').value.trim().toUpperCase();
     const email=document.getElementById('reg-email').value.trim();
     const telefono=document.getElementById('reg-telefono').value.trim();
-    const grado=document.getElementById('reg-grado').value||'';
-    const carrera=document.getElementById('reg-carrera').value||'';
-    const seccion=(document.getElementById('reg-seccion').value||'').trim().toUpperCase();
+    const rol=document.getElementById('reg-rol').value==='docente'?'docente':'alumno';
+    const grado=rol==='alumno'?(document.getElementById('reg-grado').value||''):'';
+    const carrera=rol==='alumno'?(document.getElementById('reg-carrera-manual-wrap').style.display==='none'?document.getElementById('reg-carrera').value:document.getElementById('reg-carrera-manual').value.trim()):'';
+    const seccion=rol==='alumno'?seccionRegistro():'';
     const password=document.getElementById('reg-password').value.trim();
-    const rol=document.getElementById('reg-rol').value||'alumno';
-    const requiereAprobacion=(rol==='docente');
+    const boton=document.getElementById('btn-registrar');
 
     if(!cedula||!nombre||!apellido){alert('Completa CÉDULA, NOMBRE y APELLIDO.');return}
+    if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('Ingresa un correo electrónico válido.');document.getElementById('reg-email').focus();return}
     if(!password||password.length<6){alert('La contraseña debe tener al menos 6 caracteres.');return}
+    if(rol==='alumno'&&(!grado||!carrera||!seccion)){alert('Completa grado, carrera y sección para continuar.');return}
 
     try{
         showLoadingGlobal('Registrando cuenta... no cierres la ventana');
-        const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol:rol,requiere_aprobacion:requiereAprobacion};
+        boton.disabled=true;
+        const userData={cedula,nombre,apellido,email,telefono,password,grado,carrera,seccion,foto:document.getElementById('reg-foto').value||'',rol};
         const regResult=await window.CenturiaAPI.auth.register(userData);
         if(!regResult||!regResult.ok){
-            throw new Error((regResult&&regResult.message)||'Error al registrar.');
+            throw new Error((regResult&&(regResult.message||regResult.error))||'Error al registrar.');
         }
 
-        if(regResult.user&&regResult.user.estado==='pendiente'){
+        if(rol==='docente'){
             hideLoadingGlobal();
-            alert('Tu solicitud fue registrada. Un administrador debe aprobar tu acceso como docente antes de que puedas ingresar. Volvé a intentar iniciar sesión más tarde con tu cédula y contraseña.');
-            location.reload();
+            document.getElementById('reg-resultado').textContent='Solicitud docente guardada con estado pendiente. El ingreso al portal se habilitará después de la validación administrativa.';
+            document.getElementById('reg-resultado').style.color='#166534';
+            boton.innerHTML='<i class="bi bi-check-circle me-2"></i>Solicitud enviada';
+            boton.disabled=true;
             return;
         }
 
@@ -1283,6 +1528,9 @@ async function registrarYAcceder(){
             return;
         }
         alert('Error al registrar: '+err.message);
+        boton.disabled=false;
+    }finally{
+        if(!document.getElementById('reg-resultado').textContent)boton.disabled=false;
     }
 }
 
@@ -1339,8 +1587,8 @@ function retomarFoto(){document.getElementById('reg-foto').value='';document.get
 function eliminarFoto(){document.getElementById('reg-foto').value='';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-placeholder').style.display='flex';document.getElementById('btn-retomar-foto').style.display='none';document.getElementById('btn-eliminar-foto').style.display='none';document.getElementById('btn-cambiar-camara').style.display='none'}
 
 // ═══ NAVEGACIÓN ═══
-function volverPaso1(){document.getElementById('step-2-register').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-1b').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none';if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=document.getElementById('foto-video');if(v)v.style.display='none'}
-function mostrarRegistro(){document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='block';regPaso1();cargarSecciones();if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
+function volverPaso1(){document.getElementById('step-2-register').style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-1b').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none';document.getElementById('reg-tipo-usuario').value='alumno';cambiarTipoRegistro('alumno');if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=document.getElementById('foto-video');if(v)v.style.display='none'}
+function mostrarRegistro(){document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='block';document.getElementById('reg-tipo-usuario').value='alumno';cambiarTipoRegistro('alumno');regPaso1();if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
 function regPaso1(){document.getElementById('reg-paso-1').style.display='block';document.getElementById('reg-paso-1b').style.display='none';document.getElementById('reg-paso-2').style.display='none';document.getElementById('reg-paso-3').style.display='none';document.getElementById('reg-volver-login').style.display='none'}
 function regPaso1b(){
     const c=document.getElementById('reg-cedula').value.trim().replace(/\./g,'');
@@ -1359,12 +1607,18 @@ function regPaso2(){
     const p2=document.getElementById('reg-password-confirm').value.trim();
     if(!p1||p1.length<6){alert('La contraseña debe tener al menos 6 caracteres.');document.getElementById('reg-password').focus();return}
     if(p1!==p2){alert('Las contraseñas no coinciden.');document.getElementById('reg-password-confirm').focus();return}
+    if(!document.getElementById('reg-email').value.trim()){alert('Ingresa tu correo electrónico para completar el registro.');document.getElementById('reg-email').focus();return}
     document.getElementById('reg-paso-1').style.display='none';
     document.getElementById('reg-paso-1b').style.display='none';
     document.getElementById('reg-paso-2').style.display='block';
     document.getElementById('reg-paso-3').style.display='none';
 }
 function regPaso3(){
+    const rol=document.getElementById('reg-rol').value||'alumno';
+    if(rol==='alumno'){
+        const carrera=document.getElementById('reg-carrera-manual-wrap').style.display==='none'?document.getElementById('reg-carrera').value:document.getElementById('reg-carrera-manual').value.trim();
+        if(!carrera){alert('Ingresa o selecciona tu carrera / programa.');document.getElementById(document.getElementById('reg-carrera-manual-wrap').style.display==='none'?'reg-carrera':'reg-carrera-manual').focus();return}
+    }
     document.getElementById('reg-paso-1').style.display='none';
     document.getElementById('reg-paso-1b').style.display='none';
     document.getElementById('reg-paso-2').style.display='none';
@@ -1375,18 +1629,19 @@ function regPaso3(){
     const a=document.getElementById('reg-apellido').value.trim().toUpperCase();
     const e=document.getElementById('reg-email').value.trim();
     const t=document.getElementById('reg-telefono').value.trim();
-    const g=document.getElementById('reg-grado').value;
-    const ca=document.getElementById('reg-carrera').value;
-    const s=(document.getElementById('reg-seccion').value||'S026');
+    const g=rol==='alumno'?document.getElementById('reg-grado').value:'';
+    const ca=rol==='alumno'?(document.getElementById('reg-carrera-manual-wrap').style.display==='none'?document.getElementById('reg-carrera').value:document.getElementById('reg-carrera-manual').value.trim()):'';
+    const s=rol==='alumno'?(seccionRegistro()||'—'):'';
     let h='<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px">';
     h+='<b style="color:var(--dorado)">Cédula:</b><span>'+c+'</span>';
     h+='<b style="color:var(--dorado)">Nombre:</b><span>'+n+'</span>';
     h+='<b style="color:var(--dorado)">Apellido:</b><span>'+a+'</span>';
+    h+='<b style="color:var(--dorado)">Tipo:</b><span>'+(rol==='docente'?'Solicitud de docente (requiere aprobación)':'Estudiante')+'</span>';
     if(e)h+='<b style="color:var(--dorado)">Email:</b><span>'+e+'</span>';
     if(t)h+='<b style="color:var(--dorado)">Teléfono:</b><span>'+t+'</span>';
-    if(g)h+='<b style="color:var(--dorado)">Grado:</b><span>'+g+'</span>';
-    if(ca)h+='<b style="color:var(--dorado)">Carrera:</b><span>'+ca+'</span>';
-    if(s)h+='<b style="color:var(--dorado)">Sección:</b><span>'+s+'</span>';
+    if(g)h+='<b style="color:var(--dorado)">Grado:</b><span>'+escaparHtml(g)+'</span>';
+    if(ca)h+='<b style="color:var(--dorado)">Carrera:</b><span>'+escaparHtml(ca)+'</span>';
+    if(s)h+='<b style="color:var(--dorado)">Sección:</b><span>'+escaparHtml(s)+'</span>';
     h+='<b style="color:var(--dorado)">Contraseña:</b><span style="font-family:monospace;background:#f1f5f9;padding:2px 6px;border-radius:4px">•••••••• (definida)</span></div>';
     const f=document.getElementById('reg-foto').value;
     if(f)h='<div style="text-align:center;margin-bottom:10px"><img src="'+f+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--verde-medio)"></div>'+h;
@@ -1477,12 +1732,14 @@ window.addEventListener('load',()=>{
         }
     }catch(e){}
 
-    // Cargar cédula y contraseña recordadas (si el usuario lo activó)
+    // Cargar la cédula recordada (si el usuario lo activó). La contraseña nunca se guarda aquí.
     try{
-        let remCedula = null; let remPass = null;
+        let remCedula = null;
         try{
+            // Dato viejo (cédula + contraseña en texto plano): se conserva la cédula y se borra la contraseña.
             const remObj = JSON.parse(localStorage.getItem('centuria_remember')||'null');
-            if(remObj && remObj.cedula){ remCedula = remObj.cedula; remPass = remObj.password||null; }
+            if(remObj && remObj.cedula){ remCedula = remObj.cedula; localStorage.setItem('centuria_remember_cedula', remObj.cedula); }
+            localStorage.removeItem('centuria_remember');
         }catch(e){}
         if(!remCedula) remCedula = localStorage.getItem('centuria_remember_cedula');
         if(remCedula){
@@ -1490,15 +1747,8 @@ window.addEventListener('load',()=>{
             if(inp){
                 inp.value = remCedula;
                 if(document.getElementById('chk-recordar')) document.getElementById('chk-recordar').checked = true;
-                document.getElementById('password-section').style.display = 'block';
-                document.getElementById('btn-buscar-texto').textContent = 'Ingresar al Portal';
-                document.getElementById('btn-buscar').querySelector('i').className = 'bi bi-arrow-right-circle me-2';
-                loginFase = 'pass';
-                const pwd = document.getElementById('inp-password');
-                if(pwd){
-                    if(remPass) pwd.value = remPass;
-                    pwd.focus();
-                }
+                // Busca la cédula como si se apretara "Buscar mi registro": saluda y pide la contraseña.
+                setTimeout(() => { const b = document.getElementById('btn-buscar'); if (b && loginFase !== 'pass') b.click(); }, 300);
             }
         }
     }catch(e){}
@@ -1576,6 +1826,74 @@ function cerrarInfo(){document.getElementById('modal-info').style.display='none'
 
 <script>
 (function(){const p=new URLSearchParams(window.location.search);if(p.get('view_as')==='admin'){var b=document.createElement('div');b.innerHTML='<a href="dashboard-admin.html" style="position:fixed;top:12px;right:12px;z-index:99999;background:linear-gradient(135deg,var(--dorado),#92400E);color:#fff;padding:10px 18px;border-radius:12px;font-family:Montserrat;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(184,148,31,0.4);transition:all 0.2s"><i class="bi bi-arrow-left-circle"></i> Volver al Admin</a>';document.body.appendChild(b)}})();
+</script>
+<script>
+// v2026-10-07: al cargar la cédula en "Registrarse" o en "¿Olvidaste tu contraseña?",
+// se consulta el índice de cédulas y se saluda / avisa si ya está registrada.
+(function(){
+    const esc=t=>String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const estado={};
+    function caja(input){
+        let d=document.getElementById(input.id+'-aviso');
+        if(!d){d=document.createElement('div');d.id=input.id+'-aviso';d.style.cssText='font-size:.75rem;border-radius:8px;padding:8px 10px;margin-top:6px;display:none;line-height:1.45';input.insertAdjacentElement('afterend',d);}
+        return d;
+    }
+    function pintar(d,tipo,html){
+        const c=tipo==='ok'?['#F0FDF4','#BBF7D0','#166534']:tipo==='aviso'?['#FFFBEB','#FDE68A','#92400E']:['#FEF2F2','#FECACA','#991B1B'];
+        d.style.background=c[0];d.style.border='1px solid '+c[1];d.style.color=c[2];d.innerHTML=html;d.style.display='block';
+    }
+    async function consultar(input,contexto){
+        const ced=input.value.trim().replace(/[.\s-]/g,'');
+        const d=caja(input);
+        if(ced.length<5){d.style.display='none';estado[input.id]=null;return}
+        if(estado[input.id]&&estado[input.id].ced===ced)return;
+        estado[input.id]={ced,existe:null};
+        pintar(d,'aviso','<i class="bi bi-hourglass-split me-1"></i>Buscando la cédula...');
+        let r=null;try{r=await CenturiaAPI.checkStudent(ced)}catch(e){}
+        if(input.value.trim().replace(/[.\s-]/g,'')!==ced)return;
+        if(!r||r.ok===false){d.style.display='none';estado[input.id]=null;return}
+        const nombre=r.estudiante?((r.estudiante.nombre||'')+' '+(r.estudiante.apellido||'')).trim():'';
+        estado[input.id]={ced,existe:!!r.existe};
+        if(contexto==='registro'){
+            if(r.existe) pintar(d,'aviso','<i class="bi bi-person-check me-1"></i>Hola'+(nombre?', <b>'+esc(nombre)+'</b>':'')+'. La cédula <b>'+esc(ced)+'</b> ya está registrada: no hace falta registrarse de nuevo.<br><a href="#" onclick="cvIrAIngresar(\''+esc(ced)+'\');return false;" style="font-weight:700;color:inherit">Ingresar con mi contraseña</a> · <a href="#" onclick="abrirRecuperarContrasena();document.getElementById(\'recuperar-cedula\').value=\''+esc(ced)+'\';document.getElementById(\'recuperar-cedula\').dispatchEvent(new Event(\'blur\'));return false;" style="font-weight:700;color:inherit">Olvidé mi contraseña</a>');
+            else pintar(d,'ok','<i class="bi bi-check-circle me-1"></i>Cédula disponible: podés continuar con el registro.');
+        }else{
+            if(r.existe) pintar(d,'ok','<i class="bi bi-person-check me-1"></i>Hola'+(nombre?', <b>'+esc(nombre)+'</b>':'')+'. Ingresá el correo con el que te registraste.');
+            else pintar(d,'error','<i class="bi bi-exclamation-circle me-1"></i>La cédula <b>'+esc(ced)+'</b> no está registrada. <a href="#" onclick="cerrarRecuperar();mostrarRegistro();return false;" style="font-weight:700;color:inherit">Registrarme</a>');
+        }
+    }
+    window.cvIrAIngresar=function(ced){
+        if(typeof volverPaso1==='function')volverPaso1();
+        const i=document.getElementById('inp-cedula');
+        if(i){i.value=ced;const b=document.getElementById('btn-buscar');if(b)b.click();}
+    };
+    function enganchar(id,contexto){
+        const i=document.getElementById(id);if(!i)return;
+        let t=null;
+        i.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>consultar(i,contexto),700)});
+        i.addEventListener('blur',()=>{clearTimeout(t);consultar(i,contexto)});
+    }
+    if(typeof abrirRecuperarContrasena==='function'){
+        const abrir=abrirRecuperarContrasena;
+        window.abrirRecuperarContrasena=abrirRecuperarContrasena=function(){
+            const r=abrir.apply(this,arguments);
+            const d=document.getElementById('recuperar-cedula-aviso');if(d)d.style.display='none';
+            estado['recuperar-cedula']=null;return r;
+        };
+    }
+    enganchar('reg-cedula','registro');
+    enganchar('recuperar-cedula','recuperar');
+    // No dejar avanzar el registro con una cédula que ya existe.
+    if(typeof regPaso1b==='function'){
+        const original=regPaso1b;
+        window.regPaso1b=regPaso1b=function(){
+            const i=document.getElementById('reg-cedula');const ced=i.value.trim().replace(/[.\s-]/g,'');
+            const e=estado['reg-cedula'];
+            if(e&&e.ced===ced&&e.existe){caja(i).scrollIntoView({block:'center'});return}
+            return original.apply(this,arguments);
+        };
+    }
+})();
 </script>
 </body>
 </html>

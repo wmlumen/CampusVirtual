@@ -640,6 +640,37 @@
             color: rgba(255,255,255,.6);
             line-height: 1.25;
         }
+
+        /* ── Obligaciones Financieras y Curriculares del Alumno ── */
+        .dash-fin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .dash-fin-kpi {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.1);
+            border-top: 3px solid var(--dorado);
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .dash-fin-kpi .val { font-size: 1.25rem; font-weight: 800; color: #4ade80; line-height: 1.1; }
+        .dash-fin-kpi .lbl { font-size: .58rem; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; font-weight: 700; }
+        .dash-tag-fin {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: .55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .dash-tag-modulo { background: rgba(56,189,248,.18); color: #38bdf8; border: 1px solid rgba(56,189,248,.35); }
+        .dash-tag-taller { background: rgba(250,204,21,.18); color: #facc15; border: 1px solid rgba(250,204,21,.35); }
+        .dash-tag-congreso { background: rgba(244,114,182,.18); color: #f472b6; border: 1px solid rgba(244,114,182,.35); }
+        .dash-tag-esp { background: rgba(168,85,247,.18); color: #c084fc; border: 1px solid rgba(168,85,247,.35); }
+        .dash-tag-mat { background: rgba(74,222,128,.18); color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
         .admin-mode-banner {
             background: linear-gradient(90deg, rgba(212,168,67,.2), rgba(22,129,61,.2));
             border: 1px solid rgba(212,168,67,.4);
@@ -794,6 +825,63 @@
             <div id="ficha-avance" class="ficha-avance" hidden></div>
             <div id="dash-mensajes" class="dash-mensajes" data-tono="superacion" hidden role="region" aria-label="Mensajes para ti" aria-live="polite">
                 <div id="dm-cuerpo"></div>
+            </div>
+
+            <!-- Obligaciones Financieras y Curriculares (Visible al tener alta de matrícula) -->
+            <div class="dash-section" id="sec-obligaciones-financieras" style="display:none;">
+                <div class="dash-section-title">
+                    <div class="dash-section-title-left">
+                        <i class="bi bi-wallet2"></i> Obligaciones Financieras y Curriculares del Estudiante
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span id="dash-fin-badge-nivel" class="dash-tag-fin dash-tag-modulo">PROGRAMA ACTIVO</span>
+                        <a href="facturas.html" class="dash-btn dash-btn-primary" style="padding:4px 10px;font-size:.62rem"><i class="bi bi-receipt"></i> Mis Facturas</a>
+                    </div>
+                </div>
+                <div style="font-size:.65rem;color:rgba(255,255,255,.65);margin-bottom:12px;line-height:1.5;">
+                    Al contar con el <strong>alta de matrícula</strong>, se encuentran asignados los compromisos académicos y arancelarios correspondientes al plan de estudio: módulos del nivel, talleres mensuales de práctica profesional, congreso anual y cursos especializados.
+                </div>
+
+                <!-- Tarjetas KPI -->
+                <div class="dash-fin-grid">
+                    <div class="dash-fin-kpi">
+                        <div class="val" id="dash-fin-kpi-modulos">10</div>
+                        <div class="lbl">Módulos del Nivel</div>
+                    </div>
+                    <div class="dash-fin-kpi">
+                        <div class="val" id="dash-fin-kpi-talleres">1 / mes</div>
+                        <div class="lbl">Talleres Mensuales</div>
+                    </div>
+                    <div class="dash-fin-kpi">
+                        <div class="val" id="dash-fin-kpi-congreso">1 / año</div>
+                        <div class="lbl">Congreso Anual</div>
+                    </div>
+                    <div class="dash-fin-kpi">
+                        <div class="val" id="dash-fin-kpi-cursos">3 Cursos</div>
+                        <div class="lbl">Especializados</div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Obligaciones -->
+                <div style="overflow-x:auto;">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Concepto Obligatorio</th>
+                                <th>Tipo de Arancel / Actividad</th>
+                                <th>Frecuencia / Carga</th>
+                                <th>Condición Oficial</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-fin-tabla-body">
+                            <!-- Generado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:.62rem;color:rgba(255,255,255,.5)">
+                    <span><i class="bi bi-check-circle-fill text-success me-1"></i> Estado de Matrícula: <strong style="color:#4ade80" id="dash-fin-estado-txt">Alta confirmada</strong></span>
+                    <a href="formulario-matricula.html" style="color:var(--dorado);text-decoration:none;"><i class="bi bi-file-earmark-text"></i> Ver Formulario de Matrícula Completo</a>
+                </div>
             </div>
 
             <!-- Mis Asignaturas -->
@@ -1003,6 +1091,9 @@
                         <div class="profile-data-row"><span class="profile-data-label">Fecha de Inscripción</span><span class="profile-data-value editable" id="p-fecha-inscripcion" data-field="fecha_inscripcion" data-type="date" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Matrícula Asignada</span><span class="profile-data-value editable" id="p-matricula" data-field="matricula" onclick="editarCampo(this)">-</span></div>
                         <div class="profile-data-row"><span class="profile-data-label">Estado de Pago de Aranceles</span><span class="profile-data-value editable" id="p-estado-pago" data-field="estado_pago" onclick="editarCampo(this)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Plan de Módulos</span><span class="profile-data-value" id="p-plan-modulos" style="color:var(--dorado)">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Talleres & Congresos</span><span class="profile-data-value" id="p-plan-eventos">-</span></div>
+                        <div class="profile-data-row"><span class="profile-data-label">Cursos Especializados</span><span class="profile-data-value" id="p-plan-cursos">-</span></div>
                     </div>
 
                     <!-- 🩺 Datos de Salud -->
@@ -1670,6 +1761,9 @@
             window.cvMatriculaPendiente = (currentUserRole === 'alumno' && !user.matricula_completa);
             if (window.CvMensajes) setTimeout(window.CvMensajes.actualizarFicha, 0);
 
+            // Renderizar Obligaciones Financieras y Curriculares si tiene alta de matrícula o es alumno
+            renderObligacionesFinancierasDashboard(user);
+
             // Iniciales
             const initials = ((n.charAt(0) || 'U') + (a.charAt(0) || '')).toUpperCase();
             document.getElementById('dash-avatar-initials').textContent = initials;
@@ -1699,6 +1793,124 @@
             renderizarAdminSuiteModulos(esAdmin);
 
             resolverFoto(user);
+        }
+
+        // ═══ OBLIGACIONES FINANCIERAS Y CURRICULARES (ALTA DE MATRÍCULA) ═══
+        function determinarCargaAcademicaFinanciera(carreraTexto, gradoTexto) {
+            const txt = (String(carreraTexto || '') + ' ' + String(gradoTexto || '')).toUpperCase();
+            let nivel = 'GRADO';
+            let cantModulos = 10;
+
+            if (/DOCTOR|PHD/.test(txt)) {
+                nivel = 'DOCTORADO';
+                cantModulos = 12;
+            } else if (/MAESTR|MBA|MASTER/.test(txt)) {
+                nivel = 'MAESTRÍA';
+                cantModulos = 12;
+            } else if (/ESPECIALI|DIPLO|DIDACTICA/.test(txt)) {
+                nivel = 'ESPECIALIZACIÓN';
+                cantModulos = 6;
+            } else if (/TECNIC|CORTO/.test(txt)) {
+                cantModulos = 6;
+            }
+
+            return {
+                nivel: nivel,
+                cantModulos: cantModulos,
+                talleresMes: 1,
+                congresosAno: 1,
+                cursosEspecializados: [
+                    'Actualización Profesional Continua',
+                    'Herramientas Digitales y Metodología Aplicada',
+                    'Liderazgo y Ética Institucional Centuria'
+                ]
+            };
+        }
+
+        function renderObligacionesFinancierasDashboard(user) {
+            const secFin = document.getElementById('sec-obligaciones-financieras');
+            if (!secFin) return;
+
+            // Mostrar para rol alumno o si cuenta con matrícula / legajo / alta
+            const esAlumno = (currentUserRole === 'alumno') || (user && (user.matricula || user.legajo_numero || user.carrera));
+            if (!esAlumno) {
+                secFin.style.display = 'none';
+                return;
+            }
+
+            secFin.style.display = 'block';
+
+            const config = determinarCargaAcademicaFinanciera(user.carrera, user.grado);
+            
+            // Actualizar Badge y KPIs
+            const badgeEl = document.getElementById('dash-fin-badge-nivel');
+            if (badgeEl) badgeEl.textContent = config.nivel;
+
+            const kpiMod = document.getElementById('dash-fin-kpi-modulos');
+            if (kpiMod) kpiMod.textContent = config.cantModulos + ' Módulos';
+
+            const kpiTal = document.getElementById('dash-fin-kpi-talleres');
+            if (kpiTal) kpiTal.textContent = config.talleresMes + ' / mes';
+
+            const kpiCong = document.getElementById('dash-fin-kpi-congreso');
+            if (kpiCong) kpiCong.textContent = config.congresosAno + ' / año';
+
+            const kpiCur = document.getElementById('dash-fin-kpi-cursos');
+            if (kpiCur) kpiCur.textContent = config.cursosEspecializados.length + ' Cursos';
+
+            // Actualizar filas en la tabla del Dashboard
+            const tbody = document.getElementById('dash-fin-tabla-body');
+            if (tbody) {
+                let html = `
+                    <tr>
+                        <td><strong>Matrícula Anual Institucional</strong><div style="font-size:.55rem;color:rgba(255,255,255,.5)">Habilitación de legajo y condición de alumno regular</div></td>
+                        <td><span class="dash-tag-fin dash-tag-mat">Matrícula</span></td>
+                        <td>1 al inicio del periodo</td>
+                        <td><span class="badge b-ok" style="background:rgba(74,222,128,.2);color:#4ade80">Alta Confirmada</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Módulos Curriculares del Plan (${config.cantModulos} Módulos)</strong><div style="font-size:.55rem;color:rgba(255,255,255,.5)">Cursado regular, asistencia presencial/virtual y evaluaciones</div></td>
+                        <td><span class="dash-tag-fin dash-tag-modulo">Módulo</span></td>
+                        <td>${config.cantModulos} Módulos del ciclo</td>
+                        <td><span class="badge b-blue" style="background:rgba(56,189,248,.2);color:#38bdf8">Vigente en Plataforma</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Talleres Mensuales Prácticos</strong><div style="font-size:.55rem;color:rgba(255,255,255,.5)">1 Taller intensivo mensual con certificación de competencias</div></td>
+                        <td><span class="dash-tag-fin dash-tag-taller">Taller Mensual</span></td>
+                        <td>1 Taller por mes (12 al año)</td>
+                        <td><span class="badge b-warn" style="background:rgba(250,204,21,.2);color:#facc15">1 al Mes Asignado</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Congreso Anual Centuria</strong><div style="font-size:.55rem;color:rgba(255,255,255,.5)">Participación obligatoria en conferencias y ponencias</div></td>
+                        <td><span class="dash-tag-fin dash-tag-congreso">Congreso Anual</span></td>
+                        <td>1 Congreso por año</td>
+                        <td><span class="badge b-gold" style="background:rgba(212,168,67,.2);color:var(--dorado-claro)">1 al Año Requerido</span></td>
+                    </tr>
+                `;
+
+                config.cursosEspecializados.forEach((c) => {
+                    html += `
+                        <tr>
+                            <td><strong>Curso Especializado: ${escHtml(c)}</strong><div style="font-size:.55rem;color:rgba(255,255,255,.5)">Perfeccionamiento profesional avanzado incluido</div></td>
+                            <td><span class="dash-tag-fin dash-tag-esp">Especializado</span></td>
+                            <td>Seminario modular intensivo</td>
+                            <td><span class="badge" style="background:rgba(168,85,247,.2);color:#c084fc">Habilitado</span></td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            }
+
+            // Actualizar datos complementarios en Tab 2 (Mi Perfil)
+            const pMod = document.getElementById('p-plan-modulos');
+            if (pMod) pMod.textContent = `${config.cantModulos} Módulos (${config.nivel})`;
+
+            const pEve = document.getElementById('p-plan-eventos');
+            if (pEve) pEve.textContent = `1 Taller / mes • 1 Congreso / año`;
+
+            const pCur = document.getElementById('p-plan-cursos');
+            if (pCur) pCur.textContent = `${config.cursosEspecializados.length} Cursos Especializados Habilitados`;
         }
 
         // Catálogo maestro de áreas y módulos del sistema para el Administrador General

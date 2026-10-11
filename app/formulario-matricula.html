@@ -118,6 +118,24 @@
         .otro-input{margin-top:6px}
         .otro-input[hidden]{display:none !important}
         .field-group select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
+
+        /* ── v08.6: Panel de Obligaciones Financieras y Académicas ── */
+        .fin-box{background:linear-gradient(145deg,#f0fdf4,#e8f5ec);border:1.5px solid var(--dorado-suave);border-radius:14px;padding:16px;margin-bottom:14px}
+        .fin-summary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+        .fin-card-kpi{background:#fff;border:1px solid #c8e6c9;border-top:3px solid var(--verde);border-radius:10px;padding:10px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+        .fin-card-kpi .val{font-size:1.15rem;font-weight:800;color:var(--verde-oscuro);line-height:1.2}
+        .fin-card-kpi .lbl{font-size:.56rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+        .fin-table{width:100%;border-collapse:collapse;font-size:.7rem;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #c8e6c9}
+        .fin-table th{background:var(--verde-dark);color:#fff;padding:8px 10px;font-size:.62rem;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+        .fin-table td{padding:8px 10px;border-bottom:1px solid #eef2ef;color:var(--txt2);vertical-align:middle}
+        .fin-table tr:last-child td{border-bottom:none}
+        .fin-table tr:hover td{background:#f9fdf9}
+        .tag-tipo{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+        .tag-modulo{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
+        .tag-taller{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+        .tag-congreso{background:#fce7f3;color:#9d174d;border:1px solid #fbcfe8}
+        .tag-especializado{background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe}
+        .tag-matricula{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
     </style>
 </head>
 <body>
@@ -514,7 +532,7 @@
                 </div>
 
                 <!-- ═══ PAGOS ═══ -->
-                <div class="sec-title"><i class="bi bi-credit-card"></i> Información de Pagos</div>
+                <div class="sec-title"><i class="bi bi-credit-card"></i> Información de Pagos y Obligaciones Financieras</div>
                 <div class="field-row">
                     <div class="field-group">
                         <label>Matrícula (Guaraníes / USD)</label>
@@ -529,10 +547,64 @@
                         <select id="plan_pago" name="plan_pago">
                             <option value="">— Seleccionar —</option>
                             <option value="contado">Contado</option>
-                            <option value="cuotas">Cuotas</option>
+                            <option value="cuotas" selected>Cuotas</option>
                             <option value="beca">Beca</option>
                             <option value="convenio">Convenio</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- ═══ OBLIGACIONES FINANCIERAS Y ACADÉMICAS DEL PROGRAMA ═══ -->
+                <div class="fin-box" id="obligaciones-financieras-panel">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                        <div style="font-size:.78rem;font-weight:800;color:var(--verde-oscuro);text-transform:uppercase;letter-spacing:.5px">
+                            <i class="bi bi-receipt-cutoff text-success me-1"></i> Plan Oficial de Obligaciones Financieras y Académicas
+                        </div>
+                        <span id="fin-nivel-badge" class="tag-tipo tag-modulo" style="font-size:.65rem">Programa Activo</span>
+                    </div>
+                    <p style="font-size:.65rem;color:var(--txt3);margin-bottom:12px;line-height:1.5">
+                        Al encontrarse matriculado, el estudiante queda formalmente comprometido con las obligaciones curriculares y arancelarias fijadas por la institución (Módulos correspondientes al nivel, 1 Taller mensual, 1 Congreso anual y Cursos especializados de perfeccionamiento).
+                    </p>
+
+                    <!-- Resumen Cuantitativo / KPIs -->
+                    <div class="fin-summary-cards">
+                        <div class="fin-card-kpi">
+                            <div class="val" id="fin-kpi-modulos">10</div>
+                            <div class="lbl">Módulos del Nivel</div>
+                        </div>
+                        <div class="fin-card-kpi">
+                            <div class="val" id="fin-kpi-talleres">1 / mes</div>
+                            <div class="lbl">Talleres Mensuales</div>
+                        </div>
+                        <div class="fin-card-kpi">
+                            <div class="val" id="fin-kpi-congresos">1 / año</div>
+                            <div class="lbl">Congreso Anual</div>
+                        </div>
+                        <div class="fin-card-kpi">
+                            <div class="val" id="fin-kpi-cursos">Incluidos</div>
+                            <div class="lbl">Cursos Especializados</div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración y Detalle Desplegado -->
+                    <div style="overflow-x:auto;">
+                        <table class="fin-table">
+                            <thead>
+                                <tr>
+                                    <th>Concepto Obligatorio</th>
+                                    <th>Tipo</th>
+                                    <th>Frecuencia / Carga</th>
+                                    <th>Estado / Condición</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fin-tabla-obligaciones-body">
+                                <!-- Generado dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:.62rem;color:var(--txt3)">
+                        <span><i class="bi bi-shield-check text-success"></i> Los comprobantes oficiales se cargan y auditan en la sección <a href="facturas.html" target="_blank" style="font-weight:700;color:var(--verde-oscuro)">Mis Facturas</a>.</span>
+                        <span style="font-weight:700;color:var(--verde-dark)" id="fin-total-obligaciones-txt">Total estimado de eventos y actividades: Activo</span>
                     </div>
                 </div>
 
@@ -621,6 +693,105 @@
 
         if (user.telefono) document.getElementById('telefono_movil').value = user.telefono;
         if (user.grado) document.getElementById('semestre').value = user.grado;
+
+        // ═══ v08.6: Motor de Obligaciones Financieras y Académicas ═══
+        function determinarCargaPrograma(carreraTexto, semestreTexto) {
+            const txt = (String(carreraTexto || '') + ' ' + String(semestreTexto || '')).toUpperCase();
+            let nivel = 'GRADO';
+            let cantModulos = 10; // Por defecto Grado (10 u 8 semestres / módulos)
+
+            if (/DOCTOR|PHD/.test(txt)) {
+                nivel = 'DOCTORADO';
+                cantModulos = 12; // 12 módulos avanzados de investigación doctoral
+            } else if (/MAESTR|MBA|MASTER/.test(txt)) {
+                nivel = 'MAESTRÍA';
+                cantModulos = 12; // 12 módulos de postgrado / maestría
+            } else if (/ESPECIALI|DIPLO|DIDACTICA/.test(txt)) {
+                nivel = 'ESPECIALIZACIÓN';
+                cantModulos = 6;  // 6 módulos intensivos
+            } else if (/TECNIC|CORTO/.test(txt)) {
+                cantModulos = 6;
+            }
+
+            return {
+                nivel: nivel,
+                cantModulos: cantModulos,
+                talleresMes: 1,
+                congresosAno: 1,
+                cursosEspecializados: ['Actualización Profesional Continua', 'Herramientas Digitales y Metodología', 'Liderazgo y Ética Institucional']
+            };
+        }
+
+        function renderizarObligacionesFinancieras() {
+            const carVal = document.getElementById('carrera').value.trim();
+            const semVal = document.getElementById('semestre').value.trim();
+            const config = determinarCargaPrograma(carVal || user.carrera, semVal || user.grado);
+
+            const badgeEl = document.getElementById('fin-nivel-badge');
+            if (badgeEl) badgeEl.textContent = config.nivel;
+
+            const kpiMod = document.getElementById('fin-kpi-modulos');
+            if (kpiMod) kpiMod.textContent = config.cantModulos + ' Módulos';
+
+            const kpiTal = document.getElementById('fin-kpi-talleres');
+            if (kpiTal) kpiTal.textContent = config.talleresMes + ' / mes';
+
+            const kpiCong = document.getElementById('fin-kpi-congresos');
+            if (kpiCong) kpiCong.textContent = config.congresosAno + ' / año';
+
+            const tbody = document.getElementById('fin-tabla-obligaciones-body');
+            if (!tbody) return;
+
+            let filas = `
+                <tr>
+                    <td><strong>Matrícula Institucional Anual</strong><div style="font-size:.58rem;color:var(--txt3)">Habilitación de legajo, plataforma y campus</div></td>
+                    <td><span class="tag-tipo tag-matricula">Matrícula</span></td>
+                    <td>1 al inicio del periodo</td>
+                    <td><span class="badge b-ok" style="background:#dcfce7;color:#166534">Requisito de Alta</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Módulos Curriculares (${config.cantModulos} Módulos del Plan)</strong><div style="font-size:.58rem;color:var(--txt3)">Desarrollo cátedra, exámenes parciales y finales</div></td>
+                    <td><span class="tag-tipo tag-modulo">Módulo</span></td>
+                    <td>${config.cantModulos} Módulos en el ciclo académico</td>
+                    <td><span class="badge b-blue" style="background:#e0f2fe;color:#075985">Obligatorio Curricular</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Talleres Mensuales de Práctica y Habilidades</strong><div style="font-size:.58rem;color:var(--txt3)">1 Taller intensivo con certificación cada mes</div></td>
+                    <td><span class="tag-tipo tag-taller">Taller Mensual</span></td>
+                    <td>1 Taller por mes (12 al año)</td>
+                    <td><span class="badge b-warn" style="background:#fef3c7;color:#854d0e">1 Mensual Vigente</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Congreso Académico Institucional</strong><div style="font-size:.58rem;color:var(--txt3)">1 Congreso Internacional o Nacional por año</div></td>
+                    <td><span class="tag-tipo tag-congreso">Congreso Anual</span></td>
+                    <td>1 Congreso al año</td>
+                    <td><span class="badge b-gold" style="background:#fef9c3;color:#854d0e">1 al Año Requerido</span></td>
+                </tr>
+            `;
+
+            config.cursosEspecializados.forEach((c, idx) => {
+                filas += `
+                    <tr>
+                        <td><strong>Curso Especializado: ${c}</strong><div style="font-size:.58rem;color:var(--txt3)">Perfeccionamiento profesional y actualización de competencias</div></td>
+                        <td><span class="tag-tipo tag-especializado">Especializado</span></td>
+                        <td>Seminario intensivo / Asignado</td>
+                        <td><span class="badge b-ok" style="background:#ede9fe;color:#5b21b6">Habilitado para Alumno</span></td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = filas;
+
+            const txtTotal = document.getElementById('fin-total-obligaciones-txt');
+            if (txtTotal) {
+                txtTotal.textContent = `Total del Plan: ${config.cantModulos} Módulos + 12 Talleres Anuales + 1 Congreso Anual + ${config.cursosEspecializados.length} Cursos Especializados.`;
+            }
+        }
+
+        // Ejecutar render inicial y enlazar a cambios
+        renderizarObligacionesFinancieras();
+        document.getElementById('carrera').addEventListener('input', renderizarObligacionesFinancieras);
+        document.getElementById('semestre').addEventListener('change', renderizarObligacionesFinancieras);
 
         // ═══ v08.5.7: listas desplegables con "Otro" ═══
         // Nacionalidad y estado civil: catálogos locales. Departamento → Ciudad → Barrio: API propia (localidades-py, códigos DGEEC).
@@ -824,6 +995,7 @@
             elegirValor('ciudad', m.ciudad);
             await cargarBarrios();
             elegirValor('barrio_compania', m.barrio_compania);
+            renderizarObligacionesFinancieras();
         }
 
         function mostrarEstado(estado) {

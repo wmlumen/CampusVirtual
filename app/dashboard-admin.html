@@ -108,7 +108,7 @@
             <img src="images/logo_centuria.png" alt="Centuria" class="h-10" onerror="this.src='favicon.ico'">
             <div>
                 <h1 class="text-sm font-bold text-slate-800 tracking-wide uppercase">Panel Administrativo — Centuria</h1>
-                <p class="text-[10px] font-medium text-amber-600" id="admin-mode-label">Modo Admin — <span id="admin-user-display">CHRISTHIAN JOSE RAUL</span></p>
+                <p class="text-[10px] font-medium text-amber-600" id="admin-mode-label">Modo Admin — <span id="admin-user-display">Administrador</span></p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -138,6 +138,9 @@
             </button>
             <button onclick="cambiarSeccion('tab-asignaturas', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-asignaturas">
                 <i class="bi bi-book-half text-base"></i> Asignaturas
+            </button>
+            <button onclick="cambiarSeccion('tab-calificaciones', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-calificaciones">
+                <i class="bi bi-file-text text-base"></i> Panel Calificaciones
             </button>
             <button onclick="cambiarSeccion('tab-tesoreria', this)" class="side-btn text-left px-6 py-3 text-xs flex items-center gap-3 transition-colors tab-inactive" data-tab="tab-tesoreria">
                 <i class="bi bi-cash-stack text-base"></i> Tesorería
@@ -193,20 +196,26 @@
                 </div>
                 <div id="tab-usuarios" class="admin-section" style="display:none">
                     <div class="admin-card">
-                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-people-fill text-success me-2"></i>Directorio de Usuarios</h2><p class="small text-white-50 mb-0">Crear, editar, bloquear o eliminar usuarios</p></div>
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-people-fill text-success me-2"></i>Directorio de Usuarios</h2><p class="small text-white-50 mb-0">Pre-registrar, editar rol, activar o dar de baja</p></div>
                         <div class="d-flex gap-2 flex-wrap">
                             <input type="text" id="filtro-user-busqueda" class="search-inp" placeholder="Buscar cedula, nombre..." oninput="filtrarUsuarios()">
-                            <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos los Roles</option><option value="alumno">Alumnos</option><option value="docente">Docentes</option><option value="admin">Admins</option><option value="administracion_general">Administración General</option><option value="academico">Academicos</option></select>
-                            <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="inactivo">Inactivos</option></select>
+                            <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos los Roles</option><option value="alumno">Alumnos</option><option value="docente">Docentes</option><option value="admin">Admins</option><option value="administracion_general">Administración General</option><option value="academico">Academicos</option><option value="asistencia_estudiante">Asist. al Estudiante</option></select>
+                            <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="inactivo">Dados de baja</option><option value="pre_registro">Pre-registrados</option></select>
                             <button onclick="abrirModalCrear()" class="btn-act btn-act-primary"><i class="bi bi-plus-lg"></i> Nuevo usuario</button>
                         </div></div>
                         <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre</th><th>Rol</th><th>Carrera</th><th>Seccion</th><th>Estado</th><th class="text-end">Opciones</th></tr></thead><tbody id="tabla-usuarios-body"><tr><td colspan="7" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
                     </div>
                 </div>
+                <div id="tab-calificaciones" class="admin-section" style="display:none">
+                    <div class="admin-card">
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-file-text me-2"></i>Panel de Calificaciones</h2><p class="small text-white-50 mb-0">Gestión y visualización de notas del curso</p></div>
+                        <!-- Contenido cargado por JavaScript -->
+                    </div>
+                </div>
                 <div id="tab-asignaturas" class="admin-section" style="display:none">
                     <div class="admin-card">
-                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Catedras</h2><p class="small text-white-50 mb-0">Materias del plan curricular</p></div><div class="d-flex gap-2"><a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none"><i class="bi bi-plus-circle me-1"></i> Constructor</a><button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
-                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Codigo / Materia</th><th>Carrera</th><th>Docente</th><th>Seccion</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-asignaturas-body"><tr><td colspan="5" class="text-center py-4">Cargando...</td></tr></tbody></table></div>
+                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Catedras</h2><p class="small text-white-50 mb-0">Materias del plan curricular — activar o dar de baja</p></div><div class="d-flex gap-2"><a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none"><i class="bi bi-plus-circle me-1"></i> Constructor</a><button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Codigo / Materia</th><th>Carrera</th><th>Docente</th><th>Grado / Semestre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-asignaturas-body"><tr><td colspan="6" class="text-center py-4">Cargando...</td></tr></tbody></table></div>
                     </div>
                 </div>
                 <div id="tab-tesoreria" class="admin-section" style="display:none">
@@ -225,19 +234,19 @@
                 <div class="modal-centuria-box">
                     <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-warning mb-0"><i class="bi bi-person-gear me-2"></i>Editar usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalUsuario()"></button></div>
                     <div class="mb-3"><label class="small text-white-50 mb-1">Nombre Completo</label><input type="text" id="modal-user-nombre" class="form-control form-control-sm search-inp w-100" readonly></div>
-                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula</label><input type="text" id="modal-user-cedula" class="form-control form-control-sm search-inp w-100" readonly></div><div class="col-6"><label class="small text-white-50 mb-1">Rol</label><select id="modal-user-rol" class="form-select form-select-sm search-inp w-100"><option value="alumno">Alumno</option><option value="docente">Docente</option><option value="academico">Academico</option><option value="administracion_general">Administración General</option><option value="admin">Admin</option></select></div></div>
-                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Carrera</label><input type="text" id="modal-user-carrera" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Seccion</label><input type="text" id="modal-user-seccion" class="form-control form-control-sm search-inp w-100"></div></div>
-                    <div class="mb-3"><label class="small text-white-50 mb-1">Estado</label><select id="modal-user-estado" class="form-select form-select-sm search-inp w-100"><option value="activo">Activo</option><option value="pendiente">Pendiente</option><option value="inactivo">Inactivo / Bloqueado</option></select></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula</label><input type="text" id="modal-user-cedula" class="form-control form-control-sm search-inp w-100" readonly></div><div class="col-6"><label class="small text-white-50 mb-1">Rol</label><select id="modal-user-rol" class="form-select form-select-sm search-inp w-100"><option value="alumno">Alumno</option><option value="docente">Docente</option><option value="academico">Académico</option><option value="asistencia_estudiante">Asistencia al Estudiante</option><option value="admin_filial">Admin filial</option><option value="administracion_general">Administración General</option><option value="admin">Admin</option><option value="administrador_plataforma">Admin plataforma (general)</option></select></div></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Carrera</label><input type="text" id="modal-user-carrera" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Seccion</label><input type="text" id="modal-user-seccion" list="cv-lista-secciones" placeholder="LV026, MJ026, S026 u otra" class="form-control form-control-sm search-inp w-100" style="text-transform:uppercase"></div></div>
+                    <div class="mb-3"><label class="small text-white-50 mb-1">Estado</label><select id="modal-user-estado" class="form-select form-select-sm search-inp w-100"><option value="activo">Activo</option><option value="pendiente">Pendiente</option><option value="inactivo">Dado de baja (bloqueado)</option></select></div>
                     <div id="modal-user-msg" class="small mb-3" style="display:none"></div>
                     <div class="d-flex justify-content-end gap-2 mt-4"><button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalUsuario()">Cancelar</button><button type="button" class="btn btn-sm btn-act-primary px-4" onclick="guardarEdicionUsuario()"><i class="bi bi-check-lg me-1"></i> Guardar</button></div>
                 </div>
             </div>
             <div id="modal-crear-usuario" class="modal-centuria-backdrop" style="display:none">
                 <div class="modal-centuria-box">
-                    <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-person-plus me-2"></i>Nuevo usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalCrear()"></button></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-person-plus me-2"></i>Pre-registrar usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalCrear()"></button></div>
                     <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Nombre *</label><input type="text" id="crear-user-nombre" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Apellido *</label><input type="text" id="crear-user-apellido" class="form-control form-control-sm search-inp w-100"></div></div>
-                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula *</label><input type="text" id="crear-user-cedula" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Email</label><input type="text" id="crear-user-email" class="form-control form-control-sm search-inp w-100"></div></div>
-                    <div class="row g-2 mb-3"><div class="col-4"><label class="small text-white-50 mb-1">Rol</label><select id="crear-user-rol" class="form-select form-select-sm search-inp w-100"><option value="alumno">Alumno</option><option value="docente">Docente</option><option value="academico">Academico</option><option value="administracion_general">Administración General</option><option value="admin">Admin</option></select></div><div class="col-4"><label class="small text-white-50 mb-1">Carrera</label><input type="text" id="crear-user-carrera" class="form-control form-control-sm search-inp w-100"></div><div class="col-4"><label class="small text-white-50 mb-1">Seccion</label><input type="text" id="crear-user-seccion" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula *</label><input type="text" id="crear-user-cedula" class="form-control form-control-sm search-inp w-100"></div></div>
+                    <p class="small text-white-50 mb-3"><i class="bi bi-info-circle me-1"></i>Se pre-registra la cédula: la persona entra a «Registrarse», busca su cédula y elige su contraseña. Después le asignás rol, carrera y sección desde «Editar».</p><datalist id="cv-lista-secciones"><option value="LV026"><option value="MJ026"><option value="S026"></datalist>
                     <div id="crear-user-msg" class="small mb-3" style="display:none"></div>
                     <div class="d-flex justify-content-end gap-2 mt-4"><button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalCrear()">Cancelar</button><button type="button" class="btn btn-sm btn-act-primary px-4" onclick="crearUsuario()"><i class="bi bi-check-lg me-1"></i> Crear</button></div>
                 </div>
@@ -250,23 +259,14 @@
 
 <script>
 var LISTA_USUARIOS_CACHE=[],LISTA_PENDIENTES_CACHE=[],LISTA_ASIGNATURAS_CACHE=[];
-/* dashboard-admin: logica unica (sobrescribe funciones base). Query: view_as=admin&admin_token=muaqe8lciyxz34&admin_user=CHRISTHIAN JOSE RAUL */
-(function(){
-  var q=new URLSearchParams(location.search);
-  var au=q.get('admin_user')||'CHRISTHIAN JOSE RAUL';
-  try{au=decodeURIComponent(au);}catch(e){}
-  window._viewAs=q.get('view_as')||'admin';
-  window._adminToken=q.get('admin_token')||'muaqe8lciyxz34';
-  window._adminUser=au;
-  var d1=document.getElementById('admin-user-display'); if(d1)d1.textContent=au;
-  var d2=document.getElementById('admin-user-name'); if(d2)d2.textContent=au;
-})();
+/* dashboard-admin: logica unica (sobrescribe funciones base). El nombre sale de la sesión. */
+window._viewAs='admin';window._adminUser='Administrador';
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function escQ(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function badgeRol(rol){rol=(rol||'alumno').toLowerCase();var c=rol==='docente'?'badge-role-docente':rol==='admin'?'badge-role-admin':rol==='academico'?'badge-role-academico':rol==='academic'?'badge-role-academico':rol==='administracion_general'||rol==='admin_general'||rol==='administracion'?'badge-role-admgen':'badge-role-alumno';return '<span class="badge-role '+c+'">'+esc(rol.replace('_',' '))+'</span>';}
 function badgeEstado(est){est=(est||'').toLowerCase();var c=est==='activo'?'badge-role-alumno':est==='pendiente'?'badge-role-docente':'badge-role-admin';return '<span class="badge-role '+c+'">'+esc(est||'---')+'</span>';}
 function inicializarHeader(){var n=sessionStorage.getItem('current_nombre')||window._adminUser||'Administrador';var e1=document.getElementById('admin-user-name');if(e1)e1.textContent=n;var e2=document.getElementById('admin-user-display');if(e2)e2.textContent=n;}
-function cambiarSeccion(tabId,btn){document.querySelectorAll('.admin-section').forEach(function(s){s.style.display='none';});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.side-btn').forEach(function(b){b.classList.remove('tab-active');b.classList.add('tab-inactive');});var t=document.getElementById(tabId);if(t)t.style.display='block';if(btn)btn.classList.add('active');var sb=document.querySelector('.side-btn[data-tab="'+tabId+'"]');if(sb){sb.classList.add('tab-active');sb.classList.remove('tab-inactive');}if(tabId==='tab-pendientes'&&LISTA_PENDIENTES_CACHE.length===0)cargarPendientes();else if(tabId==='tab-usuarios'&&LISTA_USUARIOS_CACHE.length===0)cargarUsuarios();else if(tabId==='tab-asignaturas'&&LISTA_ASIGNATURAS_CACHE.length===0)cargarAsignaturas();}
+function cambiarSeccion(tabId,btn){document.querySelectorAll('.admin-section').forEach(function(s){s.style.display='none';});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.side-btn').forEach(function(b){b.classList.remove('tab-active');b.classList.add('tab-inactive');});var t=document.getElementById(tabId);if(t)t.style.display='block';if(btn)btn.classList.add('active');var sb=document.querySelector('.side-btn[data-tab="'+tabId+'"]');if(sb){sb.classList.add('tab-active');sb.classList.remove('tab-inactive');}if(tabId==='tab-pendientes'&&LISTA_PENDIENTES_CACHE.length===0)cargarPendientes();else if(tabId==='tab-usuarios'&&LISTA_USUARIOS_CACHE.length===0)cargarUsuarios();else if(tabId==='tab-asignaturas'&&LISTA_ASIGNATURAS_CACHE.length===0)cargarAsignaturas();else if(tabId==='tab-calificaciones')cargarPanelCalificaciones();}
 async function cargarTodoElDashboard(){try{if(window._fbCheck)window._fbCheck();}catch(e){}await Promise.allSettled([cargarPendientes(),cargarUsuarios(),cargarAsignaturas(),cargarStatsTesoreria()]);}
 document.addEventListener('DOMContentLoaded',function(){inicializarHeader();cargarTodoElDashboard();});
 async function cargarPendientes(){var tb=document.getElementById('tabla-pendientes-body');if(!tb)return;tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';try{var res=await CenturiaAPI.usuarios.pendientes();var list=(res&&res.pendientes)?res.pendientes:(Array.isArray(res)?res:[]);LISTA_PENDIENTES_CACHE=list;var kpi=document.getElementById('kpi-pendientes');if(kpi)kpi.textContent=list.length;var b1=document.getElementById('badge-pendientes-tab');if(b1){b1.style.display=list.length>0?'inline-block':'none';b1.textContent=list.length;}var b2=document.getElementById('badge-pendientes-tab2');if(b2){b2.style.display=list.length>0?'inline-block':'none';b2.textContent=list.length;}if(!list.length){tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><i class="bi bi-check-circle text-success me-2"></i>Sin solicitudes pendientes.</td></tr>';return;}tb.innerHTML=list.map(function(u){var rol=(u.rol||'alumno').toLowerCase();var nm=esc((u.nombre||'')+' '+(u.apellido||''));return '<tr><td class="fw-bold text-warning">'+esc(u.cedula)+'</td><td class="fw-bold">'+nm+'</td><td>'+esc(u.email||'Sin email')+'</td><td>'+badgeRol(rol)+'</td><td>'+esc(u.carrera||'---')+' / '+esc(u.seccion||'---')+'</td><td class="text-end"><button onclick="aprobarUsuarioRapido(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-success me-1">Aprobar</button><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ((u.nombre||'')+' '+(u.apellido||''))+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\'pendiente\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="6" class="text-center py-4 text-danger">Error al cargar pendientes.</td></tr>';}}
@@ -287,6 +287,147 @@ async function crearUsuario(){var nom=document.getElementById('crear-user-nombre
 async function bloquearUsuario(cedula){if(!confirm('Bloquear a C.I. '+cedula+'? (estado inactivo)'))return;try{var r=await CenturiaAPI.usuarios.actualizar(cedula,{estado:'inactivo'});if(r&&r.ok!==false){alert('Usuario '+cedula+' bloqueado.');cargarUsuarios();cargarPendientes();}else{alert((r&&(r.error||r.mensaje))||'No se pudo bloquear.');}}catch(e){alert('Error de conexion.');}}
 async function eliminarUsuario(cedula){if(!confirm('Eliminar a C.I. '+cedula+'? Se marcara inactivo y se desactivara su rol.'))return;try{try{await CenturiaAPI.usuarios.actualizar(cedula,{estado:'inactivo'});}catch(e){}var r=await CenturiaAPI.request('desactivar_rol',{cedula:cedula},'POST');if(r&&r.ok!==false){alert('Usuario '+cedula+' eliminado.');cargarUsuarios();cargarPendientes();}else{alert((r&&(r.error||r.mensaje))||'Se marco inactivo. Verifique el directorio.');cargarUsuarios();}}catch(e){alert('Error de conexion.');}}
 function cerrarSesion(){if(typeof CenturiaLogout!=='undefined'&&typeof CenturiaLogout.salir==='function'){CenturiaLogout.salir();}else{sessionStorage.clear();localStorage.removeItem('centuria_auth_token');localStorage.removeItem('centuria_user');window.location.href='index.html';}}
+</script>
+<script>
+// ═══ v2026-10-07: tabla de usuarios mejorada + errores claros al editar ═══
+var CV_ROL_NOMBRE={alumno:'Alumno',docente:'Docente',academico:'Académico',academic:'Académico',administracion_general:'Adm. General',admin_general:'Adm. General',administracion:'Administración',administrativo:'Administrativo',admin:'Admin',administrador_plataforma:'Admin plataforma',admin_filial:'Admin filial',asistencia_estudiante:'Asist. al Estudiante'};
+var CV_ROLES_ADMIN=['admin','administrador_plataforma','administracion_general','admin_general','administracion'];
+function cvRolNombre(r){r=String(r||'alumno').toLowerCase();return CV_ROL_NOMBRE[r]||r.replace(/_/g,' ');}
+function cvMiCedula(){try{var u=CenturiaAPI.getCurrentUser()||{};return String(u.cedula||u.username||sessionStorage.getItem('current_cedula')||'');}catch(e){return '';}}
+// Cuenta marcada como admin solo por carrera/sección "ADMIN" (método viejo): para la base sigue siendo alumno.
+function cvAdminHeredado(u){return String(u.carrera||'').toUpperCase()==='ADMIN'||String(u.seccion||'').toUpperCase()==='ADMIN';}
+function badgeRol(rol){rol=(rol||'alumno').toLowerCase();var c=rol==='docente'?'badge-role-docente':CV_ROLES_ADMIN.indexOf(rol)>-1?'badge-role-admin':(rol==='academico'||rol==='academic')?'badge-role-academico':rol==='alumno'?'badge-role-alumno':'badge-role-admgen';return '<span class="badge-role '+c+'">'+esc(cvRolNombre(rol))+'</span>';}
+function badgeEstado(est){est=(est||'activo').toLowerCase();var c=est==='activo'?'badge-role-alumno':(est==='pendiente'||est==='pre_registro')?'badge-role-docente':'badge-role-admin';var t=est==='activo'?'Activo':est==='pendiente'?'Pendiente':est==='pre_registro'?'Pre-registro':est==='inactivo'?'De baja':est;return '<span class="badge-role '+c+'">'+esc(t)+'</span>';}
+function renderTablaUsuarios(list){
+  var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;
+  if(!list||!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">No se encontraron usuarios.</td></tr>';return;}
+  var f=((document.getElementById('filtro-user-busqueda')||{}).value||'').toLowerCase().trim();
+  var fr=(document.getElementById('filtro-user-rol')||{}).value||'';
+  var fe=(document.getElementById('filtro-user-estado')||{}).value||'';
+  var yo=cvMiCedula();
+  var orden={pendiente:0,pre_registro:1,activo:2,inactivo:3};
+  var fl=list.filter(function(u){
+    var txt=(getNombre(u)+' '+(u.cedula||'')+' '+(u.email||'')+' '+(u.carrera||'')).toLowerCase();
+    var r=getRol(u).toLowerCase();
+    var rolOk=!fr||r===fr||(fr==='admin'&&CV_ROLES_ADMIN.indexOf(r)>-1);
+    return (!f||txt.indexOf(f)>-1)&&rolOk&&(!fe||String(u.estado||'activo').toLowerCase()===fe);
+  }).sort(function(a,b){
+    var ea=orden[String(a.estado||'activo').toLowerCase()],eb=orden[String(b.estado||'activo').toLowerCase()];
+    if(ea!==eb)return (ea==null?3:ea)-(eb==null?3:eb);
+    return getNombre(a).localeCompare(getNombre(b));
+  });
+  if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin resultados para el filtro.</td></tr>';return;}
+  var vis=fl.slice(0,200);
+  tb.innerHTML=vis.map(function(u){
+    var rol=getRol(u),nm=getNombre(u).trim()||'(sin nombre)',estado=String(u.estado||'activo').toLowerCase(),ced=String(u.cedula||'');
+    var esYo=ced&&ced===yo, heredado=cvAdminHeredado(u)&&CV_ROLES_ADMIN.indexOf(rol.toLowerCase())<0;
+    var carrera=heredado?'—':(u.carrera||'—'), seccion=heredado?'—':(u.seccion||'—');
+    var avisoRol=heredado?'<div style="font-size:.6rem;color:#fbbf24;margin-top:3px" title="Figura como admin solo por carrera/sección ADMIN; la base de datos lo trata como alumno"><i class="bi bi-exclamation-triangle"></i> Admin por método viejo: asignale el rol Admin</div>':'';
+    // Opciones como íconos (con texto al pasar el mouse y para lectores de pantalla).
+    var ico=function(onclick,icon,tit,color){return '<button type="button" onclick="'+onclick+'" title="'+tit+'" aria-label="'+tit+'" style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:8px;margin-left:4px;cursor:pointer;background:'+color+';color:#fff;font-size:.85rem"><i class="bi '+icon+'"></i></button>';};
+    var acciones='';
+    if(u.sin_cuenta){
+      // Pre-registro: todavía no hay ficha; solo se puede anular.
+      acciones+='<span style="font-size:.62rem;color:#94a3b8;margin-right:4px">sin cuenta</span>'+ico("anularPreregistro('"+escQ(ced)+"')",'bi-x-circle','Anular pre-registro','#dc2626');
+    }else{
+      if(estado==='pendiente')acciones+=ico("aprobarUsuarioRapido('"+escQ(ced)+"')",'bi-check-lg','Aprobar y habilitar','#16a34a');
+      acciones+=ico("abrirModalEditar('"+escQ(ced)+"','"+escQ(nm)+"','"+escQ(rol)+"','"+escQ(heredado?'':u.carrera||'')+"','"+escQ(heredado?'':u.seccion||'')+"','"+escQ(estado)+"')",'bi-pencil-square','Editar','#d97706');
+      if(esYo)acciones+='<span title="Tu cuenta" style="font-size:.62rem;color:#94a3b8;margin-left:6px"><i class="bi bi-person-check"></i> vos</span>';
+      else if(estado==='inactivo')acciones+=ico("cvCambiarEstado('"+escQ(ced)+"','activo')",'bi-unlock','Reactivar','#0891b2');
+      else if(estado==='activo')acciones+=ico("cvCambiarEstado('"+escQ(ced)+"','inactivo')",'bi-slash-circle','Dar de baja','#64748b');
+    }
+    return '<tr'+(estado==='pendiente'?' style="background:rgba(251,191,36,.06)"':'')+'>'+
+      '<td class="fw-bold">'+esc(ced)+'</td>'+
+      '<td><div style="font-weight:600">'+esc(nm.toUpperCase())+'</div>'+(u.email?'<div style="font-size:.62rem;color:#94a3b8">'+esc(u.email)+'</div>':'')+'</td>'+
+      '<td>'+badgeRol(heredado?'alumno':rol)+avisoRol+'</td>'+
+      '<td>'+esc(carrera)+(u.grado&&!heredado?'<div style="font-size:.6rem;color:#94a3b8">'+esc(u.grado)+'</div>':'')+'</td>'+
+      '<td>'+esc(seccion)+'</td>'+
+      '<td>'+badgeEstado(estado)+'</td>'+
+      '<td class="text-end" style="white-space:nowrap">'+acciones+'</td></tr>';
+  }).join('')+
+  '<tr><td colspan="7" style="font-size:.65rem;color:#94a3b8;text-align:right">Mostrando '+vis.length+' de '+fl.length+(fl.length!==list.length?' (filtrados de '+list.length+')':'')+' usuarios</td></tr>';
+}
+async function guardarEdicionUsuario(){
+  var ced=document.getElementById('modal-user-cedula').value,rol=document.getElementById('modal-user-rol').value,est=document.getElementById('modal-user-estado').value,car=document.getElementById('modal-user-carrera').value,sec=document.getElementById('modal-user-seccion').value;
+  var msg=document.getElementById('modal-user-msg');
+  var mostrar=function(t){if(msg){msg.textContent=t;msg.style.color='#f87171';msg.style.display='block';}};
+  if(msg)msg.style.display='none';
+  if(ced===cvMiCedula()&&(est!=='activo'||CV_ROLES_ADMIN.indexOf(rol)<0)){mostrar('No podés quitarte el rol de administrador ni darte de baja a vos mismo: pedíselo a otro administrador.');return;}
+  if(!rol){mostrar('Elegí un rol.');return;}
+  try{
+    var r1=await CenturiaAPI.usuarios.actualizar(ced,{rol:rol,estado:est,carrera:car,seccion:sec});
+    if(r1&&r1.ok!==false){
+      if(est==='activo'){try{await CenturiaAPI.usuarios.aprobar(ced);}catch(e){}}
+      cerrarModalUsuario();cargarPendientes();cargarUsuarios();alert('Usuario '+ced+' actualizado.');return;
+    }
+    var err=String((r1&&(r1.error||r1.mensaje))||'Error al actualizar');
+    if(/permission|insufficient|permiso/i.test(err)){
+      var yo=(LISTA_USUARIOS_CACHE||[]).find(function(u){return String(u.cedula)===cvMiCedula();})||{};
+      err='Sin permiso para editar usuarios: tu cuenta ('+cvMiCedula()+') figura con rol "'+cvRolNombre(getRol(yo))+'" en la base de datos, y solo un Admin puede editar. Asignale el rol Admin a tu cuenta (tools\\asignar-rol.js).';
+    }
+    mostrar(err);
+  }catch(e){mostrar('No se pudo guardar: '+((e&&e.message)||'error desconocido'));}
+}
+</script>
+<script>
+// ═══ v2026-10-11: activar / dar de baja desde el panel (usuarios, pre-registros y asignaturas) ═══
+function abrirModalEditar(cedula,nombre,rol,carrera,seccion,estado){
+  var m=document.getElementById('modal-editar-usuario');if(!m)return;
+  var sel=document.getElementById('modal-user-rol');rol=String(rol||'alumno').toLowerCase();
+  // Un rol que no está en la lista se agrega para no borrarlo al guardar.
+  if(!Array.prototype.some.call(sel.options,function(o){return o.value===rol;})){var o=document.createElement('option');o.value=rol;o.textContent=cvRolNombre(rol);sel.appendChild(o);}
+  document.getElementById('modal-user-cedula').value=cedula||'';document.getElementById('modal-user-nombre').value=nombre||'';
+  sel.value=rol;document.getElementById('modal-user-carrera').value=carrera||'';document.getElementById('modal-user-seccion').value=seccion||'';
+  var es=document.getElementById('modal-user-estado');es.value=String(estado||'activo').toLowerCase();if(!es.value)es.value='activo';
+  var msg=document.getElementById('modal-user-msg');if(msg)msg.style.display='none';m.style.display='flex';
+}
+async function cvCambiarEstado(cedula,estado){
+  if(cedula===cvMiCedula()){alert('No podés darte de baja a vos mismo.');return;}
+  var txt=estado==='activo'?'Reactivar la cuenta de C.I. '+cedula+'? Podrá volver a ingresar.':'Dar de baja a C.I. '+cedula+'? No podrá ingresar al Campus hasta que la reactives.';
+  if(!confirm(txt))return;
+  try{var r=await CenturiaAPI.usuarios.actualizar(cedula,{estado:estado});
+    if(r&&r.ok!==false){cargarUsuarios();cargarPendientes();}
+    else alert((r&&(r.error||r.mensaje))||'No se pudo cambiar el estado.');
+  }catch(e){alert('Error de conexion.');}
+}
+// Compatibilidad con los botones de «Aprobación»: Bloquear/Eliminar = dar de baja (no se borra la ficha).
+function bloquearUsuario(cedula){return cvCambiarEstado(cedula,'inactivo');}
+function eliminarUsuario(cedula){return cvCambiarEstado(cedula,'inactivo');}
+async function anularPreregistro(cedula){
+  if(!confirm('Anular el pre-registro de C.I. '+cedula+'? Ya no podrá registrarse con esa cédula hasta que la vuelvas a pre-registrar.'))return;
+  var r=await CenturiaAPI.usuarios.anularPreregistro(cedula);
+  if(r&&r.ok)cargarUsuarios();else alert((r&&r.error)||'No se pudo anular.');
+}
+async function crearUsuario(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var nom=g('crear-user-nombre'),ape=g('crear-user-apellido'),ced=g('crear-user-cedula').replace(/[\.\s\-]/g,'');
+  var msg=document.getElementById('crear-user-msg');var mostrar=function(t){if(msg){msg.textContent=t;msg.style.color='#f87171';msg.style.display='block';}else alert(t);};
+  if(msg)msg.style.display='none';
+  if(!nom||!ape||!ced){mostrar('Nombre, apellido y cédula son obligatorios.');return;}
+  try{var r=await CenturiaAPI.usuarios.registerDirect({cedula:ced,nombre:nom,apellido:ape});
+    if(r&&r.ok){cerrarModalCrear();['crear-user-nombre','crear-user-apellido','crear-user-cedula'].forEach(function(id){document.getElementById(id).value='';});cargarUsuarios();alert('C.I. '+ced+' pre-registrada. Ya puede registrarse en el Campus con su cédula.');}
+    else mostrar((r&&r.error)||'No se pudo pre-registrar.');
+  }catch(e){mostrar('Error de conexion.');}
+}
+async function cargarAsignaturas(){
+  var tb=document.getElementById('tabla-asignaturas-body');if(!tb)return;
+  try{var res=await CenturiaAPI.asignaturas.list({estado:'todas'});
+    var list=(res&&res.asignaturas)?res.asignaturas:(res&&res.items)?res.items:(Array.isArray(res)?res:[]);
+    LISTA_ASIGNATURAS_CACHE=list;
+    if(!list.length){tb.innerHTML='<tr><td colspan="6" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}
+    tb.innerHTML=list.slice(0,200).map(function(a){
+      var id=a.id||a.codigo||'',est=String(a.estado||'activo').toLowerCase(),activa=est==='activo'||est==='desarrollado';
+      var boton=activa?'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'inactivo\')" class="btn-act me-1" style="background:#64748b;color:#fff" title="Los alumnos dejan de verla"><i class="bi bi-slash-circle"></i> Dar de baja</button>'
+                      :'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'activo\')" class="btn-act btn-act-success me-1" title="Los alumnos la ven en Mis Cursos"><i class="bi bi-check-lg"></i> Activar</button>';
+      return '<tr><td class="fw-bold">'+esc(a.codigo||id)+'<div style="font-size:.65rem;color:#94a3b8;font-weight:400">'+esc(a.nombre||'')+'</div></td><td>'+esc(a.carrera||'---')+'</td><td>'+esc(a.docente||a.docente_nombre||a.docente_cedula||'---')+'</td><td>'+esc(a.grado||'---')+(a.semestre?' · '+esc(a.semestre):'')+'</td><td>'+badgeEstado(activa?'activo':'inactivo')+'</td><td class="text-end" style="white-space:nowrap">'+boton+'<a href="constructor/index.html" class="btn-act btn-act-primary text-decoration-none">Abrir</a></td></tr>';
+    }).join('');
+  }catch(e){tb.innerHTML='<tr><td colspan="6" class="text-center py-4">No se pudo cargar el catalogo.</td></tr>';}
+}
+async function cvEstadoAsignatura(id,estado){
+  if(!confirm((estado==='activo'?'Activar':'Dar de baja')+' la asignatura '+id+'?'))return;
+  var r=await CenturiaAPI.asignaturas.setEstado(id,estado);
+  if(r&&r.ok)cargarAsignaturas();else alert((r&&r.error)||'No se pudo cambiar el estado.');
+}
 </script>
 </body>
 </html>

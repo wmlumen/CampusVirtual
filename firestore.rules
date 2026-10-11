@@ -10,14 +10,23 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
+    // v2026-10-11: rol efectivo de la ficha; una cuenta dada de baja o pendiente no tiene permisos de personal.
+    function rolActivo() {
+      return getUserData().get('estado', 'activo') == 'activo' ? getUserData().get('rol', '') : '';
+    }
+
+    // Cédula del usuario con sesión (Firebase Auth Email/Contraseña, v2026-10-06):
+    // claim "cedula" (lo pone la migración) o, si no está, la parte local del correo
+    // interno <cedula>@campus-centuria.local. Cualquier otro correo no da cédula.
     function getCedulaForUid() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/uid_cedula/$(request.auth.uid))
-          ? get(/databases/$(database)/documents/uid_cedula/$(request.auth.uid)).data.cedula
-          : null;
+      return !isAuthenticated() ? null
+        : ('cedula' in request.auth.token) ? request.auth.token.cedula
+        : (request.auth.token.get('email', '').matches('^[^@]+@campus-centuria[.]local$')
+            ? request.auth.token.email.split('@')[0] : null);
     }
 
     function isPlatformAdmin() {
-      return isAuthenticated() && getUserData().rol == 'administrador_plataforma';
+      return isAuthenticated() && rolActivo() == 'administrador_plataforma';
     }
 
     function isAdminOrPlatform() {
@@ -27,7 +36,7 @@ service cloud.firestore {
         'administracion_general',
         'admin_general',
         'administracion'
-      ].hasAny([getUserData().rol]);
+      ].hasAny([rolActivo()]);
     }
 
     // Roles autorizados para asignar/quitar roles a otros usuarios.
@@ -42,19 +51,19 @@ service cloud.firestore {
         'administrativo',
         'academico',
         'admin_filial'
-      ].hasAny([getUserData().rol]);
+      ].hasAny([rolActivo()]);
     }
 
     function isAcademico() {
-      return isAuthenticated() && getUserData().rol == 'academico';
+      return isAuthenticated() && rolActivo() == 'academico';
     }
 
     function isDocente() {
-      return isAuthenticated() && getUserData().rol == 'docente';
+      return isAuthenticated() && rolActivo() == 'docente';
     }
 
     function isAdminFilial() {
-      return isAuthenticated() && getUserData().rol == 'admin_filial';
+      return isAuthenticated() && rolActivo() == 'admin_filial';
     }
 
 
@@ -70,7 +79,7 @@ service cloud.firestore {
         'docente',
         'admin_filial',
         'asistencia_estudiante'
-      ].hasAny([getUserData().rol]);
+      ].hasAny([rolActivo()]);
     }
 
     function isOwner(userId) {
@@ -84,45 +93,66 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Índice público de cédulas (v2026-10-06): solo nombre/estado para el paso "Buscar mi registro".
+    // Se lee de a un documento (get), nunca la colección entera. Lo escribe el dueño o un admin.
+    match /cedulas/{cedula} {
+      allow get: if true;
+      // Listar (p. ej. alumnos pre-registrados sin cuenta) solo para administración y académico.
+      allow list: if isAdminOrPlatform() || isAcademico();
+      allow create, update: if (getCedulaForUid() == cedula || isAdminOrPlatform())
+                    && request.resource.data.keys().hasOnly(['cedula','nombre','apellido','estado','rol','uid','actualizado'])
+                    && request.resource.data.cedula == cedula;
+      allow delete: if isAdminOrPlatform();
+    }
+
     match /usuarios/{userId} {
-      // Lectura autenticada (propietario, el alumno por su cédula, o staff)
+      // Lectura: el propio usuario (por uid o por cédula) o el personal autorizado.
+      // Sin sesión no se puede leer ni listar: la contraseña la verifica Firebase Auth.
       allow read: if isAuthenticated() && (isOwner(userId) || getCedulaForUid() == resource.data.cedula || isStaff());
 
-      // 🔒 Login bootstrap SIN auth: SOLO query filtrada por cédula y con LIMIT 1.
-      // Prohibida la lectura de la colección completa o por ID sin autenticación.
-      // Con auth (anónima/real): scans puntuales por rol o es_docente para gestión docente (limit<=500).
-      allow list: if request.query.where.size() == 1
-                  && request.query.limit <= 500
-                  && (
-                      (request.query.where[0].field == 'cedula' && request.query.limit <= 1)
-                      || (isAuthenticated()
-                          && (request.query.where[0].field == 'rol'
-                              || request.query.where[0].field == 'es_docente'))
-                  );
-
-      // Cambio de contraseña SIN auth (login provisorio → definitiva):
-      // exige current_password == password actual (prueba de identidad) y solo permite
-      // tocar password/updated_at/must_change_password/current_password sin cambiar cedula.
-      // Un segundo update (sin auth) permite borrar el campo current_password del doc.
-      // Gestión docente (académico/admin) con auth: permite tocar SOLO claves de asignación,
-      // sin cambiar cedula ni password.
-      // Actualización de perfil: el propio usuario (por getCedulaForUid) o un admin.
-      allow update: if isAuthenticated() && (isOwner(userId) || getCedulaForUid() == resource.data.cedula || isAdminOrPlatform())
-                 || (request.auth == null
-                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password','updated_at','must_change_password','current_password'])
-                     && request.resource.data.cedula == resource.data.cedula
-                     && request.resource.data.current_password == resource.data.password)
-                 || (request.auth == null
-                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['current_password'])
-                     && !('current_password' in request.resource.data))
-                 // Gestión de roles: solo roles autorizados pueden tocar rol/roles/estado.
-                 // canAssignRoles() = admin, administrador_plataforma, administracion_general,
-                 //                    administrativo, academico, admin_filial.
+      // El propio usuario actualiza su perfil, pero no su rol, estado, asignaciones ni cédula.
+      // Admin: todo. Roles autorizados: solo rol/roles/estado/es_docente/asignaciones.
+      allow update: if (isAuthenticated()
+                        && (isOwner(userId) || getCedulaForUid() == resource.data.cedula)
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                              .hasAny(['rol','roles','estado','es_docente','asignaciones','cedula','password','current_password']))
+                 || isAdminOrPlatform()
                  || (canAssignRoles()
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol','estado','roles','es_docente','asignaciones','updated_at'])
-                     && request.resource.data.cedula == resource.data.cedula
-                     && request.resource.data.password == resource.data.password);
-      allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrPlatform());
+                     && request.resource.data.cedula == resource.data.cedula);
+
+      // Registro: la ficha la crea el mismo usuario recién creado en Firebase Auth.
+      // Alumno: ID = cédula. Docente: ID = uid. Ya no se guardan contraseñas en Firestore.
+      allow create: if isAuthenticated()
+                    && (isOwner(userId) || userId == getCedulaForUid())
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.id == userId
+                    && request.resource.data.keys().hasOnly([
+                      'id','cedula','nombre','apellido','email','rol',
+                      'grado','carrera','seccion','carrera_grado','telefono','foto','estado',
+                      'solicitud_rol_docente','created_at'
+                    ])
+                    && request.resource.data.keys().hasAll([
+                      'id','cedula','nombre','apellido','email','rol','estado','created_at'
+                    ])
+                    && request.resource.data.cedula is string
+                    && request.resource.data.cedula.size() >= 5
+                    && request.resource.data.cedula.size() <= 20
+                    && request.resource.data.nombre is string
+                    && request.resource.data.apellido is string
+                    && request.resource.data.email is string
+                    && request.resource.data.created_at is string
+                    && request.resource.data.carrera_grado is string
+                    && ((request.resource.data.rol == 'alumno'
+                         && request.resource.data.estado == 'activo'
+                         && request.resource.data.keys().hasAll(['grado','carrera','seccion','carrera_grado'])
+                         && request.resource.data.grado is string
+                         && request.resource.data.carrera is string
+                         && request.resource.data.seccion is string
+                         && request.resource.data.solicitud_rol_docente == false)
+                        || (request.resource.data.rol == 'docente'
+                            && request.resource.data.estado == 'pendiente'
+                            && request.resource.data.solicitud_rol_docente == true));
       allow delete: if isAdminOrPlatform();
 
       match /roles/{rolId} {
@@ -152,10 +182,177 @@ service cloud.firestore {
 
     match /asistencia/{asistId} {
       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.cedula || isStaff());
+      // Autorregistro del alumno (v2026-10-07): solo su propia presencia, con hora del servidor,
+      // un documento por asignatura+unidad (ID fijo) y sin poder editarlo después.
+      allow create: if isAuthenticated() && getCedulaForUid() != null
+                    && asistId.matches('ASI-' + getCedulaForUid() + '-[A-Za-z0-9]+-U[0-9]+')
+                    && request.resource.data.keys().hasOnly(['id','cedula','user_id','nombre','carrera','seccion',
+                         'asignatura','unidad','estado','status','observacion','origen','server_ts'])
+                    && request.resource.data.id == asistId
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.user_id == getCedulaForUid()
+                    && request.resource.data.estado == 'presente'
+                    && request.resource.data.status == 'present'
+                    && request.resource.data.origen == 'autoregistro'
+                    && request.resource.data.server_ts == request.time;
       allow create, update: if isAuthenticated() && (
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
       allow delete: if isAdminOrPlatform();
+    }
+
+    // ── Facturas del alumno (v2026-10-07) ──
+    // Ven y revisan: Asistencia al Estudiante, Administración, Filial, Tesorería y cédulas habilitadas en facturas_accesos.
+    // Gestionan accesos: Asistencia al Estudiante y Administración.
+    function rolFicha() {
+      return exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) ? rolActivo() : '';
+    }
+    function puedeAccesosFacturas() {
+      return isAuthenticated() && rolFicha() in ['asistencia_estudiante', 'asistente_estudiante', 'admin', 'administrador',
+        'administrador_plataforma', 'admin_plataforma', 'administracion_general', 'admin_general', 'administracion'];
+    }
+    function puedeVerFacturas() {
+      return isAuthenticated() && (
+        puedeAccesosFacturas() || rolFicha() in ['admin_filial', 'tesoreria', 'tesorero'] ||
+        (getCedulaForUid() != null
+          && exists(/databases/$(database)/documents/facturas_accesos/$(getCedulaForUid()))
+          && get(/databases/$(database)/documents/facturas_accesos/$(getCedulaForUid())).data.estado == 'activo'));
+    }
+
+    match /facturas/{facId} {
+      allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || puedeVerFacturas());
+      // El alumno crea la suya, siempre como «registrada» y sin revisión.
+      allow create: if isAuthenticated() && getCedulaForUid() != null
+                    && facId.matches('FAC-' + getCedulaForUid() + '-[a-z0-9]+')
+                    && request.resource.data.keys().hasOnly(['id','cedula','nombre','carrera','grado','seccion','fecha','numero','numero_clave',
+                         'concepto','monto','tiene_foto','estado','observacion','revisado_por','fecha_revision','creada','actualizada'])
+                    && request.resource.data.id == facId
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.estado == 'registrada'
+                    && request.resource.data.observacion == '' && request.resource.data.revisado_por == ''
+                    && exists(/databases/$(database)/documents/facturas_fotos/$(facId));
+      // El alumno edita o anula la suya mientras no esté verificada ni anulada; no puede revisarse a sí mismo.
+      allow update: if isAuthenticated() && resource.data.cedula == getCedulaForUid()
+                    && resource.data.estado in ['registrada', 'observada']
+                    && request.resource.data.estado in ['registrada', 'anulada']
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fecha','numero','numero_clave','concepto','monto',
+                         'estado','observacion','revisado_por','fecha_revision','actualizada'])
+                    && request.resource.data.observacion in ['', resource.data.observacion]
+                    && request.resource.data.revisado_por in ['', resource.data.revisado_por]
+                    && request.resource.data.fecha_revision in ['', resource.data.fecha_revision];
+      // El personal solo cambia estado y datos de revisión.
+      allow update: if puedeVerFacturas() && resource.data.estado != 'anulada'
+                    && request.resource.data.estado in ['registrada', 'verificada', 'observada', 'anulada']
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','observacion','revisado_por','fecha_revision','actualizada']);
+      allow delete: if isAdminOrPlatform();
+    }
+
+    // Foto privada de cada factura (dataURL), separada para no cargarla al listar.
+    match /facturas_fotos/{facId} {
+      allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || puedeVerFacturas());
+      allow create: if isAuthenticated() && getCedulaForUid() != null
+                    && facId.matches('FAC-' + getCedulaForUid() + '-[a-z0-9]+')
+                    && request.resource.data.keys().hasOnly(['cedula', 'imagen'])
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.imagen is string
+                    && request.resource.data.imagen.matches('data:image/(jpeg|png|webp);base64,.*')
+                    && request.resource.data.imagen.size() < 1000000;
+      allow update: if isAuthenticated() && resource.data.cedula == getCedulaForUid()
+                    && get(/databases/$(database)/documents/facturas/$(facId)).data.estado in ['registrada', 'observada']
+                    && request.resource.data.keys().hasOnly(['cedula', 'imagen'])
+                    && request.resource.data.cedula == resource.data.cedula
+                    && request.resource.data.imagen is string
+                    && request.resource.data.imagen.matches('data:image/(jpeg|png|webp);base64,.*')
+                    && request.resource.data.imagen.size() < 1000000;
+      allow delete: if isAdminOrPlatform();
+    }
+
+    match /facturas_accesos/{cedula} {
+      allow read: if puedeAccesosFacturas() || (isAuthenticated() && getCedulaForUid() == cedula);
+      allow create, update: if puedeAccesosFacturas()
+                    && request.resource.data.keys().hasOnly(['cedula','nombre','habilitado_por','fecha','estado'])
+                    && request.resource.data.cedula == cedula
+                    && request.resource.data.estado in ['activo', 'inactivo'];
+      allow delete: if puedeAccesosFacturas();
+    }
+
+    // ── Trabajos prácticos en PDF (v2026-10-07) ──
+    // El alumno entrega (y reemplaza mientras no esté calificado) su propio trabajo; el personal docente lo ve y lo califica.
+    function esPersonalDocente() {
+      return isAuthenticated() && rolFicha() in ['docente', 'academico', 'academic', 'admin', 'administrador', 'administrador_plataforma',
+        'admin_plataforma', 'administracion_general', 'admin_general', 'administracion'];
+    }
+    function esMiTrabajo(trabId) {
+      return isAuthenticated() && getCedulaForUid() != null
+        && trabId.matches('TRA-' + getCedulaForUid() + '-[A-Za-z0-9]+-U[0-9]+');
+    }
+
+    match /trabajos/{trabId} {
+      allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || esPersonalDocente());
+      allow create, update: if esMiTrabajo(trabId)
+                    && (resource == null || resource.data.estado == 'entregado')
+                    && request.resource.data.keys().hasOnly(['id','cedula','nombre','carrera','seccion','asignatura','unidad','titulo',
+                         'archivo_nombre','tamano','partes','estado','calificacion','puntaje_max','comentario','calificado_por',
+                         'calificado_en','entregado_ts'])
+                    && request.resource.data.id == trabId
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.estado == 'entregado'
+                    && request.resource.data.calificacion == null && request.resource.data.puntaje_max == null
+                    && request.resource.data.comentario == '' && request.resource.data.calificado_por == ''
+                    && request.resource.data.partes is int && request.resource.data.partes > 0 && request.resource.data.partes <= 20
+                    && request.resource.data.entregado_ts == request.time;
+      allow update: if esPersonalDocente()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','calificacion','puntaje_max','comentario',
+                         'calificado_por','calificado_en'])
+                    && request.resource.data.estado == 'calificado'
+                    && request.resource.data.puntaje_max is number
+                    && request.resource.data.puntaje_max > 0 && request.resource.data.puntaje_max <= 100
+                    && request.resource.data.calificacion is number
+                    && request.resource.data.calificacion >= 0
+                    && request.resource.data.calificacion <= request.resource.data.puntaje_max;
+      allow delete: if isAdminOrPlatform();
+
+      match /partes/{parte} {
+        allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || esPersonalDocente());
+        allow create, update: if esMiTrabajo(trabId)
+                      && (!exists(/databases/$(database)/documents/trabajos/$(trabId))
+                          || get(/databases/$(database)/documents/trabajos/$(trabId)).data.estado == 'entregado')
+                      && request.resource.data.keys().hasOnly(['cedula', 'datos'])
+                      && request.resource.data.cedula == getCedulaForUid()
+                      && request.resource.data.datos is string
+                      && request.resource.data.datos.size() <= 700000;
+        allow delete: if isAdminOrPlatform();
+      }
+    }
+
+    // ── Justificaciones de ausencia (v2026-10-07): el alumno envía la suya; el personal la revisa ──
+    match /justificaciones/{jusId} {
+      allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || esPersonalDocente() || isStaff());
+      allow create: if isAuthenticated() && getCedulaForUid() != null
+                    && jusId.matches('JUS-' + getCedulaForUid() + '-[a-z0-9]+')
+                    && request.resource.data.keys().hasOnly(['id','cedula','nombre','fecha_ausencia','motivo','observacion',
+                         'archivo_nombre','archivo_tipo','partes','estado','creada'])
+                    && request.resource.data.id == jusId
+                    && request.resource.data.cedula == getCedulaForUid()
+                    && request.resource.data.motivo in ['salud', 'laboral', 'familiar', 'academico', 'otro']
+                    && request.resource.data.estado == 'Pendiente'
+                    && request.resource.data.partes is int && request.resource.data.partes >= 0 && request.resource.data.partes <= 8
+                    && request.resource.data.creada == request.time;
+      allow update: if (esPersonalDocente() || isStaff())
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','revisado_por','fecha_revision','respuesta']);
+      allow delete: if isAdminOrPlatform();
+
+      match /partes/{parte} {
+        allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || esPersonalDocente() || isStaff());
+        allow create: if isAuthenticated() && getCedulaForUid() != null
+                      && jusId.matches('JUS-' + getCedulaForUid() + '-[a-z0-9]+')
+                      && !exists(/databases/$(database)/documents/justificaciones/$(jusId))
+                      && request.resource.data.keys().hasOnly(['cedula', 'datos'])
+                      && request.resource.data.cedula == getCedulaForUid()
+                      && request.resource.data.datos is string
+                      && request.resource.data.datos.size() <= 700000;
+        allow delete: if isAdminOrPlatform();
+      }
     }
 
     match /eventos/{eventoId} {
@@ -251,9 +448,7 @@ service cloud.firestore {
     }
 
      // Intentos/resultados de exámenes por alumno (doc por examen + cédula: "examen__cedula").
-     // La lectura es pública (requerida para el historial del alumno mientras no exista
-     // Firebase Auth anónimo). La escritura se limita a que la cédula del documento coincida
-     // con la cédula del ID, evitando que un alumno sobrescriba las de otro.
+     // La lectura actual del historial permanece pública; escrituras limitadas al dueño del ID.
      match /intentos/{intentoId} {
        allow read: if true;
        allow create, update: if request.resource.data.alumno_cedula == intentoId.split('__')[1];
@@ -276,9 +471,19 @@ service cloud.firestore {
        allow read: if true;
        allow write: if true;
      }
-     match /acceso_examen/{accId} {
-       allow read: if true;
-       allow write: if true;
-     }
-   }
+match /acceso_examen/{accId} {
+        allow read: if true;
+        allow write: if true;
+      }
+      match /config_carreras/{configId} {
+        allow read: if true;
+        allow write: if request.auth != null && [
+          'admin',
+          'administrador_plataforma',
+          'administracion_general',
+          'admin_general',
+          'administracion'
+        ].hasAny([rolActivo()]);
+      }
+    }
  }

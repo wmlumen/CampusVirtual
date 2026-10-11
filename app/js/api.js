@@ -293,7 +293,15 @@ function callGasCore(action, data, method) {
                   'rol','estado','carrera','seccion','grado','must_change_password'
                 ].forEach(k => { if (data[k] !== undefined) updates[k] = data[k]; });
                 updates.updated_at = new Date().toISOString();
-                return ref.update(updates).then(() => ({ ok: true, user: Object.assign({}, snap.docs[0].data(), updates) }));
+                return ref.update(updates).then(async () => {
+                    // v2026-10-11: el índice público «cedulas» refleja rol/estado (lo usan el login y «Buscar mi registro»).
+                    if (updates.rol !== undefined || updates.estado !== undefined) {
+                        const d = Object.assign({}, snap.docs[0].data(), updates);
+                        await db.collection('cedulas').doc(String(d.cedula)).set({ cedula: String(d.cedula), rol: String(d.rol || 'alumno'),
+                            estado: String(d.estado || 'activo'), actualizado: updates.updated_at }, { merge: true }).catch(() => {});
+                    }
+                    return { ok: true, user: Object.assign({}, snap.docs[0].data(), updates) };
+                });
             }).catch(e => ({ ok: false, error: e.message }));
             case 'cambiar_password': return (async () => {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
@@ -535,6 +543,27 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 return { ok: true, id: id };
             })();
             case 'eliminar_asignatura': return db.collection('asignaturas').doc(data.id).delete().then(() => ({ ok: true })).catch(() => ({ ok: false }));
+            // v2026-10-11: activar / dar de baja una asignatura sin reescribir el resto de la ficha.
+            case 'asignatura_estado': {
+                const est = String(data.estado || '').toLowerCase();
+                if (!data.id || ['activo', 'inactivo'].indexOf(est) < 0) return Promise.resolve({ ok: false, error: 'Datos inválidos.' });
+                return db.collection('asignaturas').doc(String(data.id)).update({ estado: est, updated_at: new Date().toISOString() })
+                    .then(() => ({ ok: true })).catch(e => ({ ok: false, error: e.message }));
+            }
+            // v2026-10-11: alta desde el panel = pre-registro de la cédula; la persona completa el registro con su contraseña.
+            case 'preregistrar_usuario': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (ced.length < 5) return { ok: false, error: 'Cédula inválida.' };
+                const idx = await db.collection('cedulas').doc(ced).get();
+                if (idx.exists) return { ok: false, error: idx.data().estado === 'pre_registro' ? 'Esa cédula ya está pre-registrada.' : 'Ya existe una cuenta con esa cédula.' };
+                await db.collection('cedulas').doc(ced).set({ cedula: ced, nombre: String(data.nombre || '').toUpperCase(),
+                    apellido: String(data.apellido || '').toUpperCase(), estado: 'pre_registro', rol: 'alumno', uid: '', actualizado: new Date().toISOString() });
+                return { ok: true };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'anular_preregistro': return db.collection('cedulas').doc(String(data.cedula || '')).get().then(d => {
+                if (!d.exists || d.data().estado !== 'pre_registro') return { ok: false, error: 'No es un pre-registro.' };
+                return d.ref.delete().then(() => ({ ok: true }));
+            }).catch(e => ({ ok: false, error: e.message }));
             case 'asignar_rol': return (async () => {
                 // Acciones: 'agregar' (default) | 'quitar' | 'principal'
                 const ced    = String(data.cedula  || '').replace(/[\.\s\-]/g, '').trim();
@@ -814,7 +843,7 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 await db.collection('cedulas').doc(ced).set({ estado: 'inactivo' }, { merge: true }).catch(() => {});
                 return { ok: true, mensaje: 'Docente rechazado.' };
             })().catch(e => ({ ok: false, error: e.message || 'Error interno.' }));
-            case 'usuarios_pendientes': return ensureAnonAuth().then(() => db.collection('usuarios').where('rol', '==', 'docente').where('estado', '==', 'pendiente').limit(500).get()).then(snap => ({
+            case 'usuarios_pendientes': return ensureAnonAuth().then(() => db.collection('usuarios').where('estado', '==', 'pendiente').limit(500).get()).then(snap => ({
                 ok: true, pendientes: snap.docs.map(doc => {
                     const d = doc.data();
                     return { id: doc.id, cedula: d.cedula || '', nombre: d.nombre || '', apellido: d.apellido || '', email: d.email || '', telefono: d.telefono || '', rol: d.rol || '', estado: d.estado || 'pendiente', carrera: d.carrera || '', seccion: d.seccion || '', created_at: d.created_at || '' };
@@ -2528,7 +2557,8 @@ API.asignaturas = {
     create: (data) => callGas('guardar_asignatura', data, 'POST'),
     update: (data) => callGas('guardar_asignatura', data, 'POST'),
     save: (data) => callGas('guardar_asignatura', data, 'POST'),
-    delete: (id) => callGas('eliminar_asignatura', { id }, 'POST')
+    delete: (id) => callGas('eliminar_asignatura', { id }, 'POST'),
+    setEstado: (id, estado) => callGas('asignatura_estado', { id: id, estado: estado }, 'POST')
 };
 
 // Alias usado por dashboard-admin.html: CenturiaAPI.materias.listar()
@@ -2557,7 +2587,8 @@ API.usuarios = {
         return callGas('actualizar_perfil', payload, 'POST').then(r => Object.assign({ ok: !!(r && r.ok) }, r || {}));
     },
     reject: (data) => callGas('desactivar_rol', data, 'POST'),
-    registerDirect: (data) => callGas('registrar_alumno', data, 'POST'),
+    registerDirect: (data) => callGas('preregistrar_usuario', data, 'POST'),
+    anularPreregistro: (cedula) => callGas('anular_preregistro', { cedula: cedula }, 'POST'),
     resetPassword: (cedula) => callGas('recuperar_acceso', { cedula: cedula }, 'POST')
 };
 

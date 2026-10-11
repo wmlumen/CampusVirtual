@@ -193,6 +193,13 @@ service cloud.firestore {
       allow read, write: if esPersonalDocente();
     }
 
+    // Copia íntegra de los formularios de asistencia importados (tienen correos): solo lectura del personal;
+    // se escribe únicamente con tools/importar-asistencia-formulario.js (cuenta de servicio).
+    match /asistencia_formulario/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
     // Contenido publicado de cada unidad (aula/index.html). Lo lee cualquiera con sesión; lo escribe Publicar del Constructor.
     match /contenidos/{id} {
       allow read: if isAuthenticated();

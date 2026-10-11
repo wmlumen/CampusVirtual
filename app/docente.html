@@ -114,10 +114,22 @@
     <!-- Solicitar asignatura -->
     <div class="sec" id="sec-solicitar">
         <div class="sec-title"><i class="bi bi-plus-circle"></i> Solicitar Asignatura</div>
-        <p style="font-size:.62rem;color:#475569;margin-bottom:8px">Busca una materia y pídela. Queda <strong>pendiente</strong> hasta que el administrador te asigne carrera y sección; ahí el sistema te muestra los nombres de tus alumnos.</p>
-        <input id="inp-buscar-asig" placeholder="Buscar por nombre o código..." oninput="filtrarDisponibles()"
+        <p style="font-size:.62rem;color:#475569;margin-bottom:8px">Elegí <strong>una</strong> materia por módulo y pedila. Queda <strong>pendiente</strong> hasta que el administrador te asigne carrera y sección; ahí el sistema te muestra los nombres de tus alumnos.</p>
+        <input id="inp-buscar-asig" placeholder="Filtrar por nombre o código..." oninput="filtrarDisponibles()"
             style="width:100%;padding:8px 12px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;margin-bottom:8px;outline:none">
-        <div id="lista-disponibles" style="display:grid;gap:8px"></div>
+        <!-- v2026-10-07: selección en cascada Grado → Carrera → Asignatura (una solicitud por módulo) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end">
+            <div><label for="sel-grado-solicitar" style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">1. Grado</label>
+                <select id="sel-grado-solicitar" onchange="filtrarDisponibles('grado')" style="width:100%;padding:8px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></select></div>
+            <div><label for="sel-carrera-solicitar" style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">2. Carrera</label>
+                <select id="sel-carrera-solicitar" onchange="filtrarDisponibles('carrera')" style="width:100%;padding:8px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></select></div>
+            <div><label for="sel-asig-solicitar" style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">3. Asignatura</label>
+                <select id="sel-asig-solicitar" onchange="actualizarBotonSolicitar()" style="width:100%;padding:8px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></select></div>
+            <button id="btn-solicitar-asig" onclick="solicitarSeleccionada()" disabled
+                style="padding:9px 16px;border-radius:8px;font-size:.7rem;font-weight:700;cursor:pointer;border:none;background:var(--azul);color:#fff;opacity:.5">
+                <i class="bi bi-send"></i> Solicitar</button>
+        </div>
+        <div id="lista-disponibles" style="font-size:.62rem;color:#64748b;margin-top:6px"></div>
         <div id="lista-pendientes" style="margin-top:8px"></div>
     </div>
 
@@ -125,7 +137,7 @@
     <div class="sec" id="sec-exam-hab" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
             <div class="sec-title" style="margin-bottom:0"><i class="bi bi-calendar-check"></i> Evaluaciones</div>
-            <button class="btn btn-g" onclick="abrirModalCrearEvaluacion()"><i class="bi bi-plus-circle"></i> Crear Evaluación</button>
+            <button class="btn btn-g" onclick="abrirModalCrearEvaluacion()" style="display:none"><i class="bi bi-plus-circle"></i> Crear Evaluación</button>
         </div>
         <p style="font-size:.63rem;color:var(--txt2);margin-bottom:10px">
             <i class="bi bi-info-circle"></i> Configurá código de acceso, fecha/hora e intentos de cada examen. El alumno carga su factura y recibe el enlace con su clave.
@@ -291,12 +303,24 @@
         <button class="btn btn-s" onclick="cargarPanel()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
     </div>
 
+    <!-- Trabajos prácticos en PDF entregados por los alumnos (v2026-10-07) -->
+    <div class="sec" id="sec-trabajos">
+        <div class="sec-title"><i class="bi bi-file-earmark-pdf"></i> Trabajos entregados</div>
+        <div id="trabajos-docente"></div>
+    </div>
+
     <!-- Tabla principal: Lista de Alumnos -->
     <div class="sec">
         <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <div><i class="bi bi-people"></i> <span id="sec-title-text">Lista de Alumnos</span></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <input type="text" id="filtro-doc-alumno" placeholder="Buscar por nombre o cédula..." oninput="renderTabla()" style="padding:5px 10px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';min-width:180px;">
+                <input type="text" id="filtro-doc-alumno" placeholder="Buscar por nombre o cédula..." oninput="renderTabla()" style="padding:5px 10px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';min-width:160px;">
+                <select id="filtro-doc-carrera" onchange="renderTabla()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';">
+                    <option value="">Todas las Carreras</option>
+                </select>
+                <select id="filtro-doc-seccion" onchange="renderTabla()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';">
+                    <option value="">Todas las Secciones</option>
+                </select>
                 <select id="filtro-doc-estado" onchange="renderTabla()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:#fff;font-size:.65rem;font-family:'Montserrat';">
                     <option value="">Todos los Estados</option>
                     <option value="Aprobado">Aprobados (≥70)</option>
@@ -416,7 +440,9 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=21"></script>
+<script src="js/api.js?v=22"></script>
+<script src="js/trabajos.js?v=1"></script>
+<script>document.addEventListener('DOMContentLoaded', function () { CenturiaTrabajos.montarDocente(document.getElementById('trabajos-docente'), {}); });</script>
 <script src="js/session-guard.js?v=5"></script>
 <script src="js/logout.js?v=2"></script>
     <script src="js/role-tabs.js?v=1"></script>
@@ -578,29 +604,45 @@ async function cargarMisAsignaturas(cedula) {
         const assignments = data.assignments || [];
         const subjects = data.subjects || [];
 
-        // Solo mostrar las que tienen rol docente
-        const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo'));
+        // Agrupar asignaturas por cátedra única (código base):
+        // Un docente puede tener la misma materia dictada a varias carreras/secciones a la vez.
+        const catedrasMap = new Map();
+        docenteAsig.forEach(s => {
+            const cod = s.codigo;
+            if (!catedrasMap.has(cod)) {
+                catedrasMap.set(cod, {
+                    ...s,
+                    secciones_lista: s.seccion ? [s.seccion] : [],
+                    carreras_lista: (s.carrera || s.carrera_asignada) ? [s.carrera || s.carrera_asignada] : []
+                });
+            } else {
+                const item = catedrasMap.get(cod);
+                if (s.seccion && !item.secciones_lista.includes(s.seccion)) item.secciones_lista.push(s.seccion);
+                const car = s.carrera || s.carrera_asignada;
+                if (car && !item.carreras_lista.includes(car)) item.carreras_lista.push(car);
+            }
+        });
 
-        misAsignaturas = docenteAsig;
+        misAsignaturas = Array.from(catedrasMap.values());
         misAsignaturas.forEach((a, i) => { a._i = i; });
 
-        if (docenteAsig.length === 0) {
+        if (misAsignaturas.length === 0) {
             tabsEl.innerHTML = '<div class="empty"><i class="bi bi-inbox"></i><p><strong>Sin asignaturas asignadas</strong></p><p style="font-size:.55rem;color:#94a3b8;margin-top:4px">Espera a que el administrador te vincule a una materia.</p></div>';
             document.getElementById('statsRow').style.display = 'none';
             return;
         }
 
-        // Renderizar tabs
-        tabsEl.innerHTML = docenteAsig.map((s, i) => `
+        // Renderizar tabs mostrando solo la cátedra
+        tabsEl.innerHTML = misAsignaturas.map((s, i) => `
             <div class="asig-tab ${i===0?'active':''}" onclick="seleccionarAsig('${s.codigo}', this, ${i})" data-cod="${s.codigo}">
                 <i class="bi ${s.icono||'bi-book'}"></i>
-                ${s.nombre||s.codigo}${s.seccion ? ' · ' + s.seccion : ''}
+                ${s.nombre||s.codigo}
                 <span class="count" id="count-${i}">—</span>
             </div>
         `).join('');
 
         // Seleccionar la primera
-        seleccionarAsig(docenteAsig[0].codigo, tabsEl.querySelector('.asig-tab'), 0);
+        seleccionarAsig(misAsignaturas[0].codigo, tabsEl.querySelector('.asig-tab'), 0);
 
     } catch(e) {
         console.error('Error:', e);
@@ -703,6 +745,23 @@ async function cargarDatosAsignatura(codigo) {
             asistData = dA.data || dA.asistencias || [];
         } catch(e) { asistData = []; }
 
+        // Poblar selectores de filtro por Carrera y Sección encontrados en la nómina
+        const carrerasUnicas = [...new Set(alumnosData.map(a => a.carrera).filter(Boolean))].sort();
+        const seccionesUnicas = [...new Set(alumnosData.map(a => a.seccion).filter(Boolean))].sort();
+        
+        const selCar = document.getElementById('filtro-doc-carrera');
+        if (selCar) {
+            const valPrev = selCar.value;
+            selCar.innerHTML = '<option value="">Todas las Carreras</option>' + carrerasUnicas.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (carrerasUnicas.includes(valPrev)) selCar.value = valPrev;
+        }
+        const selSec = document.getElementById('filtro-doc-seccion');
+        if (selSec) {
+            const valPrev = selSec.value;
+            selSec.innerHTML = '<option value="">Todas las Secciones</option>' + seccionesUnicas.map(s => `<option value="${s}">Sección ${s}</option>`).join('');
+            if (seccionesUnicas.includes(valPrev)) selSec.value = valPrev;
+        }
+
         renderTabla();
 
     } catch(e) {
@@ -784,21 +843,47 @@ function renderTabla() {
         const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'En Proceso';
         const estClass = prom !== '-' ? (parseFloat(prom) >= 70 ? 'est-ap' : 'est-re') : 'est-pen';
 
+        const carBusq = ((document.getElementById('filtro-doc-carrera') || {}).value || '').trim();
+        const secBusq = ((document.getElementById('filtro-doc-seccion') || {}).value || '').trim();
+
         // Filtro en vivo
         if (txtBusq) {
             const matchTexto = nomCompleto.toLowerCase().includes(txtBusq) || String(cedula).toLowerCase().includes(txtBusq);
             if (!matchTexto) return;
         }
+        if (carBusq && (alumno.carrera || '').trim() !== carBusq) {
+            return;
+        }
+        if (secBusq && (alumno.seccion || '').trim() !== secBusq) {
+            return;
+        }
         if (estBusq && estado.toLowerCase() !== estBusq) {
             return;
         }
+
+        // Foto del alumno si la tiene
+        let fotoAlumno = alumno.foto || alumno.photo || '';
+        if (!fotoAlumno) {
+            try { fotoAlumno = localStorage.getItem('centuria_foto_' + cedula) || ''; } catch(e) {}
+        }
+        const iniciales = ((nom.charAt(0) || 'E') + (ape.charAt(0) || '')).toUpperCase();
 
         filasMostradas++;
         html += `<tr>
             <td style="text-align:center;color:var(--txt2)">${filasMostradas}</td>
             <td>
-                <strong style="color:#fff;font-size:.72rem">${nomCompleto}</strong>
-                <div style="font-size:.56rem;color:var(--txt2)">${alumno.carrera || asigActual.carrera || 'General'} • Sec: ${alumno.seccion || asigActual.seccion || 'A'}</div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.65rem;border:1.5px solid var(--dorado);">
+                        ${fotoAlumno ? `<img src="${fotoAlumno}" style="width:100%;height:100%;object-fit:cover;" alt="Foto">` : `<span>${iniciales}</span>`}
+                    </div>
+                    <div>
+                        <strong style="color:#fff;font-size:.72rem">${nomCompleto}</strong>
+                        <div style="font-size:.56rem;color:var(--txt2)">
+                            <span class="badge" style="background:rgba(212,168,67,.15);color:var(--dorado);border:1px solid rgba(212,168,67,.3);font-size:.52rem;padding:2px 6px;border-radius:4px;">${alumno.carrera || asigActual.carrera || 'General'}</span>
+                            <span class="badge" style="background:rgba(37,99,235,.15);color:#60a5fa;border:1px solid rgba(37,99,235,.3);font-size:.52rem;padding:2px 6px;border-radius:4px;margin-left:3px;">Sec: ${alumno.seccion || asigActual.seccion || 'A'}</span>
+                        </div>
+                    </div>
+                </div>
             </td>
             <td style="color:var(--dorado);font-weight:600">${cedula}</td>
             <td class="nota ${pctAsist!==null?(pctAsist>=80?'aprobado':pctAsist>=70?'':'reprobado'):'pendiente'}" style="text-align:center">${pctAsist!==null?pctAsist+'%':'-'}</td>
@@ -1019,28 +1104,79 @@ async function cargarDisponibles() {
     }
 }
 
-function filtrarDisponibles() {
+function tienePendiente() {
+    return pendientesData.some(p => p.estado === 'pendiente');
+}
+
+const GRADOS_BASE = ['GRADO', 'ESPECIALIZACIÓN', 'MAESTRÍA', 'DOCTORADO'];
+const normGrado = g => String(g || '').trim().toUpperCase() || 'GRADO';
+
+// Cascada Grado → Carrera → Asignatura. "nivel" indica qué selector cambió.
+function filtrarDisponibles(nivel) {
     const q = (document.getElementById('inp-buscar-asig').value || '').toLowerCase().trim();
-    const listEl = document.getElementById('lista-disponibles');
-    const rows = disponiblesData.filter(s =>
-        !q || (s.nombre || '').toLowerCase().includes(q) || (s.codigo || '').toLowerCase().includes(q)
-    );
-    if (!rows.length) {
-        listEl.innerHTML = '<p style="font-size:.65rem;color:#94a3b8">' + (q ? 'Sin resultados.' : 'No hay materias por solicitar.') + '</p>';
+    const selG = document.getElementById('sel-grado-solicitar');
+    const selC = document.getElementById('sel-carrera-solicitar');
+    const sel = document.getElementById('sel-asig-solicitar');
+    const info = document.getElementById('lista-disponibles');
+    const esc = t => String(t || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const opciones = (lista, vacio) => '<option value="">' + vacio + '</option>' + lista.map(x => '<option value="' + esc(x.v) + '"' + (x.dis ? ' disabled' : '') + '>' + esc(x.t) + '</option>').join('');
+
+    if (tienePendiente()) {
+        [selG, selC, sel].forEach(x => { x.innerHTML = '<option value="">—</option>'; x.disabled = true; });
+        info.innerHTML = '<i class="bi bi-info-circle"></i> Ya tenés una solicitud pendiente: solo se puede pedir una asignatura por módulo. Esperá la respuesta del administrador.';
+        actualizarBotonSolicitar();
         return;
     }
-    listEl.innerHTML = rows.map(s =>
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:1px solid var(--bdr);border-radius:8px">' +
-        '<div><div style="font-size:.72rem;font-weight:700;color:#0f172a">' + (s.nombre || s.codigo) + '</div>' +
-        '<div style="font-size:.6rem;color:#64748b">' + s.codigo + (s.carrera ? ' • ' + s.carrera : '') + '</div></div>' +
-        '<button onclick="solicitarAsignatura(\'' + s.codigo + '\')" style="padding:6px 14px;border-radius:8px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;background:var(--azul);color:#fff">Solicitar</button></div>'
-    ).join('');
+    const base = disponiblesData.filter(s =>
+        !q || (s.nombre || '').toLowerCase().includes(q) || (s.codigo || '').toLowerCase().includes(q));
+
+    // 1. Grado
+    const gradoAnt = selG.value;
+    const grados = [...new Set(GRADOS_BASE.concat(base.map(s => normGrado(s.grado))))];
+    selG.innerHTML = opciones(grados.map(g => { const n = base.filter(s => normGrado(s.grado) === g).length; return { v: g, t: g.charAt(0) + g.slice(1).toLowerCase() + ' (' + n + ')', dis: !n }; }), '— Elegí el grado —');
+    const conDatos = grados.filter(g => base.some(s => normGrado(s.grado) === g));
+    selG.value = conDatos.includes(gradoAnt) ? gradoAnt : (conDatos.length === 1 ? conDatos[0] : '');
+    selG.disabled = !conDatos.length;
+
+    // 2. Carrera (del grado elegido)
+    const enGrado = base.filter(s => selG.value && normGrado(s.grado) === selG.value);
+    const carreraAnt = nivel === 'grado' ? '' : selC.value;
+    const carreras = [...new Set(enGrado.map(s => s.carrera || 'Sin carrera'))].sort((x, y) => x.localeCompare(y));
+    selC.innerHTML = opciones(carreras.map(c => ({ v: c, t: c + ' (' + enGrado.filter(s => (s.carrera || 'Sin carrera') === c).length + ')' })), selG.value ? '— Elegí la carrera —' : 'Primero elegí el grado');
+    selC.value = carreras.includes(carreraAnt) ? carreraAnt : (carreras.length === 1 ? carreras[0] : '');
+    selC.disabled = !selG.value;
+
+    // 3. Asignatura (de la carrera elegida)
+    const enCarrera = enGrado.filter(s => selC.value && (s.carrera || 'Sin carrera') === selC.value)
+        .sort((x, y) => String(x.nombre || '').localeCompare(String(y.nombre || '')));
+    const asigAnt = sel.value;
+    sel.innerHTML = opciones(enCarrera.map(s => ({ v: s.codigo, t: (s.nombre || s.codigo) + ' (' + s.codigo + ')' })), selC.value ? '— Elegí la asignatura —' : 'Primero elegí la carrera');
+    sel.value = enCarrera.some(s => s.codigo === asigAnt) ? asigAnt : '';
+    sel.disabled = !selC.value;
+
+    info.textContent = !base.length ? (q ? 'Sin resultados para "' + q + '".' : 'No hay materias por solicitar.') : '';
+    actualizarBotonSolicitar();
+}
+
+function actualizarBotonSolicitar() {
+    const sel = document.getElementById('sel-asig-solicitar');
+    const btn = document.getElementById('btn-solicitar-asig');
+    const ok = !!sel.value && !sel.disabled;
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '.5';
+}
+
+function solicitarSeleccionada() {
+    const codigo = document.getElementById('sel-asig-solicitar').value;
+    if (codigo) solicitarAsignatura(codigo);
 }
 
 async function solicitarAsignatura(codigo) {
     const cedula = sessionStorage.getItem('current_cedula');
     if (!cedula || !codigo) return;
-    if (!confirm('Solicitar la asignatura ' + codigo + '? Quedará pendiente de aprobación.')) return;
+    if (tienePendiente()) { alert('Ya tenés una solicitud pendiente. Solo se puede pedir una asignatura por módulo.'); return; }
+    const elegida = disponiblesData.find(s => s.codigo === codigo);
+    if (!confirm('¿Solicitar ' + (elegida ? elegida.nombre + ' (' + codigo + ')' : codigo) + '? Solo podés pedir una asignatura por módulo y quedará pendiente de aprobación.')) return;
     try {
         const d = await CenturiaAPI.docente.requestSubject(cedula, codigo);
         alert(d.mensaje || d.error || 'Solicitud enviada');
@@ -1067,11 +1203,9 @@ function saveCustomEval(codigoAsig, examId, nombre) {
     ev[codigoAsig][examId] = nombre;
     localStorage.setItem('centuria_custom_evals', JSON.stringify(ev));
 }
+// v2026-10-07: solo se muestran Parcial 1, Parcial 2 y Examen Final (las evaluaciones extra quedan ocultas).
 function getAllExamenes(codigoAsig) {
-    const base = { ...examesMapa };
-    const custom = getCustomEvals()[codigoAsig] || {};
-    Object.assign(base, custom);
-    return base;
+    return { ...examesMapa };
 }
 
 function abrirModalCrearEvaluacion() {
@@ -1112,7 +1246,10 @@ function fmtVentana(c) {
 }
 let habDatos = { configs: [], solicitudes: [], pagos: {} };
 
+let habRenderId = 0;
 async function cargarHabilitacion(codigoAsignatura) {
+    // Evita tarjetas duplicadas si la carga se dispara dos veces seguidas.
+    const miRender = ++habRenderId;
     const list = document.getElementById('hab-list');
     const sec = document.getElementById('sec-exam-hab');
     if (!codigoAsignatura) { sec.style.display = 'none'; return; }
@@ -1130,6 +1267,7 @@ async function cargarHabilitacion(codigoAsignatura) {
         list.innerHTML = '<div style="padding:12px;font-size:.7rem;color:#f87171">No se pudo cargar: ' + escHtml(e.message) + '</div>';
         return;
     }
+    if (miRender !== habRenderId) return;
     list.innerHTML = '';
     const examenes = getAllExamenes(codigoAsignatura);
     for (const [examId, examNombre] of Object.entries(examenes)) {
@@ -1215,6 +1353,7 @@ async function cargarHabilitacion(codigoAsignatura) {
                     ${renderSolicitudes(sols)}
                 </div>
             </div>`;
+        if (miRender !== habRenderId) return;
         list.appendChild(card);
     }
 }

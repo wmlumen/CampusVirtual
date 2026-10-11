@@ -293,6 +293,15 @@
                         <span id="profile-initials">A</span>
                         <img id="profile-img" alt="Foto">
                     </div>
+                    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                        <label class="btn btn-p" for="al-foto-input" style="cursor:pointer;padding:6px 12px;font-size:.65rem;border-radius:8px;">
+                            <i class="bi bi-cloud-upload"></i> Subir Foto
+                        </label>
+                        <button type="button" class="btn btn-g" onclick="abrirCamaraAlumno()" style="padding:6px 12px;font-size:.65rem;border-radius:8px;background:var(--dorado);color:#0d2c16;font-weight:700;">
+                            <i class="bi bi-camera"></i> Tomar Foto
+                        </button>
+                        <input type="file" id="al-foto-input" accept="image/*" style="display:none" onchange="subirFotoAlumno(this)">
+                    </div>
                     <div class="profile-name" id="profile-name">Cargando...</div>
                     <div class="profile-role" id="profile-role">ALUMNO</div>
                 </div>
@@ -348,6 +357,26 @@
                 <button class="btn btn-g" onclick="document.getElementById('modal-password').style.display='none'" style="width:100%">Cancelar</button>
             </div>
         </div>
+    <!-- MODAL CÁMARA ALUMNO -->
+    <div id="modal-camara-alumno" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div style="background:#0d2c16;border:1px solid var(--dorado);border-radius:18px;padding:24px;width:90%;max-width:380px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);color:#fff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h4 style="margin:0;font-size:.9rem;color:var(--dorado);font-weight:700;"><i class="bi bi-camera"></i> Tomar Foto con Cámara</h4>
+                <button type="button" onclick="cerrarCamaraAlumno()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.2rem;cursor:pointer;">✕</button>
+            </div>
+            <div style="width:200px;height:200px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:3px solid var(--dorado);background:#000;">
+                <video id="al-cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+            </div>
+            <div id="al-cam-error" style="color:#ef4444;font-size:.65rem;margin-bottom:10px;display:none;"></div>
+            <div style="display:flex;gap:8px;justify-content:center;">
+                <button type="button" class="btn btn-p" onclick="capturarFotoAlumno()" style="padding:8px 14px;font-size:.7rem;">
+                    <i class="bi bi-camera-fill"></i> Capturar Foto
+                </button>
+                <button type="button" class="btn btn-g" onclick="cerrarCamaraAlumno()" style="padding:8px 14px;font-size:.7rem;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- FOOTER -->
@@ -392,9 +421,14 @@
             document.getElementById('pf-nombre').textContent = nombre;
             document.getElementById('pf-apellido').textContent = apellido;
             document.getElementById('pf-email').textContent = user.email || 'No registrado';
-            document.getElementById('pf-grado').textContent = user.grado || '-';
-            document.getElementById('pf-carrera').textContent = user.carrera || '-';
-            document.getElementById('pf-seccion').textContent = user.seccion || '-';
+            // Foto de perfil existente
+            let fotoExistente = user.foto || user.photo || '';
+            if (!fotoExistente) {
+                try { fotoExistente = localStorage.getItem('centuria_foto_' + cedula) || sessionStorage.getItem('centuria_foto_tmp') || ''; } catch(e) {}
+            }
+            if (fotoExistente) {
+                aplicarFotoAlumno(fotoExistente);
+            }
 
             // Cargar dashboard
             await cargarAsignaturas();
@@ -505,13 +539,125 @@
             }
         }
 
+        // ═══ GESTIÓN DE FOTO DE PERFIL (CÁMARA / SUBIDA) ═══
+        function aplicarFotoAlumno(url) {
+            const has = !!url;
+            const imgBig = document.getElementById('profile-img');
+            const initBig = document.getElementById('profile-initials');
+            if (imgBig) { imgBig.src = url || ''; imgBig.style.display = has ? 'block' : 'none'; }
+            if (initBig) { initBig.style.display = has ? 'none' : 'block'; }
+
+            const mainAv = document.getElementById('main-avatar');
+            if (mainAv) {
+                if (has) {
+                    mainAv.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                }
+            }
+        }
+
+        async function guardarFotoAlumno(dataUrl) {
+            aplicarFotoAlumno(dataUrl);
+            const user = CenturiaAPI.getCurrentUser() || {};
+            const ced = user.username || sessionStorage.getItem('current_cedula') || '';
+            try {
+                if (ced) localStorage.setItem('centuria_foto_' + ced, dataUrl);
+                sessionStorage.setItem('centuria_foto_tmp', dataUrl);
+            } catch(e) {}
+            try {
+                if (CenturiaAPI.auth && typeof CenturiaAPI.auth.updateProfile === 'function') {
+                    await CenturiaAPI.auth.updateProfile({ foto: dataUrl });
+                }
+            } catch(e) {}
+            alert('¡Foto de perfil actualizada correctamente!');
+        }
+
+        function subirFotoAlumno(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { alert('El archivo seleccionado debe ser una imagen.'); return; }
+            if (file.size > 4 * 1024 * 1024) { alert('La imagen no puede superar los 4MB.'); return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const S = 240;
+                    const cv = document.createElement('canvas');
+                    cv.width = S; cv.height = S;
+                    const ctx = cv.getContext('2d');
+                    const m = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+                    guardarFotoAlumno(cv.toDataURL('image/jpeg', 0.85));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        let _camStreamAl = null;
+        async function abrirCamaraAlumno() {
+            const modal = document.getElementById('modal-camara-alumno');
+            const video = document.getElementById('al-cam-video');
+            const errEl = document.getElementById('al-cam-error');
+            errEl.style.display = 'none';
+            modal.style.display = 'flex';
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Navegador no soporta cámara.');
+                }
+                _camStreamAl = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' },
+                    audio: false
+                });
+                video.srcObject = _camStreamAl;
+            } catch (err) {
+                errEl.textContent = 'No se pudo acceder a la cámara: ' + (err.message || 'Permiso denegado');
+                errEl.style.display = 'block';
+            }
+        }
+
+        function cerrarCamaraAlumno() {
+            if (_camStreamAl) {
+                _camStreamAl.getTracks().forEach(t => t.stop());
+                _camStreamAl = null;
+            }
+            const video = document.getElementById('al-cam-video');
+            if (video) video.srcObject = null;
+            const modal = document.getElementById('modal-camara-alumno');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function capturarFotoAlumno() {
+            const video = document.getElementById('al-cam-video');
+            const errEl = document.getElementById('al-cam-error');
+            if (!video || !video.videoWidth) {
+                errEl.textContent = 'Esperando señal de video...';
+                errEl.style.display = 'block';
+                return;
+            }
+            const S = 240;
+            const cv = document.createElement('canvas');
+            cv.width = S; cv.height = S;
+            const ctx = cv.getContext('2d');
+            const minDim = Math.min(video.videoWidth, video.videoHeight);
+            const startX = (video.videoWidth - minDim) / 2;
+            const startY = (video.videoHeight - minDim) / 2;
+            ctx.translate(S, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, startX, startY, minDim, minDim, 0, 0, S, S);
+            const dataUrl = cv.toDataURL('image/jpeg', 0.85);
+            cerrarCamaraAlumno();
+            guardarFotoAlumno(dataUrl);
+        }
+
         // ROLE CONFIG
         const roleConfig = {
             alumno: [
                 { href: '../Materiales_Clases/index.html', icon: 'bi-book', label: 'Materiales' },
                 { href: '../calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
                 { href: '../academic/examen_virtual.html', icon: 'bi-pencil-square', label: 'Exámenes' },
-                { href: '../academic/examen_parcial_tic026.html', icon: 'bi-file-earmark-text', label: 'Parcial TIC026' },
+                { href: 'https://centuria-examen.web.app/', icon: 'bi-file-earmark-text', label: 'Parcial TIC026' },
                 { href: '../libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
             ]
         };

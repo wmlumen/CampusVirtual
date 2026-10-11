@@ -879,6 +879,9 @@
                             <label class="dash-btn dash-btn-primary" for="foto-input" style="cursor:pointer">
                                 <i class="bi bi-cloud-upload"></i> Subir Foto
                             </label>
+                            <button type="button" class="dash-btn dash-btn-gold" onclick="abrirCamaraFoto()">
+                                <i class="bi bi-camera"></i> Tomar Foto
+                            </button>
                             <button type="button" class="dash-btn dash-btn-danger" id="btn-quitar-foto" onclick="quitarFoto()" style="display:none">
                                 <i class="bi bi-trash"></i> Eliminar
                             </button>
@@ -1083,6 +1086,29 @@
             <div id="qr-modal-estado" style="font-size:.66rem;color:rgba(255,255,255,.7);margin-bottom:12px;"></div>
             <div style="display:flex;gap:10px;justify-content:center;">
                 <button class="dash-btn dash-btn-ghost" onclick="cerrarQRModal()">Cerrar ✕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Modal Cámara Web/Móvil para Foto de Perfil ═══ -->
+    <div id="modal-camara-foto" class="modal-backdrop-custom" style="display:none;align-items:center;justify-content:center;z-index:9999;">
+        <div class="modal-card-custom" style="max-width:440px;width:95%;text-align:center;padding:22px;background:#0d2c16;border:1px solid var(--dorado);border-radius:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="margin:0;font-size:.95rem;color:var(--dorado);font-weight:800;"><i class="bi bi-camera"></i> Tomar Foto de Perfil</h3>
+                <button type="button" onclick="cerrarCamaraFoto()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(255,255,255,.6);">✕</button>
+            </div>
+            <div style="position:relative;width:240px;height:240px;margin:0 auto 16px;border-radius:50%;overflow:hidden;border:4px solid var(--dorado);background:#000;box-shadow:0 8px 24px rgba(0,0,0,.5);">
+                <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                <canvas id="cam-canvas" style="display:none;"></canvas>
+            </div>
+            <div id="cam-error" style="color:#f87171;font-size:.68rem;margin-bottom:10px;display:none;"></div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button type="button" class="dash-btn dash-btn-primary" onclick="capturarFotoCamara()">
+                    <i class="bi bi-camera-fill"></i> Capturar y Guardar
+                </button>
+                <button type="button" class="dash-btn dash-btn-ghost" onclick="cerrarCamaraFoto()">
+                    Cancelar
+                </button>
             </div>
         </div>
     </div>
@@ -2141,6 +2167,69 @@
 
         function cerrarFoto() {
             document.getElementById('modal-foto').style.display = 'none';
+        }
+
+        let _camStream = null;
+
+        async function abrirCamaraFoto() {
+            const modal = document.getElementById('modal-camara-foto');
+            const video = document.getElementById('cam-video');
+            const errEl = document.getElementById('cam-error');
+            errEl.style.display = 'none';
+            modal.style.display = 'flex';
+
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Tu navegador o dispositivo no soporta acceso directo a la cámara.');
+                }
+                _camStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' },
+                    audio: false
+                });
+                video.srcObject = _camStream;
+            } catch (err) {
+                console.error('Error al abrir cámara:', err);
+                errEl.textContent = 'No se pudo activar la cámara: ' + (err.message || 'Permiso denegado.');
+                errEl.style.display = 'block';
+            }
+        }
+
+        function cerrarCamaraFoto() {
+            if (_camStream) {
+                _camStream.getTracks().forEach(track => track.stop());
+                _camStream = null;
+            }
+            const video = document.getElementById('cam-video');
+            if (video) video.srcObject = null;
+            const modal = document.getElementById('modal-camara-foto');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function capturarFotoCamara() {
+            const video = document.getElementById('cam-video');
+            const errEl = document.getElementById('cam-error');
+            if (!video || !video.videoWidth) {
+                errEl.textContent = 'Espera a que el video de la cámara esté activo.';
+                errEl.style.display = 'block';
+                return;
+            }
+            const S = 240;
+            const cv = document.createElement('canvas');
+            cv.width = S;
+            cv.height = S;
+            const ctx = cv.getContext('2d');
+            const minDim = Math.min(video.videoWidth, video.videoHeight);
+            const startX = (video.videoWidth - minDim) / 2;
+            const startY = (video.videoHeight - minDim) / 2;
+
+            // Invertir horizontalmente para efecto espejo natural
+            ctx.translate(S, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, startX, startY, minDim, minDim, 0, 0, S, S);
+
+            const dataUrl = cv.toDataURL('image/jpeg', 0.85);
+            cerrarCamaraFoto();
+            guardarFoto(dataUrl);
         }
 
         function subirFoto(input) {

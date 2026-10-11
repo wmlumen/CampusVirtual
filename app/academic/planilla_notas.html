@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="../js/session-guard.js?v=5"></script>
+    <script>CenturiaSession.protect();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla de Notas — Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,600,700,800" rel="stylesheet">
+    <style>
+        :root { --vosc:#007A33; --vmed:#00B140; --vcla:#E6F4EA; --txt:#2D2D2D; --gris:#64748b; --borde:#dfe7df; --rojo:#b91c1c; --ambar:#92400E }
+        * { box-sizing:border-box; margin:0; padding:0 }
+        body { font-family:'Montserrat',sans-serif; background:#f2f6f2; color:var(--txt); min-height:100vh; padding:16px }
+        .wrap { max-width:1500px; margin:0 auto }
+        .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:14px; overflow:hidden }
+        .head { background:linear-gradient(135deg,var(--vmed),var(--vosc)); color:#fff; padding:18px 22px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center }
+        .head h1 { font-size:1.1rem } .head p { font-size:.75rem; opacity:.9; margin-top:3px }
+        .head a { color:#fff; font-size:.72rem; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,.5); border-radius:10px; padding:6px 12px }
+        .body { padding:16px 20px }
+        .ctl { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end }
+        .ctl label { display:block; font-size:.62rem; font-weight:700; color:var(--gris); text-transform:uppercase; margin-bottom:4px }
+        .ctl select { padding:8px 10px; border:2px solid var(--borde); border-radius:9px; font-family:inherit; font-size:.8rem; min-width:200px }
+        .btn { padding:9px 14px; border-radius:9px; border:none; font-family:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px }
+        .btn-p { background:var(--vmed); color:#fff } .btn-p:hover { background:var(--vosc) } .btn-p:disabled { background:#9ca3af; cursor:default }
+        .btn-s { background:#f1f5f9; color:var(--txt) }
+        .leyenda { font-size:.68rem; color:var(--gris); margin-top:10px; display:flex; gap:12px; flex-wrap:wrap }
+        .src { display:inline-block; font-size:.56rem; font-weight:700; border-radius:6px; padding:1px 5px; margin-top:2px }
+        .src-examen { background:#DBEAFE; color:#1E40AF } .src-trabajo { background:#FCE7F3; color:#9D174D } .src-asistencia { background:#FEF3C7; color:var(--ambar) }
+        .src-guardada { background:var(--vcla); color:var(--vosc) } .src-manual { background:#EDE9FE; color:#5B21B6 }
+        .tabla-wrap { overflow-x:auto }
+        table { width:100%; border-collapse:collapse; font-size:.74rem }
+        th { background:var(--vosc); color:#fff; padding:8px 6px; font-size:.64rem; text-align:center; position:sticky; top:0; vertical-align:bottom }
+        th.al { text-align:left } th small { display:block; font-weight:400; opacity:.85; margin-top:2px }
+        td { border-bottom:1px solid #eef2ee; padding:6px; text-align:center; vertical-align:middle }
+        td.al { text-align:left } tr:hover td { background:#f8fbf8 }
+        td input { width:62px; padding:5px; border:1px solid var(--borde); border-radius:7px; text-align:center; font-family:inherit; font-size:.76rem }
+        td input.cambio { border-color:#7C3AED; background:#F5F3FF } td input.error { border-color:var(--rojo); background:#FEF2F2 }
+        .nota { font-weight:800; font-size:.9rem } .ok { color:var(--vosc) } .mal { color:var(--rojo) } .pend { color:var(--gris) }
+        .falta { font-size:.6rem; color:var(--ambar); max-width:220px; text-align:left }
+        .msg { font-size:.78rem; padding:10px 0 } .msg.err { color:var(--rojo) }
+        @media (max-width:700px) { body { padding:8px } .ctl select { min-width:0; width:100% } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <div class="head">
+            <div><h1><i class="bi bi-table"></i> Planilla de notas</h1><p>Según el plan de evaluación publicado en el Constructor. Las notas automáticas (exámenes online, trabajos calificados y asistencia) ya vienen cargadas; se pueden corregir.</p></div>
+            <a href="index.html"><i class="bi bi-arrow-left"></i> Volver</a>
+        </div>
+        <div class="body">
+            <div id="sin-acceso" class="msg err" style="display:none">Solo docentes, académicos y administración.</div>
+            <div class="ctl" id="controles">
+                <div><label for="sel-asig">Asignatura</label><select id="sel-asig"><option value="">Cargando…</option></select></div>
+                <div><label for="sel-sec">Sección</label><select id="sel-sec"><option value="">Todas</option></select></div>
+                <button class="btn btn-p" id="btn-guardar" disabled onclick="guardar()"><i class="bi bi-check-lg"></i> Guardar notas</button>
+                <button class="btn btn-s" onclick="exportarCSV()"><i class="bi bi-download"></i> CSV</button>
+            </div>
+            <div class="leyenda">
+                <span><span class="src src-guardada">guardada</span> confirmada en la planilla</span>
+                <span><span class="src src-examen">examen</span> mejor intento del examen online</span>
+                <span><span class="src src-trabajo">trabajo</span> trabajo calificado</span>
+                <span><span class="src src-asistencia">asistencia</span> % de clases con presencia</span>
+                <span><span class="src src-manual">editada</span> cambio sin guardar</span>
+            </div>
+            <div id="msg" class="msg"></div>
+        </div>
+    </div>
+    <div class="card"><div class="tabla-wrap" id="tabla"></div></div>
+</div>
+
+<script src="../js/api.js?v=23"></script>
+<script src="../js/logout.js?v=3"></script>
+<script src="../js/calificaciones.js?v=2"></script>
+<script src="../js/notas-plan.js?v=1"></script>
+<script>
+    const ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
+    const PUEDE = ['docente', 'academico', 'academic', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(ROL);
+    const MI_CED = sessionStorage.getItem('current_cedula') || '';
+    let DATOS = null, CAMBIOS = false;
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const fmt = (n) => n == null ? '' : String(Math.round(n * 100) / 100);
+    const msg = (t, err) => { $('msg').textContent = t || ''; $('msg').className = 'msg' + (err ? ' err' : ''); };
+
+    window.addEventListener('beforeunload', e => { if (CAMBIOS) { e.preventDefault(); e.returnValue = ''; } });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!PUEDE) { $('sin-acceso').style.display = 'block'; $('controles').style.display = 'none'; return; }
+        try {
+            await (typeof authListo === 'function' ? authListo() : null);
+            const snap = await getDb().collection('asignaturas').get();
+            const conPlan = snap.docs.map(d => Object.assign({ codigo: d.id }, d.data()))
+                .filter(a => Array.isArray(a.evaluaciones) && a.evaluaciones.length && a.evaluaciones[0].id)
+                .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+            $('sel-asig').innerHTML = conPlan.length
+                ? '<option value="">Elegí la asignatura…</option>' + conPlan.map(a => `<option value="${esc(a.codigo)}">${esc(a.codigo)} — ${esc(a.nombre)}</option>`).join('')
+                : '<option value="">Ninguna asignatura tiene plan publicado</option>';
+            const q = new URLSearchParams(location.search).get('asignatura');
+            if (q && conPlan.some(a => a.codigo === q.toUpperCase())) { $('sel-asig').value = q.toUpperCase(); await cargar(); }
+        } catch (e) { msg('No se pudieron cargar las asignaturas: ' + e.message, true); }
+        $('sel-asig').addEventListener('change', () => { if (confirmarDescarte()) { $('sel-sec').value = ''; cargar(); } });
+        $('sel-sec').addEventListener('change', () => { if (confirmarDescarte()) cargar(); });
+    });
+
+    function confirmarDescarte() { return !CAMBIOS || confirm('Hay notas sin guardar. ¿Descartarlas?'); }
+
+    async function cargar() {
+        const cod = $('sel-asig').value;
+        CAMBIOS = false; $('btn-guardar').disabled = true; $('tabla').innerHTML = ''; DATOS = null;
+        if (!cod) return;
+        msg('Cargando alumnos y notas…');
+        try {
+            const sec = $('sel-sec').value;
+            DATOS = await CenturiaPlan.planilla(cod, { seccion: sec });
+            if (!DATOS) { msg('La asignatura no tiene plan de evaluación publicado.', true); return; }
+            $('sel-sec').innerHTML = '<option value="">Todas</option>' + DATOS.secciones.map(s => `<option ${s === sec ? 'selected' : ''}>${esc(s)}</option>`).join('');
+            pintar();
+            msg(DATOS.filas.length ? DATOS.filas.length + ' alumno(s). Aprobación ' + (DATOS.plan.reglas.aprobacion_pct || 70) + '% · asistencia mínima para el final ' + (DATOS.plan.reglas.asistencia_min_pct ?? 80) + '%.' : 'No hay alumnos de esta asignatura todavía (se toman de las fichas de las carreras y de la asistencia).');
+            $('btn-guardar').disabled = !DATOS.filas.length;
+        } catch (e) { msg('Error al cargar la planilla: ' + e.message, true); }
+    }
+
+    function pintar() {
+        const evs = DATOS.plan.evaluaciones;
+        const T = CenturiaNotas.TIPOS;
+        let h = '<table><thead><tr><th class="al">Alumno</th><th>Sección</th>';
+        evs.forEach(ev => {
+            const peso = ev.tipo === 'recuperatorio' ? 'reemplaza' : ev.ponderacion + '%';
+            h += `<th title="${esc(T[ev.tipo] || ev.tipo)}">${esc(ev.nombre)}<small>${peso} · sobre ${CenturiaPlan.escala(ev)}${ev.requisito ? ' · requisito' : ''}</small></th>`;
+        });
+        h += '<th>Acumulado</th><th>Nota</th><th class="al">Para el final</th></tr></thead><tbody>';
+        DATOS.filas.forEach((f, i) => {
+            h += `<tr data-i="${i}"><td class="al"><b>${esc(f.nombre || '(sin nombre)')}</b><br><small style="color:var(--gris)">C.I. ${esc(f.cedula)}</small></td><td>${esc(f.seccion || '—')}</td>`;
+            evs.forEach(ev => {
+                const v = CenturiaPlan.enEscala(ev, f.notas[ev.id]);
+                const src = f.fuente[ev.id];
+                h += `<td><input type="number" step="0.01" min="0" max="${CenturiaPlan.escala(ev)}" data-ev="${esc(ev.id)}" value="${fmt(v)}" aria-label="${esc(ev.nombre)} de ${esc(f.nombre)}" oninput="editado(this)">` +
+                     `<br><span class="src src-${src || 'vacia'}" data-src>${src || ''}</span></td>`;
+            });
+            h += `<td class="acum"></td><td class="nota"></td><td class="falta"></td></tr>`;
+        });
+        $('tabla').innerHTML = h + '</tbody></table>';
+        DATOS.filas.forEach((f, i) => recalcular(i));
+    }
+
+    // Valores actuales de la fila (en la escala de cada evaluación).
+    function valoresFila(i) {
+        const tr = document.querySelector(`tr[data-i="${i}"]`), val = {};
+        tr.querySelectorAll('input[data-ev]').forEach(inp => { val[inp.dataset.ev] = inp.value === '' ? null : Number(inp.value); });
+        return val;
+    }
+
+    function recalcular(i) {
+        const f = DATOS.filas[i], p = DATOS.plan, val = valoresFila(i), notas = {};
+        p.evaluaciones.forEach(ev => { if (val[ev.id] != null) notas[ev.id] = { obtenido: val[ev.id], maximo: CenturiaPlan.escala(ev) }; });
+        // La asistencia ya está en la planilla como evaluación: no se vuelve a sumar aparte.
+        const r = CenturiaNotas.calcular(p, notas, f.asistencia_pct);
+        const tr = document.querySelector(`tr[data-i="${i}"]`);
+        tr.querySelector('.acum').innerHTML = `<b>${fmt(r.acumulado_pct)}%</b><br><small style="color:var(--gris)">de ${fmt(r.ponderacion_cargada)}% cargado</small>`;
+        tr.querySelector('.nota').innerHTML = `<span class="${r.completo ? (r.aprobado ? 'ok' : 'mal') : 'pend'}">${r.nota}</span><br><small style="font-weight:400;font-size:.6rem">${r.completo ? r.texto : 'parcial'}</small>`;
+        tr.querySelector('.falta').innerHTML = r.derecho_final ? '<span class="ok">✔ Habilitado</span>' : r.faltan.map(esc).join('<br>');
+        f._resultado = r;
+    }
+
+    function editado(inp) {
+        const max = Number(inp.max), v = inp.value === '' ? null : Number(inp.value);
+        inp.classList.toggle('error', v != null && (v < 0 || v > max));
+        inp.classList.add('cambio');
+        const s = inp.parentElement.querySelector('[data-src]'); s.className = 'src src-manual'; s.textContent = 'editada';
+        CAMBIOS = true;
+        recalcular(Number(inp.closest('tr').dataset.i));
+    }
+
+    async function guardar() {
+        if (document.querySelector('td input.error')) { msg('Hay notas fuera de rango (marcadas en rojo).', true); return; }
+        const filas = DATOS.filas.map((f, i) => {
+            const val = valoresFila(i), fuente = {};
+            document.querySelectorAll(`tr[data-i="${i}"] input[data-ev]`).forEach(inp => {
+                fuente[inp.dataset.ev] = inp.classList.contains('cambio') ? 'manual' : (f.fuente[inp.dataset.ev] === 'guardada' ? 'guardada' : (f.fuente[inp.dataset.ev] || 'manual'));
+            });
+            return { cedula: f.cedula, nombre: f.nombre, seccion: f.seccion, valores: val, fuente: fuente };
+        });
+        if (!confirm('¿Guardar las notas de ' + filas.length + ' alumno(s)? Las automáticas quedan confirmadas y el alumno las ve en su libreta.')) return;
+        $('btn-guardar').disabled = true; msg('Guardando…');
+        try {
+            const r = await CenturiaPlan.guardar(DATOS.plan.codigo, filas, MI_CED);
+            if (!r.ok) { msg(r.error, true); $('btn-guardar').disabled = false; return; }
+            CAMBIOS = false;
+            await cargar();
+            msg('Guardado: ' + r.guardadas + ' nota(s)' + (r.borradas ? ', ' + r.borradas + ' borrada(s)' : '') + '.');
+        } catch (e) {
+            msg(e && e.code === 'permission-denied' ? 'Sin permiso para guardar notas.' : 'Error al guardar: ' + e.message, true);
+            $('btn-guardar').disabled = false;
+        }
+    }
+
+    function exportarCSV() {
+        if (!DATOS) return;
+        const evs = DATOS.plan.evaluaciones;
+        const fila = (a) => a.map(x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"').join(';');
+        const lineas = [fila(['Cedula', 'Nombre', 'Seccion'].concat(evs.map(e => e.nombre + ' (/' + CenturiaPlan.escala(e) + ')'), ['Acumulado %', 'Nota', 'Para el final']))];
+        DATOS.filas.forEach((f, i) => {
+            const val = valoresFila(i), r = f._resultado || {};
+            lineas.push(fila([f.cedula, f.nombre, f.seccion].concat(evs.map(e => val[e.id]), [r.acumulado_pct, r.nota, r.derecho_final ? 'Habilitado' : (r.faltan || []).join(' / ')])));
+        });
+        const blob = new Blob(['﻿' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'planilla_' + DATOS.plan.codigo + ($('sel-sec').value ? '_' + $('sel-sec').value : '') + '.csv';
+        a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

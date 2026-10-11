@@ -187,7 +187,8 @@
                     <div class="row g-2">
                         <div class="col-md-4"><div class="fld"><label>De dónde sale la nota</label><select id="e-origen"><option value="examen_online">Examen online</option><option value="entrega_pdf">Entrega de PDF</option><option value="asistencia">Asistencia registrada</option><option value="manual">Carga del docente</option></select></div></div>
                         <div class="col-md-2"><div class="fld"><label>Unidad</label><input id="e-unidad" type="number" min="1" placeholder="—"></div></div>
-                        <div class="col-md-6 d-flex align-items-end pb-2"><label style="font-size:.72rem"><input type="checkbox" id="e-req"> Requisito para rendir el examen final (hay que aprobarla)</label></div>
+                        <div class="col-md-3"><div class="fld"><label>ID del examen online</label><input id="e-examen" placeholder="ej. soc_parcial_1" title="Identificador con el que se guardan los intentos del examen (colección intentos)"></div></div>
+                        <div class="col-md-3 d-flex align-items-end pb-2"><label style="font-size:.72rem"><input type="checkbox" id="e-req"> Requisito para rendir el examen final (hay que aprobarla)</label></div>
                         <div class="col-md-4 d-flex align-items-end gap-3 pb-2">
                             <label style="font-size:.72rem"><input type="checkbox" id="e-ale"> Aleatorizar</label>
                             <label style="font-size:.72rem"><input type="checkbox" id="e-pub"> Publicar notas</label>
@@ -448,7 +449,8 @@
                 const eid = e.id;
                 const det = [(N && N.TIPOS[e.tipo]) || e.tipo, e.unidad ? 'Unidad ' + e.unidad : '',
                     e.tipo === 'recuperatorio' ? 'reemplaza al parcial más bajo' : e.ponderacion + '%',
-                    e.puntaje_max ? 'sobre ' + e.puntaje_max + ' pts' : '', 'nota: ' + ((N && N.ORIGENES[e.origen]) || e.origen)].filter(Boolean).join(' · ');
+                    e.puntaje_max ? 'sobre ' + e.puntaje_max + ' pts' : '', 'nota: ' + ((N && N.ORIGENES[e.origen]) || e.origen),
+                    e.origen === 'examen_online' ? (e.examen_id ? 'examen «' + e.examen_id + '»' : '<span style="color:#92400E">sin examen enlazado (la nota la carga el docente)</span>') : ''].filter(Boolean).join(' · ');
                 return `<div class="block"><b>${e.nombre}</b> ${e.requisito ? '<span class="badge b-en_revision">requisito para el final</span>' : ''}<br><small class="text-muted">${det}</small>
                     <div class="mt-1 d-flex gap-1">
                         <button class="btn btn-s btn-sm" onclick="editarEvaluacion('${eid}')">Editar</button>
@@ -639,7 +641,7 @@
         }
         function limpiarEvaluacion() {
             evalEditando = null;
-            ['e-nom', 'e-pts', 'e-pond', 'e-dur', 'e-ap', 'e-ci', 'e-unidad'].forEach(id => document.getElementById(id).value = '');
+            ['e-nom', 'e-pts', 'e-pond', 'e-dur', 'e-ap', 'e-ci', 'e-unidad', 'e-examen'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('e-int').value = 1;
             ['e-ale', 'e-pub', 'e-req'].forEach(id => document.getElementById(id).checked = false);
             document.getElementById('e-tipo').value = 'parcial'; evTipoCambio();
@@ -655,6 +657,7 @@
             document.getElementById('e-tipo').value = N ? N.normalizarTipo(e.Tipo) : (e.Tipo || 'parcial');
             document.getElementById('e-origen').value = e.Origen || (N && N.ORIGEN_DE_TIPO[document.getElementById('e-tipo').value]) || 'manual';
             document.getElementById('e-unidad').value = e.Unidad || '';
+            document.getElementById('e-examen').value = e.ExamenId || '';
             document.getElementById('e-req').checked = !!e.Requisito;
             document.getElementById('e-pts').value = e.PuntajeMax || '';
             document.getElementById('e-pond').value = e.Ponderacion ?? 0;
@@ -693,6 +696,7 @@
                 id: evalEditando || '', subjectID: cur.draft.ID, nombre: document.getElementById('e-nom').value.trim(),
                 tipo: document.getElementById('e-tipo').value, origen: document.getElementById('e-origen').value,
                 unidad: document.getElementById('e-unidad').value, requisito: document.getElementById('e-req').checked,
+                examen_id: document.getElementById('e-examen').value.trim(),
                 puntaje_max: document.getElementById('e-pts').value || 0,
                 ponderacion: document.getElementById('e-pond').value || 0,
                 fecha_apertura: document.getElementById('e-ap').value, fecha_cierre: document.getElementById('e-ci').value,

@@ -125,7 +125,87 @@
         return errores;
     }
 
-    const api = { TIPOS, ORIGENES, ORIGEN_DE_TIPO, ESCALA, REGLAS, normalizarTipo, escalaDe, calcular, validarPlan };
+    // ── Etapa 3: notas automáticas a partir de sus fuentes ──────────────────────────────
+    const PRESENTE = ['presente', 'present', 'justificado', 'tardanza', 'late'];
+    const sinTilde = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+
+    // Clave de la sesión de clase de un registro de asistencia (por fecha o, en el autorregistro, por unidad).
+    function sesionDe(r) {
+        if (r.fecha) return 'F' + String(r.fecha).slice(0, 10);
+        if (r.unidad != null && r.unidad !== '') return 'U' + String(r.unidad);
+        const ts = r.timestamp || r.created_at || '';
+        return ts ? 'F' + String(ts).slice(0, 10) : '';
+    }
+    // ¿El registro es de esta asignatura? Acepta el código o el nombre (los importados traen el nombre o vacío).
+    function esDeAsignatura(r, asig) {
+        const a = sinTilde(r.asignatura);
+        return !!a && (a === sinTilde(asig.codigo) || a === sinTilde(asig.nombre));
+    }
+    /**
+     * % de asistencia: sesiones con presencia del alumno / sesiones dictadas.
+     * sesionesDictadas: número (calculado por el docente sobre toda la sección) o null → se usa la cantidad de unidades del plan.
+     */
+    function asistenciaPct(registros, asig, sesionesDictadas) {
+        const mias = new Set((registros || []).filter(r => esDeAsignatura(r, asig) && PRESENTE.indexOf(String(r.estado || r.status || '').toLowerCase()) >= 0).map(sesionDe).filter(Boolean));
+        const total = num(sesionesDictadas) || ((asig.unidades || []).length) || null;
+        if (!total) return null;
+        return red(Math.min(100, mias.size / total * 100), 0);
+    }
+    // Sesiones dictadas en una sección: todas las sesiones distintas en las que alguien estuvo presente.
+    function sesionesDictadas(registrosSeccion, asig) {
+        return new Set((registrosSeccion || []).filter(r => esDeAsignatura(r, asig)).map(sesionDe).filter(Boolean)).size;
+    }
+
+    /**
+     * Notas de un alumno para cada evaluación del plan, tomadas de sus fuentes.
+     * fuentes: { intentos:[docs intentos], trabajos:[docs trabajos], guardadas:[docs notas], asistencia_pct }
+     * Prioridad: nota guardada por el docente (planilla) > fuente automática.
+     * Devuelve { notas: {evalId:{obtenido,maximo}}, fuente: {evalId:'guardada'|'examen'|'trabajo'|'asistencia'} }
+     */
+    function notasDesdeFuentes(plan, fuentes, codigo) {
+        fuentes = fuentes || {};
+        const notas = {}, fuente = {};
+        const guardadas = {};
+        (fuentes.guardadas || []).forEach(g => { if (g && g.evaluacion_id) guardadas[g.evaluacion_id] = g; });
+        ((plan && plan.evaluaciones) || []).forEach(function (ev) {
+            const g = guardadas[ev.id];
+            if (g && num(g.obtenido) !== null) {
+                notas[ev.id] = { obtenido: num(g.obtenido), maximo: num(g.maximo) || num(ev.puntaje_max) || 100 };
+                fuente[ev.id] = 'guardada';
+                return;
+            }
+            const origen = ev.origen || ORIGEN_DE_TIPO[normalizarTipo(ev.tipo)] || 'manual';
+            if (origen === 'examen_online' && ev.examen_id) {
+                const doc = (fuentes.intentos || []).find(i => i.examen_id === ev.examen_id);
+                const intentos = (doc && Array.isArray(doc.intentos)) ? doc.intentos : [];
+                // Mejor intento por porcentaje; se lleva a la escala de la evaluación.
+                const mejor = intentos.map(i => (num(i.pct) !== null ? num(i.pct) : (num(i.total) ? num(i.puntaje) / num(i.total) * 100 : null)))
+                    .filter(p => p !== null).sort((a, b) => b - a)[0];
+                if (mejor != null) {
+                    const max = num(ev.puntaje_max) || 100;
+                    notas[ev.id] = { obtenido: red(mejor * max / 100, 2), maximo: max };
+                    fuente[ev.id] = 'examen';
+                }
+            } else if (origen === 'entrega_pdf') {
+                const u = num(ev.unidad) || 0;
+                const t = (fuentes.trabajos || []).find(x => sinTilde(x.asignatura) === sinTilde(codigo) && Number(x.unidad) === u && x.estado === 'calificado');
+                if (t && num(t.calificacion) !== null) {
+                    notas[ev.id] = { obtenido: num(t.calificacion), maximo: num(t.puntaje_max) || 10 };
+                    fuente[ev.id] = 'trabajo';
+                }
+            } else if (origen === 'asistencia' && num(fuentes.asistencia_pct) !== null) {
+                notas[ev.id] = { obtenido: num(fuentes.asistencia_pct), maximo: 100 };
+                fuente[ev.id] = 'asistencia';
+            }
+        });
+        return { notas: notas, fuente: fuente };
+    }
+
+    // ID del documento de una nota: una por alumno, asignatura y evaluación del plan.
+    const idNota = (cedula, codigo, evalId) => [cedula, String(codigo).toUpperCase(), evalId].join('__');
+
+    const api = { TIPOS, ORIGENES, ORIGEN_DE_TIPO, ESCALA, REGLAS, normalizarTipo, escalaDe, calcular, validarPlan,
+        sesionDe, esDeAsignatura, asistenciaPct, sesionesDictadas, notasDesdeFuentes, idNota, sinTilde };
     if (typeof module === 'object' && module.exports) module.exports = api;
     else raiz.CenturiaNotas = api;
 })(typeof window !== 'undefined' ? window : this);

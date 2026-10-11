@@ -86,7 +86,7 @@
             return {
                 id: e.ID, nombre: txt(e.Nombre), tipo: tipo, origen: txt(e.Origen) || (N && N.ORIGEN_DE_TIPO[tipo]) || 'manual',
                 unidad: num(e.Unidad) || null, puntaje_max: num(e.PuntajeMax) || null, ponderacion: num(e.Ponderacion),
-                requisito: !!e.Requisito, fecha_apertura: txt(e.FechaApertura), fecha_cierre: txt(e.FechaCierre)
+                requisito: !!e.Requisito, examen_id: txt(e.ExamenId), fecha_apertura: txt(e.FechaApertura), fecha_cierre: txt(e.FechaCierre)
             };
         }).sort((a, b) => (orden.indexOf(a.tipo) - orden.indexOf(b.tipo)) || ((a.unidad || 0) - (b.unidad || 0)) || a.nombre.localeCompare(b.nombre));
         const R = todo.draft.Reglas || {};
@@ -256,7 +256,7 @@
                 await db.collection(C.evals).doc(id).set({
                     SubjectID: sid, Nombre: nombre, Tipo: tipo,
                     Origen: txt(data.origen) || (N && N.ORIGEN_DE_TIPO[tipo]) || 'manual', Unidad: num(data.unidad) || null,
-                    Requisito: data.requisito === true || data.requisito === 'true', PuntajeMax: num(data.puntaje_max),
+                    Requisito: data.requisito === true || data.requisito === 'true', ExamenId: txt(data.examen_id).trim(), PuntajeMax: num(data.puntaje_max),
                     Ponderacion: num(data.ponderacion), FechaApertura: txt(data.fecha_apertura), FechaCierre: txt(data.fecha_cierre),
                     DuracionMin: num(data.duracion_min), IntentosMax: num(data.intentos_max) || 1, Modalidad: txt(data.modalidad || 'virtual'),
                     Aleatorizar: !!data.aleatorizar, PublicarResultados: !!data.publicar_resultados

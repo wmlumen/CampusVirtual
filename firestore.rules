@@ -208,7 +208,8 @@ service cloud.firestore {
       allow create, update: if isAuthenticated() && (
         isAdminOrPlatform() || isAcademico() || isDocente()
       );
-      allow delete: if isAdminOrPlatform();
+      // v2026-10-11: el docente puede borrar una nota de la planilla (dejar la celda vacía).
+      allow delete: if isAdminOrPlatform() || isAcademico() || isDocente();
     }
 
     match /asistencia/{asistId} {

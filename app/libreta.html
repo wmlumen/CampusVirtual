@@ -455,7 +455,9 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=21"></script>
+<script src="js/api.js?v=23"></script>
+    <script src="js/calificaciones.js?v=2"></script>
+    <script src="js/notas-plan.js?v=1"></script>
     <script src="js/logout.js?v=2"></script>
     <script>
         // Estado global de la vista
@@ -518,6 +520,52 @@
             if (rg) grades = rg.data || rg.notas || [];
             if (ra) attendance = ra.data || ra.asistencias || [];
             procesarMaterias(user, grades, attendance, cursosResp);
+            await enriquecerConPlan(cedula);
+        }
+
+        // v2026-10-11: materias con plan de evaluación publicado (Constructor) → nota ponderada, detalle y requisitos del final.
+        async function enriquecerConPlan(cedula) {
+            if (!window.CenturiaPlan) return;
+            let cambio = false;
+            await Promise.all(materiasProcesadas.map(async m => {
+                try {
+                    const r = await CenturiaPlan.alumno(m.codigo, cedula);
+                    if (!r) return;
+                    const R = r.resultado, evs = R.evaluaciones;
+                    const pctDe = (ev) => ev && !ev.pendiente ? Math.round(ev.pct) : '-';
+                    const parciales = evs.filter(e => e.tipo === 'parcial'), fin = evs.find(e => e.tipo === 'final');
+                    m.plan = r;
+                    m.parcial1 = pctDe(parciales[0]); m.parcial2 = pctDe(parciales[1]); m.final = pctDe(fin);
+                    m.promedio = R.ponderacion_cargada ? R.acumulado_pct : '-';
+                    if (r.asistencia_pct != null) m.asistenciaPct = r.asistencia_pct;
+                    m.progreso = Math.round(R.ponderacion_cargada);
+                    if (m.estadoCurso === 'desarrollado' && R.completo) {
+                        m.estadoBadgeClass = R.aprobado ? 'desarrollado' : 'reprobado';
+                        m.estadoTexto = 'Desarrollado • ' + (R.aprobado ? 'Aprobado (' + R.nota + ')' : 'Reprobado');
+                    }
+                    cambio = true;
+                } catch (e) { console.warn('Plan de ' + m.codigo + ':', e); }
+            }));
+            if (cambio) { actualizarEstadisticasYBadges(); renderLibreta(); }
+        }
+
+        function detallePlan(m) {
+            const R = m.plan.resultado, T = CenturiaNotas.TIPOS;
+            const celdas = R.evaluaciones.map(ev => {
+                const valor = ev.pendiente ? '<span style="opacity:.5">pendiente</span>' : Math.round(ev.pct) + '%';
+                const peso = ev.tipo === 'recuperatorio' ? 'reemplaza al parcial más bajo' : ev.ponderacion + '%' + (ev.pendiente ? '' : ' → aporta ' + ev.aporte);
+                return `<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 10px;min-width:150px">
+                    <div style="font-size:.6rem;opacity:.6">${escHtml(T[ev.tipo] || ev.tipo)}${ev.requisito ? ' • requisito' : ''}</div>
+                    <div style="font-weight:700;font-size:.72rem">${escHtml(ev.nombre)}</div>
+                    <div style="font-size:.72rem">${valor} <span style="opacity:.55;font-size:.6rem">${escHtml(peso)}</span></div></div>`;
+            }).join('');
+            const fin = R.derecho_final
+                ? '<span style="color:#4ade80"><i class="bi bi-check2-circle"></i> Habilitado para el examen final</span>'
+                : '<span style="color:#fbbf24"><i class="bi bi-exclamation-triangle"></i> Para rendir el final: ' + R.faltan.map(escHtml).join(' · ') + '</span>';
+            return `<tr><td colspan="9" style="padding:4px 12px 14px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">${celdas}</div>
+                <div style="font-size:.68rem">Acumulado <b>${R.acumulado_pct}%</b> de ${R.ponderacion_cargada}% evaluado · Nota ${R.completo ? '<b>' + R.nota + ' (' + escHtml(R.texto) + ')</b>' : 'parcial ' + R.nota} · ${fin}</div>
+            </td></tr>`;
         }
 
         function mostrarErrorLibreta(msg) {
@@ -738,7 +786,7 @@
                             <td class="grade-cell ${p1Class}">${asig.parcial1}</td>
                             <td class="grade-cell ${p2Class}">${asig.parcial2}</td>
                             <td class="grade-cell ${finClass}">${asig.final}</td>
-                            <td class="grade-cell ${promClass}" style="font-size:.9rem;">${asig.promedio}</td>
+                            <td class="grade-cell ${promClass}" style="font-size:.9rem;">${asig.promedio}${asig.plan ? '<div style="font-size:.55rem;opacity:.6;font-weight:400">ponderado</div>' : ''}</td>
                             <td>
                                 <span class="subject-badge ${asig.estadoBadgeClass}">
                                     ${asig.estadoBadgeClass === 'desarrollado' ? '<i class="bi bi-check2-circle"></i>' : ''}
@@ -757,7 +805,7 @@
                                     <div class="progress-text">${asig.progreso}%</div>
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>` + (asig.plan ? detallePlan(asig) : '');
                 });
 
                 html += `

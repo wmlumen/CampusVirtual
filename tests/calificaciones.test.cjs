@@ -58,6 +58,49 @@ test('tipos viejos del Constructor se reconocen', () => {
   assert.strictEqual(N.normalizarTipo('proyecto'), 'monografia');
 });
 
+const ASIG = { codigo: 'SOC', nombre: 'Sociología', unidades: [1, 2, 3, 4, 5, 6].map(n => ({ numero: n })) };
+const PLAN = { evaluaciones: [
+  { id: 'p1', nombre: 'P1', tipo: 'parcial', origen: 'examen_online', examen_id: 'soc_p1', puntaje_max: 20, ponderacion: 20 },
+  { id: 'tp', nombre: 'TP', tipo: 'trabajo_practico', origen: 'entrega_pdf', unidad: 4, ponderacion: 0, requisito: true },
+  { id: 'as', nombre: 'Asist', tipo: 'asistencia', origen: 'asistencia', ponderacion: 10 },
+  { id: 'fi', nombre: 'Final', tipo: 'final', origen: 'manual', puntaje_max: 40, ponderacion: 70 }
+] };
+
+test('asistencia: sesiones del alumno sobre sesiones dictadas, por código o nombre de la asignatura', () => {
+  const regs = [
+    { asignatura: 'SOC', fecha: '2026-05-01', estado: 'presente' },
+    { asignatura: 'Sociologia', fecha: '2026-05-08', estado: 'presente' },
+    { asignatura: 'SOC', fecha: '2026-05-08', estado: 'presente' },          // misma sesión: no cuenta doble
+    { asignatura: 'TIC', fecha: '2026-05-15', estado: 'presente' },          // otra materia
+    { asignatura: '', fecha: '2026-05-22', estado: 'presente' }              // importado sin materia
+  ];
+  assert.strictEqual(N.asistenciaPct(regs, ASIG, 4), 50);
+  assert.strictEqual(N.asistenciaPct(regs, ASIG, null), 33);              // sin dato del docente: 6 unidades
+  assert.strictEqual(N.sesionesDictadas(regs, ASIG), 2);
+});
+
+test('notas desde fuentes: mejor intento, trabajo calificado, asistencia y prioridad de la guardada', () => {
+  const f = {
+    intentos: [{ examen_id: 'soc_p1', intentos: [{ puntaje: 6, total: 10 }, { pct: 85 }] }],
+    trabajos: [{ asignatura: 'SOC', unidad: 4, estado: 'calificado', calificacion: 8, puntaje_max: 10 }],
+    asistencia_pct: 90
+  };
+  const r = N.notasDesdeFuentes(PLAN, f, 'SOC');
+  assert.deepStrictEqual(r.notas.p1, { obtenido: 17, maximo: 20 });
+  assert.deepStrictEqual(r.notas.tp, { obtenido: 8, maximo: 10 });
+  assert.deepStrictEqual(r.notas.as, { obtenido: 90, maximo: 100 });
+  assert.strictEqual(r.notas.fi, undefined);
+  assert.deepStrictEqual(r.fuente, { p1: 'examen', tp: 'trabajo', as: 'asistencia' });
+  const g = N.notasDesdeFuentes(PLAN, Object.assign({ guardadas: [{ evaluacion_id: 'p1', obtenido: 12, maximo: 20 }, { evaluacion_id: 'fi', obtenido: 30, maximo: 40 }] }, f), 'SOC');
+  assert.deepStrictEqual(g.notas.p1, { obtenido: 12, maximo: 20 });
+  assert.strictEqual(g.fuente.fi, 'guardada');
+});
+
+test('trabajo sin calificar no cuenta', () => {
+  const r = N.notasDesdeFuentes(PLAN, { trabajos: [{ asignatura: 'SOC', unidad: 4, estado: 'entregado', calificacion: null }] }, 'SOC');
+  assert.strictEqual(r.notas.tp, undefined);
+});
+
 test('validarPlan avisa ponderación incompleta y falta de final', () => {
   const e = N.validarPlan({ evaluaciones: [{ nombre: 'P1', tipo: 'parcial', ponderacion: 30 }, { nombre: 'TP', tipo: 'trabajo_practico', ponderacion: 10 },
     { nombre: 'Rec', tipo: 'recuperatorio', ponderacion: 5 }] });

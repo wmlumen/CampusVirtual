@@ -369,7 +369,7 @@
                         <div class="fw-bold small" id="sidebar-user-name">Usuario</div>
                         <div class="text-muted" id="sidebar-user-id" style="font-size:0.7rem">C.I: -</div>
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="sessionStorage.clear(); localStorage.removeItem('centuria_auth_token'); window.location.replace('../index.html')">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="centuriaLogout()">
                         <i class="bi bi-box-arrow-right"></i> Salir
                     </button>
                 </div>
@@ -629,5 +629,6 @@
         location.href = dest;
     };
 </script>
+<script src="../js/logout.js?v=3"></script>
 </body>
 </html>

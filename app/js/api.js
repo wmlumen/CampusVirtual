@@ -1998,21 +1998,15 @@ const API = {
         } catch (e) { return null; }
     },
 
+    // v2026-10-11: cierra la sesión de Firebase Auth (antes no se esperaba y la redirección la cortaba)
+    // y borra del navegador la sesión y los datos personales. Se conservan solo preferencias del equipo.
     logout() {
-        const token = this.getToken();
-        if (token) gasLogout(token);
-        try {
-            localStorage.removeItem('centuria_auth_token');
-            localStorage.removeItem('centuria_token');
-            localStorage.removeItem('centuria_user');
-            localStorage.removeItem('centuria_token_expires');
-            sessionStorage.removeItem('centuria_auth_token');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('centuria_user');
-            sessionStorage.removeItem('centuria_token_expires');
-            sessionStorage.clear();
-        } catch (e) {}
-        return Promise.resolve({ ok: true });
+        cvLimpiarSesionLocal();
+        _cvAuthListo = null;
+        // Se carga el SDK de Auth si la página no lo tenía: la sesión de Firebase queda guardada en el navegador (IndexedDB).
+        const fin = cvCargarAuthSdk().then(function () { getDb(); return window.firebase.auth().signOut(); }).catch(function () {});
+        // Como máximo 3 s: si la red falla, igual se sale (la sesión local ya se borró).
+        return Promise.race([fin, new Promise(function (r) { setTimeout(r, 3000); })]).then(function () { return { ok: true }; });
     },
 
     updateProfile(data) {
@@ -2671,6 +2665,43 @@ function getCurrentUser() {
 // Objeto global usado por todas las pantallas
 window.CenturiaAPI = API;
 var CenturiaAPI = window.CenturiaAPI;
+
+// ═══ CIERRE DE SESIÓN (v2026-10-11) ═══
+// Claves del navegador que NO son de la sesión (preferencias y avance en este equipo); todo lo demás «centuria_*» se borra.
+const CV_CLAVES_EQUIPO = ['centuria_dark', 'centuria_remember_cedula', 'centuria_custom_evals', 'tic026_dispositivo_id'];
+function cvLimpiarSesionLocal() {
+    try { sessionStorage.clear(); } catch (e) {}
+    try {
+        const borrar = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k.indexOf('centuria_') === 0 || k === 'token') && CV_CLAVES_EQUIPO.indexOf(k) < 0) borrar.push(k);
+        }
+        borrar.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) {}
+}
+function cvEsPaginaDeIngreso() {
+    try { return [appUrl('index.html'), appUrl('')].some(function (u) { return new URL(u).pathname === location.pathname; }); }
+    catch (e) { return false; }
+}
+// Botón «Salir» de cualquier página que cargue api.js (logout.js, si está, define la misma función).
+if (typeof window.centuriaLogout !== 'function') {
+    window.centuriaLogout = function (confirmar) {
+        if (confirmar && !confirm('¿Estás seguro de que deseas cerrar sesión?')) return;
+        API.logout().then(function () { window.location.replace(appUrl('index.html')); });
+    };
+}
+// «Atrás» después de salir: el navegador puede mostrar la página guardada sin volver a ejecutarla.
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted && !API.getToken() && !cvEsPaginaDeIngreso()) window.location.replace(appUrl('index.html'));
+});
+// Salir en una pestaña cierra también las demás pestañas abiertas del Campus.
+window.addEventListener('storage', function (e) {
+    if (e.key === 'centuria_auth_token' && !e.newValue && e.oldValue && !cvEsPaginaDeIngreso()) {
+        cvLimpiarSesionLocal();
+        window.location.replace(appUrl('index.html'));
+    }
+});
 
 // ═══ TESORERÍA - PAGOS Y EXONERACIONES ═══
 API.tesoreria = {

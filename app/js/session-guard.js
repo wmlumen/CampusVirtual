@@ -164,10 +164,12 @@
                 return;
             }
             try { sessionStorage.clear(); } catch (e) {}
+            // Igual que logout.js: se borra todo «centuria_*» (sesión y datos personales) salvo preferencias del equipo.
             try {
-                localStorage.removeItem('centuria_auth_token');
-                localStorage.removeItem('centuria_token');
-                localStorage.removeItem('centuria_user');
+                const conservar = ['centuria_dark', 'centuria_remember_cedula', 'centuria_custom_evals', 'tic026_dispositivo_id'];
+                Object.keys(localStorage).forEach(function (k) {
+                    if ((k.indexOf('centuria_') === 0 || k === 'token') && conservar.indexOf(k) < 0) localStorage.removeItem(k);
+                });
             } catch (e) {}
             const loginUrl = getLoginUrl(reason);
             if (isCurrentPage(loginUrl)) return; // ya estamos en el login: no recargar en bucle

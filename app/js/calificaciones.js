@@ -119,7 +119,8 @@
         if (total !== 100) errores.push('La ponderación suma ' + total + '% (tiene que dar 100%).');
         if (!evs.some(e => normalizarTipo(e.tipo) === 'final')) errores.push('Falta el examen final.');
         evs.forEach(function (e) {
-            if ((normalizarTipo(e.tipo) === 'trabajo_practico') && !num(e.unidad)) errores.push(e.nombre + ': indicá la unidad del trabajo práctico.');
+            if (!String(e.nombre || '').trim()) errores.push('Hay una evaluación sin nombre.');
+            if (normalizarTipo(e.tipo) === 'recuperatorio' && num(e.ponderacion)) errores.push(e.nombre + ': el recuperatorio no lleva ponderación (reemplaza al parcial más bajo).');
         });
         return errores;
     }

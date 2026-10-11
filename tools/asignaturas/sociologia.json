@@ -11,8 +11,8 @@
     "fundamentacion": "La asignatura enfoca en forma global la sociología. En la Carrera nos centraremos en el estudio de la persona repasando los diversos aspectos corpóreos de la naturaleza humana, las inmateriales, las diversas manifestaciones éticas y estéticas humanas, culminándose con un acceso a la intimidad personal. El fin de la materia es obtener hábitos de reflexión personal y sobre todo analizar y comprender algunas de las dimensiones de la persona humana individual y social, situación que encaminará al éxito al profesional de la carrera.",
     "objetivo_general": "Formar una mentalidad crítica que conduzca a una comprensión renovada del hombre y la sociedad.",
     "objetivos_especificos": "Obtener hábitos de reflexión personal.\nFormular conceptualmente la propia experiencia.\nAnalizar y comprender algunas de las dimensiones de la persona humana.\nTomar conciencia acerca de los temas fundamentales que hacen a la existencia de la persona y de la sociedad contemporánea.\nIntroducir los conceptos fundamentales del análisis sociológico y las diferentes perspectivas teóricas.\nAnalizar y comparar los distintos sistemas sociales a lo largo de la historia desde un punto de vista sociológico.\nConocer los principales componentes, indicadores y tasas de la población activa.\nAnalizar la estructura social y los sistemas de estratificación social.\nIdentificar las principales variables que determinan la dinámica de las sociedades contemporáneas.\nConocer las principales características e instituciones del periodo de posguerra.\nIntroducir los conceptos fundamentales del ámbito político moderno y analizar las diversas formas de autoridad.",
-    "competencias": "",
-    "capacidades": "",
+    "competencias": "Analiza críticamente la realidad social, económica y organizacional del Paraguay y de la región, aplicando los conceptos y las perspectivas teóricas de la sociología.\nComprende a la persona como ser individual y social, y su incidencia en el comportamiento de clientes, trabajadores y organizaciones.\nInterpreta los procesos de cambio social (modernización, urbanización, incorporación de la mujer al trabajo, políticas económicas) y su impacto en el comercio y en la gestión contable.\nActúa con ética, responsabilidad social y respeto a los derechos humanos y a la participación democrática en el ejercicio profesional.\nComunica en forma oral y escrita análisis sociológicos fundamentados y trabaja en equipo.",
+    "capacidades": "Identifica a los fundadores de la sociología y diferencia sus doctrinas: positivismo, organicismo, realismo social, sociología comprensiva y materialismo histórico (Unidad I).\nDefine el objeto, los fines y los campos de la sociología y explica su relación con la Economía (Unidad II).\nExplica la conducta humana a partir de los conceptos de naturaleza humana, instinto y cultura (Unidad III).\nDistingue individualismo, colectivismo y masificación, y valora las relaciones interpersonales y la democracia participativa (Unidad IV).\nArgumenta sobre la libertad, la deliberación y la responsabilidad en la acción humana y sobre las condiciones sociales, económicas y políticas para la realización humana (Unidad V).\nAnaliza la dinámica del cambio social, la modernización y el reformismo keynesiano de posguerra con ejemplos actuales (Unidad VI).\nElabora trabajos de investigación y presentaciones orales grupales sobre problemas sociales de la realidad actual.\nFormula conceptualmente su propia experiencia y desarrolla hábitos de reflexión personal.",
     "metodologia": "El profesor expondrá los temas y su entorno explicativo necesario.\nMediante el método dialogado se analizará la temática del programa.\nSe discutirá en grupos para favorecer la reflexión personal y acceder a conclusiones válidas.\nSe desarrollará el sentido de cooperación mediante trabajos comunitarios.\nCada profesor buscará ejemplos adecuados para la discusión.\nLos grupos harán presentaciones orales, luego de una investigación temática conectada con la realidad que vivimos.\nInterpretación crítica de los puntos del programa para favorecer una mayor comprensión de la esencia humana.",
     "requisitos": "Para tener derecho a examen final el alumno debe tener 80% de asistencia, aprobados los exámenes parciales y trabajo práctico. Los exámenes parciales y finales podrán rendirse en forma ordinaria y extraordinaria.\nEscala: 0-69% = 1 Insuficiente; 70-77% = 2 Aprobado; 78-85% = 3 Bueno; 86-93% = 4 Distinguido; 94-100% = 5 Sobresaliente.",
     "bibliografia": "Castells, Manuel. La era de la información: economía, sociedad y cultura. Madrid: Alianza, 2009.\nChinoy, Ely. La sociedad, una introducción a la sociología. México: Fondo de Cultura Económica, 5.ª ed., 1973.\nCoreth, Emerich. ¿Qué es el hombre? Madrid: Herder, 1980.\nGevaert, Joseph. El problema del hombre. Salamanca: Sígueme, 1998.\nJiménez, Emiliano. ¿Quién soy yo? Madrid: Biblioteca Catecumenal, 1992.\nLucas, Juan de S. El hombre, ¿quién es? Atenas: Sociedad de Educación, 1988.\nLuypen, W. Fenomenología existencial. Madrid: Herder, 1980.\nRecondo, Gregorio. Sociología y ciencias sociales, introducción a la sociología. Buenos Aires: Pannedille, 1971.\nVidal, Marciano. Moral de actitudes. Madrid: P.S., 1979.\nDe la sociedad tradicional a la sociedad de masas (Antología). Departamento de Sociología, UNBA, 1961.\nNaciones Unidas. Población, desarrollo y salud reproductiva en el Paraguay. Asunción, 1998.\nRumney, Jay y Maier, Joseph. Sociología, la ciencia de la sociedad. Buenos Aires: Paidós, 1952."
@@ -21,38 +21,122 @@
     {
       "numero": 1,
       "titulo": "La sociología: sus orígenes, autores y doctrinas",
-      "temas": ["Sociología y sociólogos: autores y doctrinas", "Aparición de la sociología – Los fundadores", "Comte: el positivismo sociológico", "Spencer: el organicismo evolucionista", "Durkheim: el realismo social", "Darwin: evolucionismo social", "Weber: la sociología comprensiva", "Marx: el materialismo histórico", "Pareto: mecanicismo y psicologismo", "Resumen: doctrinas y escuelas sociológicas"]
+      "temas": [
+        "Sociología y sociólogos: autores y doctrinas",
+        "Aparición de la sociología – Los fundadores",
+        "Comte: el positivismo sociológico",
+        "Spencer: el organicismo evolucionista",
+        "Durkheim: el realismo social",
+        "Darwin: evolucionismo social",
+        "Weber: la sociología comprensiva",
+        "Marx: el materialismo histórico",
+        "Pareto: mecanicismo y psicologismo",
+        "Resumen: doctrinas y escuelas sociológicas"
+      ]
     },
     {
       "numero": 2,
       "titulo": "Definiciones y campos de la sociología",
-      "temas": ["La esfera de la sociología", "Complejidad de la sociología", "Fines de la sociología", "Tres tareas", "Definiciones", "El objeto de la sociología", "Visión de conjunto", "La sociología y la Economía", "Especialidades"]
+      "temas": [
+        "La esfera de la sociología",
+        "Complejidad de la sociología",
+        "Fines de la sociología",
+        "Tres tareas",
+        "Definiciones",
+        "El objeto de la sociología",
+        "Visión de conjunto",
+        "La sociología y la Economía",
+        "Especialidades"
+      ]
     },
     {
       "numero": 3,
       "titulo": "Objeto de la sociología: la conducta humana",
-      "temas": ["El concepto de naturaleza humana", "La teoría de los instintos", "Criterios de estabilidad", "Los orígenes de la cultura", "El hombre fuera de la cultura"]
+      "temas": [
+        "El concepto de naturaleza humana",
+        "La teoría de los instintos",
+        "Criterios de estabilidad",
+        "Los orígenes de la cultura",
+        "El hombre fuera de la cultura"
+      ]
     },
     {
       "numero": 4,
       "titulo": "El hombre como ser social",
-      "temas": ["La integración del hombre en la sociedad", "La búsqueda del equilibrio en la integración", "El individualismo", "El colectivismo y la masificación", "Planificación y manipulación", "El primado de las relaciones interpersonales", "Democracia: participación y derechos humanos"]
+      "temas": [
+        "La integración del hombre en la sociedad",
+        "La búsqueda del equilibrio en la integración",
+        "El individualismo",
+        "El colectivismo y la masificación",
+        "Planificación y manipulación",
+        "El primado de las relaciones interpersonales",
+        "Democracia: participación y derechos humanos"
+      ]
     },
     {
       "numero": 5,
       "titulo": "La libertad y la existencia humana",
-      "temas": ["La acción humana: deliberación y responsabilidad", "La libertad absoluta", "La libertad condicionada y sus diversos aspectos", "La libertad como proyecto de realización humana", "El establecimiento de las condiciones sociales, económicas y políticas para la realización humana"]
+      "temas": [
+        "La acción humana: deliberación y responsabilidad",
+        "La libertad absoluta",
+        "La libertad condicionada y sus diversos aspectos",
+        "La libertad como proyecto de realización humana",
+        "El establecimiento de las condiciones sociales, económicas y políticas para la realización humana"
+      ]
     },
     {
       "numero": 6,
       "titulo": "Cambio y conflicto social. La dinámica social",
-      "temas": ["La dinámica del cambio social", "Estructura y proceso", "La dinámica socioeconómica: leyes del desarrollo social", "Modernización y racionalización", "Las características de la fase de desarrollo de posguerra", "La nueva política económica: el reformismo keynesiano", "Cambios asociados: éxodo rural, urbanización e incorporación de la mujer al mundo laboral"]
+      "temas": [
+        "La dinámica del cambio social",
+        "Estructura y proceso",
+        "La dinámica socioeconómica: leyes del desarrollo social",
+        "Modernización y racionalización",
+        "Las características de la fase de desarrollo de posguerra",
+        "La nueva política económica: el reformismo keynesiano",
+        "Cambios asociados: éxodo rural, urbanización e incorporación de la mujer al mundo laboral"
+      ]
     }
   ],
   "evaluaciones": [
-    { "nombre": "Primer examen parcial", "tipo": "parcial", "ponderacion": 20 },
-    { "nombre": "Segundo examen parcial", "tipo": "parcial", "ponderacion": 20 },
-    { "nombre": "Participación en clase (asistencia)", "tipo": "trabajo", "ponderacion": 10 },
-    { "nombre": "Examen final", "tipo": "final", "ponderacion": 50, "puntaje_max": 40 }
-  ]
+    {
+      "nombre": "Primer examen parcial",
+      "tipo": "parcial",
+      "origen": "examen_online",
+      "ponderacion": 20,
+      "requisito": true
+    },
+    {
+      "nombre": "Segundo examen parcial",
+      "tipo": "parcial",
+      "origen": "examen_online",
+      "ponderacion": 20,
+      "requisito": true
+    },
+    {
+      "nombre": "Trabajo práctico",
+      "tipo": "trabajo_practico",
+      "origen": "entrega_pdf",
+      "ponderacion": 0,
+      "requisito": true
+    },
+    {
+      "nombre": "Participación en clase (asistencia)",
+      "tipo": "asistencia",
+      "origen": "asistencia",
+      "ponderacion": 10
+    },
+    {
+      "nombre": "Examen final",
+      "tipo": "final",
+      "origen": "examen_online",
+      "ponderacion": 50,
+      "puntaje_max": 40
+    }
+  ],
+  "_competencias_capacidades": "Redactadas a partir de los objetivos y contenidos del programa oficial (el .docx no las trae). Pendiente de validación académica.",
+  "reglas": {
+    "aprobacion_pct": 70,
+    "asistencia_min_pct": 80
+  }
 }

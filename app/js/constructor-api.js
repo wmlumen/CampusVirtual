@@ -53,11 +53,14 @@
             .map(col => db.collection(col).where('SubjectID', '==', id).get()));
         const bloques = filas(b);
         const units = filas(u).sort(porOrden).map(x => Object.assign(x, { blocks: bloques.filter(k => k.UnitID === x.ID).sort(porOrden) }));
-        return {
+        const todo = {
             ok: true, draft: draft, program: draft.Program || {}, units: units,
             activities: filas(a), evaluations: filas(e),
             reviews: filas(r).sort((x, y) => txt(x.CreatedAt).localeCompare(txt(y.CreatedAt)))
         };
+        todo.plan = planDe(todo);
+        todo.problemas = window.CenturiaNotas ? CenturiaNotas.validarPlan(todo.plan) : [];
+        return todo;
     }
 
     async function cambiarEstado(db, id, aEstado, data, quien) {
@@ -73,6 +76,23 @@
         return { ok: true, estado: aEstado };
     }
 
+    // Plan de evaluación en el formato que usa calificaciones.js (el que se publica en asignaturas/{Codigo}).
+    // El orden es: parciales, trabajos y monografía por unidad, asistencia, final, recuperatorio.
+    function planDe(todo) {
+        const N = window.CenturiaNotas;
+        const orden = ['parcial', 'trabajo_practico', 'monografia', 'asistencia', 'final', 'recuperatorio'];
+        const evaluaciones = todo.evaluations.map(e => {
+            const tipo = N ? N.normalizarTipo(e.Tipo) : txt(e.Tipo);
+            return {
+                id: e.ID, nombre: txt(e.Nombre), tipo: tipo, origen: txt(e.Origen) || (N && N.ORIGEN_DE_TIPO[tipo]) || 'manual',
+                unidad: num(e.Unidad) || null, puntaje_max: num(e.PuntajeMax) || null, ponderacion: num(e.Ponderacion),
+                requisito: !!e.Requisito, fecha_apertura: txt(e.FechaApertura), fecha_cierre: txt(e.FechaCierre)
+            };
+        }).sort((a, b) => (orden.indexOf(a.tipo) - orden.indexOf(b.tipo)) || ((a.unidad || 0) - (b.unidad || 0)) || a.nombre.localeCompare(b.nombre));
+        const R = todo.draft.Reglas || {};
+        return { evaluaciones: evaluaciones, reglas: { aprobacion_pct: num(R.aprobacion_pct) || 70, asistencia_min_pct: R.asistencia_min_pct == null ? 80 : num(R.asistencia_min_pct) } };
+    }
+
     // Publicar: copia a asignaturas/{Codigo}. Conserva estado y docente si la asignatura ya existía;
     // si es nueva queda «inactivo» hasta que Administración la active y se asigne un docente.
     async function publicar(db, id, data, quien) {
@@ -83,6 +103,9 @@
         if (['aprobado', 'publicado'].indexOf(dr.Estado) < 0) return { ok: false, error: 'Primero tiene que estar aprobada.' };
         const codigo = txt(dr.Codigo).trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
         if (!codigo) return { ok: false, error: 'Falta el código de la asignatura.' };
+        const plan = planDe(todo);
+        const errores = window.CenturiaNotas ? CenturiaNotas.validarPlan(plan) : [];
+        if (errores.length) return { ok: false, error: 'El plan de evaluación tiene problemas: ' + errores.join(' ') };
         const ref = db.collection('asignaturas').doc(codigo);
         const prev = await ref.get();
         const p = prev.exists ? prev.data() : {};
@@ -92,7 +115,7 @@
             grado: txt(dr.Grado), curso: txt(dr.Curso), semestre: txt(dr.Semestre), carga_horaria: num(dr.CargaHoraria),
             programa_id: id, programa_version: num(dr.Version) || 1,
             unidades: todo.units.map(u => ({ numero: num(u.Numero), titulo: txt(u.Titulo) })),
-            evaluaciones: todo.evaluations.map(e => ({ nombre: txt(e.Nombre), tipo: txt(e.Tipo), ponderacion: num(e.Ponderacion) })),
+            evaluaciones: plan.evaluaciones, reglas: plan.reglas,
             estado: p.estado || 'inactivo', docente_cedula: p.docente_cedula || '',
             icono: p.icono || 'bi-journal-text', color: p.color || '#007A33', modulo: p.modulo || '',
             publicado_por: quien.cedula, updated_at: ahora()
@@ -175,7 +198,9 @@
                 [['fundamentacion', 'Fundamentacion'], ['objetivo_general', 'ObjetivoGeneral'], ['objetivos_especificos', 'ObjetivosEspecificos'],
                  ['competencias', 'Competencias'], ['capacidades', 'Capacidades'], ['metodologia', 'Metodologia'],
                  ['requisitos', 'Requisitos'], ['bibliografia', 'Bibliografia']].forEach(([k, K]) => { P[K] = txt(data[k]); });
-                await db.collection(C.asig).doc(id).set({ Program: P, Fundamentacion: P.Fundamentacion, UpdatedAt: ahora() }, { merge: true });
+                // Reglas de aprobación del plan de evaluación (por defecto las del programa oficial: 70% y 80% de asistencia).
+                const Reglas = { aprobacion_pct: num(data.aprobacion_pct) || 70, asistencia_min_pct: data.asistencia_min_pct === '' || data.asistencia_min_pct == null ? 80 : num(data.asistencia_min_pct) };
+                await db.collection(C.asig).doc(id).set({ Program: P, Reglas: Reglas, Fundamentacion: P.Fundamentacion, UpdatedAt: ahora() }, { merge: true });
                 return { ok: true, id: id };
             }
             case 'constructor_save_unit': {
@@ -221,11 +246,17 @@
                 const nombre = txt(data.nombre).trim();
                 if (!sid || !nombre) return { ok: false, error: 'Falta el nombre de la evaluación.' };
                 const id = txt(data.id) || nuevoId('EVA');
+                const N = window.CenturiaNotas;
+                const tipo = N ? N.normalizarTipo(data.tipo) : txt(data.tipo || 'parcial');
+                // El recuperatorio no suma: reemplaza al parcial más bajo (ver calificaciones.js).
+                const pesa = (t, p) => (N ? N.normalizarTipo(t) : t) === 'recuperatorio' ? 0 : num(p);
                 const otras = filas(await db.collection(C.evals).where('SubjectID', '==', sid).get()).filter(e => e.ID !== id);
-                const suma = otras.reduce((s, e) => s + num(e.Ponderacion), 0) + num(data.ponderacion);
+                const suma = otras.reduce((s, e) => s + pesa(e.Tipo, e.Ponderacion), 0) + pesa(tipo, data.ponderacion);
                 if (suma > 100) return { ok: false, error: 'La ponderación total quedaría en ' + suma + '% (máximo 100%).' };
                 await db.collection(C.evals).doc(id).set({
-                    SubjectID: sid, Nombre: nombre, Tipo: txt(data.tipo || 'parcial'), PuntajeMax: num(data.puntaje_max),
+                    SubjectID: sid, Nombre: nombre, Tipo: tipo,
+                    Origen: txt(data.origen) || (N && N.ORIGEN_DE_TIPO[tipo]) || 'manual', Unidad: num(data.unidad) || null,
+                    Requisito: data.requisito === true || data.requisito === 'true', PuntajeMax: num(data.puntaje_max),
                     Ponderacion: num(data.ponderacion), FechaApertura: txt(data.fecha_apertura), FechaCierre: txt(data.fecha_cierre),
                     DuracionMin: num(data.duracion_min), IntentosMax: num(data.intentos_max) || 1, Modalidad: txt(data.modalidad || 'virtual'),
                     Aleatorizar: !!data.aleatorizar, PublicarResultados: !!data.publicar_resultados

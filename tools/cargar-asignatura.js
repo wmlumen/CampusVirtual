@@ -63,6 +63,7 @@ const carrerasDe = (s) => String(s || '').split(/\s*[\/,;]\s*/).map(x => x.trim(
   await db.collection(C.asig).doc(sid).set({
     Codigo: codigo, Nombre: A.nombre, Carrera: A.carrera, Carreras: carreras, Grado: A.grado || '', Curso: A.curso || '',
     Semestre: A.semestre || '', CargaHoraria: Number(A.carga_horaria) || 0, Program: Program, Fundamentacion: Program.Fundamentacion,
+    Reglas: Object.assign({ aprobacion_pct: 70, asistencia_min_pct: 80 }, A.reglas || {}),
     Estado: 'borrador', Version: 1, DocenteCedula: '', CreadoPor: 'tools/cargar-asignatura.js', CreatedAt: ahora(), UpdatedAt: ahora()
   });
   for (const u of A.unidades || []) {
@@ -75,9 +76,13 @@ const carrerasDe = (s) => String(s || '').split(/\s*[\/,;]\s*/).map(x => x.trim(
       SubjectID: sid, UnitID: uid, Tipo: 'lista', Titulo: 'Contenidos de la unidad', Contenido: (u.temas || []).join('\n'), Orden: 1, Visible: true
     });
   }
+  const evalIds = [];
   for (const e of A.evaluaciones || []) {
-    await db.collection(C.evals).doc(nuevoId('EVA')).set({
-      SubjectID: sid, Nombre: e.nombre, Tipo: e.tipo || 'parcial', PuntajeMax: Number(e.puntaje_max) || 0, Ponderacion: Number(e.ponderacion) || 0,
+    const eid = nuevoId('EVA');
+    evalIds.push({ id: eid, e: e });
+    await db.collection(C.evals).doc(eid).set({
+      SubjectID: sid, Nombre: e.nombre, Tipo: e.tipo || 'parcial', Origen: e.origen || '', Unidad: Number(e.unidad) || null, Requisito: !!e.requisito,
+      PuntajeMax: Number(e.puntaje_max) || 0, Ponderacion: Number(e.ponderacion) || 0,
       FechaApertura: '', FechaCierre: '', DuracionMin: 0, IntentosMax: 1, Modalidad: 'presencial', Aleatorizar: false, PublicarResultados: false
     });
   }
@@ -95,7 +100,12 @@ const carrerasDe = (s) => String(s || '').split(/\s*[\/,;]\s*/).map(x => x.trim(
     codigo: codigo, nombre: A.nombre, carrera: carreras[0] || '', carreras: carreras, grado: A.grado || '', curso: A.curso || '',
     semestre: A.semestre || '', carga_horaria: Number(A.carga_horaria) || 0, programa_id: sid, programa_version: 1,
     unidades: (A.unidades || []).map(u => ({ numero: u.numero, titulo: u.titulo })),
-    evaluaciones: (A.evaluaciones || []).map(e => ({ nombre: e.nombre, tipo: e.tipo || 'parcial', ponderacion: Number(e.ponderacion) || 0 })),
+    // Mismo formato que publica el Constructor (planDe en app/js/constructor-api.js), leído por app/js/calificaciones.js.
+    evaluaciones: evalIds.map(({ id, e }) => ({
+      id: id, nombre: e.nombre, tipo: e.tipo || 'parcial', origen: e.origen || '', unidad: Number(e.unidad) || null,
+      puntaje_max: Number(e.puntaje_max) || null, ponderacion: Number(e.ponderacion) || 0, requisito: !!e.requisito, fecha_apertura: '', fecha_cierre: ''
+    })),
+    reglas: Object.assign({ aprobacion_pct: 70, asistencia_min_pct: 80 }, A.reglas || {}),
     estado: p.estado || 'inactivo', docente_cedula: p.docente_cedula || '',
     icono: p.icono || 'bi-journal-text', color: p.color || '#007A33', modulo: p.modulo || '',
     publicado_por: 'tools/cargar-asignatura.js', updated_at: ahora()

@@ -120,6 +120,12 @@
                         <div class="col-md-6"><div class="fld"><label>Requisitos</label><textarea id="p-req"></textarea></div></div>
                         <div class="col-md-6"><div class="fld"><label>Bibliografía</label><textarea id="p-bib"></textarea></div></div>
                     </div>
+                    <h2 style="margin-top:6px">Reglas de aprobación</h2>
+                    <div class="row g-2">
+                        <div class="col-md-3"><div class="fld"><label>Aprobación (% mínimo)</label><input id="p-aprob" type="number" min="1" max="100" placeholder="70"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Asistencia mínima para el final (%)</label><input id="p-asismin" type="number" min="0" max="100" placeholder="80"></div></div>
+                        <div class="col-md-6 d-flex align-items-end pb-2"><small class="text-muted">Escala: 0–69% = 1 · 70–77% = 2 · 78–85% = 3 · 86–93% = 4 · 94–100% = 5. Lo que se marque como «requisito» en Evaluaciones también hay que aprobarlo para rendir el final.</small></div>
+                    </div>
                     <button class="btn btn-p" onclick="guardarPrograma()"><i class="bi bi-check-lg"></i> Guardar programa</button>
                 </div>
 
@@ -168,7 +174,7 @@
                     <div id="pond-txt" class="sub">0% asignado</div>
                     <div class="row g-2">
                         <div class="col-md-4"><div class="fld"><label>Nombre *</label><input id="e-nom" placeholder="Parcial 1"></div></div>
-                        <div class="col-md-2"><div class="fld"><label>Tipo</label><select id="e-tipo"><option value="parcial">Parcial</option><option value="trabajo">Trabajo</option><option value="proyecto">Proyecto</option><option value="final">Final</option><option value="recuperatorio">Recuperatorio</option></select></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Tipo</label><select id="e-tipo" onchange="evTipoCambio()"><option value="parcial">Examen parcial</option><option value="trabajo_practico">Trabajo práctico</option><option value="monografia">Monografía</option><option value="asistencia">Asistencia / participación</option><option value="final">Examen final</option><option value="recuperatorio">Recuperatorio</option></select></div></div>
                         <div class="col-md-2"><div class="fld"><label>Puntaje máx</label><input id="e-pts" type="number" min="0"></div></div>
                         <div class="col-md-2"><div class="fld"><label>Ponderación % *</label><input id="e-pond" type="number" min="0" max="100"></div></div>
                         <div class="col-md-2"><div class="fld"><label>Duración (min)</label><input id="e-dur" type="number" min="0"></div></div>
@@ -177,12 +183,19 @@
                         <div class="col-md-3"><div class="fld"><label>Apertura</label><input id="e-ap" type="date"></div></div>
                         <div class="col-md-3"><div class="fld"><label>Cierre</label><input id="e-ci" type="date"></div></div>
                         <div class="col-md-2"><div class="fld"><label>Intentos</label><input id="e-int" type="number" min="1" value="1"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><div class="fld"><label>De dónde sale la nota</label><select id="e-origen"><option value="examen_online">Examen online</option><option value="entrega_pdf">Entrega de PDF</option><option value="asistencia">Asistencia registrada</option><option value="manual">Carga del docente</option></select></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Unidad</label><input id="e-unidad" type="number" min="1" placeholder="—"></div></div>
+                        <div class="col-md-6 d-flex align-items-end pb-2"><label style="font-size:.72rem"><input type="checkbox" id="e-req"> Requisito para rendir el examen final (hay que aprobarla)</label></div>
                         <div class="col-md-4 d-flex align-items-end gap-3 pb-2">
                             <label style="font-size:.72rem"><input type="checkbox" id="e-ale"> Aleatorizar</label>
                             <label style="font-size:.72rem"><input type="checkbox" id="e-pub"> Publicar notas</label>
                         </div>
                     </div>
-                    <button class="btn btn-p" onclick="guardarEvaluacion()"><i class="bi bi-plus-lg"></i> Agregar evaluación</button>
+                    <button class="btn btn-p" id="e-guardar" onclick="guardarEvaluacion()"><i class="bi bi-plus-lg"></i> Agregar evaluación</button>
+                    <button class="btn btn-s" id="e-cancelar" style="display:none" onclick="limpiarEvaluacion()">Cancelar edición</button>
+                    <div id="plan-problemas" class="mt-2"></div>
                     <hr>
                     <div id="lista-evals"></div>
                 </div>
@@ -230,7 +243,8 @@
     <div id="toast-wrap"></div>
 
     <script src="../js/api.js?v=23"></script>
-    <script src="../js/constructor-api.js?v=1"></script>
+    <script src="../js/calificaciones.js?v=1"></script>
+    <script src="../js/constructor-api.js?v=2"></script>
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
@@ -347,7 +361,7 @@
 
         function nuevoDraft(precarga) {
             cur = null;
-            ['p-codigo', 'p-nombre', 'p-carrera', 'p-grado', 'p-semestre', 'p-carga', 'p-fund', 'p-objg', 'p-obje', 'p-comp', 'p-capa', 'p-met', 'p-req', 'p-bib'].forEach(id => document.getElementById(id).value = '');
+            ['p-codigo', 'p-nombre', 'p-carrera', 'p-grado', 'p-semestre', 'p-carga', 'p-fund', 'p-objg', 'p-obje', 'p-comp', 'p-capa', 'p-met', 'p-req', 'p-bib', 'p-aprob', 'p-asismin'].forEach(id => document.getElementById(id).value = '');
             
             if (precarga) {
                 if (precarga.codigo) document.getElementById('p-codigo').value = precarga.codigo;
@@ -388,6 +402,9 @@
             document.getElementById('p-met').value = pr.Metodologia || '';
             document.getElementById('p-req').value = pr.Requisitos || '';
             document.getElementById('p-bib').value = pr.Bibliografia || '';
+            const rg = dr.Reglas || {};
+            document.getElementById('p-aprob').value = rg.aprobacion_pct ?? '';
+            document.getElementById('p-asismin').value = rg.asistencia_min_pct ?? '';
             document.getElementById('view-list').style.display = 'none';
             document.getElementById('view-edit').style.display = 'block';
             pintarEditor();
@@ -415,8 +432,10 @@
             const dr = cur.draft;
             document.getElementById('ed-titulo').textContent = (dr.Nombre || 'Asignatura') + ' (' + (dr.Codigo || '') + ')';
             document.getElementById('ed-estado').innerHTML = badge(dr.Estado || 'borrador') + ' v' + (dr.Version || 1);
-            const evs = cur.evaluations || [];
-            const suma = evs.reduce((s, e) => s + (parseFloat(e.Ponderacion) || 0), 0);
+            // El plan ya viene ordenado y normalizado desde constructor-api.js (planDe).
+            const evs = ((cur.plan || {}).evaluaciones) || [];
+            const N = window.CenturiaNotas;
+            const suma = evs.filter(e => e.tipo !== 'recuperatorio').reduce((s, e) => s + (parseFloat(e.ponderacion) || 0), 0);
             document.getElementById('ed-pond').textContent = 'Ponderación: ' + suma + '%';
             document.getElementById('lista-units').innerHTML = (cur.units || []).map(u => `
                 <div class="block"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b>
@@ -426,8 +445,11 @@
                     <button class="btn btn-r" onclick="borrarUnidad('${u.ID}')">Quitar</button>
                 </div><div id="bl-${u.ID}" class="mt-2"></div></div>`).join('') || '<p class="text-muted">Sin unidades.</p>';
             document.getElementById('lista-evals').innerHTML = evs.map(e => {
-                const eid = e.ID || e.id;
-                return `<div class="block"><b>${e.Nombre}</b> <small class="text-muted">${e.Tipo} · ${e.Ponderacion}% · máx ${e.PuntajeMax}</small>
+                const eid = e.id;
+                const det = [(N && N.TIPOS[e.tipo]) || e.tipo, e.unidad ? 'Unidad ' + e.unidad : '',
+                    e.tipo === 'recuperatorio' ? 'reemplaza al parcial más bajo' : e.ponderacion + '%',
+                    e.puntaje_max ? 'sobre ' + e.puntaje_max + ' pts' : '', 'nota: ' + ((N && N.ORIGENES[e.origen]) || e.origen)].filter(Boolean).join(' · ');
+                return `<div class="block"><b>${e.nombre}</b> ${e.requisito ? '<span class="badge b-en_revision">requisito para el final</span>' : ''}<br><small class="text-muted">${det}</small>
                     <div class="mt-1 d-flex gap-1">
                         <button class="btn btn-s btn-sm" onclick="editarEvaluacion('${eid}')">Editar</button>
                         <button class="btn btn-r btn-sm" onclick="borrarEvaluacion('${eid}')">X</button>
@@ -440,6 +462,10 @@
             }).join('') || '<p class="text-muted">Sin actividades.</p>';
             document.getElementById('pond-fill').style.width = Math.min(100, suma) + '%';
             document.getElementById('pond-txt').textContent = suma + '% asignado' + (suma > 100 ? ' (EXCEDE)' : '');
+            const prob = cur.problemas || [];
+            document.getElementById('plan-problemas').innerHTML = prob.length
+                ? '<div class="block" style="border-left-color:#d97706;background:#FFFBEB"><b>Antes de publicar:</b><br>' + prob.map(x => '• ' + x).join('<br>') + '</div>'
+                : (evs.length ? '<div class="block"><b>Plan de evaluación completo.</b> <small class="text-muted">Se usa para la libreta, la planilla del docente y los paneles.</small></div>' : '');
         }
 
         async function guardarPrograma() {
@@ -459,7 +485,9 @@
                 capacidades: document.getElementById('p-capa').value,
                 metodologia: document.getElementById('p-met').value,
                 requisitos: document.getElementById('p-req').value,
-                bibliografia: document.getElementById('p-bib').value
+                bibliografia: document.getElementById('p-bib').value,
+                aprobacion_pct: document.getElementById('p-aprob').value,
+                asistencia_min_pct: document.getElementById('p-asismin').value
             };
             if (!body.nombre) { toast('Falta el nombre', true); return; }
             // 1) borrador + 2) programa (el id del borrador alimenta al programa)
@@ -601,27 +629,44 @@
             await abrirDraft(cur.draft.ID);
         }
 
-        async function editarEvaluacion(eid) {
+        // v2026-10-11: se edita en el mismo formulario (antes con prompt(), que perdía tipo, origen y unidad).
+        let evalEditando = null;
+        function evTipoCambio() {
+            const t = document.getElementById('e-tipo').value;
+            const o = window.CenturiaNotas && CenturiaNotas.ORIGEN_DE_TIPO[t];
+            if (o) document.getElementById('e-origen').value = o;
+            if (t === 'recuperatorio') document.getElementById('e-pond').value = 0;
+        }
+        function limpiarEvaluacion() {
+            evalEditando = null;
+            ['e-nom', 'e-pts', 'e-pond', 'e-dur', 'e-ap', 'e-ci', 'e-unidad'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('e-int').value = 1;
+            ['e-ale', 'e-pub', 'e-req'].forEach(id => document.getElementById(id).checked = false);
+            document.getElementById('e-tipo').value = 'parcial'; evTipoCambio();
+            document.getElementById('e-guardar').innerHTML = '<i class="bi bi-plus-lg"></i> Agregar evaluación';
+            document.getElementById('e-cancelar').style.display = 'none';
+        }
+        function editarEvaluacion(eid) {
             const e = (cur.evaluations || []).find(x => (x.ID || x.id) === eid);
             if (!e) return;
-            const nom = prompt('Nombre:', e.Nombre || '');
-            if (nom === null) return;
-            const pond = prompt('Ponderación %:', e.Ponderacion ?? e.ponderacion ?? 0);
-            if (pond === null) return;
-            const r = await api('save_evaluation', {}, {
-                id: eid, subjectID: cur.draft.ID, nombre: nom,
-                tipo: e.Tipo || e.tipo || 'parcial', puntaje_max: e.PuntajeMax ?? e.puntaje_max ?? 0,
-                ponderacion: pond, fecha_apertura: e.FechaApertura || e.fecha_apertura || '',
-                fecha_cierre: e.FechaCierre || e.fecha_cierre || '',
-                duracion_min: e.DuracionMin ?? e.duracion_min ?? 0,
-                intentos_max: e.IntentosMax ?? e.intentos_max ?? 1,
-                modalidad: e.Modalidad || e.modalidad || 'virtual',
-                aleatorizar: !!(e.Aleatorizar ?? e.aleatorizar),
-                publicar_resultados: !!(e.PublicarResultados ?? e.publicar_resultados)
-            });
-            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
-            toast('Evaluación actualizada');
-            await abrirDraft(cur.draft.ID);
+            evalEditando = eid;
+            const N = window.CenturiaNotas;
+            document.getElementById('e-nom').value = e.Nombre || '';
+            document.getElementById('e-tipo').value = N ? N.normalizarTipo(e.Tipo) : (e.Tipo || 'parcial');
+            document.getElementById('e-origen').value = e.Origen || (N && N.ORIGEN_DE_TIPO[document.getElementById('e-tipo').value]) || 'manual';
+            document.getElementById('e-unidad').value = e.Unidad || '';
+            document.getElementById('e-req').checked = !!e.Requisito;
+            document.getElementById('e-pts').value = e.PuntajeMax || '';
+            document.getElementById('e-pond').value = e.Ponderacion ?? 0;
+            document.getElementById('e-dur').value = e.DuracionMin || '';
+            document.getElementById('e-ap').value = e.FechaApertura || '';
+            document.getElementById('e-ci').value = e.FechaCierre || '';
+            document.getElementById('e-int').value = e.IntentosMax || 1;
+            document.getElementById('e-ale').checked = !!e.Aleatorizar;
+            document.getElementById('e-pub').checked = !!e.PublicarResultados;
+            document.getElementById('e-guardar').innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+            document.getElementById('e-cancelar').style.display = '';
+            document.getElementById('e-nom').focus();
         }
 
         async function borrarEvaluacion(eid) {
@@ -645,15 +690,18 @@
         async function guardarEvaluacion() {
             if (!cur) return;
             const r = await api('save_evaluation', {}, {
-                subjectID: cur.draft.ID, nombre: document.getElementById('e-nom').value.trim(),
-                tipo: document.getElementById('e-tipo').value, puntaje_max: document.getElementById('e-pts').value || 0,
+                id: evalEditando || '', subjectID: cur.draft.ID, nombre: document.getElementById('e-nom').value.trim(),
+                tipo: document.getElementById('e-tipo').value, origen: document.getElementById('e-origen').value,
+                unidad: document.getElementById('e-unidad').value, requisito: document.getElementById('e-req').checked,
+                puntaje_max: document.getElementById('e-pts').value || 0,
                 ponderacion: document.getElementById('e-pond').value || 0,
                 fecha_apertura: document.getElementById('e-ap').value, fecha_cierre: document.getElementById('e-ci').value,
                 duracion_min: document.getElementById('e-dur').value || 0, intentos_max: document.getElementById('e-int').value || 1,
                 aleatorizar: document.getElementById('e-ale').checked, publicar_resultados: document.getElementById('e-pub').checked
             });
             if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
-            toast('Evaluación guardada (total ' + (r.d.suma_ponderacion || '?') + '%)');
+            toast((evalEditando ? 'Evaluación actualizada' : 'Evaluación guardada') + ' (total ' + (r.d.suma_ponderacion ?? '?') + '%)');
+            limpiarEvaluacion();
             await abrirDraft(cur.draft.ID);
         }
 
@@ -691,6 +739,9 @@
             if (['borrador', 'observado', 'corregido'].includes(est) && esDoc) h += B('Enviar a revisión', 'flujoEnviar', 'btn-a');
             if (est === 'en_revision' && esRev) h += B('Aprobar', 'flujoAprobar', 'btn-p') + B('Observar', 'flujoObservar', 'btn-r');
             if (est === 'aprobado' && esPub) h += B('Publicar', 'flujoPublicar', 'btn-p');
+            // Tras corregir el plan de una asignatura ya publicada se vuelve a publicar sin repetir la revisión.
+            if (est === 'publicado' && esPub) h += B('Volver a publicar', 'flujoPublicar', 'btn-g');
+            if ((cur.problemas || []).length && ['aprobado', 'publicado'].includes(est)) h += '<div class="w-100"><small style="color:#92400E">No se puede publicar hasta corregir el plan de evaluación (pestaña Evaluaciones).</small></div>';
             document.getElementById('flujo-btns').innerHTML = h || '<small class="text-muted">Sin acciones para tu rol en este estado.</small>';
             document.getElementById('lista-reviews').innerHTML = (cur.reviews || []).map(r =>
                 `<div class="block"><b>${r.DeEstado} → ${r.AEstado}</b> <small class="text-muted">${r.PorRol || ''} ${r.PorCedula || ''} · ${r.CreatedAt || ''}</small><br>${r.Comentario || ''}</div>`

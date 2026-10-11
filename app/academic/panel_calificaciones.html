@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="../js/session-guard.js?v=5"></script>
+    <script>CenturiaSession.protect();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Calificaciones — Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"></script>
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <style>
+        :root {
+            --vosc: #007A33;
+            --vmed: #00B140;
+            --vcla: #E6F4EA;
+            --dor: #C5A55A;
+            --txt: #2D2D2D;
+            --rosa: #D94172;
+            --azul: #2563EB;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+        body { font-family: 'Montserrat', sans-serif; background: #f2f6f2; color: var(--txt); min-height: 100vh; padding: 18px }
+        .wrap { max-width: 1400px; margin: 0 auto }
+        .card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 16px; overflow: hidden }
+        .head { background: linear-gradient(135deg,var(--vmed),var(--vosc)); color: #fff; padding: 20px 24px }
+        .head h1 { font-size: 1.15rem; letter-spacing: .5px }
+        .head p { font-size: .78rem; opacity: .9; margin-top: 4px }
+        .body { padding: 22px 24px }
+        .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px }
+        .badge { background: var(--vcla); color: var(--vosc); font-weight: 700; font-size: .72rem; padding: 6px 12px; border-radius: 20px }
+        .badge.gold { background: #f7efda; color: #8a6d2b }
+        h2.sec { font-size: .95rem; color: var(--vosc); border-bottom: 2px solid var(--vcla); padding-bottom: 6px; margin: 20px 0 10px }
+        .tema { border: 1px solid #e3e9e3; border-radius: 12px; padding: 14px 16px; margin: 10px 0; cursor: pointer; transition: .2s }
+        .tema:hover { border-color: var(--vmed); background: #f6fbf6 }
+        .tema.sel { border-color: var(--vmed); background: var(--vcla) }
+        .tema h3 { font-size: .88rem; color: var(--vosc) }
+        .tema .tag { display: inline-block; font-size: .64rem; font-weight: 700; background: #eef4ee; color: #3c6b4c; border-radius: 12px; padding: 2px 10px; margin: 6px 6px 6px 0 }
+        .tema p { font-size: .8rem; margin-top: 6px }
+        .tema .preg { font-size: .76rem; color: #555; margin-top: 6px; font-style: italic }
+        table { width: 100%; border-collapse: collapse; font-size: .78rem; margin-top: 10px }
+        th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left }
+        th { background: var(--vosc); color: #fff }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg,var(--vmed),var(--vosc)); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: .9rem; cursor: pointer; margin-top: 12px }
+        .btn:disabled { opacity: .5 }
+        ol.reglas { margin: 8px 0 8px 20px; font-size: .82rem; }
+        ol.reglas li { margin: 4px 0 }
+        small.mut { color: #777 }
+        .alert { background: #f4f8f4; border-left: 4px solid var(--vosc); border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-size: .8rem }
+        @media print { .noprint { display: none } body { padding: 0 } }
+        .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: rgba(13,44,22,.95); border: 1px solid var(--vmed); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: .75rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .filter-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .filter-row select, .filter-row input { padding: 8px 12px; font-size: .78rem; border: 1px solid #ddd; border-radius: 6px }
+        .stat-card { background: #f8f9fa; padding: 16px; border-radius: 10px; text-align: center; margin: 8px; min-width: 140px }
+        .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--vosc) }
+        .stat-card .lbl { font-size: .65rem; color: #666; text-transform: uppercase; margin-top: 4px }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- Header -->
+        <div class="head">
+            <h1><i class="bi bi-bar-chart me-2"></i> Panel de Calificaciones</h1>
+            <p>Instituto Superior Centuria · Gestión Académica</p>
+        </div>
+
+        <div class="body">
+            <!-- Filtros -->
+            <div class="filter-row mb-4">
+                <select id="filtro-curso" class="filter-row-select">
+                    <option value="all">Todos los Cursos</option>
+                    <option value="TIC">TIC - Tecnología de la Información</option>
+                    <option value="ADM">Administración de Empresas</option>
+                    <option value="EXT">Extensión Universitaria</option>
+                </select>
+                <select id="filtro-grado" class="filter-row-select">
+                    <option value="all">Todos los Grados</option>
+                    <option value="GRADO">GRADO</option>
+                    <option value="ESPECIALIZACIÓN">ESPECIALIZACIÓN</option>
+                    <option value="MAESTRÍA">MAESTRÍA</option>
+                    <option value="DOCTORADO">DOCTORADO</option>
+                </select>
+                <select id="filtro-seccion" class="filter-row-select">
+                    <option value="all">Todas las Secciones</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="ÚNICA">ÚNICA</option>
+                </select>
+                <select id="filtro-estado" class="filter-row-select">
+                    <option value="all">Todos los Estados</option>
+                    <option value="aprobado">Aprobado</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="recuperatorio">Recuperatorio</option>
+                </select>
+                <button class="btn btn-sm" onclick="refrescar()" style="margin-left: 12px;"><i class="bi bi-arrow-clockwise me-1"></i> Refrescar</button>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4" id="stats-row">
+                <!-- Se llenarán con JavaScript -->
+            </div>
+
+            <!-- Tabla de Calificaciones -->
+            <div class="card">
+                <div class="head" style="padding: 16px 24px;">
+                    <h2 class="h6 mb-0"><i class="bi bi-table me-2"></i> Historial de Calificaciones</h2>
+                </div>
+                <div class="body">
+                    <div id="tabla-notas" style="height: 400px; overflow-y: auto;">
+                        <p style="text-align: center; color: #666; padding: 20px;">Cargando calificaciones...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="mt-4" id="acciones-panel" style="display: none;">
+                <button class="btn btn-outline-secondary me-2" onclick="exportarCSV()">Exportar a CSV</button>
+                <button class="btn btn-outline-secondary me-2" onclick="imprimirPanel()">Imprimir Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos globales
+        let todasLasNotas = [];
+        let cursoActual = 'all';
+        let userRole = 'alumno';
+
+        // Inicializar al cargar
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar rol de usuario
+            const user = CenturiaAPI.getCurrentUser() || {};
+            userRole = (user.role || user.rol || 'alumno').toLowerCase();
+            
+            // Mostrar/ocultar panel de acciones según rol
+            const accionPanel = document.getElementById('acciones-panel');
+            if (['admin', 'academico', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(userRole)) {
+                accionPanel.style.display = 'block';
+            } else {
+                accionPanel.style.display = 'none';
+            }
+
+            // Cargar cursos disponibles
+            await cargarCursos();
+            
+            // Cargar calificaciones
+            await cargarCalificaciones();
+
+            // Configurar filtros
+            configurarFiltros();
+        });
+
+        // Cargar lista de cursos disponibles
+        async function cargarCursos() {
+            try {
+                const res = await CenturiaAPI.catalogos.getCarreras();
+                const carreras = res.carreras || res.items || [];
+                const cursoSelect = document.getElementById('filtro-curso');
+                
+                // Agregar cursos encontrados
+                cursoSelect.innerHTML = '<option value="all">Todos los Cursos</option>';
+                cursoSelect.innerHTML += '<option value="TIC">TIC - Tecnología de la Información</option>';
+                cursoSelect.innerHTML += '<option value="ADM">Administración de Empresas</option>';
+                cursoSelect.innerHTML += '<option value="EXT">Extensión Universitaria</option>';
+                
+                // Podríamos agregar más cursos dinámicamente aquí
+            } catch (e) {
+                console.error('Error cargando cursos:', e);
+            }
+        }
+
+        // Cargar todas las calificaciones
+        async function cargarCalificaciones() {
+            const curso = document.getElementById('filtro-curso').value;
+            cursoActual = curso;
+            
+            try {
+                let res;
+                if (cursoActual === 'all' || !cursoActual) {
+                    res = await CenturiaAPI.grades.listAll();
+                } else {
+                    res = await CenturiaAPI.grades.listByCourse(cursoActual);
+                }
+                
+                todasLasNotas = (res && res.notas) ? res.notas : (res || []);
+                renderizarTabla();
+                actualizarEstadisticas();
+            } catch (e) {
+                console.error('Error cargando calificaciones:', e);
+                document.getElementById('tabla-notas').innerHTML = '<p style="color: #dc3545;">Error al cargar calificaciones.</p>';
+            }
+        }
+
+        // Renderizar la tabla de calificaciones
+        function renderizarTabla() {
+            const tabla = document.getElementById('tabla-notas');
+            
+            if (!todasLasNotas || todasLasNotas.length === 0) {
+                tabla.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay calificaciones registradas.</p>';
+                return;
+            }
+
+            // Ordenar por fecha (más recientes primero)
+            const notasOrdenadas = [...todasLasNotas].sort((a, b) => new Date(b.fecha || '') - new Date(a.fecha || ''));
+
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; font-size: .75rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px; background: #f8f9fa;">Cédula</th>
+                            <th style="text-align: left; padding: 8px; background: #f8f9fa;">Nombre</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Curso</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Grado</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Asignatura</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Nota</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Estado</th>
+                            <th style="text-align: center; padding: 8px; background: #f8f9fa;">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            notasOrdenadas.forEach((nota, index) => {
+                const cedula = nota.cedula || 'N/A';
+                const nombre = nota.nombre ? `${nota.nombre} ${nota.apellido || ''}`.trim() : 'Sin nombre';
+                const curso = nota.curso || 'N/A';
+                const grado = nota.grado || '—';
+                const asignatura = nota.asignatura || 'N/A';
+                const notaValue = nota.score !== undefined ? nota.score : '—';
+                const estado = nota.estado || '—';
+                const fecha = nota.fecha ? new Date(fecha).toLocaleDateString() : '—';
+
+                // Determinar clase de estado
+                let estadoClass = 'badge';
+                if (estado === 'aprobado') estadoClass = 'badge bg-success';
+                else if (estado === 'pendiente') estadoClass = 'badge bg-warning';
+                else if (estado === 'recuperatorio') estadoClass = 'badge bg-info';
+
+                html += `
+                    <tr>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${cedula}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee;">${nombre}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;">${curso}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;">${grado}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: left;">${asignatura}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;">${notaValue}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;"><span class="${estadoClass}">${estado}</span></td>
+                        <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;">${fecha}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            tabla.innerHTML = html;
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticas() {
+            const container = document.getElementById('stats-row');
+            if (!container) return;
+
+            if (!todasLasNotas || todasLasNotas.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 10px;">No hay datos para estadísticas.</p>';
+                return;
+            }
+
+            const total = todasLasNotas.length;
+            const aprobados = todasLasNotas.filter(n => n.estado === 'aprobado').length;
+            const pending = todasLasNotas.filter(n => n.estado === 'pendiente').length;
+            const promedio = (todasLasNotas.reduce((s, g) => s + (g.score || 0), 0) / total).toFixed(1);
+
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="val">${total}</div>
+                    <div class="lbl">Total de Calificaciones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">${aprobados}</div>
+                    <div class="lbl">Aprobados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">${pending}</div>
+                    <div class="lbl">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">${promedio}</div>
+                    <div class="lbl">Promedio General</div>
+                </div>
+            `;
+        }
+
+        // Configurar filtros
+        function configurarFiltros() {
+            const filtros = document.querySelectorAll('.filter-row-select');
+            
+            filtros.forEach(filtro => {
+                filtro.addEventListener('change', () => {
+                    // Filtrar por curso
+                    const curso = document.getElementById('filtro-curso').value;
+                    cursoActual = curso === 'all' ? '' : curso;
+                    cargarCalificaciones();
+                    
+                    // Resetear otros filtros cuando se cambia curso
+                    if (filtro.id !== 'filtro-curso') {
+                        document.getElementById('filtro-grado').value = 'all';
+                        document.getElementById('filtro-seccion').value = 'all';
+                        document.getElementById('filtro-estado').value = 'all';
+                        cargarCalificaciones();
+                    }
+                });
+            });
+        }
+
+        // Exportar a CSV
+        function exportarCSV() {
+            if (!todasLasNotas || todasLasNotas.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
+
+            let csv = 'Cédula,Nombre,Curso,Grado,Asignatura,Nota,Estado,Fecha\n';
+            
+            todasLasNotas.forEach((nota) => {
+                const cedula = nota.cedula || '';
+                const nombre = `"${nota.nombre || ''} ${nota.apellido || ''}".replace(/"/g, '""')`;
+                const curso = nota.curso || '';
+                const grado = nota.grado || '';
+                const asignatura = `"${nota.asignatura || ''}".replace(/"/g, '""')`;
+                const notaValue = nota.score !== undefined ? nota.score : '';
+                const estado = nota.estado || '';
+                const fecha = nota.fecha ? new Date(nota.fecha).toLocaleDateString('es-AR') : '';
+                
+                // Escape simple para CSV
+                const escapeCSV = (val) => `'${String(val).replace(/'/g, "''")}'`;
+                
+                csv += `${cedula},${nombre},${curso},${grado},${asignatura},${notaValue},${estado},${fecha}\n`;
+            });
+
+            // Crear enlace de descarga
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'calificaciones_' + new Date().toISOString().slice(0, 10) + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Imprimir panel
+        function imprimirPanel() {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Panel de Calificaciones - Centuria</title>
+                        <style>
+                            body { font-family: Montserrat, sans-serif; padding: 20px; }
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f6f2; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Panel de Calificaciones - Centuria</h1>
+                        ${document.getElementById('tabla-notas').innerHTML || '<p>No hay datos para imprimir</p>'}
+                        <button onclick="window.print(); window.close;">Cerrar</button>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+</body>
+</html>

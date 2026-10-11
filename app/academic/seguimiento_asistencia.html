@@ -405,10 +405,8 @@
                     <label>Sección</label>
                     <select id="filterSeccion">
                         <option value="">Todas las Secciones</option>
-                        <option value="A">Sección A</option>
-                        <option value="B">Sección B</option>
-                        <option value="C">Sección C</option>
-                        <option value="D">Sección D</option>
+                        <option value="LV026">Sección LV026</option>
+                        <option value="MJ026">Sección MJ026</option>
                         <option value="S026">Sección S026</option>
                     </select>
                 </div>
@@ -445,6 +443,7 @@
                         <th>Carrera</th>
                         <th>Asistencia</th>
                         <th>Detalle</th>
+                        <th>Último registro</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -494,15 +493,37 @@
                 // Cargar estudiantes
                 const studentsData = await CenturiaAPI.usuarios.list().catch(() => ({ usuarios: [] }));
                 const rawUsers = studentsData.usuarios || studentsData.data || [];
-                allStudents = rawUsers.filter(u => {
+                allStudents = rawUsers.filter(u => !u.sin_cuenta).filter(u => {   // los pre-registrados se arman desde la asistencia
                     const rol = (u.rol || u.role || '').toLowerCase();
                     const roles = (u.roles || []).map(r => (r.rol || r).toLowerCase());
                     return rol === 'alumno' || rol === 'student' || roles.includes('alumno') || roles.includes('student');
-                });
+                }).map(u => Object.assign({}, u, {
+                    firstname: u.firstname || u.nombre || '',
+                    lastname: u.lastname || u.apellido || '',
+                    username: String(u.cedula || u.username || u.id || '')
+                }));
 
-                // Cargar asistencia
+                // Cargar asistencia (cada registro trae fecha y hora de Asunción)
                 const attendanceResult = await CenturiaAPI.attendance.list().catch(() => ({ data: [] }));
-                allAttendance = attendanceResult.records || attendanceResult.data || attendanceResult.eventos || [];
+                const rawAttendance = attendanceResult.records || attendanceResult.data || attendanceResult.asistencias || [];
+                allAttendance = (Array.isArray(rawAttendance) ? rawAttendance : []).map(normalizeRecord);
+
+                // Alumnos que figuran en la asistencia (p. ej. planillas importadas) aunque aún no tengan cuenta.
+                const conCuenta = new Set(allStudents.map(s => s.username));
+                const soloAsistencia = {};
+                allAttendance.forEach(r => {
+                    if (!r.cedula || conCuenta.has(r.cedula)) return;
+                    const a = soloAsistencia[r.cedula] = soloAsistencia[r.cedula] || { id: r.cedula, username: r.cedula, firstname: r.nombre || r.cedula, lastname: '', carrera: r.carrera || '', grado: '', secciones: {} };
+                    if (r.seccion) a.secciones[r.seccion] = (a.secciones[r.seccion] || 0) + 1;
+                });
+                Object.values(soloAsistencia).forEach(a => {
+                    a.seccion = Object.entries(a.secciones).sort((x, y) => y[1] - x[1]).map(x => x[0]).join(' / ');
+                    allStudents.push(a);
+                });
+                // Organizado por carrera, luego sección y nombre.
+                allStudents.sort((a, b) => String(a.carrera || 'zz').localeCompare(String(b.carrera || 'zz')) ||
+                    String(a.seccion || '').localeCompare(String(b.seccion || '')) ||
+                    (a.firstname + ' ' + a.lastname).localeCompare(b.firstname + ' ' + b.lastname));
 
                 // Calcular estadísticas y renderizar
                 filteredStudents = [...allStudents];
@@ -518,8 +539,39 @@
         // ═══════════════════════════════════════════════════════
         // CALCULAR ESTADÍSTICAS DE ESTUDIANTE
         // ═══════════════════════════════════════════════════════
-        function getStudentStats(studentId) {
-            const records = allAttendance.filter(a => a.user_id === studentId);
+        const STATUS_MAP = { presente: 'present', tarde: 'late', ausente: 'absent', justificado: 'justified' };
+
+        // Unifica estado (es/en) y garantiza fecha (dd/mm/aaaa) y hora (HH:MM) visibles
+        function normalizeRecord(r) {
+            const raw = String(r.status || r.estado || '').toLowerCase();
+            const status = STATUS_MAP[raw] || raw || 'present';
+            let fecha = r.fecha || r.date || '';
+            let hora = r.hora || r.hora_registro || '';
+            const ts = r.timestamp || r.created_at || '';
+            if ((!fecha || !hora) && ts) {
+                const d = new Date(ts);
+                if (!isNaN(d)) {
+                    if (!fecha) fecha = d.toLocaleDateString('en-CA', { timeZone: 'America/Asuncion' });
+                    if (!hora) hora = d.toLocaleTimeString('es-PY', { timeZone: 'America/Asuncion', hour: '2-digit', minute: '2-digit', hour12: false });
+                }
+            }
+            const sortKey = ts || (fecha + 'T' + hora);
+            return Object.assign({}, r, { status, fecha, hora: String(hora).slice(0, 5), sortKey, cedula: String(r.cedula || r.user_id || '') });
+        }
+
+        function formatFecha(f) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f || '');
+            return m ? `${m[3]}/${m[2]}/${m[1]}` : (f || '-');
+        }
+
+        function getStudentRecords(student) {
+            const ced = String(student.username);
+            return allAttendance.filter(a => a.cedula === ced)
+                .sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
+        }
+
+        function getStudentStats(student) {
+            const records = getStudentRecords(student);
             const total = records.length;
             const present = records.filter(a => a.status === 'present').length;
             const late = records.filter(a => a.status === 'late').length;
@@ -542,6 +594,7 @@
             }
             
             return {
+                last: records[0] || null,
                 total,
                 present,
                 late,
@@ -560,7 +613,7 @@
             let excellent = 0, good = 0, warning = 0, danger = 0;
             
             allStudents.forEach(student => {
-                const stats = getStudentStats(student.id);
+                const stats = getStudentStats(student);
                 if (stats.status === 'excellent') excellent++;
                 else if (stats.status === 'good') good++;
                 else if (stats.status === 'warning') warning++;
@@ -581,7 +634,7 @@
             tbody.innerHTML = '';
             
             filteredStudents.forEach(student => {
-                const stats = getStudentStats(student.id);
+                const stats = getStudentStats(student);
                 const initials = (student.firstname?.[0] || '') + (student.lastname?.[0] || '');
                 
                 const row = `
@@ -623,11 +676,15 @@
                                 </div>
                             </div>
                         </td>
+                        <td style="white-space: nowrap;">
+                            ${stats.last ? `<div><i class="far fa-calendar"></i> ${formatFecha(stats.last.fecha)}</div>
+                            <div style="color:#666; font-size:0.8rem;"><i class="far fa-clock"></i> ${stats.last.hora || '-'}</div>` : '<span style="color:#999;">Sin registros</span>'}
+                        </td>
                         <td>
                             <span class="status-badge ${stats.status}">${stats.statusText}</span>
                         </td>
                         <td>
-                            <button class="action-btn view" onclick="viewDetails(${student.id})">
+                            <button class="action-btn view" onclick="viewDetails('${student.username}')">
                                 <i class="fas fa-eye"></i> Ver
                             </button>
                         </td>
@@ -645,7 +702,7 @@
         function populateFilterOptions() {
             const grados = [...new Set(allStudents.map(s => s.grado).filter(Boolean))].sort();
             const carreras = [...new Set(allStudents.map(s => s.carrera).filter(Boolean))].sort();
-            const secciones = [...new Set(allStudents.map(s => s.seccion).filter(Boolean))].sort();
+            const secciones = [...new Set(allStudents.flatMap(s => String(s.seccion || '').split(' / ')).filter(Boolean))].sort();
 
             const gradoSelect = document.getElementById('filterGrado');
             if (gradoSelect) {
@@ -686,13 +743,15 @@
                     student.lastname?.toLowerCase().includes(searchTerm) ||
                     student.username?.includes(searchTerm);
                 
-                // Filtro de carrera
-                const matchesCareer = !careerFilter || student.carrera === careerFilter;
-                
+                // Filtros de grado, carrera y sección
+                const same = (v, f) => !f || String(v || '').toLowerCase().trim() === f;
+                const matchesCareer = same(student.grado, gradoFilter) && same(student.carrera, careerFilter) &&
+                    (!seccionFilter || String(student.seccion || '').toLowerCase().split(' / ').includes(seccionFilter));
+
                 // Filtro de estado
-                const stats = getStudentStats(student.id);
+                const stats = getStudentStats(student);
                 const matchesStatus = !statusFilter || stats.status === statusFilter;
-                
+
                 return matchesSearch && matchesCareer && matchesStatus;
             });
             
@@ -703,9 +762,10 @@
         // VER DETALLES
         // ═══════════════════════════════════════════════════════
         function viewDetails(studentId) {
-            const student = allStudents.find(s => s.id === studentId);
-            const stats = getStudentStats(studentId);
-            const records = allAttendance.filter(a => a.user_id === studentId);
+            const student = allStudents.find(s => s.username === String(studentId));
+            if (!student) return;
+            const stats = getStudentStats(student);
+            const records = getStudentRecords(student);
             
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = `
@@ -747,6 +807,7 @@
                     <thead>
                         <tr>
                             <th>Fecha</th>
+                            <th>Hora</th>
                             <th>Estado</th>
                             <th>Observación</th>
                         </tr>
@@ -754,15 +815,16 @@
                     <tbody>
                         ${records.length > 0 ? records.map(r => `
                             <tr>
-                                <td>${r.date || '-'}</td>
+                                <td>${formatFecha(r.fecha)}</td>
+                                <td>${r.hora || '-'}</td>
                                 <td>
                                     <span class="status-badge ${r.status === 'present' ? 'excellent' : r.status === 'late' ? 'warning' : 'danger'}">
                                         ${r.status === 'present' ? 'Presente' : r.status === 'late' ? 'Tarde' : r.status === 'justified' ? 'Justificado' : 'Ausente'}
                                     </span>
                                 </td>
-                                <td>${r.notes || '-'}</td>
+                                <td>${r.observacion || r.notes || '-'}</td>
                             </tr>
-                        `).join('') : '<tr><td colspan="3" class="text-center">Sin registros de asistencia</td></tr>'}
+                        `).join('') : '<tr><td colspan="4" class="text-center">Sin registros de asistencia</td></tr>'}
                     </tbody>
                 </table>
             `;
@@ -775,11 +837,13 @@
         // EXPORTAR
         // ═══════════════════════════════════════════════════════
         function exportAttendance() {
-            let csv = 'Nombre,Cédula,Carrera,Asistencia %,Presente,Tarde,Ausente,Justificado,Estado\n';
-            
+            let csv = 'Nombre,Cédula,Carrera,Asistencia %,Presente,Tarde,Ausente,Justificado,Último registro (fecha),Último registro (hora),Estado\n';
+
             filteredStudents.forEach(student => {
-                const stats = getStudentStats(student.id);
-                csv += `"${student.firstname} ${student.lastname}","${student.username}","${student.carrera || ''}",${stats.percentage}%,${stats.present},${stats.late},${stats.absent},${stats.justified},"${stats.statusText}"\n`;
+                const stats = getStudentStats(student);
+                const lastFecha = stats.last ? formatFecha(stats.last.fecha) : '';
+                const lastHora = stats.last ? (stats.last.hora || '') : '';
+                csv += `"${student.firstname} ${student.lastname}","${student.username}","${student.carrera || ''}",${stats.percentage}%,${stats.present},${stats.late},${stats.absent},${stats.justified},"${lastFecha}","${lastHora}","${stats.statusText}"\n`;
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

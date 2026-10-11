@@ -1039,7 +1039,7 @@
                 });
 
                 // 3. Cargar Secciones
-                let secciones = ['A', 'B', 'C', 'D', 'ÚNICA', 'S026'];
+                let secciones = ['LV026', 'MJ026', 'S026'];
                 if (userSeccion && !secciones.includes(userSeccion)) secciones.push(userSeccion);
                 try {
                     const ds = await CenturiaAPI.catalogos.getSecciones();

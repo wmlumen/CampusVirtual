@@ -148,6 +148,13 @@
                     </div>
                 </section>
 
+                <!-- Trabajos prácticos en PDF (v2026-10-07) -->
+                <section class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-trabajos"><div class="card-body">
+                    <h2 id="titulo-trabajos" class="h5 fw-bold" style="color:#007A33;"><i class="bi bi-file-earmark-pdf me-2"></i>Mis Trabajos y Calificaciones</h2>
+                    <p class="small text-muted mb-3">Subí tu trabajo en PDF eligiendo la unidad. Podés reemplazarlo mientras el docente no lo haya calificado.</p>
+                    <div id="trabajos-alumno"></div>
+                </div></section>
+
                 <!-- Info calificaciones -->
                 <div class="alert d-flex align-items-center shadow-sm border-0 mb-4" style="background:#E6F4EA; border-left:4px solid #007A33 !important;">
                     <i class="bi bi-info-circle-fill fs-4 me-3" style="color:#007A33;"></i>
@@ -234,6 +241,10 @@
 
             <!-- VISTA DOCENTE -->
             <div id="vista-docente" style="display:none;">
+<section class="card border-0 shadow-sm mb-4"><div class="card-body">
+<h2 class="h5"><i class="bi bi-file-earmark-pdf me-2"></i>Trabajos entregados</h2>
+<div id="trabajos-docente"></div>
+</div></section>
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
 <h2 class="h5">Fechas de clase y justificaciones</h2>
 <p class="small text-muted">Registrar una fecha establece un día de clase; cada alumno debe tener su asistencia registrada para figurar presente.</p>
@@ -524,13 +535,19 @@
     });
     // Logout
     document.getElementById('btn-logout').addEventListener('click', function() {
-        sessionStorage.clear();
-        localStorage.removeItem('centuria_remember');
-        localStorage.removeItem('centuria_token');
-        window.location.replace('../index.html');
+        centuriaLogout(); // v2026-10-11: cierre completo (Firebase + navegador)
     });
 </script>
-<script src="../js/api.js?v=21"></script>
+<script src="../js/api.js?v=22"></script>
+<script src="../js/trabajos.js?v=1"></script>
+<script>
+    CenturiaTrabajos.montarAlumno(document.getElementById('trabajos-alumno'), { asignatura: 'TIC', unidades: 10 });
+    // La vista docente se monta al abrirla (los alumnos no tienen permiso de listar entregas).
+    document.getElementById('btn-docente').addEventListener('change', function () {
+        const el = document.getElementById('trabajos-docente');
+        if (!el.dataset.montado) { el.dataset.montado = '1'; CenturiaTrabajos.montarDocente(el, { asignatura: 'TIC' }); }
+    });
+</script>
 <script src="../js/accesibilidad.js"></script>
 <script src="../js/session-guard.js?v=5"></script>
 </body>

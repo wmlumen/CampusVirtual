@@ -381,13 +381,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) { estado.textContent = 'No se pudo recuperar el progreso anterior.'; }
     actualizarProgreso();
     document.getElementById('btn-logout').addEventListener('click', () => {
-        sessionStorage.removeItem('current_cedula');
-        sessionStorage.removeItem('current_nombre');
-        sessionStorage.removeItem('rol');
-        location.replace('../index.html');
+        centuriaLogout(); // v2026-10-11: cierre completo (Firebase + navegador)
     });
 });
 </script>
 
+<script src="../js/api.js?v=22"></script>
+<script src="../js/asistencia-clase.js?v=1"></script>
 </body>
 </html>

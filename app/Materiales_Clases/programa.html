@@ -365,10 +365,7 @@
 
         // Logout
         document.getElementById('btn-logout').addEventListener('click', function() {
-            sessionStorage.clear();
-            localStorage.removeItem('centuria_remember');
-            localStorage.removeItem('centuria_token');
-            window.location.replace('../index.html');
+        centuriaLogout(); // v2026-10-11: cierre completo (Firebase + navegador)
         });
     </script>
 </body>

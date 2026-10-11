@@ -106,3 +106,9 @@ CREAR_USUARIOS_*.md
 # === Scripts de importación con datos reales ===
 IMPORTAR_ASISTENCIAS_*.gs
 IMPORTAR_ALUMNOS_*.gs
+
+# === Backends de examen (contienen la clave de respuestas) ===
+Claude outputs/examenes_tic026*.gs
+
+# === Claude Code (configuración personal) ===
+.claude/settings.local.json

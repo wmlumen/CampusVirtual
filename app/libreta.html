@@ -630,7 +630,7 @@
                 return {
                     codigo: asig.codigo || asig.uuid || '-', nombre: asig.nombre || asig.uuid || 'Asignatura',
                     grado: c.grado || user.grado || 'Grado', carrera: c.carrera || user.carrera || '', seccion: c.seccion || '',
-                    semestre: asig.semestre || '', horas: horas, materiales: !!c.materiales,
+                    semestre: asig.semestre || '', horas: horas, materiales: !!c.materiales, aula: !!asig.aula,
                     parcial1: p1 !== null && p1 > 0 ? p1 : '-', parcial2: p2 !== null && p2 > 0 ? p2 : '-',
                     final: fin !== null && fin > 0 ? fin : '-', promedio: prom !== null ? prom : '-',
                     asistenciaPct: asistPct !== null ? asistPct : '-',
@@ -780,6 +780,7 @@
                                     <i class="bi bi-tag me-1"></i>${escHtml(asig.codigo)}${asig.semestre ? ' • ' + escHtml(asig.semestre) : ''}${asig.seccion ? ' • Sección ' + escHtml(asig.seccion) : ''}
                                 </span>
                                 ${asig.materiales && normTxt(asig.codigo) === 'TIC' ? '<br><a href="Materiales_Clases/index.html" style="font-size:.62rem;color:#4ade80;text-decoration:none;"><i class="bi bi-book me-1"></i>Abrir materiales</a>' : ''}
+                                ${asig.materiales && asig.aula ? '<br><a href="aula/index.html?asignatura=' + encodeURIComponent(asig.codigo) + '" style="font-size:.62rem;color:#4ade80;text-decoration:none;"><i class="bi bi-book me-1"></i>Abrir aula</a>' : ''}
                             </td>
                             <td style="text-align:center;font-weight:600;">${asig.horas ? escHtml(asig.horas) : '-'}</td>
                             <td class="grade-cell ${asistClass}">${asig.asistenciaPct !== '-' ? asig.asistenciaPct + '%' : '-'}</td>

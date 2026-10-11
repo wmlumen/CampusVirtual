@@ -245,7 +245,7 @@
 
     <script src="../js/api.js?v=23"></script>
     <script src="../js/calificaciones.js?v=1"></script>
-    <script src="../js/constructor-api.js?v=2"></script>
+    <script src="../js/constructor-api.js?v=3"></script>
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
@@ -782,11 +782,16 @@
             if (!cur) return;
             const dr = cur.draft;
             document.getElementById('pv-carrera').textContent = (dr.Carrera || '') + ' · ' + (dr.Codigo || '');
-            let h = `<div class="pv-card"><b>PROGRAMA — ${dr.Nombre || ''}</b><br><small>${dr.Fundamentacion || (cur.program || {}).Fundamentacion || ''}</small></div>`;
+            // v2026-10-11: la vista real es el aula (aula/index.html) en modo borrador; acá queda el índice.
+            const aula = `../aula/index.html?asignatura=${encodeURIComponent(dr.Codigo || '')}&borrador=${encodeURIComponent(dr.ID)}`;
+            let h = `<div class="pv-card"><a class="btn btn-p" href="${aula}" target="_blank" rel="noopener"><i class="bi bi-eye"></i> Abrir el aula como la ve el alumno (borrador)</a>
+                <br><small class="text-muted">Los alumnos ven lo último publicado; esta vista muestra también los cambios sin publicar.</small></div>`;
+            h += `<div class="pv-card"><b>PROGRAMA — ${dr.Nombre || ''}</b><br><small>${dr.Fundamentacion || (cur.program || {}).Fundamentacion || ''}</small></div>`;
+            const texto = (s) => (new DOMParser().parseFromString(String(s || ''), 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim();
             (cur.units || []).forEach(u => {
-                h += `<div class="pv-card"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b><br><small>${u.Resumen || ''}</small>`;
+                h += `<div class="pv-card"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b>`;
                 (u.blocks || []).filter(b => b.Visible !== false && b.Visible !== 'false').forEach(b => {
-                    h += `<div style="margin-top:6px"><b>[${b.Tipo}]</b> ${b.Titulo || ''}<br><small>${(b.Contenido || '').slice(0, 300)}</small></div>`;
+                    h += `<div style="margin-top:6px"><b>${b.Titulo || b.Tipo}</b> <small class="text-muted">[${b.Tipo}${b.Formato === 'html' ? ', importado' : ''}]</small><br><small>${texto(b.Contenido).slice(0, 220)}…</small></div>`;
                 });
                 h += `</div>`;
             });

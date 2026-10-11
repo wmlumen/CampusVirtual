@@ -1,0 +1,36 @@
+/* aula-contenido.css — Estilo del desarrollo de cada unidad (material de estudio importado al Constructor).
+   Reúne las clases propias de UNIDAD_<n>_MATERIAL_DE_ESTUDIO.html, limitadas a .aula-contenido.
+   Las utilidades (grid, p-4, text-sm…) las pone Tailwind, como en el material original. */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap');
+
+.aula-contenido {
+    --color-primary: #28a745;
+    --color-secondary: #1e1e1e;
+    --font-title: 'Playfair Display', serif;
+    --font-body: 'Open Sans', sans-serif;
+    font-family: var(--font-body);
+    color: #1e293b;
+}
+.aula-contenido h1, .aula-contenido h2, .aula-contenido h3, .aula-contenido h4, .aula-contenido .font-title { font-family: var(--font-title); color: var(--color-secondary); }
+.aula-contenido .step-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 2rem; overflow: hidden; border-left: 6px solid var(--color-primary); }
+.aula-contenido .step-card.leida { border-left-color: #94a3b8; }
+.aula-contenido .step-header { background: #f7f7f7; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px; }
+.aula-contenido .step-number { background: var(--color-primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; flex-shrink: 0; }
+.aula-contenido .content-padding { padding: 1.5rem; }
+.aula-contenido .highlight-box { background: #f0fdf4; border-radius: 8px; padding: 1rem; border: 1px solid #bbf7d0; }
+.aula-contenido .glossary-term { color: var(--color-primary); font-weight: 600; }
+.aula-contenido .perspectiva-pill { background: #eafaf1; border: 1px solid #a6e7c3; color: #1c7c4a; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+.aula-contenido .text-primary { color: var(--color-primary); }
+.aula-contenido .bg-primary { background-color: var(--color-primary); }
+.aula-contenido .border-primary { border-color: var(--color-primary); }
+.aula-contenido .text-secondary { color: var(--color-secondary); }
+.aula-contenido .bg-secondary { background-color: var(--color-secondary); color: white; }
+.aula-contenido .quote-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; font-style: italic; }
+.aula-contenido .concept-box { background: #f0f9ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: 8px; }
+/* Bloques escritos a mano en el Constructor (texto, lista, …): texto plano con saltos de línea. */
+.aula-contenido .bloque-texto { white-space: pre-line; font-size: .9rem; line-height: 1.6; color: #334155; }
+.aula-contenido ul.bloque-lista { list-style: disc; padding-left: 1.4rem; font-size: .9rem; line-height: 1.7; color: #334155; }
+@media print {
+    .no-print { display: none !important; }
+    .aula-contenido .step-card { box-shadow: none; border: 1px solid #e2e8f0; border-left: 6px solid var(--color-primary); page-break-inside: avoid; }
+}

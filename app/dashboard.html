@@ -2065,7 +2065,8 @@
                 estado: s.estado || s.Estado || '',
                 semestre: s.semestre || s.Semestre || '',
                 horas: s.carga_horaria || s.CargaHoraria || '',
-                icono: s.icono || s.Icono || 'bi-laptop'
+                icono: s.icono || s.Icono || 'bi-laptop',
+                aula: !!s.aula   // con aula publicada en el Constructor → «Acceder al Curso» abre aula/
             };
         }
         function tarjetaCurso(a, user, esDocente) {
@@ -2086,7 +2087,7 @@
                             ${a.horas ? `<span><i class="bi bi-clock"></i> ${escHtml(a.horas)} hs</span>` : ''}
                         </div>
                     </div>
-                    <a href="Materiales_Clases/programa.html?curso=${encodeURIComponent(codigo)}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
+                    <a href="${a.aula ? 'aula/index.html?asignatura=' : 'Materiales_Clases/programa.html?curso='}${encodeURIComponent(codigo)}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px">
                         <i class="bi bi-arrow-right-circle"></i> Acceder al Curso
                     </a>
                 </div>`;
@@ -2143,7 +2144,7 @@
             const est = ESTADO_CURSO[c.estado] || ESTADO_CURSO.pendiente;
             const color = c.estado === 'activo' ? '#4ade80' : c.estado === 'desarrollado' ? 'var(--dorado)' : 'rgba(255,255,255,.45)';
             const accion = c.materiales
-                ? `<a href="Materiales_Clases/programa.html?curso=${encodeURIComponent(a.codigo || a.uuid || '')}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px"><i class="bi bi-arrow-right-circle"></i> ${c.estado === 'desarrollado' ? 'Repasar materiales' : 'Acceder al Curso'}</a>`
+                ? `<a href="${a.aula ? 'aula/index.html?asignatura=' : 'Materiales_Clases/programa.html?curso='}${encodeURIComponent(a.codigo || a.uuid || '')}" class="dash-btn dash-btn-primary" style="justify-content:center;margin-top:10px"><i class="bi bi-arrow-right-circle"></i> ${c.estado === 'desarrollado' ? 'Repasar materiales' : 'Acceder al Curso'}</a>`
                 : `<span class="dash-btn" style="justify-content:center;margin-top:10px;opacity:.55;cursor:not-allowed" aria-disabled="true"><i class="bi bi-lock"></i> Se habilita cuando esté activo</span>`;
             return `
                 <div class="course-card">

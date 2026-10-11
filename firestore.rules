@@ -193,6 +193,12 @@ service cloud.firestore {
       allow read, write: if esPersonalDocente();
     }
 
+    // Contenido publicado de cada unidad (aula/index.html). Lo lee cualquiera con sesión; lo escribe Publicar del Constructor.
+    match /contenidos/{id} {
+      allow read: if isAuthenticated();
+      allow write: if esPersonalDocente();
+    }
+
     match /asignaturas/{asigId} {
       // Catálogo público: necesario para cargar "Mis Cursos" cuando Firebase Auth anónimo
       // no está habilitado. Las escrituras siguen restringidas al staff.

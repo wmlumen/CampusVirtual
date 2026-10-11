@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="../js/session-guard.js?v=5"></script>
+    <script>CenturiaSession.protect();</script>
+    <script>
+        // Aula genérica (v2026-10-11): ?asignatura=SOC&unidad=1 · ?borrador=<id> para que el personal vea lo no publicado.
+        var AULA_Q = new URLSearchParams(location.search);
+        var ASIG = String(AULA_Q.get('asignatura') || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        var UNIDAD_ACTUAL = String(parseInt(AULA_Q.get('unidad'), 10) || 1);
+        var BORRADOR = String(AULA_Q.get('borrador') || '').replace(/[^A-Za-z0-9_-]/g, '');
+        // Mismo control de acceso que los materiales de TIC (el alumno entra si su curso está activo o desarrollado).
+        if (ASIG && !BORRADOR) document.write('<script src="../js/acceso-curso.js?v=1" data-asignatura="' + ASIG + '"><\/script>');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aula — Campus Virtual Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/aula-contenido.css?v=1" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; }
+        .aula-menu { background: #007A33; }
+        .aula-menu a { color: rgba(255,255,255,.85); }
+        .aula-menu a:hover, .aula-menu a.activa { background: rgba(255,255,255,.14); color: #fff; }
+        .aula-menu a.activa { font-weight: 700; box-shadow: inset 3px 0 0 #fff; }
+        .btn-leido { font-size: .75rem; font-weight: 700; border: 1px solid #28a745; color: #1c7c4a; border-radius: 8px; padding: .35rem .8rem; background: #fff; }
+        .btn-leido.hecho { background: #28a745; color: #fff; }
+        .barra { height: 8px; background: #e2e8f0; border-radius: 6px; overflow: hidden }
+        .barra > div { height: 100%; background: #28a745; transition: width .3s }
+        @media (max-width: 767px) { .aula-menu { position: static !important; height: auto !important; } }
+    </style>
+</head>
+<body class="min-h-screen">
+<div class="md:flex">
+    <!-- MENÚ DE UNIDADES -->
+    <nav id="aula-menu" aria-label="Unidades de la asignatura" class="aula-menu md:w-64 md:flex-shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto no-print">
+        <div class="p-4 border-b border-white/20">
+            <a href="../dashboard.html" class="text-xs inline-flex items-center gap-1"><i class="bi bi-arrow-left"></i> Mi campus</a>
+            <div class="text-white font-bold mt-2 leading-tight" id="menu-asig">Asignatura</div>
+            <div class="text-white/70 text-xs mt-1" id="menu-cod"></div>
+        </div>
+        <div id="menu-unidades" class="py-2"></div>
+        <div class="border-t border-white/20 py-2">
+            <a href="#" id="link-plan" class="block px-4 py-2 text-sm"><i class="bi bi-clipboard-check mr-2"></i>Plan de evaluación</a>
+            <a href="../libreta.html" id="link-libreta" class="block px-4 py-2 text-sm"><i class="bi bi-journal-bookmark mr-2"></i>Mis notas</a>
+        </div>
+    </nav>
+
+    <main class="flex-1 min-w-0">
+        <!-- BARRA SUPERIOR -->
+        <div class="bg-white border-b px-4 py-3 flex justify-between items-center gap-3 flex-wrap no-print">
+            <div class="flex items-center gap-3">
+                <img src="../Materiales_Clases/logo_centuria.png" alt="Centuria" width="36" height="36" onerror="this.style.display='none'">
+                <div>
+                    <div class="font-bold text-sm">INSTITUTO SUPERIOR CENTURIA</div>
+                    <div class="text-xs text-gray-500" id="top-curso"></div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right text-xs">
+                    <div class="font-bold" id="top-usuario"></div>
+                    <div class="text-gray-500" id="top-ci"></div>
+                </div>
+                <button type="button" onclick="centuriaLogout()" class="text-xs font-bold text-red-600 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50"><i class="bi bi-box-arrow-right"></i> Salir</button>
+            </div>
+        </div>
+
+        <div id="aviso-borrador" class="hidden bg-amber-50 border-b border-amber-200 text-amber-800 text-xs px-4 py-2 no-print"><i class="bi bi-eye"></i> Vista de borrador: incluye cambios del Constructor que todavía no están publicados.</div>
+
+        <div class="max-w-5xl mx-auto px-4 py-6 aula-contenido">
+            <div id="estado" class="text-sm text-gray-500">Cargando…</div>
+
+            <div id="cabecera" class="hidden mb-6">
+                <div class="text-xs font-bold uppercase tracking-wide text-primary" id="cab-unidad"></div>
+                <h1 class="text-3xl font-bold mt-1" id="cab-titulo"></h1>
+                <div class="mt-4 flex items-center gap-3 no-print">
+                    <div class="barra flex-1"><div id="barra-progreso" style="width:0%"></div></div>
+                    <span class="text-xs text-gray-600" id="progreso-texto" role="status" aria-live="polite"></span>
+                </div>
+            </div>
+
+            <div id="bloques"></div>
+
+            <!-- Asistencia en clase presencial (mismo registro que TIC: js/asistencia-clase.js) -->
+            <section class="step-card hidden no-print" id="card-asistencia-clase">
+                <div class="step-header"><div class="step-number"><i class="bi bi-person-check"></i></div><h2 class="text-xl font-bold uppercase text-secondary">Asistencia en clase</h2></div>
+                <div class="content-padding text-sm">
+                    <p class="mb-3">Si estás en la clase presencial de esta unidad, registrá tu asistencia (una vez por unidad, con la hora del servidor).</p>
+                    <button class="bg-primary text-white font-bold rounded-lg px-4 py-2" id="btn-asis-clase" onclick="marcarAsistenciaClase()"><i class="bi bi-check2-square"></i> Registrar asistencia</button>
+                    <p id="estado-guardado" class="mt-2 text-xs text-gray-600" role="status" aria-live="polite"></p>
+                </div>
+            </section>
+
+            <div id="navegacion" class="hidden flex justify-between gap-3 mt-6 text-sm no-print"></div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/api.js?v=23"></script>
+<script src="../js/logout.js?v=3"></script>
+<script src="../js/calificaciones.js?v=2"></script>
+<script src="../js/constructor-api.js?v=3"></script>
+<script src="../js/asistencia-clase.js?v=1"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
+    const ES_ALUMNO = !ROL || ROL === 'alumno';
+    const CED = sessionStorage.getItem('current_cedula') || '';
+    let AULA = null;   // { asignatura, unidades: [{ numero, titulo, resumen, bloques }] }
+
+    // El contenido lo escribe el personal en el Constructor, pero igual se limpia: sin scripts, eventos ni javascript:.
+    function limpiarHTML(html) {
+        const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+        doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,base').forEach(n => n.remove());
+        doc.querySelectorAll('*').forEach(el => {
+            Array.from(el.attributes).forEach(a => {
+                const n = a.name.toLowerCase();
+                if (n.startsWith('on') || n === 'srcdoc') el.removeAttribute(a.name);
+                else if (['href', 'src', 'xlink:href', 'action', 'formaction'].includes(n) && /^\s*(javascript|data|vbscript):/i.test(a.value) && !(n === 'src' && /^\s*data:image\//i.test(a.value))) el.removeAttribute(a.name);
+            });
+            if (el.tagName === 'A' && el.getAttribute('href')) { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+        });
+        return doc.body.innerHTML;
+    }
+
+    function cuerpoBloque(b) {
+        if (b.formato === 'html') return limpiarHTML(b.contenido);
+        const lineas = String(b.contenido || '').split('\n').map(s => s.trim()).filter(Boolean);
+        if (b.tipo === 'lista') return '<div class="content-padding"><ul class="bloque-lista">' + lineas.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul></div>';
+        if (b.tipo === 'enlace' && /^https?:\/\//i.test(lineas[0] || '')) return '<div class="content-padding"><a class="text-primary font-bold" href="' + esc(lineas[0]) + '" target="_blank" rel="noopener noreferrer">' + esc(lineas[0]) + '</a></div>';
+        return '<div class="content-padding"><div class="bloque-texto">' + esc(b.contenido) + '</div></div>';
+    }
+
+    // ── Datos: lo publicado (contenidos/) o, para el personal, el borrador del Constructor ──
+    async function cargarPublicado() {
+        await authListo();
+        const db = getDb();
+        const [a, c] = await Promise.all([
+            db.collection('asignaturas').doc(ASIG).get(),
+            db.collection('contenidos').where('asignatura', '==', ASIG).get()
+        ]);
+        if (!a.exists) throw new Error('No existe la asignatura ' + ASIG + '.');
+        return {
+            asignatura: Object.assign({ codigo: ASIG }, a.data()),
+            unidades: c.docs.map(d => d.data()).sort((x, y) => x.unidad - y.unidad)
+                .map(u => ({ numero: u.unidad, titulo: u.titulo, resumen: u.resumen, bloques: u.bloques || [] }))
+        };
+    }
+    async function cargarBorrador() {
+        const d = await CenturiaAPI.constructor.submit('constructor_get_subject', { id: BORRADOR });
+        if (!d || !d.ok) throw new Error((d && d.error) || 'No se pudo abrir el borrador.');
+        const dr = d.draft;
+        return {
+            asignatura: { codigo: dr.Codigo, nombre: dr.Nombre, carreras: dr.Carreras || [dr.Carrera], semestre: dr.Semestre, evaluaciones: d.plan.evaluaciones, reglas: d.plan.reglas },
+            unidades: (d.units || []).map(u => ({
+                numero: Number(u.Numero), titulo: u.Titulo, resumen: u.Resumen,
+                bloques: (u.blocks || []).filter(b => b.Visible !== false && b.Visible !== 'false').map(b => ({ tipo: b.Tipo, titulo: b.Titulo, contenido: b.Contenido, formato: b.Formato || 'texto' }))
+            })).sort((x, y) => x.numero - y.numero)
+        };
+    }
+
+    // ── Progreso de lectura (en este navegador, como en TIC) ──
+    const claveLeidos = () => 'aula_leidos_' + ASIG + '_U' + UNIDAD_ACTUAL + '_' + CED;
+    function leidos() { try { return new Set(JSON.parse(localStorage.getItem(claveLeidos()) || '[]')); } catch (e) { return new Set(); } }
+    function guardarLeidos(s) { try { localStorage.setItem(claveLeidos(), JSON.stringify(Array.from(s))); } catch (e) {} }
+    function marcarLeido(i) {
+        const s = leidos();
+        s.has(i) ? s.delete(i) : s.add(i);
+        guardarLeidos(s);
+        pintarProgreso();
+    }
+    function pintarProgreso() {
+        const s = leidos(), total = document.querySelectorAll('#bloques .step-card').length;
+        document.querySelectorAll('#bloques .step-card').forEach((card, i) => {
+            const hecho = s.has(i);
+            card.classList.toggle('leida', hecho);
+            const b = card.querySelector('.btn-leido');
+            b.classList.toggle('hecho', hecho);
+            b.innerHTML = hecho ? '<i class="bi bi-check-circle-fill"></i> Leído' : '<i class="bi bi-check-circle"></i> Marcar como leído';
+            b.setAttribute('aria-pressed', hecho ? 'true' : 'false');
+        });
+        const n = Array.from(s).filter(i => i < total).length;
+        $('progreso-texto').textContent = n + ' / ' + total + ' secciones leídas';
+        $('barra-progreso').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
+    }
+
+    function url(params) {
+        const q = new URLSearchParams({ asignatura: ASIG });
+        if (BORRADOR) q.set('borrador', BORRADOR);
+        Object.entries(params).forEach(([k, v]) => q.set(k, v));
+        return '?' + q.toString();
+    }
+
+    function pintarMenu(vista) {
+        const A = AULA.asignatura;
+        $('menu-asig').textContent = A.nombre || ASIG;
+        $('menu-cod').textContent = ASIG + (A.semestre ? ' · ' + A.semestre : '');
+        $('menu-unidades').innerHTML = AULA.unidades.map(u =>
+            `<a href="${url({ unidad: u.numero })}" class="block px-4 py-2 text-sm ${vista === 'unidad' && String(u.numero) === UNIDAD_ACTUAL ? 'activa' : ''}" ${vista === 'unidad' && String(u.numero) === UNIDAD_ACTUAL ? 'aria-current="page"' : ''}>Unidad ${u.numero}<div class="text-xs opacity-75 leading-tight">${esc(u.titulo)}</div></a>`).join('');
+        $('link-plan').href = url({ vista: 'plan' });
+        if (vista === 'plan') { $('link-plan').classList.add('activa'); $('link-plan').setAttribute('aria-current', 'page'); }
+        const carreras = (A.carreras && A.carreras.length ? A.carreras : [A.carrera]).filter(Boolean).join(' / ');
+        const sec = sessionStorage.getItem('current_seccion') || '';
+        $('top-curso').textContent = [carreras, sec ? 'Sección ' + sec : '', A.docente_nombre ? 'Docente: ' + A.docente_nombre : ''].filter(Boolean).join(' · ');
+        $('top-usuario').textContent = sessionStorage.getItem('current_nombre') || '';
+        $('top-ci').textContent = CED ? 'C.I: ' + CED : '';
+        document.title = (A.nombre || ASIG) + ' — Aula Centuria';
+    }
+
+    function pintarUnidad() {
+        const u = AULA.unidades.find(x => String(x.numero) === UNIDAD_ACTUAL) || AULA.unidades[0];
+        if (!u) { $('estado').textContent = 'Esta asignatura todavía no tiene unidades publicadas.'; return; }
+        UNIDAD_ACTUAL = String(u.numero);
+        $('estado').classList.add('hidden');
+        $('cabecera').classList.remove('hidden');
+        $('cab-unidad').textContent = 'Unidad ' + u.numero;
+        $('cab-titulo').textContent = u.titulo;
+        $('bloques').innerHTML = u.bloques.length ? u.bloques.map((b, i) => `
+            <section class="step-card">
+                <div class="step-header"><div class="step-number">${i + 1}</div><h2 class="text-xl font-bold uppercase text-secondary">${esc(b.titulo || b.tipo)}</h2></div>
+                ${cuerpoBloque(b)}
+                <div class="px-6 pb-4 flex justify-end no-print"><button type="button" class="btn-leido" onclick="marcarLeido(${i})"></button></div>
+            </section>`).join('') : '<p class="text-sm text-gray-500">Esta unidad todavía no tiene desarrollo cargado.</p>';
+        pintarProgreso();
+        if (ES_ALUMNO && !BORRADOR) $('card-asistencia-clase').classList.remove('hidden');
+        const idx = AULA.unidades.indexOf(u), ant = AULA.unidades[idx - 1], sig = AULA.unidades[idx + 1];
+        $('navegacion').classList.remove('hidden');
+        $('navegacion').innerHTML = (ant ? `<a class="text-primary font-bold" href="${url({ unidad: ant.numero })}"><i class="bi bi-arrow-left"></i> Unidad ${ant.numero}</a>` : '<span></span>') +
+            (sig ? `<a class="text-primary font-bold" href="${url({ unidad: sig.numero })}">Unidad ${sig.numero} <i class="bi bi-arrow-right"></i></a>` : '<span></span>');
+    }
+
+    function pintarPlan() {
+        const A = AULA.asignatura, evs = A.evaluaciones || [], R = A.reglas || {}, T = CenturiaNotas.TIPOS, O = CenturiaNotas.ORIGENES;
+        $('estado').classList.add('hidden');
+        $('cabecera').classList.remove('hidden');
+        $('cab-unidad').textContent = A.nombre || ASIG;
+        $('cab-titulo').textContent = 'Plan de evaluación';
+        $('cabecera').querySelector('.barra').parentElement.classList.add('hidden');
+        $('bloques').innerHTML = `<section class="step-card"><div class="content-padding text-sm">
+            ${evs.length ? `<table class="w-full text-left"><thead><tr class="border-b"><th class="py-2">Evaluación</th><th>Tipo</th><th>Peso</th><th>Se califica con</th></tr></thead><tbody>
+            ${evs.map(e => `<tr class="border-b"><td class="py-2 font-semibold">${esc(e.nombre)}${e.requisito ? ' <span class="perspectiva-pill">requisito para el final</span>' : ''}</td><td>${esc(T[e.tipo] || e.tipo)}${e.unidad ? ' · U' + e.unidad : ''}</td><td>${e.tipo === 'recuperatorio' ? 'reemplaza al parcial más bajo' : e.ponderacion + '%'}</td><td>${esc(O[e.origen] || e.origen || '')}</td></tr>`).join('')}
+            </tbody></table>` : '<p>Todavía no hay plan de evaluación publicado.</p>'}
+            <div class="highlight-box mt-4">Se aprueba con <b>${R.aprobacion_pct || 70}%</b> (escala 1 a 5: 70–77% = 2 · 78–85% = 3 · 86–93% = 4 · 94–100% = 5). Para rendir el examen final hay que tener <b>${R.asistencia_min_pct ?? 80}%</b> de asistencia y aprobadas las evaluaciones marcadas como requisito.</div>
+        </div></section>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!ASIG) { $('estado').textContent = 'Falta indicar la asignatura.'; return; }
+        try {
+            if (BORRADOR) {
+                if (ES_ALUMNO) throw new Error('La vista de borrador es solo para el personal.');
+                $('aviso-borrador').classList.remove('hidden');
+                AULA = await cargarBorrador();
+            } else {
+                AULA = await cargarPublicado();
+            }
+            const vista = AULA_Q.get('vista') === 'plan' ? 'plan' : 'unidad';
+            pintarMenu(vista);
+            vista === 'plan' ? pintarPlan() : pintarUnidad();
+        } catch (e) {
+            $('estado').textContent = (e && e.code === 'permission-denied') ? 'No tenés permiso para ver esta asignatura.' : 'No se pudo cargar el aula: ' + ((e && e.message) || e);
+        }
+    });
+</script>
+</body>
+</html>

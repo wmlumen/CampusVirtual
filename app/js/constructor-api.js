@@ -120,6 +120,25 @@
             icono: p.icono || 'bi-journal-text', color: p.color || '#007A33', modulo: p.modulo || '',
             publicado_por: quien.cedula, updated_at: ahora()
         }, { merge: true });
+        // Contenido de cada unidad para el aula de los alumnos (contenidos/{CODIGO}__U{n}): los bloques visibles, en orden.
+        // Las unidades que ya no existen se borran para que el aula no muestre contenido viejo.
+        const lote = db.batch();
+        const vigentes = new Set();
+        todo.units.forEach(u => {
+            const cid = codigo + '__U' + num(u.Numero);
+            vigentes.add(cid);
+            lote.set(db.collection('contenidos').doc(cid), {
+                asignatura: codigo, unidad: num(u.Numero), titulo: txt(u.Titulo), resumen: txt(u.Resumen),
+                bloques: (u.blocks || []).filter(b => b.Visible !== false && b.Visible !== 'false').map(b => ({
+                    tipo: txt(b.Tipo), titulo: txt(b.Titulo), contenido: txt(b.Contenido), formato: txt(b.Formato) || 'texto'
+                })),
+                version: num(dr.Version) || 1, actualizado: ahora()
+            });
+        });
+        (await db.collection('contenidos').where('asignatura', '==', codigo).get()).docs
+            .forEach(d => { if (!vigentes.has(d.id)) lote.delete(d.ref); });
+        await lote.commit();
+        await ref.update({ aula: todo.units.length > 0 });
         const r = await cambiarEstado(db, id, 'publicado', data, quien);
         return Object.assign(r, { codigo: codigo, mensaje: 'Publicada en asignaturas/' + codigo + ' (estado: ' + (p.estado || 'inactivo') + ').' });
     }
@@ -224,10 +243,13 @@
                 const id = txt(data.id) || nuevoId('BLQ');
                 const u = await db.collection(C.unid).doc(txt(data.unitID)).get();
                 if (!u.exists) return { ok: false, error: 'La unidad no existe.' };
-                await db.collection(C.bloq).doc(id).set({
+                const blq = {
                     SubjectID: u.data().SubjectID, UnitID: u.id, Tipo: txt(data.tipo || 'texto'), Titulo: txt(data.titulo),
                     Contenido: txt(data.contenido), Orden: num(data.orden), Visible: data.visible !== false && data.visible !== 'false'
-                });
+                };
+                if (data.formato) blq.Formato = txt(data.formato);
+                // merge: editar o mover un bloque no le borra el formato (HTML importado) ni la fuente.
+                await db.collection(C.bloq).doc(id).set(blq, { merge: true });
                 return { ok: true, id: id };
             }
             case 'constructor_delete_block': await db.collection(C.bloq).doc(txt(data.id)).delete(); return { ok: true };

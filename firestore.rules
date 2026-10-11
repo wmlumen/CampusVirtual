@@ -162,6 +162,37 @@ service cloud.firestore {
 
     }
 
+    // ── Constructor de asignaturas (v2026-10-11): borradores, unidades, bloques, evaluaciones y flujo ──
+    // Lo ve el personal; lo editan docentes, académicos y administración (activos). Las preguntas
+    // guardan la respuesta correcta: solo las lee el personal docente.
+    match /constructor_asignaturas/{id} {
+      allow read: if isStaff();
+      allow write: if esPersonalDocente();
+    }
+    match /constructor_unidades/{id} {
+      allow read: if isStaff();
+      allow write: if esPersonalDocente();
+    }
+    match /constructor_bloques/{id} {
+      allow read: if isStaff();
+      allow write: if esPersonalDocente();
+    }
+    match /constructor_actividades/{id} {
+      allow read: if isStaff();
+      allow write: if esPersonalDocente();
+    }
+    match /constructor_evaluaciones/{id} {
+      allow read: if isStaff();
+      allow write: if esPersonalDocente();
+    }
+    match /constructor_revisiones/{id} {
+      allow read: if isStaff();
+      allow create: if esPersonalDocente();
+    }
+    match /constructor_preguntas/{id} {
+      allow read, write: if esPersonalDocente();
+    }
+
     match /asignaturas/{asigId} {
       // Catálogo público: necesario para cargar "Mis Cursos" cuando Firebase Auth anónimo
       // no está habilitado. Las escrituras siguen restringidas al staff.

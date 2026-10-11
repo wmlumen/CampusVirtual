@@ -496,10 +496,12 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 var snap = await db.collection('asignaturas').get();
                 var todas = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
                 // Filtrar: si el alumno tiene carrera definida, solo las de esa carrera (o sin carrera).
+                // v2026-10-11: una asignatura puede ser de varias carreras (campo carreras[]) y se compara sin tildes.
+                var sinTilde = function(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim(); };
                 var filtradas = carrera
                     ? todas.filter(function(a) {
-                        var ac = (a.carrera || '').toUpperCase().trim();
-                        return !ac || ac === carrera;
+                        var lista = (Array.isArray(a.carreras) && a.carreras.length ? a.carreras : [a.carrera]).map(sinTilde).filter(Boolean);
+                        return !lista.length || lista.indexOf(sinTilde(carrera)) >= 0;
                     })
                     : todas;
                 // Construir cursos con la estructura que espera renderCursosAlumno

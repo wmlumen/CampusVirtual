@@ -229,7 +229,8 @@
     <div class="footer">Constructor Académico · Centuria © 2026</div>
     <div id="toast-wrap"></div>
 
-    <script src="../js/api.js?v=21"></script>
+    <script src="../js/api.js?v=23"></script>
+    <script src="../js/constructor-api.js?v=1"></script>
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
@@ -320,6 +321,11 @@
         async function cargarDrafts() {
             // Se solicita sin filtro forzado para que el docente vea también borradores generales
             const { fuente, d } = await api('list_drafts', {});
+            if (!d || d.ok === false) {
+                document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente;
+                document.getElementById('lista-drafts').innerHTML = '<p style="color:#991B1B;font-weight:700">No se pudieron cargar las asignaturas: ' + ((d && d.error) || 'error desconocido') + '</p>';
+                return [];
+            }
             const drafts = d.drafts || [];
             document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente + ' · ' + drafts.length + ' asignatura(s)';
             const el = document.getElementById('lista-drafts');
@@ -332,7 +338,6 @@
                     <div><b>${x.Nombre || x.nombre || '(sin nombre)'}</b> <small class="text-muted">${x.Codigo || x.codigo || ''}</small><br>${badge(x.Estado || x.estado || 'borrador')} <small class="text-muted">v${x.Version || x.version || 1}</small></div>
                     <div class="d-flex gap-1 flex-wrap">
                         <button class="btn btn-p" onclick="abrirDraft('${x.ID || x.id}')">Abrir</button>
-                        ${String(x.Estado || x.estado).toLowerCase() === 'publicado' ? `<a class="btn btn-g" href="../cursos/ver.html?codigo=${encodeURIComponent(x.Codigo || x.codigo || '')}" target="_blank">Ver</a>` : ''}
                         <button class="btn btn-s" onclick="duplicarDraft('${x.ID || x.id}')">Duplicar</button>
                         <button class="btn btn-r" onclick="archivarDraft('${x.ID || x.id}')">Archivar</button>
                     </div>
@@ -696,13 +701,13 @@
             const body = { id: cur.draft.ID, por_rol: MI_ROL, por_cedula: MI_CEDULA, comentario: document.getElementById('flujo-com').value, ...(extra || {}) };
             const r = await api(accion, {}, body);
             if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
-            toast('Listo');
+            toast(r.d.mensaje || 'Listo');
             await abrirDraft(cur.draft.ID);
         }
         function flujoEnviar() { flujoAccion('submit_review'); }
         function flujoAprobar() { flujoAccion('review_decision', { decision: 'aprobar' }); }
         function flujoObservar() { flujoAccion('review_decision', { decision: 'observar' }); }
-        function flujoPublicar() { if (confirm('¿Publicar esta versión? No genera HTML todavía (fase 2).')) flujoAccion('publish'); }
+        function flujoPublicar() { if (confirm('¿Publicar? Se crea o actualiza la asignatura en el catálogo y queda lista para asignar a un docente.')) flujoAccion('publish'); }
 
         async function duplicarDraft(id) {
             const r = await api('duplicate', {}, { id, docente_cedula: MI_CEDULA });

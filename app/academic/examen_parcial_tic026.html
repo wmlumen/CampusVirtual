@@ -389,7 +389,7 @@
                 <i class="bi bi-lock"></i> Validación de Acceso
             </h2>
             <p style="color: #64748b; margin-bottom: 20px;">
-                Ingresa el código correspondiente al examen que vas a rendir: <strong>TIC026</strong> para el Examen 1 o <strong>TICO26</strong> para el Examen 2.
+                Ingresa el código de acceso proporcionado por tu docente para rendir el examen correspondiente.
             </p>
 
             <div class="form-group">
@@ -398,7 +398,7 @@
                     type="password"
                     id="codigoAcceso"
                     class="form-control"
-                    placeholder="TIC026 o TICO26"
+                    placeholder="Ingresa tu código"
                     maxlength="10"
                 >
             </div>
@@ -685,7 +685,7 @@
                 estadoExamen.paso = 2;
             } else {
                 mensajeError.classList.remove('hidden');
-                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Código incorrecto. Usa <strong>TIC026</strong> para el Examen 1 o <strong>TICO26</strong> para el Examen 2.';
+                mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Código de acceso incorrecto. Solicita el código correspondiente a tu docente.';
                 document.getElementById('codigoAcceso').value = '';
             }
         }

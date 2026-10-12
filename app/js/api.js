@@ -525,7 +525,7 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     return {
                         estado: estado,
                         materiales: tieneMateria,
-                        grado: a.grado || grado,
+                        grado: grado || a.grado || 'GRADO',
                         seccion: a.seccion || seccion,
                         asignatura: {
                             id:           a.id,
@@ -2297,6 +2297,9 @@ API.exams = {
     saveAttempt: (data) => callGas('examen_guardar_intento', {
         examen_id: data.examen_id,
         alumno_cedula: data.alumno_cedula,
+        nombre: data.nombre || '',
+        asignatura: data.asignatura || '',
+        evaluacion: data.evaluacion || '',
         respuestas: data.respuestas,
         puntaje: data.puntaje,
         total: data.total,

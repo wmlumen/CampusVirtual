@@ -1349,7 +1349,7 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=24"></script>
+<script src="js/api.js?v=25"></script>
 <script src="js/calificaciones.js?v=4"></script>
     <script src="js/localidades-py.js?v=1"></script>
     <script src="js/catalogos-py.js?v=1"></script>
@@ -1581,47 +1581,73 @@
             const email = user.email || localStorage.getItem('centuria_email') || 'No registrado';
             const tel = user.telefono || user.telefono_movil || user.celular || localStorage.getItem('centuria_telefono') || 'No registrado';
 
-            // Nuevos campos
-            const fechaNac = user.fecha_nacimiento || localStorage.getItem('centuria_fecha_nacimiento') || '';
-            const lugarNac = user.lugar_nacimiento || localStorage.getItem('centuria_lugar_nacimiento') || '';
-            const nacionalidad = user.nacionalidad || user.pais || localStorage.getItem('centuria_nacionalidad') || '';
-            
-            // Dirección y componentes
-            const dirCalle = user.direccion_calle || user.calle || localStorage.getItem('centuria_direccion_calle') || '';
-            const dirBarrio = user.barrio || user.barrio_compania || localStorage.getItem('centuria_barrio') || '';
-            const dirCiudad = user.ciudad || localStorage.getItem('centuria_ciudad') || '';
-            const dirDepto = user.departamento || localStorage.getItem('centuria_departamento') || '';
-            
-            let direccion = user.direccion || localStorage.getItem('centuria_direccion') || '';
-            if (!direccion && (dirCalle || dirBarrio || dirCiudad || dirDepto)) {
-                direccion = [dirCalle, dirBarrio, dirCiudad, dirDepto].filter(Boolean).join(', ');
-            }
+// Nuevos campos
+                const fechaNac = user.fecha_nacimiento || localStorage.getItem('centuria_fecha_nacimiento') || '';
+                const lugarNac = user.lugar_nacimiento || localStorage.getItem('centuria_lugar_nacimiento') || '';
+                const nacionalidad = user.nacionalidad || user.pais || localStorage.getItem('centuria_nacionalidad') || '';
+                
+                // Dirección y componentes
+                const dirCalle = user.direccion_calle || user.calle || localStorage.getItem('centuria_direccion_calle') || '';
+                const dirBarrio = user.barrio || user.barrio_compania || localStorage.getItem('centuria_barrio') || '';
+                const dirCiudad = user.ciudad || localStorage.getItem('centuria_ciudad') || '';
+                const dirDepto = user.departamento || localStorage.getItem('centuria_departamento') || '';
+                
+                let direccion = user.direccion || localStorage.getItem('centuria_direccion') || '';
+                if (!direccion && (dirCalle || dirBarrio || dirCiudad || dirDepto)) {
+                    direccion = [dirCalle, dirBarrio, dirCiudad, dirDepto].filter(Boolean).join(', ');
+                }
 
-            const estadoCivil = user.estado_civil || localStorage.getItem('centuria_estado_civil') || '';
-            const telAlt = user.telefono_alternativo || user.telefono_fijo || user.telefono2 || localStorage.getItem('centuria_telefono_alternativo') || localStorage.getItem('centuria_telefono_fijo') || '';
-            const contactoEmergencia = user.contacto_emergencia || user.contacto_urgencia || user.emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
-            const estado = user.estado || user.status || localStorage.getItem('centuria_estado') || 'ACTIVO';
-            const legajo = user.legajo_numero || user.legajo || user.expediente || localStorage.getItem('centuria_legajo_numero') || '';
-            const fechaInscripcion = user.fecha_inscripcion || localStorage.getItem('centuria_fecha_inscripcion') || '';
-            const matricula = user.matricula || user.matricula_numero || localStorage.getItem('centuria_matricula') || '';
-            const estadoPago = user.estado_pago || user.plan_pago || localStorage.getItem('centuria_estado_pago') || '';
-            const grupoSanguineo = user.grupo_sanguineo || localStorage.getItem('centuria_grupo_sanguineo') || '';
-            const alergias = user.alergias || user.condiciones_medicas || localStorage.getItem('centuria_alergias') || '';
-            const seguroMedico = user.seguro_medico || localStorage.getItem('centuria_seguro_medico') || '';
-            const becas = user.becas || user.becas_solicitadas || localStorage.getItem('centuria_becas') || '';
-            const beneficios = user.beneficios_institucionales || user.beneficios || localStorage.getItem('centuria_beneficios_institucionales') || '';
+                const estadoCivil = user.estado_civil || localStorage.getItem('centuria_estado_civil') || '';
+                const telAlt = user.telefono_alternativo || user.telefono_fijo || user.telefono2 || localStorage.getItem('centuria_telefono_alternativo') || localStorage.getItem('centuria_telefono_fijo') || '';
+                const contactoEmergencia = user.contacto_emergencia || user.contacto_urgencia || user.emergencia || localStorage.getItem('centuria_contacto_emergencia') || '';
+                const estado = user.estado || user.status || localStorage.getItem('centuria_estado') || 'ACTIVO';
+                const legajo = user.legajo_numero || user.legajo || user.expediente || localStorage.getItem('centuria_legajo_numero') || '';
+                const fechaInscripcion = user.fecha_inscripcion || localStorage.getItem('centuria_fecha_inscripcion') || '';
+                const matricula = user.matricula || user.matricula_numero || localStorage.getItem('centuria_matricula') || '';
+                const estadoPago = user.estado_pago || user.plan_pago || localStorage.getItem('centuria_estado_pago') || '';
+                const grupoSanguineo = user.grupo_sanguineo || localStorage.getItem('centuria_grupo_sanguineo') || '';
+                const alergias = user.alergias || user.condiciones_medicas || localStorage.getItem('centuria_alergias') || '';
+                const seguroMedico = user.seguro_medico || localStorage.getItem('centuria_seguro_medico') || '';
+                const becas = user.becas || user.becas_solicitadas || localStorage.getItem('centuria_becas') || '';
+                const beneficios = user.beneficios_institucionales || user.beneficios || localStorage.getItem('centuria_beneficios_institucionales') || '';
 
-            document.getElementById('dash-user-name').textContent = n + ' ' + a;
-            
-            // Subtítulo con Cédula, Carrera y Sección garantizada
-            let subTexto = 'C.I: ' + c;
-            if (carrera) subTexto += ' • ' + carrera;
-            if (seccion && seccion !== '-') subTexto += ' (Sec: ' + seccion + ')';
-            document.getElementById('dash-user-sub').textContent = subTexto;
-            
-            const badge = document.getElementById('dash-user-badge');
-            const roleInfo = roleConfig[currentUserRole] || roleConfig.alumno;
-            badge.textContent = roleInfo.label.toUpperCase();
+                // Determinar si es postulante (nuevo ingreso sin matrícula completa)
+                const esPostulante = (user.tipo_alumno === 'nuevo' || user.tipo_alumno === 'nuevo_ingreso') && !user.matricula_completa;
+                const esAlumnoConMatricula = user.matricula_completa || (!!user.matricula && !!user.carrera);
+
+                document.getElementById('dash-user-name').textContent = n + ' ' + a;
+                
+                // Subtítulo con Cédula, Carrera y Sección garantizada
+                let subTexto = 'C.I: ' + c;
+                if (carrera) subTexto += ' • ' + carrera;
+                if (seccion && seccion !== '-') subTexto += ' (Sec: ' + seccion + ')';
+                document.getElementById('dash-user-sub').textContent = subTexto;
+                
+                const badge = document.getElementById('dash-user-badge');
+                // Filtrar enlaces del alumno basándose en el estado de matrícula
+                let roleInfoOriginal = roleConfig[currentUserRole] || roleConfig.alumno;
+                let roleInfo;
+                if (currentUserRole === 'alumno' && esPostulante) {
+                    // Solo mostrar ofertas de carreras para postulante
+                    roleInfo = {
+                        label: 'Alumno',
+                        links: [
+                            { href: '../ofertas-carreras.html', icon: 'bi-grid-3x3-gap', label: 'Ofertas de Carreras a Seguir' }
+                        ]
+                    };
+                } else if (currentUserRole === 'alumno' && esAlumnoConMatricula) {
+                    // Alumno con matrícula completa: mostrar todos los enlaces
+                    roleInfo = roleInfoOriginal;
+                } else {
+                    // Estado intermedio o desconocido: links básicos
+                    roleInfo = {
+                        label: 'Alumno',
+                        links: [
+                            { href: '../ofertas-carreras.html', icon: 'bi-grid-3x3-gap', label: 'Ofertas de Carreras a Seguir' }
+                        ]
+                    };
+                }
+                badge.textContent = roleInfo.label.toUpperCase();
 
             // Rellenar tab de perfil
             document.getElementById('p-display-name').textContent = n + ' ' + a;
@@ -1857,10 +1883,22 @@
             const secFin = document.getElementById('sec-obligaciones-financieras');
             if (!secFin) return;
 
-            // Mostrar para rol alumno o si cuenta con matrícula / legajo / alta
-            const esAlumno = (currentUserRole === 'alumno') || (user && (user.matricula || user.legajo_numero || user.carrera));
+            // Determinar estado del alumno
+            const esPostulante = (user.tipo_alumno === 'nuevo' || user.tipo_alumno === 'nuevo_ingreso') && !user.matricula_completa;
+            const esAlumnoConMatricula = user.matricula_completa || (!!user.matricula && !!user.carrera);
+
+            // Si es postulante sin matrícula completa, ocultar obligaciones
+            if (currentUserRole === 'alumno' && esPostulante) {
+                secFin.style.display = 'none';
+                secFin.dataset.listo = '';
+                return;
+            }
+
+            // Mostrar para alumno con matrícula completa o si cuenta con matrícula / legajo / alta
+            const esAlumno = (currentUserRole === 'alumno' && esAlumnoConMatricula) || (currentUserRole === 'alumno') || (user && (user.matricula || user.legajo_numero || user.carrera));
             if (!esAlumno) {
                 secFin.style.display = 'none';
+                secFin.dataset.listo = '';
                 return;
             }
 
@@ -2204,10 +2242,13 @@
             const cursos = resp.cursos || [];
             const porGrado = {};
             const userCarrera = (currentUserData && currentUserData.carrera) || (resp.ficha && resp.ficha.carrera) || '';
-            const userGrado = (currentUserData && currentUserData.grado) || (resp.ficha && resp.ficha.grado) || '';
+            const userGrado = deducirGradoAcademico((currentUserData && currentUserData.grado) || (resp.ficha && resp.ficha.grado), userCarrera);
             cursos.forEach(c => {
                 const a = c.asignatura || {};
-                const g = deducirGradoAcademico(c.grado || userGrado, a.carrera || c.carrera || userCarrera);
+                // Para el estudiante, sus asignaturas se agrupan bajo su nivel/grado de matriculación principal
+                const g = (userGrado && userGrado !== 'GRADO')
+                    ? userGrado
+                    : deducirGradoAcademico(c.grado || a.grado || userGrado, userCarrera || a.carrera || c.carrera);
                 (porGrado[g] = porGrado[g] || []).push(c);
             });
             // Solo se muestran los niveles que tienen cursos (activos, desarrollados o pendientes); ningún «No inscripto»

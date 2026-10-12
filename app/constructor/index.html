@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <!-- v08.5: Security Guard -->
-    <script src="../js/session-guard.js?v=5"></script>
+    <script src="../js/session-guard.js?v=6"></script>
     <script>CenturiaSession.protect();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/aula-contenido.css?v=4" rel="stylesheet">
     <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
         /* v2026-10-12: mismo lenguaje visual que dashboard.html (fondo verde profundo, paneles de vidrio, acentos dorados). */
@@ -74,6 +75,11 @@
         .table{--bs-table-bg:transparent;--bs-table-color:var(--txt2);--bs-table-border-color:rgba(255,255,255,.1);--bs-table-hover-bg:rgba(255,255,255,.04)}
         .footer{text-align:center;padding:8px;background:rgba(6,15,9,.85);color:rgba(255,255,255,.5);font-size:.55rem;position:fixed;bottom:0;left:0;right:0;backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08)}
         @media (max-width:576px){.topbar{margin:8px 8px 0;top:8px;padding:10px 14px}.cardx{padding:14px;border-radius:16px}}
+            .ins-bar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:.62rem;opacity:.35;margin:2px 0 3px;padding:1px 4px;border-top:1px dashed rgba(212,175,55,.35);transition:opacity .15s}
+        .ins-bar:hover{opacity:1}
+        .ins-bar span{color:#9ca3af;margin-right:2px}
+        .ins-bar button{background:transparent;border:1px solid rgba(212,175,55,.45);color:#f3d77a;border-radius:10px;padding:0 7px;font-size:.62rem;line-height:1.5}
+        .ins-bar button:hover{background:rgba(212,175,55,.18)}
     </style>
 </head>
 <body>
@@ -97,9 +103,12 @@
         <div id="app" style="display:none">
             <!-- LISTA -->
             <div id="view-list">
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                     <h1 style="margin:0">Mis asignaturas</h1>
-                    <button class="btn btn-p" onclick="nuevoDraft()"><i class="bi bi-plus-lg"></i> Nueva</button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-g" id="btn-seed-tic" onclick="importarModeloTIC()"><i class="bi bi-file-earmark-arrow-up"></i> Cargar Modelo TIC Completo</button>
+                        <button class="btn btn-p" onclick="nuevoDraft()"><i class="bi bi-plus-lg"></i> Nueva</button>
+                    </div>
                 </div>
                 <div id="lista-drafts"></div>
             </div>
@@ -164,7 +173,17 @@
                 </div>
 
                 <div id="tab-units" class="cardx" style="display:none">
-                    <h2>Unidades</h2>
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h2 class="m-0">Unidades</h2>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-p btn-sm" onclick="abrirCarga('')"><i class="bi bi-magic"></i> Cargar contenido (Word, HTML, texto…)</button>
+                            <button type="button" class="btn btn-g btn-sm" onclick="cargarUnidadesTICActual()"><i class="bi bi-cloud-arrow-down"></i> Cargar 10 Unidades Modelo TIC</button>
+                            <label class="btn btn-s btn-sm m-0" style="cursor:pointer">
+                                <i class="bi bi-file-earmark-code"></i> Cargar archivo HTML de Unidad
+                                <input type="file" id="input-archivo-html" accept=".html,.htm" style="display:none" onchange="importarArchivoHTMLUnidad(event)">
+                            </label>
+                        </div>
+                    </div>
                     <div class="row g-2 mb-2">
                         <div class="col-md-2"><div class="fld"><label>N°</label><input id="u-num" type="number" min="1"></div></div>
                         <div class="col-md-10"><div class="fld"><label>Título *</label><input id="u-tit"></div></div>
@@ -185,7 +204,7 @@
                     <div class="fld"><label>Título *</label><input id="a-tit"></div>
                     <div class="fld"><label>Instrucciones</label><textarea id="a-ins"></textarea></div>
                     <div class="row g-2">
-                        <div class="col-md-4"><div class="fld"><label>Unidad (ID)</label><input id="a-unit" placeholder="opcional"></div></div>
+                        <div class="col-md-4"><div class="fld"><label>Unidad</label><select id="a-unit" class="sel-unidades" data-valor="id"></select></div></div>
                         <div class="col-md-2"><div class="fld"><label>Puntaje</label><input id="a-pts" type="number" min="0"></div></div>
                         <div class="col-md-3"><div class="fld"><label>Entrega</label><input id="a-ent" type="date"></div></div>
                         <div class="col-md-3"><div class="fld"><label>Modalidad</label><select id="a-mod"><option value="individual">Individual</option><option value="grupal">Grupal</option></select></div></div>
@@ -219,9 +238,9 @@
                         <div class="col-md-2"><div class="fld"><label>Intentos</label><input id="e-int" type="number" min="1" value="1"></div></div>
                     </div>
                     <div class="row g-2">
-                        <div class="col-md-4"><div class="fld"><label>De dónde sale la nota</label><select id="e-origen"><option value="examen_online">Examen online</option><option value="entrega_pdf">Entrega de PDF</option><option value="asistencia">Asistencia registrada</option><option value="manual">Carga del docente</option></select></div></div>
-                        <div class="col-md-2"><div class="fld"><label>Unidad</label><input id="e-unidad" type="number" min="1" placeholder="—"></div></div>
-                        <div class="col-md-3"><div class="fld"><label>ID del examen online</label><input id="e-examen" placeholder="ej. soc_parcial_1" title="Identificador con el que se guardan los intentos del examen (colección intentos)"></div></div>
+                        <div class="col-md-4"><div class="fld"><label>De dónde sale la nota</label><select id="e-origen" onchange="evOrigenCambio()"><option value="examen_online">Examen online</option><option value="entrega_pdf">Entrega de PDF</option><option value="asistencia">Asistencia registrada</option><option value="manual">Carga del docente</option></select></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Unidad</label><select id="e-unidad" class="sel-unidades" data-valor="numero"></select></div></div>
+                        <div class="col-md-3" id="e-examen-w"><div class="fld"><label>ID del examen online</label><input id="e-examen" placeholder="ej. soc_parcial_1" title="Identificador con el que se guardan los intentos del examen (colección intentos)"></div></div>
                         <div class="col-md-3 d-flex align-items-end pb-2"><label style="font-size:.72rem"><input type="checkbox" id="e-req"> Requisito para rendir el examen final (hay que aprobarla)</label></div>
                         <div class="col-md-4 d-flex align-items-end gap-3 pb-2">
                             <label style="font-size:.72rem"><input type="checkbox" id="e-ale"> Aleatorizar</label>
@@ -237,20 +256,21 @@
 
                 <div id="tab-bank" class="cardx" style="display:none">
                     <h2>Banco de preguntas</h2>
-                    <div class="fld"><label>Pregunta *</label><textarea id="q-pre"></textarea></div>
+                    <div class="fld"><label>Pregunta *</label><textarea id="q-pre" oninput="bancoTipoCambio()" placeholder="Ej.: ¿Qué estudia la deontología?"></textarea></div>
+                    <div id="q-ayuda" class="small mb-2" style="color:#fcd34d;display:none"></div>
                     <div class="row g-2">
-                        <div class="col-md-3"><div class="fld"><label>Tipo</label><select id="q-tipo"><option value="multiple">Múltiple</option><option value="vf">V/F</option><option value="corta">Corta</option><option value="desarrollo">Desarrollo</option></select></div></div>
-                        <div class="col-md-3"><div class="fld"><label>Unidad (ID)</label><input id="q-unit" placeholder="opcional"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Tipo</label><select id="q-tipo" onchange="bancoTipoCambio()"><option value="multiple">Opción múltiple</option><option value="vf">Verdadero / Falso</option><option value="completar">Completar la palabra</option><option value="corta">Respuesta corta</option><option value="desarrollo">Desarrollo (respuesta larga)</option></select></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Unidad</label><select id="q-unit" class="sel-unidades" data-valor="id"></select></div></div>
                         <div class="col-md-3"><div class="fld"><label>Dificultad</label><select id="q-dif"><option value="baja">Baja</option><option value="media" selected>Media</option><option value="alta">Alta</option></select></div></div>
-                        <div class="col-md-3"><div class="fld"><label>Puntaje</label><input id="q-pts" type="number" min="0"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Puntaje</label><input id="q-pts" type="number" min="0" placeholder="2"></div></div>
                     </div>
                     <div class="row g-2">
-                        <div class="col-md-6"><div class="fld"><label>Opciones (una por línea, solo múltiple)</label><textarea id="q-opt"></textarea></div></div>
-                        <div class="col-md-6"><div class="fld"><label>Correcta (no se muestra al alumno)</label><input id="q-ok"></div></div>
+                        <div class="col-md-6" id="q-opt-w"><div class="fld"><label>Opciones (una por línea)</label><textarea id="q-opt" oninput="bancoTipoCambio()" placeholder="Los deberes de una profesión&#10;Las leyes penales&#10;La economía"></textarea></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Respuesta correcta (no se muestra al alumno)</label><select id="q-ok-sel" style="display:none"></select><input id="q-ok" placeholder="Respuesta esperada"></div></div>
                     </div>
                     <div class="row g-2">
-                        <div class="col-md-6"><div class="fld"><label>Indicador</label><input id="q-ind"></div></div>
-                        <div class="col-md-6"><div class="fld"><label>Retroalimentación</label><input id="q-ret"></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Indicador <small class="text-muted">(qué evalúa)</small></label><input id="q-ind" placeholder="Ej.: Distingue ética de moral"></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Retroalimentación <small class="text-muted">(se muestra al corregir)</small></label><input id="q-ret" placeholder="Ej.: La deontología trata los deberes de cada profesión."></div></div>
                     </div>
                     <button class="btn btn-p" onclick="guardarPregunta()"><i class="bi bi-plus-lg"></i> Agregar pregunta</button>
                     <hr>
@@ -274,12 +294,206 @@
         </div>
     </div>
 
+    <!-- Modal: Editor visual de bloque enriquecido -->
+    <div class="modal fade" id="modalBloque" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content" style="background:#0a1f11;border:1px solid var(--dorado);color:#fff;border-radius:18px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalBloqueTitulo" style="color:var(--dorado-claro);">Editar Bloque de Aprendizaje</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="mb-unit-id">
+                    <input type="hidden" id="mb-block-id">
+                    <input type="hidden" id="mb-orden">
+                    <div class="fld mb-2">
+                        <label>Título de la sección</label>
+                        <input id="mb-titulo" placeholder="Ej.: ¿Qué es la ética?" style="font-size:1.05rem;font-weight:600">
+                    </div>
+                    <div class="fld mb-2">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                            <label class="m-0">Contenido del bloque</label>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Modo de edición">
+                                <button type="button" class="btn btn-s" id="ed-btn-visual" onclick="edModo('visual')"><i class="bi bi-pencil-square"></i> Visual</button>
+                                <button type="button" class="btn btn-s" id="ed-btn-html" onclick="edModo('html')"><i class="bi bi-code-slash"></i> Código HTML</button>
+                            </div>
+                        </div>
+                        <div id="ed-aviso" class="small mb-1" style="color:#fcd34d;display:none"></div>
+                        <div id="ed-cinta" class="ed-cinta" style="display:none" role="toolbar" aria-label="Insertar en el contenido">
+                            <div class="ed-grupo"><span class="ed-grupo-tit">Insertar</span>
+                                <button type="button" title="Insertar una imagen (desde tu computadora o un enlace)" aria-label="Insertar una imagen (desde tu computadora o un enlace)" data-bs-toggle="tooltip" onclick="eduImagen()"><i class="bi bi-image"></i></button>
+                                <button type="button" title="Insertar una tabla" aria-label="Insertar una tabla" data-bs-toggle="tooltip" onclick="eduTabla()"><i class="bi bi-table"></i></button>
+                                <button type="button" title="Insertar un video de YouTube o Google Drive" aria-label="Insertar un video de YouTube o Google Drive" data-bs-toggle="tooltip" onclick="eduVideo()"><i class="bi bi-play-btn"></i></button>
+                                <button type="button" title="Insertar un documento (PDF, Word, Drive)" aria-label="Insertar un documento (PDF, Word, Drive)" data-bs-toggle="tooltip" onclick="eduDocumento()"><i class="bi bi-file-earmark-pdf"></i></button>
+                                <button type="button" title="Insertar una cita con su autor" aria-label="Insertar una cita con su autor" data-bs-toggle="tooltip" onclick="eduCita()"><i class="bi bi-quote"></i></button>
+                                <button type="button" title="Insertar un enlace a una página web" aria-label="Insertar un enlace a una página web" data-bs-toggle="tooltip" onclick="eduEnlace()"><i class="bi bi-link-45deg"></i></button>
+                            </div>
+                            <div class="ed-grupo"><span class="ed-grupo-tit">Recuadros</span>
+                                <button type="button" title="Recuadro azul de definición" aria-label="Recuadro azul de definición" data-bs-toggle="tooltip" onclick="eduCuadro('definicion')"><i class="bi bi-book" style="color:#60a5fa"></i></button>
+                                <button type="button" title="Recuadro verde de ejemplo" aria-label="Recuadro verde de ejemplo" data-bs-toggle="tooltip" onclick="eduCuadro('ejemplo')"><i class="bi bi-lightbulb" style="color:#4ade80"></i></button>
+                                <button type="button" title="Recuadro naranja de aviso importante" aria-label="Recuadro naranja de aviso importante" data-bs-toggle="tooltip" onclick="eduCuadro('importante')"><i class="bi bi-exclamation-triangle" style="color:#fb923c"></i></button>
+                                <button type="button" title="Recuadro violeta para reflexionar" aria-label="Recuadro violeta para reflexionar" data-bs-toggle="tooltip" onclick="eduCuadro('reflexion')"><i class="bi bi-chat-heart" style="color:#c084fc"></i></button>
+                            </div>
+                            <div class="ed-grupo"><span class="ed-grupo-tit">Actividades para el alumno</span>
+                                <button type="button" title="Actividad: completar la oración con la palabra correcta" aria-label="Actividad: completar la oración con la palabra correcta" data-bs-toggle="tooltip" onclick="eduCompletar()"><i class="bi bi-input-cursor-text"></i></button>
+                                <button type="button" title="Actividad: pregunta de opción múltiple" aria-label="Actividad: pregunta de opción múltiple" data-bs-toggle="tooltip" onclick="eduMultiple()"><i class="bi bi-ui-radios"></i></button>
+                                <button type="button" title="Actividad: verdadero o falso" aria-label="Actividad: verdadero o falso" data-bs-toggle="tooltip" onclick="eduVF()"><i class="bi bi-check2-square"></i></button>
+                                <button type="button" title="Actividad: pregunta para responder con sus palabras" aria-label="Actividad: pregunta para responder con sus palabras" data-bs-toggle="tooltip" onclick="eduAbierta()"><i class="bi bi-pencil"></i></button>
+                            </div>
+                            <div class="ed-grupo"><span class="ed-grupo-tit">Ver</span>
+                                <button type="button" title="Vista previa: cómo lo ve el alumno, con las actividades funcionando" aria-label="Vista previa: cómo lo ve el alumno, con las actividades funcionando" data-bs-toggle="tooltip" onclick="togglePreviewBloque()"><i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+                        <div id="ed-visual-wrap" style="display:none"><textarea id="ed-tiny"></textarea></div>
+                        <textarea id="mb-contenido" style="min-height:160px;font-family:monospace;font-size:.78rem;" placeholder="Escribe el contenido aquí..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap mb-2" id="mb-helpers">
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarEnBloque('<strong>', '</strong>')"><b>B</b> Negrita</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarEnBloque('<em>', '</em>')"><i>I</i> Cursiva</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarPlantilla('tabla')"><i class="bi bi-table"></i> Insertar Tabla</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarPlantilla('imagen')"><i class="bi bi-image"></i> Insertar Imagen</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="abrirPanelMedia('documento')"><i class="bi bi-file-earmark-pdf"></i> Insertar Documento</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="abrirPanelMedia('video')"><i class="bi bi-play-btn"></i> Insertar Video</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarPlantilla('galeria')"><i class="bi bi-images"></i> Galería 2 imágenes</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="insertarPlantilla('cita')"><i class="bi bi-quote"></i> Insertar Cita</button>
+                        <button type="button" class="btn btn-s btn-sm py-1 px-2" onclick="togglePreviewBloque()"><i class="bi bi-eye"></i> Vista previa</button>
+                    </div>
+                    <div id="mb-media" class="border rounded p-2 mb-2" style="display:none;border-color:var(--dorado)!important;background:rgba(255,255,255,.03)">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2"><div class="fld"><label>Recurso</label>
+                                <select id="mm-tipo"><option value="imagen">Imagen</option><option value="documento">Documento</option><option value="video">Video</option></select></div></div>
+                            <div class="col-md-5"><div class="fld"><label>URL (Drive, YouTube, PDF, imagen…)</label><input id="mm-url" placeholder="https://drive.google.com/file/d/…/view"></div></div>
+                            <div class="col-md-3"><div class="fld"><label>Leyenda / título</label><input id="mm-leyenda" placeholder="Figura 1. …"></div></div>
+                            <div class="col-md-2"><div class="fld"><label>Tamaño</label>
+                                <select id="mm-tam"><option value="s">Pequeño</option><option value="m" selected>Mediano</option><option value="l">Grande</option></select></div></div>
+                            <div class="col-md-4"><div class="fld"><label>Posición (imagen)</label>
+                                <select id="mm-pos"><option value="centro">Centrada</option><option value="izq">Izquierda, texto al lado</option><option value="der">Derecha, texto al lado</option></select></div></div>
+                            <div class="col-md-4"><label class="small text-muted"><input type="checkbox" id="mm-descarga" checked> Botón "Abrir / Descargar"</label></div>
+                            <div class="col-md-4 d-flex gap-1 justify-content-end">
+                                <button type="button" class="btn btn-s btn-sm" onclick="document.getElementById('mb-media').style.display='none'">Cerrar</button>
+                                <button type="button" class="btn btn-p btn-sm" onclick="insertarMedia()"><i class="bi bi-plus-lg"></i> Insertar en el cursor</button>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1">Los enlaces de Google Drive, Docs/Slides y YouTube se convierten solos al formato embebido. En Drive, compartir como "Cualquier persona con el enlace".</small>
+                    </div>
+                    <div id="mb-preview" class="rounded p-3 mb-2" style="display:none;background:#fff;color:#1f2937;max-height:340px;overflow:auto"></div>
+                    <details class="mb-2 small" id="mb-avanzado"><summary class="text-muted" style="cursor:pointer">Opciones avanzadas</summary>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6"><div class="fld"><label>Tipo de bloque</label>
+                                <select id="mb-tipo" onchange="actualizarPlaceholderBloque()">
+                                    <option value="texto">Texto / Explicación</option>
+                                    <option value="html">HTML Enriquecido (Tablas, tarjetas, siglas)</option>
+                                    <option value="lista">Lista de puntos / Viñetas</option>
+                                    <option value="definicion">Definición conceptual</option>
+                                    <option value="ejemplo">Caso / Ejemplo práctico</option>
+                                    <option value="cita">Cita bibliográfica / Nota al pie</option>
+                                    <option value="imagen">Imagen ilustrativa / Diagrama</option>
+                                    <option value="documento">Documento (PDF, Word, Drive, Slides)</option>
+                                    <option value="video">Video (YouTube, Drive, MP4)</option>
+                                    <option value="enlace">Enlace / Lectura externa</option>
+                                    <option value="aviso">Aviso / Destacado importante</option>
+                                    <option value="resumen">Resumen de la sección</option>
+                                </select></div></div>
+                            <div class="col-md-6 d-flex align-items-end"><label class="small text-muted mb-2"><input type="checkbox" id="mb-formato-html"> Guardar con formato HTML</label></div>
+                        </div>
+                    </details>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-0"><input type="checkbox" id="mb-visible" checked> Visible para estudiantes</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-s" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-p" onclick="guardarModalBloque()"><i class="bi bi-check-lg"></i> Guardar Bloque</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Cargar contenido: pegar o subir archivos y dividirlos en bloques -->
+    <div class="modal fade" id="modalCarga" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="background:#0a1f11;border:1px solid var(--dorado);color:#fff;border-radius:18px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" style="color:var(--dorado-claro);"><i class="bi bi-magic"></i> Cargar contenido</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-5"><div class="fld"><label>Destino</label><select id="cg-unidad" onchange="cgDestino()"></select></div></div>
+                        <div class="col-md-2" id="cg-nueva-num-w"><div class="fld"><label>N°</label><input id="cg-num" type="number" min="1"></div></div>
+                        <div class="col-md-5" id="cg-nueva-tit-w"><div class="fld"><label>Título de la nueva unidad</label><input id="cg-tit" placeholder="Se toma del primer título si queda vacío"></div></div>
+                    </div>
+                    <div id="cg-drop" class="rounded p-3 mb-2 text-center" style="border:2px dashed rgba(212,175,55,.55);background:rgba(255,255,255,.03)">
+                        <i class="bi bi-cloud-arrow-up" style="font-size:1.6rem;color:var(--dorado-claro)"></i>
+                        <div class="small">Arrastrá aquí archivos <b>.docx · .html · .md · .txt</b> (varios a la vez) o
+                            <label class="btn btn-s btn-sm m-0" style="cursor:pointer">elegir archivos<input type="file" id="cg-archivos" multiple accept=".docx,.html,.htm,.md,.markdown,.txt" style="display:none" onchange="cgArchivos(this.files)"></label></div>
+                        <div class="small text-muted mt-1">o pegá abajo el texto copiado de Word, Google Docs o una página web (se conservan negritas, listas, tablas e imágenes).</div>
+                    </div>
+                    <div id="cg-pegar" contenteditable="true" class="rounded p-2 mb-2" style="min-height:110px;max-height:220px;overflow:auto;background:#fff;color:#1f2937;font-size:.85rem" data-ph="Pegá el contenido aquí (Ctrl+V)…"></div>
+                    <div class="row g-2 align-items-end mb-2">
+                        <div class="col-md-4"><div class="fld"><label>Dividir en bloques por</label>
+                            <select id="cg-dividir" onchange="cgAnalizar()">
+                                <option value="h1,h2">Títulos principales (Título 1 y 2)</option>
+                                <option value="h1,h2,h3" selected>Títulos y subtítulos (1, 2 y 3)</option>
+                                <option value="h2">Solo Título 2</option>
+                                <option value="hr">Líneas separadoras (---)</option>
+                                <option value="no">No dividir: un solo bloque</option>
+                            </select></div></div>
+                        <div class="col-md-4"><div class="fld"><label>Modo</label>
+                            <select id="cg-modo"><option value="agregar">Agregar al final de la unidad</option><option value="reemplazar">Reemplazar los bloques de la unidad</option></select></div></div>
+                        <div class="col-md-4 d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-s btn-sm" onclick="cgLimpiar()"><i class="bi bi-eraser"></i> Limpiar</button>
+                            <button type="button" class="btn btn-g btn-sm" onclick="cgAnalizar()"><i class="bi bi-scissors"></i> Dividir en bloques</button>
+                        </div>
+                    </div>
+                    <div id="cg-aviso" class="small mb-2" style="color:#fcd34d"></div>
+                    <div id="cg-bloques"></div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <span id="cg-prog" class="small text-muted me-auto"></span>
+                    <button type="button" class="btn btn-s" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-p" id="cg-guardar" onclick="cgGuardar()" disabled><i class="bi bi-check-lg"></i> Guardar bloques</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        #ed-visual-wrap .tox-tinymce{border-radius:8px}
+        /* vista previa y vista del alumno: colores del aula, no los del tema oscuro del Constructor */
+        #mb-preview h1,#mb-preview h2,#mb-preview h3,#mb-preview h4,#mb-preview h5,#mb-preview h6,#mb-preview b,#mb-preview strong{color:#111827}
+        #mb-preview table{color:#1f2937}
+        .ed-cinta{display:flex;flex-wrap:wrap;gap:4px;background:#f8fafc;border-radius:10px 10px 0 0;padding:6px;margin-bottom:-2px;border:1px solid #e2e8f0;border-bottom:0}
+        .ed-grupo{display:flex;flex-wrap:wrap;gap:1px;align-items:center;border-right:1px solid #e2e8f0;padding-right:6px}
+        .ed-grupo:last-child{border-right:0}
+        .ed-grupo-tit{display:none}
+        .ed-cinta button{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:transparent;border:1px solid transparent;border-radius:6px;padding:0;color:#1f2937}
+        .ed-cinta button i{font-size:1rem;color:#007A33}
+        .ed-cinta button:hover{background:#e2e8f0;border-color:#cbd5e1}
+        #ed-visual-wrap .tox-tinymce{border-top-left-radius:0;border-top-right-radius:0}
+        .tox-tinymce-aux{z-index:2000!important}
+        #cg-pegar:empty:before{content:attr(data-ph);color:#9ca3af}
+        #cg-pegar img{max-width:100%;height:auto}
+        #cg-drop.sobre{background:rgba(212,175,55,.15)!important}
+        .cg-blq{border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:6px 8px;margin-bottom:6px;font-size:.75rem}
+        .cg-blq.off{opacity:.4}
+        .cg-blq input[type=text],.cg-blq select{background:#0f2a18;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:2px 6px;font-size:.75rem}
+        .cg-prev{background:#fff;color:#1f2937;border-radius:6px;padding:6px 8px;margin-top:4px;max-height:140px;overflow:auto;display:none}
+        .cg-prev img{max-width:100%;max-height:120px}
+    </style>
     <div class="footer">Constructor Académico · Centuria © 2026</div>
     <div id="toast-wrap"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api.js?v=23"></script>
     <script src="../js/calificaciones.js?v=4"></script>
-    <script src="../js/constructor-api.js?v=3"></script>
+    <script src="../js/modelo-tic-data.js?v=2"></script>
+    <script src="../js/actividades-aula.js?v=1"></script>
+    <script src="../js/constructor-api.js?v=5"></script>
     <script>
         const MI_ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
         const MI_CEDULA = sessionStorage.getItem('current_cedula') || '';
@@ -462,6 +676,8 @@
             });
             if (t === 'prev') pintarPreview();
             if (t === 'flow') pintarFlujo();
+            if (t === 'bank') { bancoTipoCambio(); pintarBanco(); }
+            if (t === 'evals') evOrigenCambio();
         }
 
         function pintarEditor() {
@@ -474,11 +690,13 @@
             const N = window.CenturiaNotas;
             const suma = evs.filter(e => e.tipo !== 'recuperatorio').reduce((s, e) => s + (parseFloat(e.ponderacion) || 0), 0);
             document.getElementById('ed-pond').textContent = 'Ponderación: ' + suma + '%';
+            pintarSelectUnidades();
             document.getElementById('lista-units').innerHTML = (cur.units || []).map(u => `
                 <div class="block"><b>U${u.Numero || '?'} — ${u.Titulo || ''}</b>
                 <small class="text-muted">(${(u.blocks || []).length} bloques)</small>
                 <div class="mt-1 d-flex gap-1 flex-wrap">
                     <button class="btn btn-s" onclick="verBloques('${u.ID}')">Bloques</button>
+                    <button class="btn btn-g" onclick="abrirCarga('${u.ID}')"><i class="bi bi-upload"></i> Cargar contenido</button>
                     <button class="btn btn-r" onclick="borrarUnidad('${u.ID}')">Quitar</button>
                 </div><div id="bl-${u.ID}" class="mt-2"></div></div>`).join('') || '<p class="text-muted">Sin unidades.</p>';
             document.getElementById('lista-evals').innerHTML = evs.map(e => {
@@ -570,51 +788,660 @@
             const box = document.getElementById('bl-' + unitID);
             const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
             const blocks = [...(u.blocks || [])].sort((a, b) => (parseFloat(a.Orden ?? a.orden) || 0) - (parseFloat(b.Orden ?? b.orden) || 0));
+            const ord = b => parseFloat(b.Orden ?? b.orden) || 0;
+            const barra = (i) => {
+                const prev = i > 0 ? ord(blocks[i - 1]) : 0;
+                const next = i < blocks.length ? ord(blocks[i]) : prev + 2;
+                const o = (prev + next) / 2;
+                return `<div class="ins-bar"><span>insertar aquí:</span>
+                    <button onclick="nuevoBloque('${unitID}',${o},'texto')"><i class="bi bi-plus"></i> Bloque</button>
+                    <button onclick="nuevoBloque('${unitID}',${o},'imagen')"><i class="bi bi-image"></i> Imagen</button>
+                    <button onclick="nuevoBloque('${unitID}',${o},'documento')"><i class="bi bi-file-earmark-pdf"></i> Documento</button>
+                    <button onclick="nuevoBloque('${unitID}',${o},'video')"><i class="bi bi-play-btn"></i> Video</button></div>`;
+            };
             box.innerHTML = (blocks.map((b, i) => {
                 const bid = b.ID || b.id;
                 const bt = b.Tipo || b.tipo, btit = b.Titulo || b.titulo || '';
-                return `<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1" style="font-size:.7rem">
-                    <span><b>${i + 1}.</b> [${bt}] ${btit} <small class="text-muted">${String(b.Contenido ?? b.contenido ?? '').slice(0, 60)}</small></span>
+                const cont = String(b.Contenido ?? b.contenido ?? '');
+                const img = (cont.match(/<img[^>]+src="([^"]+)"/i) || [])[1];
+                const ico = { imagen: 'bi-image', documento: 'bi-file-earmark-pdf', video: 'bi-play-btn' }[bt];
+                const resumen = cont.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+                return barra(i) + `<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1" style="font-size:.7rem">
+                    <span class="d-flex align-items-center gap-2 flex-grow-1" style="cursor:pointer" title="Clic para editar" onclick="editarBloque('${unitID}','${bid}')">${img ? `<img src="${attrH(img)}" alt="" style="width:34px;height:26px;object-fit:cover;border-radius:4px">` : ico ? `<i class="bi ${ico}" style="color:var(--dorado-claro)"></i>` : ''}<span><b>${i + 1}.</b> [${bt}] ${attrH(btit)} <small class="text-muted">${attrH(resumen)}</small></span></span>
                     <span class="d-flex gap-1">
                         <button class="btn btn-s btn-sm" onclick="moverBloque('${unitID}','${bid}',-1)">▲</button>
                         <button class="btn btn-s btn-sm" onclick="moverBloque('${unitID}','${bid}',1)">▼</button>
                         <button class="btn btn-s btn-sm" onclick="editarBloque('${unitID}','${bid}')">Editar</button>
                         <button class="btn btn-r btn-sm" onclick="borrarBloque('${bid}')">X</button>
                     </span></div>`;
-            }).join('') || '<p class="text-muted" style="font-size:.7rem">Sin bloques.</p>') +
+            }).join('') + (blocks.length ? barra(blocks.length) : '') || '<p class="text-muted" style="font-size:.7rem">Sin bloques.</p>') +
                 `<button class="btn btn-g btn-sm mt-1" onclick="nuevoBloque('${unitID}')">+ Bloque</button>`;
         }
 
-        async function nuevoBloque(unitID) {
-            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
-            const tipo = prompt('Tipo de bloque (texto,titulo,lista,tabla,cita,definicion,ejemplo,imagen,video,archivo,enlace,actividad,pregunta,rubrica,bibliografia,aviso,resumen):', 'texto');
-            if (!tipo) return;
-            const titulo = prompt('Título (opcional):') || '';
-            const contenido = prompt('Contenido del bloque:') || '';
-            if (!contenido && !titulo && !confirm('Bloque vacío, ¿guardar igual?')) return;
-            const r = await api('save_block', {}, {
-                unitID, tipo, titulo, contenido,
-                orden: ((u.blocks || []).length) + 1, visible: true
-            });
-            if (!r.d.ok) { toast(r.d.error || 'Error', true); return; }
-            toast('Bloque agregado');
-            await abrirDraft(cur.draft.ID);
+        let modalBloqueInst = null;
+        function getModalBloque() {
+            if (!modalBloqueInst && window.bootstrap) {
+                modalBloqueInst = new bootstrap.Modal(document.getElementById('modalBloque'), { focus: false });
+            }
+            return modalBloqueInst;
         }
 
-        async function editarBloque(unitID, bid) {
+        function nuevoBloque(unitID, orden, tipo) {
+            document.getElementById('mb-unit-id').value = unitID;
+            document.getElementById('mb-block-id').value = '';
+            document.getElementById('mb-orden').value = orden != null ? orden : '';
+            document.getElementById('modalBloqueTitulo').textContent = orden != null ? 'Insertar bloque entre bloques' : 'Nuevo Bloque de Aprendizaje';
+            document.getElementById('mb-tipo').value = tipo || 'html';
+            document.getElementById('mb-media').style.display = 'none';
+            document.getElementById('mb-preview').style.display = 'none';
+            document.getElementById('mb-titulo').value = '';
+            document.getElementById('mb-contenido').value = '';
+            document.getElementById('mb-formato-html').checked = false;
+            document.getElementById('mb-visible').checked = true;
+            actualizarPlaceholderBloque();
+            if (tipo === 'imagen' || tipo === 'documento' || tipo === 'video') abrirPanelMedia(tipo);
+            edIniciar();
+            const m = getModalBloque();
+            if (m) m.show(); else toast('No se pudo abrir el editor (falta cargar Bootstrap). Recargá la página.', true);
+        }
+
+        function editarBloque(unitID, bid) {
             const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
-            const b = (u.blocks || []).find(x => (x.ID || x.id) === bid);
+            const b = (u && (u.blocks || []).find(x => (x.ID || x.id) === bid));
             if (!b) return;
-            const titulo = prompt('Título:', b.Titulo || b.titulo || '');
-            if (titulo === null) return;
-            const contenido = prompt('Contenido:', b.Contenido || b.contenido || '');
-            if (contenido === null) return;
-            const r = await api('save_block', {}, {
-                id: bid, unitID, tipo: b.Tipo || b.tipo, titulo, contenido,
-                orden: b.Orden ?? b.orden ?? 0, visible: !(b.Visible === false || b.Visible === 'false')
+            document.getElementById('mb-unit-id').value = unitID;
+            document.getElementById('mb-block-id').value = bid;
+            document.getElementById('mb-orden').value = '';
+            document.getElementById('mb-media').style.display = 'none';
+            document.getElementById('mb-preview').style.display = 'none';
+            document.getElementById('modalBloqueTitulo').textContent = 'Editar Bloque: ' + (b.Titulo || b.titulo || 'Sin título');
+            document.getElementById('mb-tipo').value = b.Tipo || b.tipo || 'texto';
+            document.getElementById('mb-titulo').value = b.Titulo || b.titulo || '';
+            document.getElementById('mb-contenido').value = b.Contenido || b.contenido || '';
+            document.getElementById('mb-formato-html').checked = (b.Formato || b.formato) === 'html';
+            document.getElementById('mb-visible').checked = !(b.Visible === false || b.Visible === 'false');
+            actualizarPlaceholderBloque();
+            edIniciar();
+            const m = getModalBloque();
+            if (m) m.show(); else toast('No se pudo abrir el editor (falta cargar Bootstrap). Recargá la página.', true);
+        }
+
+        function actualizarPlaceholderBloque() {
+            const tipo = document.getElementById('mb-tipo').value;
+            const area = document.getElementById('mb-contenido');
+            const chkHtml = document.getElementById('mb-formato-html');
+            if (tipo === 'html') {
+                chkHtml.checked = true;
+                area.placeholder = 'Escribe o pega HTML directo:\n<p>Texto con <span class="sigla">SI</span> y enlaces.</p>\n<table class="table table-bordered">...</table>';
+            } else if (tipo === 'lista') {
+                area.placeholder = 'Una línea por cada viñeta:\nPrimer punto del tema\nSegundo punto del tema\nTercer punto del tema';
+            } else if (tipo === 'imagen') {
+                chkHtml.checked = true;
+                area.placeholder = '<img src="https://..." alt="Diagrama" class="img-fluid rounded mb-2">\n<p class="small text-muted text-center">Figura: Descripción del diagrama</p>';
+            } else if (tipo === 'documento' || tipo === 'video') {
+                chkHtml.checked = true;
+                area.placeholder = 'Usa el panel "Insertar ' + tipo + '" para pegar el enlace; puedes añadir texto explicativo antes o después.';
+            } else if (tipo === 'cita') {
+                chkHtml.checked = true;
+                area.placeholder = '<blockquote class="blockquote-clase"><p>«Texto de la cita o referencia»</p><footer>— Autor / Fuente</footer></blockquote>';
+            } else {
+                area.placeholder = 'Escribe el contenido de esta sección...';
+            }
+        }
+
+        function insertarEnBloque(abrir, cerrar) {
+            if (ED.modo === 'visual' && ED.ed) {
+                const f = abrir === '<strong>' ? 'Bold' : abrir === '<em>' ? 'Italic' : null;
+                if (f) { ED.ed.execCommand(f); ED.ed.focus(); return; }
+                ED.ed.insertContent(abrir + (ED.ed.selection.getContent() || 'texto') + cerrar); return;
+            }
+            const area = document.getElementById('mb-contenido');
+            const inicio = area.selectionStart, fin = area.selectionEnd;
+            const texto = area.value;
+            const sel = texto.substring(inicio, fin) || 'texto';
+            area.value = texto.substring(0, inicio) + abrir + sel + cerrar + texto.substring(fin);
+            area.focus();
+            area.selectionStart = inicio + abrir.length;
+            area.selectionEnd = inicio + abrir.length + sel.length;
+        }
+
+        function insertarPlantilla(tipo) {
+            const area = document.getElementById('mb-contenido');
+            const chkHtml = document.getElementById('mb-formato-html');
+            chkHtml.checked = true;
+            let snippet = '';
+            if (tipo === 'tabla') {
+                snippet = `\n<div class="table-responsive my-3">\n  <table class="table table-bordered table-striped align-middle">\n    <thead class="table-primary">\n      <tr><th>Nivel</th><th>Sistema</th><th>Descripción</th></tr>\n    </thead>\n    <tbody>\n      <tr><td>Operativo</td><td>TPS</td><td>Registro de transacciones diarias.</td></tr>\n      <tr><td>Táctico</td><td>MIS / DSS</td><td>Informes de gestión y apoyo a decisiones.</td></tr>\n      <tr><td>Estratégico</td><td>EIS</td><td>Información para la alta dirección.</td></tr>\n    </tbody>\n  </table>\n</div>\n`;
+            } else if (tipo === 'imagen') {
+                abrirPanelMedia('imagen'); return;
+            } else if (tipo === 'galeria') {
+                snippet = `\n<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0">\n  <figure style="flex:1 1 240px;margin:0;text-align:center"><img src="URL_IMAGEN_1" alt="Imagen 1" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px"><figcaption class="small text-muted"><em>Figura 1</em></figcaption></figure>\n  <figure style="flex:1 1 240px;margin:0;text-align:center"><img src="URL_IMAGEN_2" alt="Imagen 2" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px"><figcaption class="small text-muted"><em>Figura 2</em></figcaption></figure>\n</div>\n`;
+            } else if (tipo === '__viejo_imagen') {
+                const urlImg = prompt('URL o nombre de archivo de la imagen:', 'logo_centuria.png') || '';
+                const alt = prompt('Descripción / leyenda de la imagen:', 'Diagrama conceptual') || '';
+                snippet = `\n<div class="text-center my-3">\n  <img src="${urlImg}" alt="${alt}" class="img-fluid rounded shadow-sm" style="max-height:320px;">\n  <p class="small text-muted mt-1"><em>${alt}</em></p>\n</div>\n`;
+            } else if (tipo === 'cita') {
+                snippet = `\n<blockquote class="blockquote-clase p-3 rounded" style="background:#fef3c7;border-left:4px solid #f59e0b;">\n  <p class="mb-1">«Definiciones y conceptos. Clasificación. Tipos y usos de los sistemas de información.»</p>\n  <footer class="small text-muted">— Plan de Estudio TIC, Unidad I.</footer>\n</blockquote>\n`;
+            }
+            insertarEnCursor(snippet);
+        }
+
+
+        // ══ Editor visual tipo Word (TinyMCE 6, MIT, sin clave) con modo Código HTML ══
+        // Conserva todo el HTML (tablas, figuras, iframes, clases e ids de las definiciones), así que cualquier bloque se edita en visual.
+        const TINY = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';
+        const ED = { ed: null, modo: 'html', cargando: null };
+        function cargarTiny() {
+            if (window.tinymce) return Promise.resolve();
+            return ED.cargando || (ED.cargando = new Promise((ok, mal) => {
+                const sc = document.createElement('script');
+                sc.src = TINY + '/tinymce.min.js';
+                sc.referrerPolicy = 'origin';
+                sc.onload = ok; sc.onerror = () => { ED.cargando = null; mal(new Error('No se pudo cargar el editor visual.')); };
+                document.head.appendChild(sc);
+            }));
+        }
+        function edAviso(t) { const el = document.getElementById('ed-aviso'); el.innerHTML = t || ''; el.style.display = t ? '' : 'none'; }
+        function edBotones() {
+            document.getElementById('ed-btn-visual').classList.toggle('btn-p', ED.modo === 'visual');
+            document.getElementById('ed-btn-html').classList.toggle('btn-p', ED.modo === 'html');
+            // los botones de ayuda de abajo siguen funcionando en los dos modos; en visual la barra ya tiene negrita y cursiva
+            document.getElementById('mb-helpers').classList.toggle('d-none', ED.modo === 'visual');
+            document.getElementById('ed-cinta').style.display = ED.modo === 'visual' ? '' : 'none';
+            if (window.bootstrap && !ED.tips) {
+                ED.tips = [...document.querySelectorAll('#ed-cinta [data-bs-toggle="tooltip"]')].map(b => new bootstrap.Tooltip(b, { trigger: 'hover', delay: { show: 150, hide: 0 } }));
+                document.querySelectorAll('#ed-cinta button').forEach(b => b.addEventListener('click', () => ED.tips.forEach(t => t.hide())));
+            }
+        }
+        async function edCrear() {
+            if (ED.ed) return;
+            await cargarTiny();
+            const [ed] = await tinymce.init({
+                target: document.getElementById('ed-tiny'),
+                base_url: TINY, suffix: '.min',
+                language: 'es', language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@24.7.29/langs6/es.js',
+                license_key: 'gpl',
+                height: 460, min_height: 300, resize: true,
+                menubar: false,
+                plugins: 'lists advlist link image table media code fullscreen searchreplace charmap autolink wordcount visualblocks preview quickbars noneditable',
+                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | bullist numlist | alignleft aligncenter alignright | removeformat | fullscreen',
+                toolbar_mode: 'wrap',
+                noneditable_class: 'act',
+                file_picker_types: 'image',
+                file_picker_callback: (cb) => elegirImagenPC(url => cb(url, { alt: '' })),
+                images_file_types: 'jpg,jpeg,png,gif,webp',
+                quickbars_selection_toolbar: 'bold italic underline | forecolor backcolor | quicklink blockquote | h2 h3',
+                quickbars_insert_toolbar: 'quicktable image media hr',
+                block_formats: 'Párrafo=p; Título 2=h2; Título 3=h3; Título 4=h4; Cita=blockquote; Código=pre',
+                table_default_attributes: { class: 'table table-bordered table-striped' },
+                table_default_styles: { width: '100%' },
+                table_class_list: [{ title: 'Con bordes', value: 'table table-bordered' }, { title: 'Rayada', value: 'table table-bordered table-striped' }, { title: 'Simple', value: 'table' }],
+                image_caption: true, image_advtab: true, image_class_list: [{ title: 'Adaptable', value: 'img-fluid rounded' }, { title: 'Sin clase', value: '' }],
+                // URLs de Drive / YouTube / Docs → formato embebible (las mismas reglas que el panel de medios)
+                urlconverter_callback: (url, node) => (node === 'img' ? urlsMedia(url).img : (node === 'iframe' || node === 'video') ? urlsMedia(url).embed : url),
+                media_url_resolver: (data) => Promise.resolve({ html: `<iframe src="${attrH(urlsMedia(data.url).embed)}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:8px" allowfullscreen loading="lazy"></iframe>` }),
+                // conservar todo lo que trae el contenido importado
+                valid_elements: '*[*]', extended_valid_elements: '*[*]', valid_children: '+body[style],+a[div|p|h2|h3|figure|img]',
+                verify_html: false, convert_urls: false, relative_urls: false, entity_encoding: 'raw',
+                paste_data_images: true, browser_spellcheck: true, contextmenu: 'link image table',
+                promotion: false, branding: false,
+                content_css: ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', '../css/aula-contenido.css?v=4'],
+                content_style: '.act{cursor:pointer;position:relative} .act::before{content:"Doble clic para editar";position:absolute;top:4px;right:8px;font-size:10px;color:#6366f1} body{font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:15px;padding:12px 16px;color:#1f2937} img{max-width:100%;height:auto} .sigla{font-weight:700;color:#007A33;border-bottom:1px dotted} [id^="def-"]{background:#f0fdf4;border-left:3px solid #22c55e;padding:4px 8px} .blockquote-clase{background:#fef3c7;border-left:4px solid #f59e0b;padding:8px 12px}',
+                setup: (e) => {
+                    e.on('change keyup undo redo SetContent', () => { clearTimeout(ED.t); ED.t = setTimeout(edSync, 300); });
+                    // doble clic sobre una actividad: se vuelve a abrir su formulario para editarla
+                    e.on('dblclick', ev => { const a = ev.target.closest && ev.target.closest('.act'); if (a) { e.selection.select(a); editarActividad(a); } });
+                }
             });
-            if (!r.d.ok) { toast('Error', true); return; }
-            toast('Bloque actualizado');
+            ED.ed = ed;
+        }
+        // contenido actual del editor → textarea (es lo que se guarda)
+        function edSync() {
+            if (ED.modo !== 'visual' || !ED.ed) return;
+            document.getElementById('mb-contenido').value = ED.ed.getContent().trim();
+            document.getElementById('mb-formato-html').checked = true;
+        }
+        function textoAHtml(t) {
+            return String(t || '').split(/\r?\n/).map(l => l.trim() ? '<p>' + attrH(l) + '</p>' : '').join('');
+        }
+        async function edModo(modo) {
+            const area = document.getElementById('mb-contenido');
+            const wrap = document.getElementById('ed-visual-wrap');
+            if (modo === 'visual') {
+                const esHtml = document.getElementById('mb-formato-html').checked || /<\w+[^>]*>/.test(area.value);
+                if (/<script/i.test(area.value) && !confirm('Este bloque tiene código interactivo (<script>) que el editor visual elimina. ¿Abrir igual en Visual?')) return;
+                edAviso('Cargando editor…');
+                try { await edCrear(); } catch (e) { edAviso(''); toast(e.message, true); return; }
+                ED.ed.setContent(esHtml ? area.value : textoAHtml(area.value));
+                ED.ed.undoManager.clear();
+                ED.modo = 'visual';
+                wrap.style.display = ''; area.style.display = 'none';
+                document.getElementById('mb-formato-html').checked = true;
+                edAviso('');
+            } else {
+                edSync();
+                ED.modo = 'html';
+                wrap.style.display = 'none'; area.style.display = '';
+            }
+            edBotones();
+        }
+        // Al abrir el modal: editor visual por defecto (o el último modo elegido).
+        function edIniciar() {
+            const pref = 'visual';
+            ED.modo = 'html';
+            document.getElementById('ed-visual-wrap').style.display = 'none';
+            document.getElementById('mb-contenido').style.display = '';
+            edAviso('');
+            edBotones();
+            if (pref === 'visual' && /<script/i.test(document.getElementById('mb-contenido').value)) {
+                edAviso('Este bloque tiene código interactivo (&lt;script&gt;); se edita en Código HTML porque el editor visual lo quitaría.');
+                return;
+            }
+            if (pref === 'visual') edModo('visual');
+        }
+
+
+        // ══ Herramientas fáciles (sin HTML): imagen, tabla, video, documento, cita, recuadros y actividades ══
+        function edLista() { if (ED.modo !== 'visual' || !ED.ed) { toast('Pasá a modo Visual para usar esta herramienta.', true); return null; } return ED.ed; }
+        // Las actividades no se editan por dentro: si el cursor quedó sobre una, se pasa a la línea siguiente para no reemplazarla.
+        function edSalirDeActividad(ed, selector) {
+            const act = ed.dom.getParent(ed.selection.getNode(), selector || '.act');
+            if (!act) return;
+            let nx = act.nextElementSibling;
+            if (!nx || nx.nodeName !== 'P') { nx = ed.dom.create('p', {}, '<br>'); ed.dom.insertAfter(nx, act); }
+            ed.selection.setCursorLocation(nx, 0);
+        }
+        // dentro: true permite insertar dentro de un recuadro (ej.: una imagen en una definición);
+        // los recuadros, citas y actividades siempre van después del recuadro donde está el cursor, nunca anidados.
+        function edInsertar(html, dentro) {
+            const ed = edLista(); if (!ed) return;
+            ed.focus();
+            edSalirDeActividad(ed, dentro ? '.act' : '.act,.cuadro,.cita-centuria,.doc-embebido');
+            ed.insertContent(html);
+            edSalirDeActividad(ed);
+            edSync();
+        }
+        const esc2 = t => attrH(t);
+        const parrafosDe = t => String(t || '').split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => '<p>' + esc2(x) + '</p>').join('');
+
+        // Imagen desde la computadora: se achica (máx. 1200 px, JPG) para que entre en la base de datos.
+        function elegirImagenPC(listo) {
+            const inp = document.createElement('input');
+            inp.type = 'file'; inp.accept = 'image/*';
+            inp.onchange = () => {
+                const f = inp.files[0]; if (!f) return;
+                const fr = new FileReader();
+                fr.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width, h = img.height; const max = 1200;
+                        if (w > max || h > max) { const k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+                        const c = document.createElement('canvas'); c.width = w; c.height = h;
+                        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+                        let q = .82, url = c.toDataURL('image/jpeg', q);
+                        while (url.length > 350000 && q > .4) { q -= .1; url = c.toDataURL('image/jpeg', q); }
+                        if (url.length > 450000) { toast('La imagen es muy pesada. Subila a Google Drive y pegá el enlace.', true); return; }
+                        listo(url);
+                    };
+                    img.src = fr.result;
+                };
+                fr.readAsDataURL(f);
+            };
+            inp.click();
+        }
+
+        function eduImagen() {
+            const ed = edLista(); if (!ed) return;
+            const dlg = ed.windowManager.open({
+                title: 'Insertar imagen',
+                body: { type: 'panel', items: [
+                    { type: 'htmlpanel', html: '<p style="margin:0 0 6px">Subí una imagen desde tu computadora <b>o</b> pegá un enlace (también de Google Drive).</p>' },
+                    { type: 'button', name: 'subir', text: '📁 Elegir imagen de mi computadora', buttonType: 'secondary' },
+                    { type: 'input', name: 'url', label: 'Enlace de la imagen', placeholder: 'https://…' },
+                    { type: 'input', name: 'pie', label: 'Texto debajo de la imagen (opcional)', placeholder: 'Figura 1. …' },
+                    { type: 'selectbox', name: 'tam', label: 'Tamaño', items: [{ text: 'Mediana', value: '60%' }, { text: 'Pequeña', value: '35%' }, { text: 'Grande (todo el ancho)', value: '100%' }] }
+                ] },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: 'Insertar', primary: true }],
+                onAction: (api, d) => { if (d.name === 'subir') elegirImagenPC(url => { api.setData({ url }); toast('✓ Imagen lista, tocá Insertar'); }); },
+                onSubmit: api => {
+                    const d = api.getData();
+                    if (!d.url.trim()) { toast('Elegí una imagen o pegá un enlace', true); return; }
+                    const src = d.url.startsWith('data:') ? d.url : urlsMedia(d.url).img;
+                    edInsertar(`<figure class="imagen-centuria"><img src="${esc2(src)}" alt="${esc2(d.pie || 'Imagen')}" style="width:${d.tam}">${d.pie ? '<figcaption>' + esc2(d.pie) + '</figcaption>' : ''}</figure><p></p>`, true);
+                    api.close();
+                }
+            });
+            return dlg;
+        }
+
+        function eduTabla() {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Insertar tabla',
+                body: { type: 'panel', items: [
+                    { type: 'grid', columns: 2, items: [
+                        { type: 'input', name: 'filas', label: 'Filas', inputMode: 'numeric' },
+                        { type: 'input', name: 'cols', label: 'Columnas', inputMode: 'numeric' }] },
+                    { type: 'checkbox', name: 'enc', label: 'La primera fila es de títulos' },
+                    { type: 'htmlpanel', html: '<p style="margin:6px 0 0;color:#64748b">Después escribís dentro de cada celda. Con clic derecho sobre la tabla podés agregar o quitar filas y columnas.</p>' }
+                ] },
+                initialData: { filas: '3', cols: '3', enc: true },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(), f = Math.min(30, Math.max(1, +d.filas || 3)), c = Math.min(10, Math.max(1, +d.cols || 3));
+                    let h = '<table class="table table-bordered table-striped" style="width:100%">';
+                    if (d.enc) h += '<thead><tr>' + Array.from({ length: c }, (_, k) => `<th>Título ${k + 1}</th>`).join('') + '</tr></thead>';
+                    h += '<tbody>' + Array.from({ length: d.enc ? f - 1 || 1 : f }, () => '<tr>' + '<td>&nbsp;</td>'.repeat(c) + '</tr>').join('') + '</tbody></table><p></p>';
+                    edInsertar(h, true); api.close();
+                }
+            });
+        }
+
+        function eduVideo() {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Insertar video',
+                body: { type: 'panel', items: [
+                    { type: 'input', name: 'url', label: 'Enlace del video (YouTube o Google Drive)', placeholder: 'https://www.youtube.com/watch?v=…' },
+                    { type: 'input', name: 'tit', label: 'Título o comentario (opcional)' }] },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(); if (!d.url.trim()) return;
+                    const r = urlsMedia(d.url);
+                    const media = r.mp4 ? `<video src="${esc2(d.url)}" controls style="width:100%;border-radius:8px"></video>`
+                        : `<iframe src="${esc2(r.embed)}" title="${esc2(d.tit || 'Video')}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:8px" allowfullscreen loading="lazy"></iframe>`;
+                    edInsertar(`<figure class="imagen-centuria">${media}${d.tit ? '<figcaption>' + esc2(d.tit) + '</figcaption>' : ''}</figure><p></p>`); api.close();
+                }
+            });
+        }
+
+        function eduDocumento() {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Insertar documento',
+                body: { type: 'panel', items: [
+                    { type: 'htmlpanel', html: '<p style="margin:0 0 6px">Subí el archivo (PDF, Word, PowerPoint) a <b>Google Drive</b>, compartilo como <i>“Cualquier persona con el enlace”</i> y pegá el enlace aquí.</p>' },
+                    { type: 'input', name: 'url', label: 'Enlace del documento', placeholder: 'https://drive.google.com/file/d/…' },
+                    { type: 'input', name: 'tit', label: 'Nombre del documento', placeholder: 'Código de ética profesional' },
+                    { type: 'checkbox', name: 'ver', label: 'Mostrarlo dentro de la página (además del botón para abrirlo)' }] },
+                initialData: { url: '', tit: '', ver: true },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(); if (!d.url.trim()) return;
+                    const r = urlsMedia(d.url), tit = d.tit || 'Documento';
+                    edInsertar(`<div class="doc-embebido"><p><strong>📄 ${esc2(tit)}</strong></p>${d.ver ? `<iframe src="${esc2(r.embed)}" title="${esc2(tit)}" loading="lazy"></iframe>` : ''}<p><a href="${esc2(r.abrir)}" target="_blank" rel="noopener noreferrer">Abrir / descargar el documento</a></p></div><p></p>`);
+                    api.close();
+                }
+            });
+        }
+
+        function eduCita() {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Insertar cita',
+                body: { type: 'panel', items: [
+                    { type: 'textarea', name: 'txt', label: 'Texto de la cita' },
+                    { type: 'input', name: 'autor', label: 'Autor y fuente', placeholder: 'Adela Cortina, Ética mínima (2000)' }] },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(); if (!d.txt.trim()) return;
+                    edInsertar(`<blockquote class="cita-centuria"><p>«${esc2(d.txt.trim())}»</p>${d.autor ? '<footer>— ' + esc2(d.autor) + '</footer>' : ''}</blockquote><p></p>`); api.close();
+                }
+            });
+        }
+
+        function eduEnlace() { const ed = edLista(); if (ed) ed.execCommand('mceLink'); }
+
+        const CUADROS = { definicion: '📘 Definición', ejemplo: '💡 Ejemplo', importante: '⚠️ Importante', reflexion: '💭 Para reflexionar' };
+        function eduCuadro(tipo) {
+            const ed = edLista(); if (!ed) return;
+            const sel = ed.selection.getContent();
+            edInsertar(`<div class="cuadro cuadro-${tipo}"><div class="cuadro-titulo">${CUADROS[tipo]}</div>${sel || '<p data-mce-ph="1">Escribí aquí…</p>'}</div><p></p>`);
+            const ph = ed.getBody().querySelector('[data-mce-ph]');
+            if (ph) { ph.removeAttribute('data-mce-ph'); ed.selection.select(ph, true); }
+        }
+
+        // ── Actividades: el formulario arma el HTML; en el aula, js/actividades-aula.js las vuelve interactivas ──
+        function htmlCompletar(enun, texto) {
+            const cuerpo = String(texto).split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => '<p>' + esc2(l).replace(/\[([^\]]+)\]/g, (_, w) => {
+                const alt = w.split('/').map(x => x.trim()).filter(Boolean);
+                return `<span class="act-hueco" data-r="${esc2(alt.join('|'))}">${esc2(alt[0])}</span>`;
+            }) + '</p>').join('');
+            return `<div class="act act-completar"><div class="act-titulo">✏️ ${esc2(enun || 'Completá con la palabra correcta')}</div>${cuerpo}</div><p></p>`;
+        }
+        function eduCompletar(prev, nodo) {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Actividad: completar con la palabra',
+                size: 'medium',
+                body: { type: 'panel', items: [
+                    { type: 'input', name: 'enun', label: 'Consigna', placeholder: 'Completá con la palabra correcta' },
+                    { type: 'textarea', name: 'texto', label: 'Oraciones. Poné entre [corchetes] la palabra que el alumno debe escribir' },
+                    { type: 'htmlpanel', html: '<p style="margin:4px 0 0;color:#64748b">Ejemplo: <code>La [ética] estudia la [moral] de forma reflexiva.</code><br>Si se aceptan varias respuestas, separalas con /: <code>[deontología/deontologia]</code></p>' }] },
+                initialData: prev || { enun: 'Completá con la palabra correcta', texto: '' },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: nodo ? 'Guardar cambios' : 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData();
+                    if (!/\[[^\]]+\]/.test(d.texto)) { toast('Marcá al menos una palabra entre [corchetes]', true); return; }
+                    if (nodo) ed.dom.remove(nodo);
+                    edInsertar(htmlCompletar(d.enun, d.texto)); api.close();
+                }
+            });
+        }
+
+        function htmlQuiz(tipo, preg, opciones, okIdx, explica) {
+            return `<div class="act act-quiz" data-tipo="${tipo}"><div class="act-titulo">${tipo === 'vf' ? '✅ Verdadero o falso' : '❓ Pregunta'}</div><p class="act-preg">${esc2(preg)}</p>` +
+                `<ul class="act-opciones">${opciones.map((o, k) => `<li${k === okIdx ? ' data-ok="1"' : ''}>${esc2(o)}</li>`).join('')}</ul>` +
+                (explica ? `<p class="act-explica">💬 ${esc2(explica)}</p>` : '') + '</div><p></p>';
+        }
+        function eduMultiple(prev, nodo) {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Actividad: opción múltiple',
+                size: 'medium',
+                body: { type: 'panel', items: [
+                    { type: 'input', name: 'preg', label: 'Pregunta' },
+                    { type: 'input', name: 'o1', label: 'Opción 1' }, { type: 'input', name: 'o2', label: 'Opción 2' },
+                    { type: 'input', name: 'o3', label: 'Opción 3 (opcional)' }, { type: 'input', name: 'o4', label: 'Opción 4 (opcional)' },
+                    { type: 'selectbox', name: 'ok', label: '¿Cuál es la correcta?', items: [1, 2, 3, 4].map(k => ({ text: 'Opción ' + k, value: String(k) })) },
+                    { type: 'input', name: 'exp', label: 'Explicación que se muestra al acertar (opcional)' }] },
+                initialData: prev || { preg: '', o1: '', o2: '', o3: '', o4: '', ok: '1', exp: '' },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: nodo ? 'Guardar cambios' : 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData();
+                    const ops = [d.o1, d.o2, d.o3, d.o4].map(x => x.trim());
+                    const ok = +d.ok - 1;
+                    if (!d.preg.trim() || ops.filter(Boolean).length < 2) { toast('Escribí la pregunta y al menos 2 opciones', true); return; }
+                    if (!ops[ok]) { toast('La opción marcada como correcta está vacía', true); return; }
+                    const usadas = ops.map((o, k) => ({ o, k })).filter(x => x.o);
+                    if (nodo) ed.dom.remove(nodo);
+                    edInsertar(htmlQuiz('multiple', d.preg.trim(), usadas.map(x => x.o), usadas.findIndex(x => x.k === ok), d.exp.trim())); api.close();
+                }
+            });
+        }
+        function eduVF(prev, nodo) {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Actividad: verdadero o falso',
+                body: { type: 'panel', items: [
+                    { type: 'textarea', name: 'preg', label: 'Afirmación' },
+                    { type: 'selectbox', name: 'ok', label: 'La afirmación es…', items: [{ text: 'Verdadera', value: '0' }, { text: 'Falsa', value: '1' }] },
+                    { type: 'input', name: 'exp', label: 'Explicación (opcional)' }] },
+                initialData: prev || { preg: '', ok: '0', exp: '' },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: nodo ? 'Guardar cambios' : 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(); if (!d.preg.trim()) return;
+                    if (nodo) ed.dom.remove(nodo);
+                    edInsertar(htmlQuiz('vf', d.preg.trim(), ['Verdadero', 'Falso'], +d.ok, d.exp.trim())); api.close();
+                }
+            });
+        }
+        function eduAbierta(prev, nodo) {
+            const ed = edLista(); if (!ed) return;
+            ed.windowManager.open({
+                title: 'Actividad: pregunta abierta',
+                body: { type: 'panel', items: [
+                    { type: 'textarea', name: 'preg', label: 'Pregunta para que el alumno responda con sus palabras' },
+                    { type: 'htmlpanel', html: '<p style="margin:4px 0 0;color:#64748b">El alumno escribe su respuesta en un cuadro; queda guardada en su dispositivo para repasar.</p>' }] },
+                initialData: prev || { preg: '' },
+                buttons: [{ type: 'cancel', text: 'Cancelar' }, { type: 'submit', text: nodo ? 'Guardar cambios' : 'Insertar', primary: true }],
+                onSubmit: api => {
+                    const d = api.getData(); if (!d.preg.trim()) return;
+                    if (nodo) ed.dom.remove(nodo);
+                    edInsertar(`<div class="act act-abierta"><div class="act-titulo">💭 Reflexioná y respondé</div><p class="act-preg">${esc2(d.preg.trim())}</p></div><p></p>`); api.close();
+                }
+            });
+        }
+        // Doble clic sobre una actividad ya insertada: se reabre su formulario con los datos cargados.
+        function editarActividad(a) {
+            const txt = q => ((a.querySelector(q) || {}).textContent || '').trim();
+            const titulo = txt('.act-titulo').replace(/^\S+\s/, '');
+            if (a.classList.contains('act-completar')) {
+                const texto = [...a.querySelectorAll('p')].map(p => {
+                    const c = p.cloneNode(true);
+                    c.querySelectorAll('.act-hueco').forEach(h => h.replaceWith('[' + (h.dataset.r || h.textContent).split('|').join('/') + ']'));
+                    return c.textContent.trim();
+                }).join('\n');
+                return eduCompletar({ enun: titulo, texto }, a);
+            }
+            if (a.classList.contains('act-abierta')) return eduAbierta({ preg: txt('.act-preg') }, a);
+            const lis = [...a.querySelectorAll('.act-opciones li')];
+            const ok = Math.max(0, lis.findIndex(l => l.dataset.ok === '1'));
+            const exp = txt('.act-explica').replace(/^💬\s*/, '');
+            if (a.dataset.tipo === 'vf') return eduVF({ preg: txt('.act-preg'), ok: String(ok), exp }, a);
+            const o = lis.map(l => l.textContent.trim());
+            return eduMultiple({ preg: txt('.act-preg'), o1: o[0] || '', o2: o[1] || '', o3: o[2] || '', o4: o[3] || '', ok: String(ok + 1), exp }, a);
+        }
+
+        function insertarEnCursor(snippet) {
+            if (ED.modo === 'visual' && ED.ed) {
+                ED.ed.focus();
+                edSalirDeActividad(ED.ed);
+                ED.ed.insertContent(snippet);
+                edSync();
+                return;
+            }
+            const area = document.getElementById('mb-contenido');
+            const i = area.selectionStart ?? area.value.length, f = area.selectionEnd ?? i;
+            area.value = area.value.slice(0, i) + snippet + area.value.slice(f);
+            area.focus();
+            area.selectionStart = area.selectionEnd = i + snippet.length;
+            if (document.getElementById('mb-preview').style.display !== 'none') pintarPreviewBloque();
+        }
+
+        function abrirPanelMedia(tipo) {
+            document.getElementById('mm-tipo').value = tipo;
+            document.getElementById('mm-url').value = '';
+            document.getElementById('mm-leyenda').value = '';
+            document.getElementById('mb-media').style.display = '';
+            setTimeout(() => document.getElementById('mm-url').focus(), 300);
+        }
+
+        function attrH(v) { return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // Normaliza enlaces de Drive / Docs / YouTube / Office al formato embebible
+        function urlsMedia(url) {
+            const u = url.trim();
+            let m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
+            if (m) return { img: `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1600`, embed: `https://drive.google.com/file/d/${m[1]}/preview`, abrir: `https://drive.google.com/file/d/${m[1]}/view` };
+            m = u.match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([\w-]+)/);
+            if (m) return { img: u, embed: `https://docs.google.com/${m[1]}/d/${m[2]}/${m[1] === 'presentation' ? 'embed' : 'preview'}`, abrir: u };
+            m = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+            if (m) return { img: `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`, embed: `https://www.youtube.com/embed/${m[1]}`, abrir: `https://www.youtube.com/watch?v=${m[1]}` };
+            if (/\.(docx?|xlsx?|pptx?)(\?|$)/i.test(u)) return { img: u, embed: `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(u)}`, abrir: u };
+            return { img: u, embed: u, abrir: u, mp4: /\.(mp4|webm|ogg)(\?|$)/i.test(u) };
+        }
+
+        function insertarMedia() {
+            const tipo = document.getElementById('mm-tipo').value;
+            const url = document.getElementById('mm-url').value.trim();
+            const ley = document.getElementById('mm-leyenda').value.trim();
+            const tam = document.getElementById('mm-tam').value;
+            const pos = document.getElementById('mm-pos').value;
+            const desc = document.getElementById('mm-descarga').checked;
+            if (!url) { toast('Pega la URL del recurso', true); return; }
+            const r = urlsMedia(url);
+            const cap = ley ? `\n  <figcaption class="small text-muted mt-1"><em>${attrH(ley)}</em></figcaption>` : '';
+            const btn = desc ? `\n  <p class="mt-1"><a href="${attrH(r.abrir)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">Abrir / Descargar</a></p>` : '';
+            let html;
+            if (tipo === 'imagen') {
+                const maxH = { s: 180, m: 320, l: 520 }[tam];
+                const ancho = { s: '30%', m: '45%', l: '60%' }[tam];
+                const est = pos === 'centro' ? 'text-align:center;margin:16px auto' : `float:${pos === 'izq' ? 'left' : 'right'};width:${ancho};margin:${pos === 'izq' ? '4px 16px 8px 0' : '4px 0 8px 16px'};text-align:center`;
+                html = `\n<figure style="${est}">\n  <img src="${attrH(r.img)}" alt="${attrH(ley || 'Imagen')}" loading="lazy" class="img-fluid rounded shadow-sm" style="max-height:${maxH}px;max-width:100%">${cap}\n</figure>\n${pos === 'centro' ? '' : '<p>Texto que rodea la imagen…</p>\n<div style="clear:both"></div>\n'}`;
+            } else if (tipo === 'video' && r.mp4) {
+                html = `\n<figure style="margin:16px 0;text-align:center">\n  <video src="${attrH(url)}" controls preload="metadata" style="width:100%;max-height:${{ s: 240, m: 400, l: 560 }[tam]}px;border-radius:8px"></video>${cap}\n</figure>\n`;
+            } else {
+                const h = { s: 300, m: 480, l: 680 }[tam];
+                const alto = tipo === 'video' ? 'aspect-ratio:16/9;height:auto' : `height:${h}px`;
+                html = `\n<figure style="margin:16px 0">\n  <iframe src="${attrH(r.embed)}" title="${attrH(ley || tipo)}" loading="lazy" allowfullscreen allow="autoplay; encrypted-media" style="width:100%;${alto};border:1px solid #e5e7eb;border-radius:8px"></iframe>${cap}${btn}\n</figure>\n`;
+            }
+            document.getElementById('mb-formato-html').checked = true;
+            insertarEnCursor(html);
+            const tit = document.getElementById('mb-titulo');
+            if (!tit.value && ley) tit.value = ley;
+            document.getElementById('mm-url').value = '';
+            document.getElementById('mm-leyenda').value = '';
+            toast('✓ ' + tipo + ' insertado');
+        }
+
+        function pintarPreviewBloque() {
+            edSync();
+            const box = document.getElementById('mb-preview');
+            const c = document.getElementById('mb-contenido').value;
+            const t = document.getElementById('mb-titulo').value;
+            const html = document.getElementById('mb-formato-html').checked;
+            box.innerHTML = (t ? `<h6 style="font-weight:700">${attrH(t)}</h6>` : '') +
+                (html ? c.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son\w+="[^"]*"/gi, '') : `<p style="white-space:pre-wrap">${attrH(c)}</p>`);
+            if (window.CenturiaActividades) CenturiaActividades.activar(box, 'vista_previa');
+        }
+
+        function togglePreviewBloque() {
+            const box = document.getElementById('mb-preview');
+            const ver = box.style.display === 'none';
+            box.style.display = ver ? '' : 'none';
+            if (ver) pintarPreviewBloque();
+        }
+
+        async function guardarModalBloque() {
+            edSync();
+            const unitID = document.getElementById('mb-unit-id').value;
+            const bid = document.getElementById('mb-block-id').value;
+            const tipo = document.getElementById('mb-tipo').value;
+            const titulo = document.getElementById('mb-titulo').value.trim();
+            const contenido = document.getElementById('mb-contenido').value.trim();
+            const esHtml = document.getElementById('mb-formato-html').checked;
+            const visible = document.getElementById('mb-visible').checked;
+
+            if (!contenido && !titulo) {
+                toast('Ingresa al menos un título o contenido para el bloque', true);
+                return;
+            }
+
+            const u = (cur.units || []).find(x => (x.ID || x.id) === unitID);
+            const ordenIns = document.getElementById('mb-orden').value;
+            const maxOrden = Math.max(0, ...(u.blocks || []).map(x => parseFloat(x.Orden ?? x.orden) || 0));
+            const orden = bid ? (u.blocks.find(x => (x.ID || x.id) === bid)?.Orden || 1) : (ordenIns !== '' ? parseFloat(ordenIns) : maxOrden + 1);
+
+            const r = await api('save_block', {}, {
+                id: bid || undefined,
+                unitID,
+                tipo,
+                titulo,
+                contenido,
+                formato: esHtml ? 'html' : 'texto',
+                orden,
+                visible
+            });
+
+            if (!r.d || !r.d.ok) {
+                toast(r.d?.error || 'Error al guardar bloque', true);
+                return;
+            }
+
+            toast('✓ Bloque guardado con éxito');
+            const m = getModalBloque();
+            if (m) m.hide();
             await abrirDraft(cur.draft.ID);
         }
 
@@ -637,6 +1464,7 @@
             const put = (id, orden, blk) => api('save_block', {}, {
                 id, unitID, tipo: blk.Tipo || blk.tipo, titulo: blk.Titulo || blk.titulo || '',
                 contenido: blk.Contenido || blk.contenido || '', orden,
+                formato: blk.Formato || blk.formato || 'texto',
                 visible: !(blk.Visible === false || blk.Visible === 'false')
             });
             await put(idI, oj === oi ? oi + dir : oj, blocks[i]);
@@ -673,6 +1501,71 @@
 
         // v2026-10-11: se edita en el mismo formulario (antes con prompt(), que perdía tipo, origen y unidad).
         let evalEditando = null;
+
+        // ── Listas de unidades en Actividades, Banco y Evaluaciones ──
+        function pintarSelectUnidades() {
+            const us = [...((cur && cur.units) || [])].sort((a, b) => (+a.Numero || 0) - (+b.Numero || 0));
+            document.querySelectorAll('select.sel-unidades').forEach(sel => {
+                const v = sel.value, porNum = sel.dataset.valor === 'numero';
+                sel.innerHTML = '<option value="">— Toda la asignatura —</option>' +
+                    us.map(u => `<option value="${porNum ? u.Numero : u.ID}">U${u.Numero} — ${attrH(u.Titulo || '')}</option>`).join('');
+                sel.value = v;
+            });
+        }
+        const nombreUnidad = (id) => { const u = ((cur && cur.units) || []).find(x => x.ID === id || String(x.Numero) === String(id)); return u ? 'U' + u.Numero + ' — ' + u.Titulo : ''; };
+
+        function evOrigenCambio() {
+            document.getElementById('e-examen-w').style.display = document.getElementById('e-origen').value === 'examen_online' ? '' : 'none';
+        }
+
+        // ── Banco de preguntas: se carga al abrir la pestaña (antes solo aparecía después de agregar una) ──
+        function bancoTipoCambio() {
+            const t = document.getElementById('q-tipo').value;
+            const sel = document.getElementById('q-ok-sel'), inp = document.getElementById('q-ok');
+            document.getElementById('q-opt-w').style.display = t === 'multiple' ? '' : 'none';
+            // Completar: las palabras entre [corchetes] son la respuesta; no hace falta escribir la correcta aparte.
+            const ayuda = document.getElementById('q-ayuda');
+            const pre = document.getElementById('q-pre');
+            if (t === 'completar') {
+                const huecos = (pre.value.match(/\[([^\]]+)\]/g) || []).map(h => h.slice(1, -1));
+                ayuda.style.display = '';
+                ayuda.innerHTML = 'Escribí la oración y poné entre [corchetes] la palabra que el alumno debe completar. Ej.: <code>La [ética] reflexiona sobre la [moral].</code> Varias respuestas válidas: <code>[deontología/deontologia]</code>' +
+                    (huecos.length ? '<br>Respuestas: <b>' + huecos.map(attrH).join(' · ') + '</b>' : '');
+                pre.placeholder = 'La [ética] reflexiona sobre la [moral].';
+                inp.value = huecos.join(' | ');
+                inp.readOnly = true;
+            } else {
+                ayuda.style.display = 'none';
+                pre.placeholder = 'Ej.: ¿Qué estudia la deontología?';
+                if (inp.readOnly) { inp.readOnly = false; inp.value = ''; }
+            }
+            let ops = null;
+            if (t === 'vf') ops = ['Verdadero', 'Falso'];
+            if (t === 'multiple') ops = document.getElementById('q-opt').value.split('\n').map(x => x.trim()).filter(Boolean);
+            if (ops) {
+                const v = sel.value;
+                sel.innerHTML = ops.length ? ops.map(o => `<option>${attrH(o)}</option>`).join('') : '<option value="">(escribí las opciones)</option>';
+                if (ops.includes(v)) sel.value = v;
+            }
+            sel.style.display = ops ? '' : 'none';
+            inp.style.display = ops ? 'none' : '';
+        }
+        async function pintarBanco() {
+            if (!cur || !cur.draft || !cur.draft.ID) return;
+            const box = document.getElementById('lista-bank');
+            box.innerHTML = '<p class="text-muted">Cargando…</p>';
+            const { d } = await api('list_bank', { subjectID: cur.draft.ID });
+            const qs = (d && d.questions) || [];
+            const TIP = { multiple: 'Opción múltiple', vf: 'Verdadero/Falso', completar: 'Completar la palabra', corta: 'Respuesta corta', desarrollo: 'Desarrollo' };
+            box.innerHTML = qs.length ? `<p class="small text-muted">${qs.length} pregunta(s) en el banco.</p>` + qs.map(q => {
+                const ops = Array.isArray(q.Opciones) ? q.Opciones : [];
+                return `<div class="block"><b>${attrH(TIP[q.Tipo] || q.Tipo)}</b>${q.UnitID ? ' <small class="text-muted">· ' + attrH(nombreUnidad(q.UnitID)) + '</small>' : ''}<br>${q.Tipo === 'completar' ? attrH(q.Pregunta).replace(/\[([^\]]+)\]/g, '<span style="border-bottom:2px solid #e8c676;padding:0 14px">&nbsp;</span>') : attrH(q.Pregunta)}
+                    ${ops.length ? '<ul class="small mb-1">' + ops.map(o => `<li>${attrH(o)}${o === q.Correcta ? ' <b style="color:#4ade80">✔</b>' : ''}</li>`).join('') + '</ul>' : (q.Correcta ? `<div class="small">Correcta: <b>${attrH(q.Correcta)}</b></div>` : '')}
+                    <small class="text-muted">${attrH(q.Dificultad || '')} · ${q.Puntaje || 0} pts${q.Indicador ? ' · ' + attrH(q.Indicador) : ''}</small>
+                    <div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarPregunta('${q.ID}')">Quitar</button></div></div>`;
+            }).join('') : '<p class="text-muted">Sin preguntas todavía.</p>';
+        }
+
         function evTipoCambio() {
             const t = document.getElementById('e-tipo').value;
             const o = window.CenturiaNotas && CenturiaNotas.ORIGEN_DE_TIPO[t];
@@ -724,10 +1617,7 @@
             const r = await api('delete_question', {}, { id: qid });
             if (!r.d.ok) { toast('Error', true); return; }
             toast('Pregunta quitada');
-            const { d } = await api('list_bank', { subjectID: cur.draft.ID });
-            document.getElementById('lista-bank').innerHTML = (d.questions || []).map(q =>
-                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small><div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarPregunta('${q.ID}')">Quitar</button></div></div>`
-            ).join('') || '<p class="text-muted">Sin preguntas.</p>';
+            await pintarBanco();
         }
 
         async function guardarEvaluacion() {
@@ -753,11 +1643,15 @@
             if (!cur) return;
             const pre = document.getElementById('q-pre').value.trim();
             if (!pre) { toast('Falta la pregunta', true); return; }
+            const tq = document.getElementById('q-tipo').value;
+            const correcta = tq === 'multiple' || tq === 'vf' ? document.getElementById('q-ok-sel').value : document.getElementById('q-ok').value.trim();
+            if (tq === 'completar' && !/\[[^\]]+\]/.test(pre)) { toast('Marcá entre [corchetes] la palabra a completar', true); return; }
+            if (tq === 'multiple' && document.getElementById('q-opt').value.split('\n').filter(x => x.trim()).length < 2) { toast('Escribí al menos 2 opciones, una por línea', true); return; }
             const r = await api('save_question', {}, {
                 subjectID: cur.draft.ID, unitID: document.getElementById('q-unit').value.trim(),
                 tipo: document.getElementById('q-tipo').value, pregunta: pre,
                 opciones_json: JSON.stringify(document.getElementById('q-opt').value.split('\n').map(s => s.trim()).filter(Boolean)),
-                correcta: document.getElementById('q-ok').value.trim(), indicador: document.getElementById('q-ind').value.trim(),
+                correcta, indicador: document.getElementById('q-ind').value.trim(),
                 dificultad: document.getElementById('q-dif').value, puntaje: document.getElementById('q-pts').value || 0,
                 retroalimentacion: document.getElementById('q-ret').value.trim()
             });
@@ -765,10 +1659,9 @@
             toast('Pregunta guardada (la correcta nunca se muestra al alumno)');
             document.getElementById('q-pre').value = '';
             document.getElementById('q-ok').value = '';
-            const { d } = await api('list_bank', { subjectID: cur.draft.ID });
-            document.getElementById('lista-bank').innerHTML = (d.questions || []).map(q =>
-                `<div class="block"><b>[${q.Tipo}]</b> ${q.Pregunta}<br><small class="text-muted">${q.Indicador || ''} · ${q.Dificultad || ''} · ${q.Puntaje || 0}pts</small><div class="mt-1"><button class="btn btn-r btn-sm" onclick="borrarPregunta('${q.ID}')">Quitar</button></div></div>`
-            ).join('') || '<p class="text-muted">Sin preguntas.</p>';
+            document.getElementById('q-opt').value = '';
+            bancoTipoCambio();
+            await pintarBanco();
         }
 
         function pintarFlujo() {
@@ -836,6 +1729,612 @@
                 h += `</div>`;
             });
             document.getElementById('pv-body').innerHTML = h || '<p class="text-muted">Sin contenido.</p>';
+        }
+
+        async function importarModeloTIC() {
+            const btn = document.getElementById('btn-seed-tic');
+            if (btn) btn.disabled = true;
+            try {
+                toast('Cargando modelo completo de TIC (10 unidades con bloques enriquecidos)...');
+                // 1. Guardar borrador base
+                const rDraft = await api('save_draft', {}, {
+                    codigo: 'TIC',
+                    nombre: 'Tecnología de la Información y Comunicación',
+                    carrera: 'Licenciatura en Administración de Empresas',
+                    grado: 'Grado',
+                    curso: '',
+                    semestre: '3er Semestre',
+                    carga_horaria: 120
+                });
+                if (!rDraft.d || !rDraft.d.ok) throw new Error(rDraft.d?.error || 'Error al crear borrador');
+                const sid = rDraft.d.id;
+
+                // 2. Guardar programa oficial completo
+                await api('save_program', {}, {
+                    subjectID: sid,
+                    fundamentacion: 'La combinación entre la tecnología informática con los sistemas de información se convierte en un factor estratégico. La gestión eficaz y eficiente de la información es sinónimo de éxito. El programa busca sistematizar estas variables para brindar al futuro profesional las herramientas teóricas y prácticas que exigen los negocios actuales.',
+                    objetivo_general: 'Brindar al futuro profesional las herramientas teóricas y prácticas de las tecnologías de la información y comunicación que exigen los negocios actuales.',
+                    objetivos_especificos: 'Conocer la perspectiva conceptual y estratégica de las TIC.\nSeñalar la infraestructura de vanguardia organizacional.\nAnalizar herramientas tecnológicas para la toma de decisiones.\nExplicar enfoques basados en TI y nuevos paradigmas.',
+                    competencias: 'Integra las tecnologías de la información en la estrategia y la gestión de la organización.\nSelecciona y evalúa soluciones tecnológicas (hardware, software, redes, ERP) con criterios técnicos y financieros.\nUtiliza la información y los sistemas de apoyo a la decisión para resolver problemas de gestión.\nActúa con ética y responsabilidad en el uso de la información, el comercio electrónico y la firma digital.\nSe actualiza ante las tendencias tecnológicas y los nuevos modelos de negocio en internet.',
+                    capacidades: 'Distingue los tipos de sistemas de información (TPS, MIS, DSS, EIS) y su ciclo de vida.\nAplica las cinco fuerzas de Porter y la matriz DESTEP para alinear la estrategia con las TIC.\nDiseña un modelo relacional normalizado y formula consultas SQL básicas.\nCompara sistemas ERP y estima su costo total de propiedad (TCO).\nDescribe la arquitectura de una computadora y clasifica el software y sus licencias.\nExplica los tipos de redes y protocolos de internet, intranet y extranet.\nUsa indicadores clave (KPI) y tableros para apoyar decisiones empresariales.\nDefine las características y los factores de éxito de un sistema de apoyo a ejecutivos.\nAnaliza modelos de negocio en internet, medios de pago y firma digital.\nIdentifica tendencias como big data, computación en la nube e inteligencia artificial.',
+                    metodologia: 'Clases magistrales teórico-prácticas con apoyo audiovisual interactivo.\nAnálisis de material bibliográfico, casos reales y lecturas estructuradas.\nEstudios de caso guiados y talleres prácticos.\nPlataforma virtual con control de avance, evaluación formativa y sumativa.',
+                    requisitos: 'Asistencia presencial mínima del 80% requerida para derecho al examen final.\nAprobación de los parciales y entrega de actividades prácticas conforme a la rúbrica institucional.',
+                    bibliografia: 'Cohen Kare, Daniel y Asín Lares, Enrique (2009). Tecnología de información en los negocios. México: McGraw-Hill.\nAmor, Daniel (2000). La Revolución e-business. Argentina: Prentice Hall.\nLaudon, Kenneth C. y Laudon, Jane P. (2020). Sistemas de información gerencial. Pearson.',
+                    aprobacion_pct: 70,
+                    asistencia_min_pct: 80,
+                    modalidad: 'presencial',
+                    duracion_horas: 120,
+                    nivel: 'GRADO',
+                    estado: 'ACTIVO'
+                });
+
+                // 3. Crear las 10 Unidades completas con sus bloques de aprendizaje
+                const dataset = (window.MODELO_TIC_UNIDADES && window.MODELO_TIC_UNIDADES.length) ? window.MODELO_TIC_UNIDADES : [];
+                for (let i = 0; i < dataset.length; i++) {
+                    const u = dataset[i];
+                    toast(`Guardando U${u.numero}: ${u.titulo}...`);
+                    const rUnit = await api('save_unit', {}, {
+                        subjectID: sid,
+                        numero: u.numero,
+                        titulo: u.titulo,
+                        resumen: u.resumen,
+                        objetivos: 'Desarrollar el dominio conceptual y analítico de los temas de la Unidad ' + u.numero + '.',
+                        indicadores: 'Aplica los criterios en evaluaciones formativas y análisis de casos.',
+                        duracion_min: 120,
+                        orden: u.numero
+                    });
+                    if (rUnit.d && rUnit.d.ok) {
+                        const uid = rUnit.d.id;
+                        const bloques = u.bloques || [];
+                        for (let bIdx = 0; bIdx < bloques.length; bIdx++) {
+                            const b = bloques[bIdx];
+                            await api('save_block', {}, {
+                                unitID: uid,
+                                tipo: b.tipo || 'html',
+                                titulo: b.titulo || ('Bloque ' + (bIdx + 1)),
+                                contenido: b.contenido || '',
+                                formato: b.formato || 'html',
+                                orden: bIdx + 1,
+                                visible: true
+                            });
+                        }
+                    }
+                }
+
+                // 4. Sistema oficial de Evaluaciones ponderadas al 100%
+                await api('save_evaluation', {}, {
+                    subjectID: sid,
+                    nombre: 'Primer Examen Parcial',
+                    tipo: 'parcial',
+                    origen: 'examen_online',
+                    examen_id: 'TIC026-P1',
+                    puntaje_max: 10,
+                    ponderacion: 20,
+                    duracion_min: 60,
+                    intentos_max: 1,
+                    requisito: true
+                });
+
+                await api('save_evaluation', {}, {
+                    subjectID: sid,
+                    nombre: 'Segundo Examen Parcial',
+                    tipo: 'parcial',
+                    origen: 'examen_online',
+                    examen_id: 'TIC026-P2',
+                    puntaje_max: 10,
+                    ponderacion: 20,
+                    duracion_min: 60,
+                    intentos_max: 1,
+                    requisito: true
+                });
+
+                await api('save_evaluation', {}, {
+                    subjectID: sid,
+                    nombre: 'Entregas de Trabajos y Asistencia Presencial',
+                    tipo: 'asistencia',
+                    origen: 'asistencia',
+                    puntaje_max: 5,
+                    ponderacion: 10,
+                    requisito: false
+                });
+
+                await api('save_evaluation', {}, {
+                    subjectID: sid,
+                    nombre: 'Examen Final Integrador',
+                    tipo: 'final',
+                    origen: 'manual',
+                    puntaje_max: 25,
+                    ponderacion: 50,
+                    duracion_min: 90,
+                    intentos_max: 1,
+                    requisito: true
+                });
+
+                toast('✓ ¡Modelo TIC con las 10 unidades completo!');
+                await abrirDraft(sid);
+            } catch (err) {
+                console.error(err);
+                toast('Error al importar modelo: ' + err.message, true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // Herramienta 1: Cargar las 10 unidades de TIC directamente en el borrador que se está editando
+        async function cargarUnidadesTICActual() {
+            if (!cur || !cur.draft || !cur.draft.ID) {
+                toast('Debes abrir o crear una asignatura primero.', true);
+                return;
+            }
+            if (!confirm(`¿Cargar las 10 unidades completas de TIC en "${cur.draft.Nombre || 'esta asignatura'}"?`)) return;
+
+            const sid = cur.draft.ID;
+            const dataset = (window.MODELO_TIC_UNIDADES && window.MODELO_TIC_UNIDADES.length) ? window.MODELO_TIC_UNIDADES : [];
+            if (!dataset.length) {
+                toast('No se encontraron los datos del Modelo TIC.', true);
+                return;
+            }
+
+            try {
+                toast('Iniciando carga de las 10 unidades...');
+                for (let i = 0; i < dataset.length; i++) {
+                    const u = dataset[i];
+                    toast(`Cargando U${u.numero}: ${u.titulo}...`);
+                    const existingUnit = (cur.units || []).find(x => Number(x.Numero) === Number(u.numero));
+                    const uidToSave = existingUnit ? (existingUnit.ID || existingUnit.id) : undefined;
+
+                    // Si la unidad ya tenía bloques previos (ej. un solo bloque genérico), limpiarlos
+                    if (existingUnit && existingUnit.blocks && existingUnit.blocks.length) {
+                        for (const ob of existingUnit.blocks) {
+                            const obId = ob.ID || ob.id;
+                            if (obId) await api('delete_block', { id: obId }).catch(() => null);
+                        }
+                    }
+
+                    const rUnit = await api('save_unit', {}, {
+                        id: uidToSave,
+                        subjectID: sid,
+                        numero: u.numero,
+                        titulo: u.titulo,
+                        resumen: u.resumen,
+                        objetivos: 'Desarrollar el dominio conceptual y analítico de los temas de la Unidad ' + u.numero + '.',
+                        indicadores: 'Aplica los criterios en evaluaciones formativas y análisis de casos.',
+                        duracion_min: 120,
+                        orden: u.numero
+                    });
+                    const finalUid = (rUnit.d && rUnit.d.id) || uidToSave;
+                    if (finalUid) {
+                        const bloques = u.bloques || [];
+                        for (let bIdx = 0; bIdx < bloques.length; bIdx++) {
+                            const b = bloques[bIdx];
+                            await api('save_block', {}, {
+                                unitID: finalUid,
+                                tipo: b.tipo || 'html',
+                                titulo: b.titulo || ('Bloque ' + (bIdx + 1)),
+                                contenido: b.contenido || '',
+                                formato: b.formato || 'html',
+                                orden: bIdx + 1,
+                                visible: true
+                            });
+                        }
+                    }
+                }
+                toast('✓ ¡10 unidades cargadas con éxito en el borrador!');
+                await abrirDraft(sid);
+            } catch (err) {
+                console.error(err);
+                toast('Error al cargar unidades: ' + err.message, true);
+            }
+        }
+
+        // Herramienta 2: Parser y carga directa desde un archivo HTML seleccionado por el docente
+
+        // ══ Cargar contenido: Word / HTML / Markdown / texto / pegado → bloques ══
+        let CG = { piezas: [], fuentes: [] };
+        let modalCargaInst = null;
+        function abrirCarga(unitID) {
+            if (!cur || !cur.draft || !cur.draft.ID) { toast('Abrí una asignatura primero.', true); return; }
+            const sel = document.getElementById('cg-unidad');
+            const us = [...(cur.units || [])].sort((a, b) => (+a.Numero || 0) - (+b.Numero || 0));
+            sel.innerHTML = '<option value="">➕ Nueva unidad</option>' + us.map(u => `<option value="${u.ID}">U${u.Numero} — ${attrH(u.Titulo || '')} (${(u.blocks || []).length} bloques)</option>`).join('');
+            sel.value = unitID || '';
+            document.getElementById('cg-num').value = Math.max(0, ...us.map(u => +u.Numero || 0)) + 1;
+            document.getElementById('cg-tit').value = '';
+            cgLimpiar();
+            cgDestino();
+            if (!modalCargaInst) {
+                modalCargaInst = new bootstrap.Modal(document.getElementById('modalCarga'));
+                const drop = document.getElementById('cg-drop');
+                ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('sobre'); }));
+                ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('sobre'); }));
+                drop.addEventListener('drop', e => cgArchivos(e.dataTransfer.files));
+                const pg = document.getElementById('cg-pegar');
+                pg.addEventListener('paste', () => setTimeout(() => { CG.fuentes = [{ nombre: 'pegado', html: pg.innerHTML }]; cgAnalizar(); }, 50));
+                pg.addEventListener('input', () => { clearTimeout(CG.t); CG.t = setTimeout(() => { CG.fuentes = [{ nombre: 'pegado', html: pg.innerHTML }]; cgAnalizar(); }, 600); });
+            }
+            modalCargaInst.show();
+        }
+        function cgDestino() {
+            const nueva = !document.getElementById('cg-unidad').value;
+            document.getElementById('cg-nueva-num-w').style.display = nueva ? '' : 'none';
+            document.getElementById('cg-nueva-tit-w').style.display = nueva ? '' : 'none';
+            document.getElementById('cg-modo').disabled = nueva;
+        }
+        function cgLimpiar() {
+            CG = { piezas: [], fuentes: [] };
+            document.getElementById('cg-pegar').innerHTML = '';
+            document.getElementById('cg-bloques').innerHTML = '';
+            document.getElementById('cg-aviso').textContent = '';
+            document.getElementById('cg-prog').textContent = '';
+            document.getElementById('cg-guardar').disabled = true;
+            document.getElementById('cg-archivos').value = '';
+        }
+
+        // Markdown / texto plano → HTML (títulos #, listas, negrita, cursiva, enlaces, imágenes, ---)
+        function mdAHtml(md) {
+            const inl = t => attrH(t)
+                .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1">')
+                .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/`([^`]+)`/g, '<code>$1</code>');
+            const out = []; let lista = null, par = [];
+            const cerrarPar = () => { if (par.length) { out.push('<p>' + par.map(inl).join('<br>') + '</p>'); par = []; } };
+            const cerrarLista = () => { if (lista) { out.push(`<${lista.t}>` + lista.items.map(i => '<li>' + inl(i) + '</li>').join('') + `</${lista.t}>`); lista = null; } };
+            String(md).replace(/\r/g, '').split('\n').forEach(l => {
+                let m;
+                if (!l.trim()) { cerrarPar(); cerrarLista(); return; }
+                if ((m = l.match(/^(#{1,6})\s+(.*)$/))) { cerrarPar(); cerrarLista(); out.push(`<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`); return; }
+                if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)) { cerrarPar(); cerrarLista(); out.push('<hr>'); return; }
+                if ((m = l.match(/^\s*([-*•])\s+(.*)$/)) || (m = l.match(/^\s*(\d+[.)])\s+(.*)$/))) {
+                    cerrarPar(); const t = /\d/.test(m[1]) ? 'ol' : 'ul';
+                    if (!lista || lista.t !== t) { cerrarLista(); lista = { t, items: [] }; }
+                    lista.items.push(m[2]); return;
+                }
+                if ((m = l.match(/^>\s?(.*)$/))) { cerrarPar(); cerrarLista(); out.push('<blockquote class="blockquote-clase">' + inl(m[1]) + '</blockquote>'); return; }
+                cerrarLista(); par.push(l.trim());
+            });
+            cerrarPar(); cerrarLista();
+            return out.join('\n');
+        }
+
+        // Limpia el HTML de Word / Google Docs / páginas: sin scripts, estilos de Office ni spans vacíos.
+        function limpiarHtmlCarga(html) {
+            const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+            doc.querySelectorAll('script,style,meta,link,title,noscript,o\\:p,xml').forEach(n => n.remove());
+            const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT); let c; const com = [];
+            while ((c = it.nextNode())) com.push(c); com.forEach(n => n.remove());
+            doc.body.querySelectorAll('*').forEach(el => {
+                [...el.attributes].forEach(a => {
+                    const n = a.name.toLowerCase();
+                    if (n.startsWith('on') || n === 'lang' || n.startsWith('data-') && n !== 'data-bs-toggle' || (n === 'class' && /\bMso|docs-|^c\d/.test(a.value))) el.removeAttribute(a.name);
+                    else if (n === 'style') {
+                        // de los estilos solo se conserva lo que da significado (alineación, negrita, color de fondo de celdas)
+                        const keep = a.value.split(';').map(x => x.trim()).filter(x => /^(text-align|font-weight:\s*(bold|[6-9]00)|font-style:\s*italic|text-decoration:\s*underline)/i.test(x));
+                        keep.length ? el.setAttribute('style', keep.join(';')) : el.removeAttribute('style');
+                    }
+                });
+                if (el.tagName === 'B' && /font-weight:\s*normal/i.test(el.getAttribute('style') || '')) el.replaceWith(...el.childNodes);   // envoltorio de Google Docs
+            });
+            doc.body.querySelectorAll('span:not([class]):not([style]):not([title]),font').forEach(el => el.replaceWith(...el.childNodes));
+            doc.body.querySelectorAll('p,div').forEach(el => { if (!el.textContent.trim() && !el.querySelector('img,table,iframe,video,hr')) el.remove(); });
+            doc.body.querySelectorAll('table').forEach(t => { t.classList.add('table', 'table-bordered', 'table-sm'); if (!t.parentElement.classList.contains('table-responsive')) { const w = doc.createElement('div'); w.className = 'table-responsive'; t.replaceWith(w); w.appendChild(t); } });
+            doc.body.querySelectorAll('img').forEach(i => { i.classList.add('img-fluid', 'rounded'); i.setAttribute('loading', 'lazy'); });
+            // los párrafos de Word con estilo "Título" que no usan <h*>: <p><strong>1. Texto corto</strong></p> → <h3>
+            doc.body.querySelectorAll('p').forEach(pp => {
+                const t = pp.textContent.trim(), f = pp.querySelector('strong,b');
+                if (f && f.textContent.trim() === t && t.length > 2 && t.length < 90 && !/[.:;,]$/.test(t)) { const h = doc.createElement('h3'); h.textContent = t; pp.replaceWith(h); }
+            });
+            return doc.body.innerHTML.trim();
+        }
+
+        // Si el archivo HTML es una unidad del modelo (tarjetas .card), se respeta esa división.
+        function htmlDeArchivo(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const cards = [...doc.querySelectorAll('.card')].filter(c => c.id !== 'card-asistencia-clase' && c.querySelector('.card-header'));
+            const tituloDoc = ((doc.querySelector('h2.h2-unidad,h1,h2') || {}).textContent || '').trim();
+            if (cards.length) return { titulo: tituloDoc, html: cards.map(c => `<h2>${attrH(c.querySelector('.card-header').textContent.trim())}</h2>` + (c.querySelector('.card-body') || c).innerHTML).join('\n') };
+            const main = doc.querySelector('main, article, .container') || doc.body;
+            main.querySelectorAll('nav,header,footer,.navbar,.no-print,#card-asistencia-clase').forEach(n => n.remove());
+            return { titulo: tituloDoc, html: main.innerHTML };
+        }
+
+        let mammothListo = null;
+        function cargarMammoth() {
+            if (window.mammoth) return Promise.resolve();
+            return mammothListo || (mammothListo = new Promise((ok, mal) => {
+                const sc = document.createElement('script');
+                sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+                sc.onload = ok; sc.onerror = () => { mammothListo = null; mal(new Error('No se pudo cargar el lector de Word.')); };
+                document.head.appendChild(sc);
+            }));
+        }
+
+        async function cgArchivos(files) {
+            files = [...(files || [])];
+            if (!files.length) return;
+            const prog = document.getElementById('cg-prog');
+            const fuentes = [];
+            for (const f of files) {
+                prog.textContent = 'Leyendo ' + f.name + '…';
+                const ext = (f.name.split('.').pop() || '').toLowerCase();
+                try {
+                    if (ext === 'docx') {
+                        await cargarMammoth();
+                        const r = await mammoth.convertToHtml({ arrayBuffer: await f.arrayBuffer() }, {
+                            styleMap: ["p[style-name='Title'] => h1:fresh", "p[style-name='Título'] => h1:fresh", "p[style-name='Subtitle'] => h2:fresh"]
+                        });
+                        fuentes.push({ nombre: f.name, html: r.value });
+                    } else if (ext === 'html' || ext === 'htm') {
+                        const x = htmlDeArchivo(await f.text());
+                        fuentes.push({ nombre: f.name, html: x.html, titulo: x.titulo });
+                    } else {
+                        fuentes.push({ nombre: f.name, html: mdAHtml(await f.text()) });
+                    }
+                } catch (e) { toast(f.name + ': ' + e.message, true); }
+            }
+            prog.textContent = '';
+            // varios archivos con destino "Nueva unidad" → una unidad por archivo
+            CG.fuentes = fuentes;
+            document.getElementById('cg-pegar').innerHTML = '';
+            cgAnalizar();
+        }
+
+        function tipoSugerido(titulo, html) {
+            const t = titulo.toLowerCase(), d = new DOMParser().parseFromString(html, 'text/html').body, txt = d.textContent.trim();
+            if (/resumen|s[ií]ntesis/.test(t)) return 'resumen';
+            if (/ejemplo|caso/.test(t)) return 'ejemplo';
+            if (/definici/.test(t)) return 'definicion';
+            if (/importante|atenci[oó]n|aviso|nota/.test(t)) return 'aviso';
+            if (/bibliograf|referencia|fuente/.test(t)) return 'cita';
+            if (d.querySelector('iframe')) return /youtube|video/.test(html) ? 'video' : 'documento';
+            if (d.querySelector('img') && txt.length < 160) return 'imagen';
+            return 'html';
+        }
+
+        // Divide el HTML en piezas: cada título del nivel elegido abre un bloque nuevo.
+        function dividir(html, modo) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            let nodos = [...doc.body.childNodes];
+            // desenvolver contenedores únicos (<div><div>…</div></div>)
+            while (nodos.filter(n => n.nodeType === 1 || n.textContent.trim()).length === 1 && nodos.find(n => n.nodeType === 1 && /^(DIV|SECTION|ARTICLE|MAIN)$/.test(n.tagName)))
+                nodos = [...nodos.find(n => n.nodeType === 1).childNodes];
+            if (modo === 'no') return [{ titulo: '', html: nodos.map(n => n.outerHTML || n.textContent).join('') }];
+            const corta = modo === 'hr' ? (n => n.tagName === 'HR') : (n => modo.split(',').includes((n.tagName || '').toLowerCase()));
+            const piezas = []; let actual = { titulo: '', html: '' };
+            nodos.forEach(n => {
+                if (n.nodeType === 1 && corta(n)) {
+                    if (actual.titulo || actual.html.replace(/<[^>]+>/g, '').trim() || /<img|<table|<iframe/.test(actual.html)) piezas.push(actual);
+                    actual = { titulo: modo === 'hr' ? '' : n.textContent.trim(), html: '' };
+                } else actual.html += n.nodeType === 1 ? n.outerHTML : (n.textContent.trim() ? '<p>' + attrH(n.textContent.trim()) + '</p>' : '');
+            });
+            if (actual.titulo || actual.html.replace(/<[^>]+>/g, '').trim() || /<img|<table|<iframe/.test(actual.html)) piezas.push(actual);
+            // un título sin contenido seguido de otra pieza: se usa como encabezado de la siguiente (ej.: Título 1 + Título 2)
+            for (let i = 0; i < piezas.length - 1; i++) {
+                if (!piezas[i].html.replace(/<[^>]+>/g, '').trim() && !/<img|<table/.test(piezas[i].html)) {
+                    piezas[i + 1].titulo = piezas[i + 1].titulo ? piezas[i].titulo + ' — ' + piezas[i + 1].titulo : piezas[i].titulo;
+                    piezas.splice(i--, 1);
+                }
+            }
+            return piezas;
+        }
+
+        function cgAnalizar() {
+            const modo = document.getElementById('cg-dividir').value;
+            const avisos = [];
+            CG.piezas = [];
+            CG.fuentes.forEach((f, fi) => {
+                let html = limpiarHtmlCarga(f.html);
+                // imágenes incrustadas muy pesadas no entran en la base (límite ~1 MB por bloque)
+                html = html.replace(/<img[^>]+src="data:[^"]{400000,}"[^>]*>/g, () => { avisos.push('Se quitó una imagen incrustada muy pesada de ' + f.nombre + ': subila a Drive e insertala con el botón Imagen.'); return '<p><em>[Imagen: subir a Drive e insertar]</em></p>'; });
+                dividir(html, modo).forEach((p, i) => CG.piezas.push({
+                    fuente: fi, nombreFuente: f.nombre, tituloFuente: f.titulo || '',
+                    titulo: p.titulo || ((p.html.match(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i) || [])[1] || '').replace(/<[^>]+>/g, '').trim() || (i === 0 ? (f.titulo || 'Introducción') : 'Bloque ' + (i + 1)),
+                    html: p.html, tipo: tipoSugerido(p.titulo || '', p.html), on: true
+                }));
+            });
+            CG.piezas.forEach(p => { if (p.html.length > 900000) avisos.push('El bloque «' + p.titulo + '» es muy grande; conviene dividirlo por subtítulos.'); });
+            document.getElementById('cg-aviso').innerHTML = [...new Set(avisos)].map(a => '⚠ ' + attrH(a)).join('<br>');
+            cgPintar();
+        }
+
+        function cgPintar() {
+            const box = document.getElementById('cg-bloques');
+            const tipos = [...document.getElementById('mb-tipo').options].map(o => [o.value, o.textContent]);
+            const varias = new Set(CG.piezas.map(p => p.fuente)).size > 1;
+            box.innerHTML = CG.piezas.length ? `<div class="small mb-1 d-flex justify-content-between"><span><b>${CG.piezas.filter(p => p.on).length}</b> de ${CG.piezas.length} bloques seleccionados${varias ? ' · ' + new Set(CG.piezas.map(p => p.fuente)).size + ' archivos' : ''}</span>
+                <span><a href="#" onclick="event.preventDefault();CG.piezas.forEach(p=>p.on=true);cgPintar()">todos</a> · <a href="#" onclick="event.preventDefault();CG.piezas.forEach(p=>p.on=false);cgPintar()">ninguno</a></span></div>` +
+                CG.piezas.map((p, i) => `${varias && (i === 0 || CG.piezas[i - 1].fuente !== p.fuente) ? `<div class="small mt-2 mb-1" style="color:var(--dorado-claro)"><i class="bi bi-file-earmark"></i> ${attrH(p.nombreFuente)}</div>` : ''}
+                <div class="cg-blq ${p.on ? '' : 'off'}">
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <input type="checkbox" ${p.on ? 'checked' : ''} onchange="CG.piezas[${i}].on=this.checked;cgPintar()">
+                        <b>${i + 1}.</b>
+                        <input type="text" value="${attrH(p.titulo)}" style="flex:1;min-width:180px" onchange="CG.piezas[${i}].titulo=this.value">
+                        <select onchange="CG.piezas[${i}].tipo=this.value">${tipos.map(([v, t]) => `<option value="${v}" ${v === p.tipo ? 'selected' : ''}>${t.split(' (')[0]}</option>`).join('')}</select>
+                        <span class="text-muted">${Math.round(p.html.length / 1024)} KB</span>
+                        <button class="btn btn-s btn-sm py-0" title="Ver" onclick="const v=this.closest('.cg-blq').querySelector('.cg-prev');v.style.display=v.style.display==='block'?'none':'block'"><i class="bi bi-eye"></i></button>
+                        <button class="btn btn-s btn-sm py-0" title="Unir con el siguiente" ${i < CG.piezas.length - 1 ? '' : 'disabled'} onclick="cgUnir(${i})"><i class="bi bi-arrow-down-short"></i> unir</button>
+                    </div>
+                    <div class="cg-prev">${p.html.replace(/<script[\s\S]*?<\/script>/gi, '')}</div>
+                </div>`).join('') : (CG.fuentes.length ? '<p class="small text-muted">No se encontró contenido.</p>' : '');
+            document.getElementById('cg-guardar').disabled = !CG.piezas.some(p => p.on);
+        }
+        function cgUnir(i) {
+            const a = CG.piezas[i], b = CG.piezas[i + 1];
+            a.html += (b.titulo ? `<h3>${attrH(b.titulo)}</h3>` : '') + b.html;
+            CG.piezas.splice(i + 1, 1);
+            cgPintar();
+        }
+
+        async function cgGuardar() {
+            const sel = CG.piezas.filter(p => p.on);
+            if (!sel.length) return;
+            const btn = document.getElementById('cg-guardar'), prog = document.getElementById('cg-prog');
+            const destino = document.getElementById('cg-unidad').value;
+            const modo = document.getElementById('cg-modo').value;
+            btn.disabled = true;
+            try {
+                // grupos: unidad existente → todo junto; nueva unidad → una unidad por archivo
+                const grupos = destino ? [{ unitID: destino, piezas: sel }]
+                    : [...new Set(sel.map(p => p.fuente))].map(f => ({ piezas: sel.filter(p => p.fuente === f) }));
+                let num = parseInt(document.getElementById('cg-num').value, 10) || ((cur.units || []).length + 1);
+                let hechos = 0;
+                for (const g of grupos) {
+                    if (!g.unitID) {
+                        const p0 = g.piezas[0];
+                        let titulo = (grupos.length === 1 && document.getElementById('cg-tit').value.trim()) || p0.tituloFuente || p0.nombreFuente.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+                        const mNum = (p0.tituloFuente + ' ' + p0.nombreFuente).match(/(?:unidad|clase|u)[_\s]*0*(\d+)/i);
+                        const n = grupos.length > 1 && mNum ? parseInt(mNum[1], 10) : num++;
+                        titulo = titulo.replace(/^Unidad\s+[IVX0-9]+\s*[:.\-–]\s*/i, '').trim() || ('Unidad ' + n);
+                        const resumen = (g.piezas.find(p => p.tipo === 'resumen') || {}).html || '';
+                        prog.textContent = 'Creando unidad ' + n + '…';
+                        const r = await api('save_unit', {}, { subjectID: cur.draft.ID, numero: n, titulo, resumen: resumen.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 600), orden: n });
+                        if (!r.d || !r.d.ok) throw new Error(r.d?.error || 'No se pudo crear la unidad');
+                        g.unitID = r.d.id; g.base = 0;
+                    } else {
+                        const u = (cur.units || []).find(x => x.ID === g.unitID);
+                        if (modo === 'reemplazar') {
+                            if (!confirm(`Se van a borrar los ${(u.blocks || []).length} bloques actuales de la unidad ${u.Numero}. ¿Continuar?`)) { btn.disabled = false; prog.textContent = ''; return; }
+                            for (const b of (u.blocks || [])) { prog.textContent = 'Quitando bloques anteriores…'; await api('delete_block', {}, { id: b.ID || b.id }); }
+                            g.base = 0;
+                        } else g.base = Math.max(0, ...(u.blocks || []).map(x => parseFloat(x.Orden ?? x.orden) || 0));
+                    }
+                    for (let i = 0; i < g.piezas.length; i++) {
+                        const p = g.piezas[i];
+                        prog.textContent = `Guardando bloque ${++hechos} de ${sel.length}…`;
+                        const r = await api('save_block', {}, { unitID: g.unitID, tipo: p.tipo, titulo: p.titulo, contenido: p.html, formato: 'html', orden: g.base + i + 1, visible: true });
+                        if (!r.d || !r.d.ok) throw new Error((r.d && r.d.error) || 'Error al guardar «' + p.titulo + '»');
+                    }
+                }
+                toast(`✓ ${sel.length} bloques cargados`);
+                modalCargaInst.hide();
+                await abrirDraft(cur.draft.ID);
+            } catch (e) {
+                toast(e.message, true);
+                prog.textContent = 'Se detuvo: ' + e.message;
+                btn.disabled = false;
+            }
+        }
+
+        async function importarArchivoHTMLUnidad(event) {
+            if (!cur || !cur.draft || !cur.draft.ID) {
+                toast('Abre una asignatura primero.', true);
+                event.target.value = '';
+                return;
+            }
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const html = e.target.result;
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                    // 1. Título y Número
+                    let titulo = '';
+                    const h2 = doc.querySelector('h2.h2-unidad') || doc.querySelector('h2') || doc.querySelector('h1');
+                    if (h2) titulo = h2.textContent.trim();
+                    let num = (cur.units || []).length + 1;
+                    const matchNum = (titulo + ' ' + file.name).match(/(?:unidad|clase|u)[_\s]*([0-9]+)/i);
+                    if (matchNum) num = parseInt(matchNum[1], 10);
+                    titulo = titulo.replace(/^Unidad\s+[IVX0-9]+:\s*/i, '').trim() || file.name.replace(/\.[^/.]+$/, '');
+
+                    // 2. Extraer bloques de tarjetas
+                    const cardElements = doc.querySelectorAll('.card');
+                    const bloques = [];
+                    let resumenText = '';
+
+                    if (cardElements.length > 0) {
+                        cardElements.forEach((card, idx) => {
+                            if (card.id === 'card-asistencia-clase') return; // Se omite asistencia
+                            const headerEl = card.querySelector('.card-header');
+                            const bodyEl = card.querySelector('.card-body');
+                            const cardTit = headerEl ? headerEl.textContent.trim() : ('Bloque ' + (idx + 1));
+                            const cardCont = bodyEl ? bodyEl.innerHTML.trim() : card.innerHTML.trim();
+                            const isResumen = cardTit.toLowerCase().includes('resumen');
+                            if (isResumen && !resumenText) {
+                                resumenText = (bodyEl ? bodyEl.textContent : cardCont).replace(/\s+/g, ' ').trim();
+                            }
+                            bloques.push({
+                                titulo: cardTit,
+                                tipo: isResumen ? 'resumen' : 'html',
+                                contenido: cardCont,
+                                formato: 'html'
+                            });
+                        });
+                    }
+
+                    // Extraer bibliografía si existe
+                    const bib = doc.querySelector('.seccion-bibliografia');
+                    if (bib) {
+                        bloques.push({
+                            titulo: 'Bibliografía y Recursos',
+                            tipo: 'html',
+                            contenido: bib.innerHTML.trim(),
+                            formato: 'html'
+                        });
+                    }
+
+                    // Si no hubo tarjetas .card, tomar secciones o body
+                    if (bloques.length === 0) {
+                        const main = doc.querySelector('main') || doc.body;
+                        bloques.push({
+                            titulo: 'Desarrollo de la Unidad',
+                            tipo: 'html',
+                            contenido: main.innerHTML.trim(),
+                            formato: 'html'
+                        });
+                    }
+
+                    toast(`Importando ${titulo} con ${bloques.length} bloques...`);
+                    const existingUnit = (cur.units || []).find(x => Number(x.Numero) === Number(num));
+                    const uidToSave = existingUnit ? (existingUnit.ID || existingUnit.id) : undefined;
+                    if (existingUnit && existingUnit.blocks && existingUnit.blocks.length) {
+                        for (const ob of existingUnit.blocks) {
+                            const obId = ob.ID || ob.id;
+                            if (obId) await api('delete_block', { id: obId }).catch(() => null);
+                        }
+                    }
+
+                    const rUnit = await api('save_unit', {}, {
+                        id: uidToSave,
+                        subjectID: cur.draft.ID,
+                        numero: num,
+                        titulo: titulo,
+                        resumen: resumenText || ('Contenido importado de ' + file.name),
+                        objetivos: 'Desarrollar el dominio conceptual y analítico de los temas.',
+                        indicadores: 'Aplica los criterios en evaluaciones formativas y análisis de casos.',
+                        duracion_min: 120,
+                        orden: num
+                    });
+
+                    const finalUid = (rUnit.d && rUnit.d.id) || uidToSave;
+                    if (finalUid) {
+                        for (let bIdx = 0; bIdx < bloques.length; bIdx++) {
+                            const b = bloques[bIdx];
+                            await api('save_block', {}, {
+                                unitID: finalUid,
+                                tipo: b.tipo,
+                                titulo: b.titulo,
+                                contenido: b.contenido,
+                                formato: b.formato,
+                                orden: bIdx + 1,
+                                visible: true
+                            });
+                        }
+                        toast(`✓ Unidad "${titulo}" importada con ${bloques.length} bloques.`);
+                        await abrirDraft(cur.draft.ID);
+                    } else {
+                        toast(rUnit.d?.error || 'Error al guardar la unidad.', true);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    toast('Error al procesar archivo HTML: ' + err.message, true);
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file, 'utf-8');
         }
     </script>
 </body>

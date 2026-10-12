@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script src="../js/session-guard.js?v=5"></script>
+    <script src="../js/session-guard.js?v=6"></script>
     <script>CenturiaSession.protect();</script>
     <script>
         // Aula genérica (v2026-10-11): ?asignatura=SOC&unidad=1 · ?borrador=<id> para que el personal vea lo no publicado.
@@ -17,11 +17,18 @@
     <title>Aula — Campus Virtual Centuria</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: {
+            colors: { primary: '#007A33', secondary: '#1e293b', acento: '#00B140', dorado: '#d4a843' },
+            fontFamily: { sans: ['Open Sans', 'Montserrat', 'Segoe UI', 'sans-serif'] }
+        } } };
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="../css/aula-contenido.css?v=1" rel="stylesheet">
+    <link href="../css/aula-contenido.css?v=4" rel="stylesheet">
     <style>
-        body { background: #f8fafc; }
+        body { background: #f8fafc; font-family: 'Open Sans', 'Montserrat', 'Segoe UI', sans-serif; color: #1e293b; }
+        .aula-contenido a.text-primary:hover { text-decoration: underline; }
         .aula-menu { background: #007A33; }
         .aula-menu a { color: rgba(255,255,255,.85); }
         .aula-menu a:hover, .aula-menu a.activa { background: rgba(255,255,255,.14); color: #fff; }
@@ -37,12 +44,20 @@
 <div class="md:flex">
     <!-- MENÚ DE UNIDADES -->
     <nav id="aula-menu" aria-label="Unidades de la asignatura" class="aula-menu md:w-64 md:flex-shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto no-print">
-        <div class="p-4 border-b border-white/20">
+        <div class="p-3 border-b border-white/20">
             <a href="../dashboard.html" class="text-xs inline-flex items-center gap-1"><i class="bi bi-arrow-left"></i> Mi campus</a>
             <div class="text-white font-bold mt-2 leading-tight" id="menu-asig">Asignatura</div>
             <div class="text-white/70 text-xs mt-1" id="menu-cod"></div>
         </div>
-        <div id="menu-unidades" class="py-2"></div>
+        <div class="p-2 border-b border-white/20 flex flex-col gap-1">
+            <a href="#" id="link-programa" data-vista="programa" class="block px-3 py-2 text-xs rounded hover:bg-white/10 text-white"><i class="bi bi-file-earmark-text mr-2"></i>Programa Oficial</a>
+            <a href="#" id="link-glosario" data-vista="glosario" class="block px-3 py-2 text-xs rounded hover:bg-white/10 text-white"><i class="bi bi-journal-text mr-2"></i>Glosario Técnico</a>
+            <a href="#" id="link-asistencia" data-vista="asistencia" class="block px-3 py-2 text-xs rounded hover:bg-white/10 text-white"><i class="bi bi-person-raised-hand mr-2"></i>Asistencia Presencial</a>
+            <a href="#" id="link-progreso" data-vista="progreso" class="block px-3 py-2 text-xs rounded hover:bg-white/10 text-white"><i class="bi bi-graph-up mr-2"></i>Planilla de Progreso</a>
+            <a href="#" id="link-cuaderno" data-vista="cuaderno" class="block px-3 py-2 text-xs rounded bg-white/15 border border-white/30 text-white hover:bg-white/25"><i class="bi bi-file-earmark-pdf mr-2"></i>Cuaderno PDF</a>
+        </div>
+        <div class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-white/50">Unidades</div>
+        <div id="menu-unidades" class="py-1"></div>
         <div class="border-t border-white/20 py-2">
             <a href="#" id="link-plan" class="block px-4 py-2 text-sm"><i class="bi bi-clipboard-check mr-2"></i>Plan de evaluación</a>
             <a href="../libreta.html" id="link-libreta" class="block px-4 py-2 text-sm"><i class="bi bi-journal-bookmark mr-2"></i>Mis notas</a>
@@ -84,12 +99,12 @@
 
             <div id="bloques"></div>
 
-            <!-- Asistencia en clase presencial (mismo registro que TIC: js/asistencia-clase.js) -->
-            <section class="step-card hidden no-print" id="card-asistencia-clase">
-                <div class="step-header"><div class="step-number"><i class="bi bi-person-check"></i></div><h2 class="text-xl font-bold uppercase text-secondary">Asistencia en clase</h2></div>
+            <!-- Asistencia en clase presencial (mismo registro y diseño que Materiales_Clases: js/asistencia-clase.js) -->
+            <section class="step-card no-print hidden" id="card-asistencia-clase">
+                <div class="step-header"><div class="step-number"><i class="bi bi-person-check"></i></div><h2 class="text-xl font-bold uppercase text-secondary">Asistencia en Clase Presencial</h2></div>
                 <div class="content-padding text-sm">
-                    <p class="mb-3">Si estás en la clase presencial de esta unidad, registrá tu asistencia (una vez por unidad, con la hora del servidor).</p>
-                    <button class="bg-primary text-white font-bold rounded-lg px-4 py-2" id="btn-asis-clase" onclick="marcarAsistenciaClase()"><i class="bi bi-check2-square"></i> Registrar asistencia</button>
+                    <p class="mb-3 text-gray-700">Haz clic en el botón inferior para marcar tu asistencia a la sesión presencial de la unidad.</p>
+                    <button class="bg-[#007A33] hover:bg-[#005c26] text-white font-bold rounded-lg px-4 py-2 transition" id="btn-asis-clase" onclick="marcarAsistenciaClase()"><i class="bi bi-hand-index-thumb mr-1"></i> Poner Presente</button>
                     <p id="estado-guardado" class="mt-2 text-xs text-gray-600" role="status" aria-live="polite"></p>
                 </div>
             </section>
@@ -102,33 +117,94 @@
 <script src="../js/api.js?v=23"></script>
 <script src="../js/logout.js?v=3"></script>
 <script src="../js/calificaciones.js?v=4"></script>
-<script src="../js/constructor-api.js?v=3"></script>
-<script src="../js/asistencia-clase.js?v=1"></script>
+<script src="../js/modelo-tic-data.js?v=2"></script>
+<script src="../js/constructor-api.js?v=5"></script>
+<script src="../js/asistencia-clase.js?v=2"></script>
+<script src="../js/actividades-aula.js?v=1"></script>
 <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
-    const ES_ALUMNO = !ROL || ROL === 'alumno';
+    const ES_PERSONAL = ['docente', 'teacher', 'admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion', 'personal'].includes(ROL);
+    const ES_ALUMNO = !ES_PERSONAL && (ROL === 'alumno' || !ROL);
     const CED = sessionStorage.getItem('current_cedula') || '';
     let AULA = null;   // { asignatura, unidades: [{ numero, titulo, resumen, bloques }] }
 
     // El contenido lo escribe el personal en el Constructor, pero igual se limpia: sin scripts, eventos ni javascript:.
     function limpiarHTML(html) {
         const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-        doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,base').forEach(n => n.remove());
+        doc.querySelectorAll('script,style,object,embed,link,meta,form,base').forEach(n => n.remove());
+        // Solo se permiten iframes de visores conocidos (Drive, Docs, YouTube, Office) que inserta el Constructor.
+        const IFRAME_OK = /^https:\/\/(drive\.google\.com\/file\/d\/[\w-]+\/preview|docs\.google\.com\/(document|presentation|spreadsheets)\/d\/[\w-]+\/(preview|embed)|www\.youtube(-nocookie)?\.com\/embed\/[\w-]{11}|view\.officeapps\.live\.com\/op\/embed\.aspx\?)/i;
+        doc.querySelectorAll('iframe').forEach(n => {
+            if (!IFRAME_OK.test(n.getAttribute('src') || '')) { n.remove(); return; }
+            n.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-presentation');
+            n.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        });
         doc.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(a => {
                 const n = a.name.toLowerCase();
                 if (n.startsWith('on') || n === 'srcdoc') el.removeAttribute(a.name);
                 else if (['href', 'src', 'xlink:href', 'action', 'formaction'].includes(n) && /^\s*(javascript|data|vbscript):/i.test(a.value) && !(n === 'src' && /^\s*data:image\//i.test(a.value))) el.removeAttribute(a.name);
             });
-            if (el.tagName === 'A' && el.getAttribute('href')) { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+            if (el.tagName === 'A' && el.getAttribute('href')) corregirEnlace(el);
         });
         return doc.body.innerHTML;
     }
 
+    // Busca en qué unidad está definido un ancla (id="def-…"); el contenido importado enlaza definiciones de otras unidades.
+    function unidadDeAncla(id) {
+        const re = new RegExp('id=["\']' + id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '["\']');
+        const u = ((AULA && AULA.unidades) || []).find(x => (x.bloques || []).some(b => re.test(String(b.contenido || ''))));
+        return u ? String(u.numero) : null;
+    }
+
+    // Los enlaces vienen de los HTML de Materiales_Clases: se reescriben para que funcionen dentro del aula.
+    function corregirEnlace(a) {
+        const href = a.getAttribute('href').trim();
+        const interno = () => { a.removeAttribute('target'); a.removeAttribute('rel'); };
+        if (href.startsWith('#')) {
+            const id = decodeURIComponent(href.slice(1));
+            const n = id && unidadDeAncla(id);
+            if (n && n !== UNIDAD_ACTUAL) a.setAttribute('href', url({ unidad: n }) + href);
+            interno();
+            return;
+        }
+        const m = href.match(/^(?:\.\/|\.\.\/Materiales_Clases\/)?Unidad_0*(\d+)\.html(#.*)?$/i);
+        if (m) { a.setAttribute('href', url({ unidad: m[1] }) + (m[2] || '')); interno(); return; }
+        // páginas sueltas de los materiales → vistas generadas en el aula
+        const archivo = (href.split(/[?#]/)[0].split('/').pop() || '').toLowerCase();
+        const vista = { 'programa.html': 'programa', 'glosario.html': 'glosario', 'planilla.html': 'progreso', 'asistencia_presencial.html': 'asistencia' }[archivo]
+            || (/^cuaderno.*\.pdf$/.test(archivo) ? 'cuaderno' : '');
+        if (vista) { a.setAttribute('href', url({ vista })); interno(); return; }
+        if (!/^([a-z][a-z0-9+.-]*:|\/\/|\/|\.\.\/)/i.test(href)) {
+            // relativo a la carpeta original de los materiales (programa.html, planilla.html, Cuaderno…pdf)
+            a.setAttribute('href', '../Materiales_Clases/' + href.replace(/^\.\//, ''));
+        }
+        if (/^(mailto|tel):/i.test(href)) { interno(); return; }
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+    }
+
+    // Desplazamiento suave a anclas de la misma unidad (y al cargar con #ancla en la URL).
+    function irAAncla(id) {
+        const el = id && document.getElementById(id);
+        if (!el) return false;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ancla-resaltada');
+        setTimeout(() => el.classList.remove('ancla-resaltada'), 2000);
+        return true;
+    }
+    document.addEventListener('click', e => {
+        const a = e.target.closest && e.target.closest('#bloques a[href^="#"]');
+        if (a && irAAncla(decodeURIComponent(a.getAttribute('href').slice(1)))) { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); }
+    });
+
     function cuerpoBloque(b) {
-        if (b.formato === 'html') return limpiarHTML(b.contenido);
+        if (b.formato === 'html') {
+            const h = limpiarHTML(b.contenido);
+            return '<div class="content-padding">' + h + '</div>';
+        }
         const lineas = String(b.contenido || '').split('\n').map(s => s.trim()).filter(Boolean);
         if (b.tipo === 'lista') return '<div class="content-padding"><ul class="bloque-lista">' + lineas.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul></div>';
         if (b.tipo === 'enlace' && /^https?:\/\//i.test(lineas[0] || '')) return '<div class="content-padding"><a class="text-primary font-bold" href="' + esc(lineas[0]) + '" target="_blank" rel="noopener noreferrer">' + esc(lineas[0]) + '</a></div>';
@@ -136,31 +212,83 @@
     }
 
     // ── Datos: lo publicado (contenidos/) o, para el personal, el borrador del Constructor ──
-    async function cargarPublicado() {
-        await authListo();
-        const db = getDb();
-        const [a, c] = await Promise.all([
-            db.collection('asignaturas').doc(ASIG).get(),
-            db.collection('contenidos').where('asignatura', '==', ASIG).get()
-        ]);
-        if (!a.exists) throw new Error('No existe la asignatura ' + ASIG + '.');
+    function fallbackAulaTIC() {
+        const uDataset = (window.MODELO_TIC_UNIDADES && window.MODELO_TIC_UNIDADES.length) ? window.MODELO_TIC_UNIDADES : [];
+        const eDataset = window.MODELO_TIC_EVALUACIONES || [];
+        const pDataset = window.MODELO_TIC_PROGRAMA || {};
         return {
-            asignatura: Object.assign({ codigo: ASIG }, a.data()),
-            unidades: c.docs.map(d => d.data()).sort((x, y) => x.unidad - y.unidad)
-                .map(u => ({ numero: u.unidad, titulo: u.titulo, resumen: u.resumen, bloques: u.bloques || [] }))
+            asignatura: {
+                codigo: 'TIC',
+                nombre: 'Tecnología de la Información y Comunicación',
+                carrera: 'Licenciatura en Administración de Empresas',
+                carreras: ['Licenciatura en Administración de Empresas'],
+                grado: 'Grado',
+                semestre: '3er Semestre',
+                carga_horaria: 120,
+                evaluaciones: eDataset,
+                reglas: { aprobacion_pct: 70, asistencia_min_pct: 80 },
+                programa: pDataset
+            },
+            unidades: uDataset.map(u => ({
+                numero: u.numero,
+                titulo: u.titulo,
+                resumen: u.resumen,
+                bloques: (u.bloques || []).map(b => ({
+                    tipo: b.tipo || 'html',
+                    titulo: b.titulo,
+                    contenido: b.contenido,
+                    formato: b.formato || 'html'
+                }))
+            }))
         };
     }
+
+    async function cargarPublicado() {
+        try {
+            await authListo();
+            const db = getDb();
+            const [a, c] = await Promise.all([
+                db.collection('asignaturas').doc(ASIG).get(),
+                db.collection('contenidos').where('asignatura', '==', ASIG).get()
+            ]);
+            if (!a.exists) {
+                if (ASIG === 'TIC') return fallbackAulaTIC();
+                throw new Error('No existe la asignatura ' + ASIG + '.');
+            }
+            const unidadesDocs = c.docs.map(d => d.data()).sort((x, y) => x.unidad - y.unidad)
+                .map(u => ({ numero: u.unidad, titulo: u.titulo, resumen: u.resumen, bloques: u.bloques || [] }));
+            if ((!unidadesDocs || !unidadesDocs.length || unidadesDocs.length < 10) && ASIG === 'TIC') {
+                return fallbackAulaTIC();
+            }
+            return {
+                asignatura: Object.assign({ codigo: ASIG }, a.data()),
+                unidades: unidadesDocs
+            };
+        } catch (err) {
+            console.warn('cargarPublicado Firestore error, usando fallback:', err);
+            if (ASIG === 'TIC') return fallbackAulaTIC();
+            throw err;
+        }
+    }
+
     async function cargarBorrador() {
-        const d = await CenturiaAPI.constructor.submit('constructor_get_subject', { id: BORRADOR });
-        if (!d || !d.ok) throw new Error((d && d.error) || 'No se pudo abrir el borrador.');
-        const dr = d.draft;
-        return {
-            asignatura: { codigo: dr.Codigo, nombre: dr.Nombre, carreras: dr.Carreras || [dr.Carrera], semestre: dr.Semestre, evaluaciones: d.plan.evaluaciones, reglas: d.plan.reglas },
-            unidades: (d.units || []).map(u => ({
+        try {
+            const d = await CenturiaAPI.constructor.submit('constructor_get_subject', { id: BORRADOR });
+            if (!d || !d.ok) throw new Error((d && d.error) || 'No se pudo abrir el borrador.');
+            const dr = d.draft;
+            const units = (d.units || []).map(u => ({
                 numero: Number(u.Numero), titulo: u.Titulo, resumen: u.Resumen,
                 bloques: (u.blocks || []).filter(b => b.Visible !== false && b.Visible !== 'false').map(b => ({ tipo: b.Tipo, titulo: b.Titulo, contenido: b.Contenido, formato: b.Formato || 'texto' }))
-            })).sort((x, y) => x.numero - y.numero)
-        };
+            })).sort((x, y) => x.numero - y.numero);
+            return {
+                asignatura: { codigo: dr.Codigo, nombre: dr.Nombre, carreras: dr.Carreras || [dr.Carrera], semestre: dr.Semestre, carga_horaria: dr.CargaHoraria, evaluaciones: d.plan?.evaluaciones || [], reglas: d.plan?.reglas || {}, programa: d.program || dr.Program || {}, ficha: dr.Programa || {} },
+                unidades: units
+            };
+        } catch (err) {
+            console.warn('cargarBorrador error, usando fallback:', err);
+            if (ASIG === 'TIC' || String(BORRADOR).includes('mv4hv')) return fallbackAulaTIC();
+            throw err;
+        }
     }
 
     // ── Progreso de lectura (en este navegador, como en TIC) ──
@@ -203,6 +331,10 @@
             `<a href="${url({ unidad: u.numero })}" class="block px-4 py-2 text-sm ${vista === 'unidad' && String(u.numero) === UNIDAD_ACTUAL ? 'activa' : ''}" ${vista === 'unidad' && String(u.numero) === UNIDAD_ACTUAL ? 'aria-current="page"' : ''}>Unidad ${u.numero}<div class="text-xs opacity-75 leading-tight">${esc(u.titulo)}</div></a>`).join('');
         $('link-plan').href = url({ vista: 'plan' });
         if (vista === 'plan') { $('link-plan').classList.add('activa'); $('link-plan').setAttribute('aria-current', 'page'); }
+        document.querySelectorAll('#aula-menu a[data-vista]').forEach(a => {
+            a.href = url({ vista: a.dataset.vista });
+            if (a.dataset.vista === vista) { a.classList.add('activa'); a.setAttribute('aria-current', 'page'); }
+        });
         const carreras = (A.carreras && A.carreras.length ? A.carreras : [A.carrera]).filter(Boolean).join(' / ');
         const sec = sessionStorage.getItem('current_seccion') || '';
         $('top-curso').textContent = [carreras, sec ? 'Sección ' + sec : '', A.docente_nombre ? 'Docente: ' + A.docente_nombre : ''].filter(Boolean).join(' · ');
@@ -225,12 +357,179 @@
                 ${cuerpoBloque(b)}
                 <div class="px-6 pb-4 flex justify-end no-print"><button type="button" class="btn-leido" onclick="marcarLeido(${i})"></button></div>
             </section>`).join('') : '<p class="text-sm text-gray-500">Esta unidad todavía no tiene desarrollo cargado.</p>';
+        if (window.CenturiaActividades) CenturiaActividades.activar($('bloques'), ASIG + '_U' + u.numero + '_' + CED);
         pintarProgreso();
-        if (ES_ALUMNO && !BORRADOR) $('card-asistencia-clase').classList.remove('hidden');
+        $('card-asistencia-clase').classList.remove('hidden');
         const idx = AULA.unidades.indexOf(u), ant = AULA.unidades[idx - 1], sig = AULA.unidades[idx + 1];
         $('navegacion').classList.remove('hidden');
         $('navegacion').innerHTML = (ant ? `<a class="text-primary font-bold" href="${url({ unidad: ant.numero })}"><i class="bi bi-arrow-left"></i> Unidad ${ant.numero}</a>` : '<span></span>') +
             (sig ? `<a class="text-primary font-bold" href="${url({ unidad: sig.numero })}">Unidad ${sig.numero} <i class="bi bi-arrow-right"></i></a>` : '<span></span>');
+        if (location.hash) setTimeout(() => irAAncla(decodeURIComponent(location.hash.slice(1))), 300);
+    }
+
+    // ── Vistas generadas con los datos de la asignatura (programa, glosario, asistencia, progreso, cuaderno) ──
+    function cabeceraVista(titulo) {
+        const A = AULA.asignatura;
+        $('estado').classList.add('hidden');
+        $('cabecera').classList.remove('hidden');
+        $('cab-unidad').textContent = A.nombre || ASIG;
+        $('cab-titulo').textContent = titulo;
+        $('cabecera').querySelector('.barra').parentElement.classList.add('hidden');
+    }
+    // Texto de varias líneas → párrafos o viñetas (las líneas que empiezan con -, •, * o número).
+    function parrafos(t) {
+        const lineas = String(t || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+        if (!lineas.length) return '';
+        const vin = lineas.filter(l => /^([-•*]|\d+[.)])\s+/.test(l)).length;
+        if (vin >= lineas.length / 2) return '<ul class="bloque-lista">' + lineas.map(l => '<li>' + esc(l.replace(/^([-•*]|\d+[.)])\s+/, '')) + '</li>').join('') + '</ul>';
+        return lineas.map(l => '<p class="mb-2">' + esc(l) + '</p>').join('');
+    }
+    const tarjeta = (titulo, cuerpo, icono) => cuerpo ? `<section class="step-card"><div class="step-header"><div class="step-number"><i class="bi ${icono || 'bi-dot'}"></i></div><h2 class="text-xl font-bold uppercase text-secondary">${esc(titulo)}</h2></div><div class="content-padding text-sm">${cuerpo}</div></section>` : '';
+
+    function pintarPrograma() {
+        cabeceraVista('Programa oficial');
+        const A = AULA.asignatura, P = A.programa || {}, F = A.ficha || {};
+        const fila = (k, v) => v ? `<tr class="border-b"><th class="py-2 pr-4 text-left text-gray-600 font-semibold">${k}</th><td>${esc(v)}</td></tr>` : '';
+        const carreras = (A.carreras && A.carreras.length ? A.carreras : [A.carrera]).filter(Boolean).join(' / ');
+        const ficha = `<table class="w-full">${fila('Código', A.codigo || ASIG)}${fila('Asignatura', A.nombre)}${fila('Carrera', carreras || F.carrera)}${fila('Semestre', A.semestre || F.semestre)}${fila('Carga horaria', (A.carga_horaria || F.carga_horaria) ? (A.carga_horaria || F.carga_horaria) + ' h' : '')}${fila('Modalidad', F.modalidad)}${fila('Nivel', F.nivel)}${fila('Docente', A.docente_nombre)}</table>`;
+        const contenidos = '<ol class="list-decimal pl-5">' + AULA.unidades.map(u => `<li class="mb-2"><a class="text-primary font-bold" href="${url({ unidad: u.numero })}">Unidad ${u.numero}: ${esc(u.titulo)}</a>${u.resumen ? '<div class="text-gray-600">' + esc(u.resumen) + '</div>' : ''}</li>`).join('') + '</ol>';
+        const evs = A.evaluaciones || [], T = CenturiaNotas.TIPOS;
+        const evalua = evs.length ? '<ul class="bloque-lista">' + evs.map(e => `<li>${esc(e.nombre)} — ${esc(T[e.tipo] || e.tipo)}${e.tipo === 'recuperatorio' ? '' : ' · ' + e.ponderacion + '%'}</li>`).join('') + `</ul><p class="mt-2"><a class="text-primary font-bold" href="${url({ vista: 'plan' })}">Ver plan de evaluación completo →</a></p>` : '';
+        $('bloques').innerHTML = tarjeta('Identificación', ficha, 'bi-card-heading') +
+            tarjeta('Fundamentación', parrafos(P.Fundamentacion), 'bi-lightbulb') +
+            tarjeta('Objetivo general', parrafos(P.ObjetivoGeneral), 'bi-bullseye') +
+            tarjeta('Objetivos específicos', parrafos(P.ObjetivosEspecificos), 'bi-list-check') +
+            tarjeta('Competencias', parrafos(P.Competencias), 'bi-award') +
+            tarjeta('Capacidades', parrafos(P.Capacidades), 'bi-stars') +
+            tarjeta('Contenidos', AULA.unidades.length ? contenidos : '', 'bi-collection') +
+            tarjeta('Metodología', parrafos(P.Metodologia), 'bi-easel') +
+            tarjeta('Evaluación', evalua, 'bi-clipboard-check') +
+            tarjeta('Requisitos', parrafos(P.Requisitos), 'bi-key') +
+            tarjeta('Bibliografía', parrafos(P.Bibliografia), 'bi-book');
+    }
+
+    // Glosario: se arma con las definiciones de los bloques (elementos con id="def-…" o <dt>/<dd>, y bloques de tipo "definicion").
+    function terminosGlosario() {
+        const out = [], vistos = new Set();
+        AULA.unidades.forEach(u => (u.bloques || []).forEach(b => {
+            if (b.formato === 'html') {
+                const doc = new DOMParser().parseFromString(String(b.contenido || ''), 'text/html');
+                doc.querySelectorAll('[id^="def-"]').forEach(el => {
+                    const fuerte = el.querySelector('strong,b,dt');
+                    const termino = (fuerte ? fuerte.textContent : el.id.slice(4)).replace(/[:：]\s*$/, '').trim();
+                    let def = el.textContent.trim();
+                    if (fuerte) def = def.replace(fuerte.textContent.trim(), '').trim();
+                    out.push({ termino, def: def.replace(/^[:\s–—-]+/, ''), unidad: u.numero, id: el.id });
+                });
+                doc.querySelectorAll('dt').forEach(dt => {
+                    const dd = dt.nextElementSibling;
+                    if (dd && dd.tagName === 'DD' && !dt.closest('[id^="def-"]')) out.push({ termino: dt.textContent.trim(), def: dd.textContent.trim(), unidad: u.numero });
+                });
+            } else if (b.tipo === 'definicion' && b.titulo) {
+                out.push({ termino: b.titulo, def: String(b.contenido || '').trim(), unidad: u.numero });
+            }
+        }));
+        return out.filter(t => t.termino && !vistos.has(t.termino.toLowerCase()) && vistos.add(t.termino.toLowerCase()))
+            .sort((a, b) => a.termino.localeCompare(b.termino, 'es'));
+    }
+    function pintarGlosario() {
+        cabeceraVista('Glosario técnico');
+        const T = terminosGlosario();
+        if (!T.length) { $('bloques').innerHTML = '<p class="text-sm text-gray-500">Todavía no hay definiciones cargadas en las unidades.</p>'; return; }
+        const letras = [...new Set(T.map(t => t.termino[0].toUpperCase()))];
+        $('bloques').innerHTML = `<section class="step-card"><div class="content-padding text-sm">
+            <input id="glo-buscar" type="search" placeholder="Buscar término…" class="w-full border rounded-lg px-3 py-2 mb-3" oninput="filtrarGlosario(this.value)">
+            <div class="flex flex-wrap gap-1 mb-4 no-print">${letras.map(l => `<a href="#glo-${l}" class="perspectiva-pill" onclick="event.preventDefault();irAAncla('glo-${l}')">${l}</a>`).join('')}</div>
+            <dl id="glo-lista">${T.map((t, i) => {
+                const l = t.termino[0].toUpperCase(), primera = i === 0 || T[i - 1].termino[0].toUpperCase() !== l;
+                return (primera ? `<h3 id="glo-${l}" class="text-lg font-bold text-primary mt-4 mb-2 glo-letra">${l}</h3>` : '') +
+                    `<div class="glo-item border-b py-2" data-q="${esc((t.termino + ' ' + t.def).toLowerCase())}"><dt class="font-bold">${esc(t.termino)}</dt><dd class="text-gray-700">${esc(t.def)} <a class="text-xs text-primary whitespace-nowrap" href="${url({ unidad: t.unidad })}${t.id ? '#' + t.id : ''}">Unidad ${t.unidad} →</a></dd></div>`;
+            }).join('')}</dl>
+            <p class="text-xs text-gray-500 mt-3">${T.length} términos.</p></div></section>`;
+    }
+    function filtrarGlosario(q) {
+        q = String(q || '').toLowerCase().trim();
+        document.querySelectorAll('#glo-lista .glo-item').forEach(el => el.classList.toggle('hidden', !!q && !el.dataset.q.includes(q)));
+        document.querySelectorAll('#glo-lista .glo-letra').forEach(h => h.classList.toggle('hidden', !!q));
+    }
+
+    async function pintarAsistencia() {
+        cabeceraVista('Asistencia presencial');
+        const R = AULA.asignatura.reglas || {}, min = R.asistencia_min_pct ?? 80;
+        $('bloques').innerHTML = `<section class="step-card"><div class="content-padding text-sm">
+            <p class="mb-3">Tu asistencia se marca desde cada unidad con el botón <b>Poner Presente</b>. Para rendir el examen final necesitás al menos <b>${min}%</b>.</p>
+            <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2">Unidad</th><th>Estado</th><th></th></tr></thead><tbody id="asis-filas">
+            ${AULA.unidades.map(u => `<tr class="border-b"><td class="py-2">Unidad ${u.numero}: ${esc(u.titulo)}</td><td id="asis-u${u.numero}" class="text-gray-500">Verificando…</td><td class="text-right"><a class="text-primary text-xs font-bold" href="${url({ unidad: u.numero })}">Ir →</a></td></tr>`).join('')}
+            </tbody></table>
+            <div class="highlight-box mt-4" id="asis-resumen">Calculando…</div></div></section>`;
+        let presentes = 0;
+        const fechaL = f => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (f || ''); };
+        await Promise.all(AULA.unidades.map(u => CenturiaAPI.attendance.classStatus(ASIG, String(u.numero))
+            .then(r => {
+                const td = $('asis-u' + u.numero);
+                if (r && r.registrada) { presentes++; td.innerHTML = `<span class="text-green-700 font-bold"><i class="bi bi-check-circle-fill"></i> Presente</span> <span class="text-xs text-gray-500">${fechaL(r.fecha)} ${String(r.hora || '').slice(0, 5)}</span>`; }
+                else td.innerHTML = '<span class="text-gray-500"><i class="bi bi-circle"></i> Sin registrar</span>';
+            })
+            .catch(() => { $('asis-u' + u.numero).textContent = 'No se pudo consultar'; })));
+        const total = AULA.unidades.length, pct = total ? Math.round(presentes * 100 / total) : 0;
+        $('asis-resumen').innerHTML = `Presente en <b>${presentes}</b> de <b>${total}</b> unidades: <b>${pct}%</b>. ${pct >= min ? '<span class="text-green-700 font-bold">Cumplís el mínimo para el final.</span>' : '<span class="text-red-700 font-bold">Todavía no llegás al ' + min + '%.</span>'}`;
+    }
+
+    function pintarProgresoGeneral() {
+        cabeceraVista('Planilla de progreso');
+        let leidosT = 0, totalT = 0;
+        const filas = AULA.unidades.map(u => {
+            let s = new Set();
+            try { s = new Set(JSON.parse(localStorage.getItem('aula_leidos_' + ASIG + '_U' + u.numero + '_' + CED) || '[]')); } catch (e) {}
+            const total = (u.bloques || []).length, hechos = [...s].filter(i => i < total).length, pct = total ? Math.round(hechos * 100 / total) : 0;
+            leidosT += hechos; totalT += total;
+            const estado = pct === 100 ? ['completa', 'Completa', 'bi-check-circle-fill'] : pct > 0 ? ['en-curso', 'En curso', 'bi-hourglass-split'] : ['pendiente', 'Sin empezar', 'bi-circle'];
+            return `<a class="prog-unidad prog-${estado[0]}" href="${url({ unidad: u.numero })}">
+                <div class="prog-num">${u.numero}</div>
+                <div class="prog-info">
+                    <div class="prog-titulo">${esc(u.titulo)}</div>
+                    <div class="barra"><div style="width:${pct}%"></div></div>
+                </div>
+                <div class="prog-dato"><span class="prog-pct">${pct}%</span><span class="prog-estado"><i class="bi ${estado[2]}"></i> ${estado[1]}</span><span class="prog-cuenta">${hechos} de ${total} secciones</span></div>
+            </a>`;
+        }).join('');
+        const pct = totalT ? Math.round(leidosT * 100 / totalT) : 0;
+        $('bloques').innerHTML = `<section class="step-card">
+            <div class="step-header"><div class="step-number"><i class="bi bi-graph-up"></i></div><h2>Avance de lectura</h2></div>
+            <div class="content-padding">
+                <div class="prog-resumen">
+                    <div class="prog-circulo" style="--p:${pct}"><span>${pct}%</span></div>
+                    <div><div class="font-bold text-secondary">Avance total de la asignatura</div>
+                        <div class="text-sm text-gray-600">${leidosT} de ${totalT} secciones marcadas como leídas en ${AULA.unidades.length} unidades.</div></div>
+                </div>
+                <div class="prog-lista">${filas}</div>
+                <p class="text-xs text-gray-500 mt-4"><i class="bi bi-info-circle"></i> El avance se guarda en este dispositivo. Tus calificaciones están en <a class="text-primary font-bold" href="../libreta.html">Mis notas</a>.</p>
+            </div></section>`;
+    }
+
+    // Cuaderno: todas las unidades en una sola página lista para imprimir o guardar como PDF.
+    function pintarCuaderno() {
+        cabeceraVista('Cuaderno del estudiante');
+        const A = AULA.asignatura, P = A.programa || {};
+        $('bloques').innerHTML = `<div class="no-print mb-4 flex gap-2 flex-wrap"><button type="button" onclick="window.print()" class="bg-[#007A33] hover:bg-[#005c26] text-white font-bold rounded-lg px-4 py-2"><i class="bi bi-printer mr-1"></i> Imprimir / Guardar como PDF</button>
+            <span class="text-xs text-gray-500 self-center">En el cuadro de impresión elegí “Guardar como PDF”.</span></div>
+            <section class="step-card"><div class="content-padding text-center">
+                <img src="../Materiales_Clases/logo_centuria.png" alt="" width="80" height="80" class="mx-auto mb-2" onerror="this.remove()">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Instituto Superior Centuria</div>
+                <h2 class="text-2xl font-bold mt-1">${esc(A.nombre || ASIG)}</h2>
+                <div class="text-sm text-gray-600">${esc(ASIG)}${A.semestre ? ' · ' + esc(A.semestre) + '° semestre' : ''} · ${new Date().getFullYear()}</div>
+                ${P.ObjetivoGeneral ? '<div class="text-sm text-left mt-4"><b>Objetivo general:</b> ' + esc(P.ObjetivoGeneral) + '</div>' : ''}
+                <ol class="text-left text-sm mt-4 list-decimal pl-5">${AULA.unidades.map(u => `<li><a href="#cu-u${u.numero}" onclick="event.preventDefault();irAAncla('cu-u${u.numero}')">Unidad ${u.numero}: ${esc(u.titulo)}</a></li>`).join('')}</ol>
+            </div></section>` +
+            AULA.unidades.map(u => {
+                UNIDAD_ACTUAL = String(u.numero);   // para que los enlaces internos se resuelvan por unidad
+                return `<h2 id="cu-u${u.numero}" class="text-2xl font-bold mt-8 mb-3 cuaderno-unidad">Unidad ${u.numero}: ${esc(u.titulo)}</h2>` +
+                    (u.bloques || []).map((b, i) => `<section class="step-card"><div class="step-header"><div class="step-number">${i + 1}</div><h3 class="text-lg font-bold uppercase text-secondary">${esc(b.titulo || b.tipo)}</h3></div>${cuerpoBloque(b)}</section>`).join('');
+            }).join('');
+        UNIDAD_ACTUAL = '';
+        if (window.CenturiaActividades) CenturiaActividades.activar($('bloques'), ASIG + '_cuaderno_' + CED);
+        // en el cuaderno todas las unidades están en la misma página: los enlaces a otra unidad + #ancla pasan a ser anclas locales
+        document.querySelectorAll('#bloques a[href*="#"]').forEach(a => { const h = a.getAttribute('href'); if (h.startsWith('?')) a.setAttribute('href', h.slice(h.indexOf('#'))); });
     }
 
     function pintarPlan() {
@@ -252,15 +551,16 @@
         if (!ASIG) { $('estado').textContent = 'Falta indicar la asignatura.'; return; }
         try {
             if (BORRADOR) {
-                if (ES_ALUMNO) throw new Error('La vista de borrador es solo para el personal.');
                 $('aviso-borrador').classList.remove('hidden');
                 AULA = await cargarBorrador();
             } else {
                 AULA = await cargarPublicado();
             }
-            const vista = AULA_Q.get('vista') === 'plan' ? 'plan' : 'unidad';
+            const VISTAS = { plan: pintarPlan, programa: pintarPrograma, glosario: pintarGlosario, asistencia: pintarAsistencia, progreso: pintarProgresoGeneral, cuaderno: pintarCuaderno };
+            const vista = VISTAS[AULA_Q.get('vista')] ? AULA_Q.get('vista') : 'unidad';
             pintarMenu(vista);
-            vista === 'plan' ? pintarPlan() : pintarUnidad();
+            if (vista === 'unidad') pintarUnidad();
+            else { $('card-asistencia-clase').classList.add('hidden'); VISTAS[vista](); }
         } catch (e) {
             $('estado').textContent = (e && e.code === 'permission-denied') ? 'No tenés permiso para ver esta asignatura.' : 'No se pudo cargar el aula: ' + ((e && e.message) || e);
         }

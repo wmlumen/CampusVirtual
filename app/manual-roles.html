@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Uso por Roles — Campus Virtual Centuria</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --verde-oscuro: #0d2c16;
+            --verde-medio: #16813D;
+            --verde-claro: #1ebb4d;
+            --dorado: #d4a843;
+            --dorado-light: #f6e05e;
+            --bg-dark: #060f09;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f1f5f9;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 15% 30%, rgba(22,129,61,.18) 0%, transparent 60%),
+                        radial-gradient(ellipse at 85% 15%, rgba(212,168,67,.12) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(13,44,22,.35) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .glass-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+        .glass-card-hover {
+            transition: all .25s ease;
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 168, 67, 0.45);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+        .tab-btn {
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(22,129,61,0.85), rgba(13,44,22,0.95));
+            border-color: var(--dorado);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(22,129,61,0.35);
+        }
+        .badge-norma {
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.8rem;
+            background: rgba(212,168,67,0.2);
+            color: #e8c676;
+            border: 1px solid var(--dorado);
+            flex-shrink: 0;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--dorado); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- TOP HEADER -->
+    <header class="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <img src="images/logo_centuria.png" alt="Centuria" class="h-10" onerror="this.src='favicon.ico'">
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-sm md:text-base font-bold text-white tracking-wide uppercase">Manual de Uso por Roles</h1>
+                    <span class="badge-norma bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">CONES 258/24 & ANEAES</span>
+                </div>
+                <p class="text-[10px] md:text-xs text-amber-400/90 font-medium">Plataforma Universitaria Oficial — Campus Virtual Centuria</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5 transition" title="Imprimir manual">
+                <i class="bi bi-printer"></i> <span class="hidden sm:inline">Imprimir</span>
+            </button>
+            <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition">
+                <i class="bi bi-box-arrow-in-right"></i> <span class="hidden sm:inline">Ir al Campus</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- HERO BANNER -->
+    <div class="max-w-7xl mx-auto w-full px-4 md:px-8 pt-8 pb-4">
+        <div class="glass-box p-6 md:p-8 bg-gradient-to-r from-emerald-950/60 via-green-950/40 to-black/60 border-emerald-500/30">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="max-w-3xl">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 mb-3">
+                        <i class="bi bi-shield-check text-amber-400"></i> Marco Regulatorio Nacional e Integridad Académica
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+                        Guía Integral de Procedimientos y Operatoria por Rol
+                    </h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-2 leading-relaxed">
+                        Este manual documenta las funciones, flujos de trabajo, responsabilidades y trazabilidad pedagógica de cada actor en el ecosistema virtual Centuria, garantizando el cumplimiento de la <strong class="text-amber-300">Resolución CONES N.º 258/2024</strong> y los criterios de evaluación de la <strong class="text-amber-300">ANEAES</strong>.
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 w-full md:w-auto shrink-0">
+                    <div class="p-3 rounded-xl bg-black/40 border border-white/10 text-center md:text-left">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Niveles Formativos Soportados</div>
+                        <div class="text-xs font-bold text-emerald-400 mt-0.5">Grado · Posgrado (Maestría / Doctorado)</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-black/40 border border-white/10 text-center md:text-left">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Arquitectura Curricular</div>
+                        <div class="text-xs font-bold text-amber-300 mt-0.5">Perfil → RA → Syllabus → Aula Virtual</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUSCADOR RÁPIDO DE FUNCIONES -->
+            <div class="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i class="bi bi-search absolute left-3.5 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="buscador-manual" oninput="filtrarContenido(this.value)" placeholder="Buscar función, pantalla o procedimiento (ej: examen, matrícula, constructor, acta, tesis)..." class="w-full bg-black/50 border border-white/20 rounded-xl pl-10 pr-4 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-amber-400 transition placeholder:text-slate-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- SELECTOR DE ROLES (TABS) -->
+        <nav class="flex gap-2 overflow-x-auto pb-2 mt-6 border-b border-white/10" aria-label="Pestañas de Roles">
+            <button class="tab-btn active" onclick="cambiarRol('postulante', this)"><i class="bi bi-person-plus"></i> Postulante</button>
+            <button class="tab-btn" onclick="cambiarRol('alumno', this)"><i class="bi bi-mortarboard"></i> Alumno Matriculado</button>
+            <button class="tab-btn" onclick="cambiarRol('docente', this)"><i class="bi bi-person-video3"></i> Docente</button>
+            <button class="tab-btn" onclick="cambiarRol('academico', this)"><i class="bi bi-award"></i> Dirección Académica</button>
+            <button class="tab-btn" onclick="cambiarRol('admin', this)"><i class="bi bi-shield-shaded"></i> Administrador</button>
+            <button class="tab-btn" onclick="cambiarRol('auditor', this)"><i class="bi bi-patch-check"></i> Auditor ANEAES / CONES</button>
+        </nav>
+    </div>
+
+    <!-- MAIN SECTIONS CONTAINER -->
+    <main class="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 flex-1">
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 1. ROL: POSTULANTE -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-postulante" class="seccion-rol">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-400 flex items-center gap-2"><i class="bi bi-person-plus-fill"></i> Rol: Postulante / Aspirante</h3>
+                    <p class="text-xs text-slate-400">Usuario registrado que aún no ha completado el legajo oficial ni su matriculación institucional.</p>
+                </div>
+                <span class="badge-norma bg-amber-500/20 text-amber-400 border border-amber-500/40">Admisión & Alta</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-box p-5 glass-card-hover md:col-span-2">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="bi bi-list-check text-emerald-400"></i> Flujo de Ingreso y Pasos Obligatorios</h4>
+                    <div class="space-y-4 text-xs text-slate-300">
+                        <div class="flex items-start gap-3">
+                            <div class="step-num">1</div>
+                            <div>
+                                <strong class="text-white block text-sm">Ingreso al Dashboard</strong>
+                                El postulante ingresa con su Cédula de Identidad y contraseña. Su panel muestra el badge <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">POSTULANTE</span>.
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="step-num">2</div>
+                            <div>
+                                <strong class="text-white block text-sm">Exploración de Oferta Académica</strong>
+                                Acceso al catálogo de carreras en <a href="ofertas-carreras.html" class="text-amber-400 underline font-semibold">Ofertas de Carreras a Seguir</a>, diferenciadas por nivel (Grado vs. Maestría/Posgrado) según Res. CONES 258/2024.
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="step-num">3</div>
+                            <div>
+                                <strong class="text-white block text-sm">Llenado del Formulario de Matrícula Oficial</strong>
+                                Ingresa a <a href="formulario-matricula.html" class="text-amber-400 underline font-semibold">Formulario de Matrícula Digital</a> completando legajo personal, datos de nacimiento, domicilio estructurado DGEEC, título de grado o bachiller y firma de declaración jurada.
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="step-num">4</div>
+                            <div>
+                                <strong class="text-white block text-sm">Transición Automática a Matriculado</strong>
+                                Al enviar el formulario con la declaración jurada, el sistema actualiza su ficha en Firestore (`matricula_completa = true`), cambiando su estado a <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">MATRICULADO</span> y habilitando el acceso pleno a asignaturas, exámenes y materiales.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="bi bi-shield-lock text-rose-400"></i> Restricciones por Seguridad</h4>
+                    <ul class="space-y-2.5 text-xs text-slate-300 list-disc list-inside">
+                        <li><strong class="text-rose-300">Bloqueo de Aulas:</strong> No puede ingresar a materias ni materiales hasta formalizar su matrícula.</li>
+                        <li><strong class="text-rose-300">Exámenes:</strong> Inhabilitado para rendir evaluaciones parciales y finales.</li>
+                        <li><strong class="text-rose-300">Certificados y Libreta:</strong> No puede emitir constancias oficiales de estudio.</li>
+                    </ul>
+                    <div class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200">
+                        <i class="bi bi-exclamation-triangle-fill text-amber-400 me-1"></i> <strong>Auditoría Administrativa:</strong> En el Panel de Control, el Administrador ve al alumno como "Postulante" hasta que concluya este procedimiento.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 2. ROL: ALUMNO MATRICULADO -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-alumno" class="seccion-rol hidden">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-emerald-400 flex items-center gap-2"><i class="bi bi-mortarboard-fill"></i> Rol: Estudiante Universitario Matriculado</h3>
+                    <p class="text-xs text-slate-400">Alumno formalmente incorporado a una cohorte de Grado o Posgrado con legajo verificado.</p>
+                </div>
+                <span class="badge-norma bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">Aulas & Rendimiento</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-book text-emerald-400"></i> Mis Cursos y Asignaturas</h4>
+                    <p class="text-xs text-slate-300 mb-3">Visualización estricta de las materias aprobadas en la malla curricular que corresponden a su grado académico:</p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li><strong>Grado:</strong> Asignaturas del plan de grado correspondiente.</li>
+                        <li><strong>Maestría / Doctorado:</strong> Módulos y seminarios avanzados aprobados por CONES.</li>
+                        <li>Acceso directo a las unidades didácticas y materiales de cátedra oficiales.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-pencil-square text-amber-400"></i> Exámenes y Evaluaciones</h4>
+                    <p class="text-xs text-slate-300 mb-3">Sistema de evaluación continua y sumativa con integridad académica:</p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li><strong>Ventana Horaria:</strong> Apertura y cierre automático programado.</li>
+                        <li><strong>Intentos Controlados:</strong> Registro de puntaje más alto o promedio según ponderación de cátedra.</li>
+                        <li><strong>Rúbricas:</strong> Visualización previa de los criterios de evaluación exigidos por ANEAES.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-qr-code-scan text-blue-400"></i> Asistencia y Eventos</h4>
+                    <p class="text-xs text-slate-300 mb-3">Seguimiento de permanencia y actividades sincrónicas/presenciales:</p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Marcación por QR institucional en talleres y congresos.</li>
+                        <li>Registro de asistencia presencial en módulos específicos.</li>
+                        <li>Justificación digital de inasistencias adjuntando comprobante.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover md:col-span-3">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="bi bi-journal-bookmark text-dorado"></i> Libreta de Calificaciones y Progreso Académico</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-300">
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                            <strong class="text-amber-300 block mb-1"><i class="bi bi-123"></i> Libreta Digital</strong>
+                            Consulta de notas parciales, trabajos prácticos y examen final conforme a la escala del Reglamento de Calificaciones (1 al 5).
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                            <strong class="text-emerald-300 block mb-1"><i class="bi bi-receipt"></i> Mis Facturas</strong>
+                            Auditoría de cuotas, aranceles de matrícula y carga de comprobantes de pago respaldatorios.
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                            <strong class="text-blue-300 block mb-1"><i class="bi bi-headset"></i> Atención al Alumno</strong>
+                            Mesa de ayuda y soporte académico y pedagógico permanente para consultas con respuesta trazable.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 3. ROL: DOCENTE -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-docente" class="seccion-rol hidden">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-blue-400 flex items-center gap-2"><i class="bi bi-person-video3"></i> Rol: Docente / Catedrático</h3>
+                    <p class="text-xs text-slate-400">Responsable del diseño didáctico de cátedra, tutoría, evaluación y carga de notas.</p>
+                </div>
+                <span class="badge-norma bg-blue-500/20 text-blue-400 border border-blue-500/40">Docencia & Tutoría</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-hammer text-amber-400"></i> Constructor y Planificación Didáctica</h4>
+                    <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                        El docente accede a <a href="constructor/index.html" class="text-amber-400 underline font-semibold">Constructor de Materias</a> para desarrollar la planificación operativa de la asignatura asignada:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                        <li><strong>Unidades y Contenidos:</strong> Carga de temas según el programa oficial aprobado.</li>
+                        <li><strong>Recursos Educativos:</strong> Subida de guías, lecturas obligatorias, enlaces de clases virtuales y grabaciones.</li>
+                        <li><strong>Actividades de Aprendizaje:</strong> Diseño de foros de debate, tareas prácticas y estudios de caso vinculados a los Resultados de Aprendizaje (RA).</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-check2-circle text-emerald-400"></i> Gestión de Evaluaciones y Calificaciones</h4>
+                    <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                        Configuración y corrección de instancias evaluativas en <a href="academic/panel_calificaciones.html" class="text-emerald-400 underline font-semibold">Panel de Calificaciones</a>:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                        <li><strong>Generación de Cuestionarios:</strong> Bancos de preguntas de opción múltiple, casos y desarrollo.</li>
+                        <li><strong>Rúbricas Institucionales:</strong> Evaluación transparente mediante criterios preestablecidos.</li>
+                        <li><strong>Planilla y Actas:</strong> Cierre de calificaciones parciales y remisión de acta preliminar a Secretaría.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover md:col-span-2">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-graph-up text-purple-400"></i> Acompañamiento, Asistencia y Alertas Tempranas</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        En cumplimiento de los requerimientos de tutoría de la Res. CONES 258/2024, el docente monitorea a sus grupos desde <a href="academic/panel_docente_analytics.html" class="text-purple-300 underline font-semibold">Analytics y Asistencia</a>:
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-white block">Marcación de Clases</strong>
+                            Toma de asistencia presencial o sincrónica por QR o registro nominal.
+                        </div>
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-white block">Alerta de Abandono</strong>
+                            Identificación temprana de alumnos con más de 10 días sin ingreso a la cátedra.
+                        </div>
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-white block">Retroalimentación</strong>
+                            Devolución pedagógica obligatoria en trabajos prácticos entregados.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 4. ROL: DIRECCIÓN ACADÉMICA / COORDINADOR -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-academico" class="seccion-rol hidden">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-purple-400 flex items-center gap-2"><i class="bi bi-award-fill"></i> Rol: Dirección Académica y Coordinación de Carrera</h3>
+                    <p class="text-xs text-slate-400">Aseguramiento de la calidad curricular, aprobación de syllabus, actas y trazabilidad.</p>
+                </div>
+                <span class="badge-norma bg-purple-500/20 text-purple-400 border border-purple-500/40">Calidad Curricular</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-diagram-3 text-purple-400"></i> Malla Curricular y Correlatividades</h4>
+                    <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                        Supervisión de planes de estudio vigentes para cada carrera:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                        <li>Control de correlatividades estrictas para evitar saltos de semestres o asignaturas no aprobadas.</li>
+                        <li>Verificación de carga horaria mínima aprobada por CONES (horas teóricas, prácticas e investigación).</li>
+                        <li>Asignación de cátedras y designación de docentes titulares y tutores por sección.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-clipboard2-check text-emerald-400"></i> Aprobación Documental de Programas</h4>
+                    <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                        Flujo de revisión y aprobación previa a la publicación en aulas:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                        <li>Validación de que el programa cumpla los 12 requisitos normativos CONES.</li>
+                        <li>Emisión del visado académico vinculando el número de resolución de decanato o acta.</li>
+                        <li>Bloqueo de modificaciones docentes sobre los componentes aprobados del programa oficial.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover md:col-span-2">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-file-earmark-spreadsheet text-amber-400"></i> Indicadores Académicos y Actas de Examen</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 mt-2">
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-amber-300 block mb-1">Cierre de Actas</strong>
+                            Homologación definitiva de planillas finales de calificaciones con firma digital y cierre de actas inmutables.
+                        </div>
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-emerald-300 block mb-1">Indicadores por Unidad</strong>
+                            Monitoreo del logro de competencias y resultados de aprendizaje por materia y semestre.
+                        </div>
+                        <div class="p-3 rounded-lg bg-black/40 border border-white/10">
+                            <strong class="text-purple-300 block mb-1">Tesis y Monografías</strong>
+                            Seguimiento del proceso de tesinas de maestría, asignación de tutores y dictámenes de mesa examinadora.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 5. ROL: ADMINISTRADOR INSTITUCIONAL -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-admin" class="seccion-rol hidden">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-rose-400 flex items-center gap-2"><i class="bi bi-shield-shaded"></i> Rol: Administrador Institucional de Plataforma</h3>
+                    <p class="text-xs text-slate-400">Gestión de cuentas, habilitaciones, directorio, seguridad y operaciones financieras.</p>
+                </div>
+                <span class="badge-norma bg-rose-500/20 text-rose-400 border border-rose-500/40">Control & Gobernanza</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-people text-emerald-400"></i> Directorio de Usuarios</h4>
+                    <p class="text-xs text-slate-300 mb-2 leading-relaxed">
+                        Control centralizado en <a href="dashboard-admin.html" class="text-emerald-300 underline font-semibold">Directorio de Usuarios</a>:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li><strong>Pre-registro:</strong> Carga de cédula y nombre para que el usuario elija su contraseña.</li>
+                        <li><strong>Auditoría de Condición:</strong> Detección inmediata de <em>Postulante</em> vs. <em>Matriculado</em>.</li>
+                        <li>Filtros por rol, matrícula y estado de actividad.</li>
+                        <li>Baja preventiva, reactivación y cambio de sección.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-person-check text-amber-400"></i> Solicitudes Pendientes</h4>
+                    <p class="text-xs text-slate-300 mb-2 leading-relaxed">
+                        Bandeja de aprobación y alta definitiva de cuentas:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Revisión de postulantes que completaron formulario de matrícula.</li>
+                        <li>Verificación de pagos iniciales y comprobantes de arancel.</li>
+                        <li>Habilitación con un clic (`Aprobar y Habilitar`) para activar acceso total.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-cash-stack text-emerald-400"></i> Tesorería y Facturas</h4>
+                    <p class="text-xs text-slate-300 mb-2 leading-relaxed">
+                        Gestión financiera integral en <a href="tesoreria.html" class="text-amber-300 underline font-semibold">Tesorería</a> y <a href="facturas.html" class="text-amber-300 underline font-semibold">Facturación</a>:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Aranceles de matrícula, cuotas de módulo y derechos de examen.</li>
+                        <li>Validación de comprobantes subidos por estudiantes.</li>
+                        <li>Reporte de estados financieros (Cobrado, Pendiente, Mora).</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover md:col-span-3">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-lock text-rose-400"></i> Regla de Separación de Funciones (Seguridad CONES / ANEAES)</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        El Administrador técnico tiene facultades de gestión operativa, pero <strong class="text-rose-300">no puede modificar unilateralmente actas cerradas de calificaciones, ni reemplazar programas oficiales aprobados por resolución</strong> sin mediar el flujo documental de la Dirección Académica. Toda acción administrativa queda registrada en los logs de auditoría de la plataforma.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 6. ROL: AUDITOR Y EVALUADOR ANEAES / CONES -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <section id="sec-auditor" class="seccion-rol hidden">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-dorado flex items-center gap-2"><i class="bi bi-patch-check-fill"></i> Rol: Auditor de Calidad y Par Evaluador ANEAES / CONES</h3>
+                    <p class="text-xs text-slate-400">Perfil de acceso exclusivo de consulta para procesos de habilitación, autoevaluación y acreditación.</p>
+                </div>
+                <span class="badge-norma bg-amber-500/20 text-amber-300 border border-amber-500/40">Acreditación Nacional</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-folder2-open text-amber-300"></i> Expediente de Carrera</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        Acceso directo a la carpeta institucional que contiene:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Resolución de habilitación CONES de la carrera y modalidad.</li>
+                        <li>Plan de estudios oficial con detalle de horas y créditos.</li>
+                        <li>Resoluciones de aprobación de cada programa de asignatura.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-bezier2 text-emerald-400"></i> Trazabilidad Curricular</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        Verificación de la cadena de coherencia pedagógica:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Perfil de egreso vinculado con las competencias declaradas.</li>
+                        <li>Resultados de aprendizaje mapeados a cada unidad de materia.</li>
+                        <li>Instrumentos de evaluación que miden fehacientemente cada RA.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover">
+                    <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2"><i class="bi bi-archive text-blue-400"></i> Muestras y Evidencias</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        Auditoría de evidencias reales bajo resguardo de privacidad:
+                    </p>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li>Muestras anónimas de exámenes y trabajos corregidos con rúbrica.</li>
+                        <li>Registros de interacción sincrónica y tutorías virtuales.</li>
+                        <li>Estadísticas de retención, deserción y aprobación por cohorte.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-box p-5 glass-card-hover md:col-span-3 bg-gradient-to-r from-amber-950/20 to-black/40 border-amber-500/30">
+                    <h4 class="text-sm font-bold text-amber-300 mb-2 flex items-center gap-2"><i class="bi bi-check-all"></i> Principio Rector de Transparencia</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        El auditor no evalúa una maqueta estática: comprueba la realidad académica mediante la base de datos viva del Campus Virtual Centuria, constatando que cada calificación, asistencia y contenido impartido corresponde fehacientemente a un plan curricular aprobado y en vigencia.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-white/10 bg-black/60 py-6 px-4 md:px-8 mt-12 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <img src="images/logo_centuria.png" alt="Centuria" class="h-6" onerror="this.src='favicon.ico'">
+                <span>Instituto Superior Centuria — Sistema Académico Virtual</span>
+            </div>
+            <div>
+                Normativas: <span class="text-slate-300">Ley 4995/13</span> · <span class="text-slate-300">Res. CONES 258/2024</span> · <span class="text-slate-300">Criterios ANEAES</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPT DE NAVEGACIÓN Y FILTRO -->
+    <script>
+        function cambiarRol(rolId, btn) {
+            document.querySelectorAll('.seccion-rol').forEach(function(sec) {
+                sec.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            var sec = document.getElementById('sec-' + rolId);
+            if (sec) sec.classList.remove('hidden');
+            if (btn) btn.classList.add('active');
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+
+        function filtrarContenido(txt) {
+            txt = (txt || '').toLowerCase().trim();
+            if (!txt) {
+                var activa = document.querySelector('.tab-btn.active');
+                if (activa) activa.click();
+                return;
+            }
+            document.querySelectorAll('.seccion-rol').forEach(function(sec) {
+                var match = sec.innerText.toLowerCase().indexOf(txt) > -1;
+                sec.classList.toggle('hidden', !match);
+            });
+        }
+    </script>
+</body>
+</html>

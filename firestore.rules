@@ -25,61 +25,75 @@ service cloud.firestore {
             ? request.auth.token.email.split('@')[0] : null);
     }
 
+    // ═══ Catálogo de roles (v2026-10-12, auditoría RBAC) ═══
+    // Cada grupo tiene un código canónico (primero) y acepta los alias históricos, para que un rol no funcione
+    // en una pantalla y falle en otra. Una persona puede tener varios roles: usuarios.rol (principal) +
+    // usuarios.roles_activos (lista de códigos asignados explícitamente por Administración; el usuario no puede cambiarla).
+    function rolesDelUsuario() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+          && getUserData().get('estado', 'activo') == 'activo'
+        ? [getUserData().get('rol', '')].concat(getUserData().get('roles_activos', []))
+        : [];
+    }
+    function tieneRol(lista) {
+      return isAuthenticated() && lista.hasAny(rolesDelUsuario());
+    }
+    function ROL_ADMIN_TECNICO()  { return ['administrador_plataforma', 'admin_plataforma']; }
+    function ROL_ADMIN_GENERAL()  { return ['administracion_general', 'admin', 'administrador', 'admin_general', 'administracion']; }
+    function ROL_DIRECCION()      { return ['direccion_academica', 'academico', 'academic']; }
+    function ROL_COORDINACION()   { return ['coordinador_carrera']; }
+    function ROL_CALIDAD()        { return ['calidad_academica']; }
+    function ROL_SECRETARIA()     { return ['secretaria_academica', 'administrativo']; }
+    function ROL_TESORERIA()      { return ['tesoreria', 'tesorero']; }
+    function ROL_ATENCION()       { return ['atencion_estudiante', 'asistencia_estudiante', 'asistente_estudiante']; }
+    function ROL_FILIAL()         { return ['admin_filial']; }
+    function ROL_DOCENTE()        { return ['docente']; }
+    function ROL_DISENO()         { return ['disenador_instruccional']; }
+
     function isPlatformAdmin() {
-      return isAuthenticated() && rolActivo() == 'administrador_plataforma';
+      return tieneRol(ROL_ADMIN_TECNICO());
     }
 
+    // Administración (técnica o general). Por ahora conserva las facultades académicas que ya tenía;
+    // separarlas es una decisión institucional pendiente (ver informe de auditoría).
     function isAdminOrPlatform() {
-      return isAuthenticated() && [
-        'admin',
-        'administrador_plataforma',
-        'administracion_general',
-        'admin_general',
-        'administracion'
-      ].hasAny([rolActivo()]);
+      return tieneRol(ROL_ADMIN_TECNICO().concat(ROL_ADMIN_GENERAL()));
     }
 
     // Roles autorizados para asignar/quitar roles a otros usuarios.
-    // ✅ Definido por el administrador: admin_plataforma, admin_general, filial, académico, administrativo.
     function canAssignRoles() {
-      return isAuthenticated() && [
-        'admin',
-        'administrador_plataforma',
-        'administracion_general',
-        'admin_general',
-        'administracion',
-        'administrativo',
-        'academico',
-        'admin_filial'
-      ].hasAny([rolActivo()]);
+      return tieneRol(ROL_ADMIN_TECNICO().concat(ROL_ADMIN_GENERAL()).concat(ROL_SECRETARIA()).concat(ROL_DIRECCION()).concat(ROL_FILIAL()));
     }
 
+    // Dirección académica (y sus alias académico/academic).
     function isAcademico() {
-      return isAuthenticated() && rolActivo() == 'academico';
+      return tieneRol(ROL_DIRECCION());
     }
 
     function isDocente() {
-      return isAuthenticated() && rolActivo() == 'docente';
+      return tieneRol(ROL_DOCENTE());
     }
 
     function isAdminFilial() {
-      return isAuthenticated() && rolActivo() == 'admin_filial';
+      return tieneRol(ROL_FILIAL());
     }
 
+    function isTesoreria() {
+      return tieneRol(ROL_TESORERIA());
+    }
 
+    function isAtencion() {
+      return tieneRol(ROL_ATENCION());
+    }
+
+    function isSecretaria() {
+      return tieneRol(ROL_SECRETARIA());
+    }
+
+    // Personal con acceso de lectura a la información académica de los alumnos.
+    // Tesorería no está acá a propósito: tiene permisos propios (pagos, facturas, fichas), no notas ni asistencia.
     function isStaff() {
-      return isAuthenticated() && [
-        'admin',
-        'administrador_plataforma',
-        'administracion_general',
-        'admin_general',
-        'administracion',
-        'academico',
-        'academic',
-        'docente',
-        'admin_filial',
-        'asistencia_estudiante'
-      ].hasAny([rolActivo()]);
+      return tieneRol(ROL_ADMIN_TECNICO().concat(ROL_ADMIN_GENERAL()).concat(ROL_DIRECCION()).concat(ROL_COORDINACION()).concat(ROL_CALIDAD()).concat(ROL_SECRETARIA()).concat(ROL_DOCENTE()).concat(ROL_FILIAL()).concat(ROL_ATENCION()).concat(ROL_DISENO()));
     }
 
     function isOwner(userId) {
@@ -115,10 +129,10 @@ service cloud.firestore {
       allow update: if (isAuthenticated()
                         && (isOwner(userId) || getCedulaForUid() == resource.data.cedula)
                         && !request.resource.data.diff(resource.data).affectedKeys()
-                              .hasAny(['rol','roles','estado','es_docente','asignaciones','cedula','password','current_password']))
+                              .hasAny(['rol','roles','roles_activos','estado','es_docente','asignaciones','cedula','password','current_password']))
                  || isAdminOrPlatform()
                  || (canAssignRoles()
-                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol','estado','roles','es_docente','asignaciones','updated_at'])
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol','estado','roles','roles_activos','es_docente','asignaciones','updated_at'])
                      && request.resource.data.cedula == resource.data.cedula);
 
       // Registro: la ficha la crea el mismo usuario recién creado en Firebase Auth.
@@ -167,23 +181,23 @@ service cloud.firestore {
     // guardan la respuesta correcta: solo las lee el personal docente.
     match /constructor_asignaturas/{id} {
       allow read: if isStaff();
-      allow write: if esPersonalDocente();
+      allow write: if editaContenidos();
     }
     match /constructor_unidades/{id} {
       allow read: if isStaff();
-      allow write: if esPersonalDocente();
+      allow write: if editaContenidos();
     }
     match /constructor_bloques/{id} {
       allow read: if isStaff();
-      allow write: if esPersonalDocente();
+      allow write: if editaContenidos();
     }
     match /constructor_actividades/{id} {
       allow read: if isStaff();
-      allow write: if esPersonalDocente();
+      allow write: if editaContenidos();
     }
     match /constructor_evaluaciones/{id} {
       allow read: if isStaff();
-      allow write: if esPersonalDocente();
+      allow write: if editaContenidos();
     }
     match /constructor_revisiones/{id} {
       allow read: if isStaff();
@@ -284,12 +298,11 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) ? rolActivo() : '';
     }
     function puedeAccesosFacturas() {
-      return isAuthenticated() && rolFicha() in ['asistencia_estudiante', 'asistente_estudiante', 'admin', 'administrador',
-        'administrador_plataforma', 'admin_plataforma', 'administracion_general', 'admin_general', 'administracion'];
+      return tieneRol(ROL_ATENCION().concat(ROL_ADMIN_TECNICO()).concat(ROL_ADMIN_GENERAL()));
     }
     function puedeVerFacturas() {
       return isAuthenticated() && (
-        puedeAccesosFacturas() || rolFicha() in ['admin_filial', 'tesoreria', 'tesorero'] ||
+        puedeAccesosFacturas() || tieneRol(ROL_FILIAL().concat(ROL_TESORERIA()).concat(ROL_SECRETARIA())) ||
         (getCedulaForUid() != null
           && exists(/databases/$(database)/documents/facturas_accesos/$(getCedulaForUid()))
           && get(/databases/$(database)/documents/facturas_accesos/$(getCedulaForUid())).data.estado == 'activo'));
@@ -354,9 +367,13 @@ service cloud.firestore {
 
     // ── Trabajos prácticos en PDF (v2026-10-07) ──
     // El alumno entrega (y reemplaza mientras no esté calificado) su propio trabajo; el personal docente lo ve y lo califica.
+    // Personal docente: quien dicta, coordina o dirige (califica, declara clases, edita el Constructor).
     function esPersonalDocente() {
-      return isAuthenticated() && rolFicha() in ['docente', 'academico', 'academic', 'admin', 'administrador', 'administrador_plataforma',
-        'admin_plataforma', 'administracion_general', 'admin_general', 'administracion'];
+      return tieneRol(ROL_DOCENTE().concat(ROL_DIRECCION()).concat(ROL_COORDINACION()).concat(ROL_ADMIN_TECNICO()).concat(ROL_ADMIN_GENERAL()));
+    }
+    // Constructor: además del personal docente, el diseñador instruccional (prepara contenido; publicar sigue siendo de Administración).
+    function editaContenidos() {
+      return esPersonalDocente() || tieneRol(ROL_DISENO());
     }
     function esMiTrabajo(trabId) {
       return isAuthenticated() && getCedulaForUid() != null
@@ -446,8 +463,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         getCedulaForUid() == resource.data.cedula_alumno || isAdminOrPlatform() || isAcademico()
       );
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdminOrPlatform();
+      allow create: if isAuthenticated() && (request.resource.data.cedula_alumno == getCedulaForUid() || isStaff());
+      allow update, delete: if isAdminOrPlatform() || isSecretaria();
     }
 
     match /pagos/{pagoId} {
@@ -463,8 +480,8 @@ service cloud.firestore {
     }
 
     match /solicitudes_docentes/{solId} {
-      allow read: if isAuthenticated() && (isAdminOrPlatform() || isOwner(solId));
-      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && (isAdminOrPlatform() || isAcademico() || isOwner(solId));
+      allow create: if isOwner(solId) || isAdminOrPlatform();
       allow update: if isAdminOrPlatform();
       allow delete: if false;
     }
@@ -492,27 +509,33 @@ service cloud.firestore {
        allow delete: if isAdminOrPlatform();
      }
 
+     // Consultas de alumnos (v2026-10-12): cada alumno crea y ve las suyas; las atiende el personal.
      match /consultas/{conId} {
-       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.alumno_cedula || isAdminOrPlatform() || isAcademico());
-       allow create: if isAuthenticated();
-       allow update: if isAuthenticated() && (isAdminOrPlatform() || getCedulaForUid() == resource.data.alumno_cedula);
+       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.alumno_cedula || isStaff());
+       allow create: if isAuthenticated() && (request.resource.data.alumno_cedula == getCedulaForUid() || isStaff());
+       allow update: if isAuthenticated() && (isStaff()
+                     || (getCedulaForUid() == resource.data.alumno_cedula && request.resource.data.alumno_cedula == resource.data.alumno_cedula));
+       allow delete: if isAdminOrPlatform();
      }
 
+     // Mensajes a alumnos: los envía el personal; el destinatario los lee y los borra.
      match /mensajes/{msgId} {
        allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.destinatario || isStaff());
-       allow create: if isAuthenticated();
-       allow delete: if isAuthenticated() && getCedulaForUid() == resource.data.destinatario;
+       allow create: if isStaff();
+       allow update: if isStaff();
+       allow delete: if isAuthenticated() && (getCedulaForUid() == resource.data.destinatario || isAdminOrPlatform());
      }
 
+     // Credenciales (QR del alumno): cada uno la suya; el personal las verifica.
      match /credenciales/{credId} {
-       allow read: if isAuthenticated();
-       allow create: if isAuthenticated();
-       allow update: if isAuthenticated() && isStaff();
+       allow read: if isAuthenticated() && (resource.data.cedula == getCedulaForUid() || isStaff());
+       allow create: if isAuthenticated() && (request.resource.data.cedula == getCedulaForUid() || isStaff());
+       allow update: if isStaff();
        allow delete: if isAdminOrPlatform();
      }
 
      match /borradores/{brwId} {
-       allow read: if isAuthenticated();
+       allow read: if isStaff();
        allow create: if isAuthenticated() && isStaff();
        allow update: if isAuthenticated() && (isAdminOrPlatform() || isAcademico() || isDocente());
        allow delete: if isAdminOrPlatform();
@@ -547,35 +570,42 @@ service cloud.firestore {
        allow delete: if false;
      }
 
-     // Módulo de exámenes: configuración (ventana/intentos), aprobación académica, código y
-     // solicitudes de acceso por factura. Lectura pública (el gate exam-lock la consulta sin
-     // auth). Escritura abierta mientras no exista Firebase Auth anónimo para poder
-     // autenticar docentes/académicos en el servidor (mismo modelo pseudo-token de la app).
+     // ═══ Módulo de exámenes (v2026-10-12): antes lectura y escritura públicas ═══
+     // Configuración (ventana, intentos) y aprobación: las lee cualquiera con sesión (el control del examen las consulta),
+     // las escribe solo el personal docente.
      match /config_examen/{cfgId} {
-       allow read: if true;
-       allow write: if true;
+       allow read: if isAuthenticated();
+       allow write: if esPersonalDocente();
      }
      match /aprobacion_examen/{apId} {
-       allow read: if true;
-       allow write: if true;
+       allow read: if isAuthenticated();
+       allow write: if esPersonalDocente();
      }
+     // Códigos de acceso: solo el personal docente (los alumnos los reciben del docente, nunca los leen de la base).
      match /codigo_examen/{codId} {
-       allow read: if true;
-       allow write: if true;
+       allow read, write: if esPersonalDocente();
      }
-match /acceso_examen/{accId} {
-        allow read: if true;
-        allow write: if true;
-      }
+     // Solicitudes de acceso por factura: el alumno ve y crea SOLO la suya (ID acc_<su cédula>_…), siempre como
+     // «solicitado» y sin clave; habilitar, rechazar y dar la clave es del personal docente / atención al estudiante.
+     match /acceso_examen/{accId} {
+       allow read: if isAuthenticated() && (resource == null || resource.data.cedula == getCedulaForUid() || esPersonalDocente() || isAtencion());
+       allow create: if isAuthenticated() && getCedulaForUid() != null
+                     && accId.matches('acc_' + getCedulaForUid() + '_.*')
+                     && request.resource.data.cedula == getCedulaForUid()
+                     && request.resource.data.estado == 'solicitado'
+                     && !('clave' in request.resource.data);
+       allow update: if (esPersonalDocente() || isAtencion())
+                     || (isAuthenticated() && resource.data.cedula == getCedulaForUid()
+                         && resource.data.estado == 'solicitado'
+                         && request.resource.data.estado == 'solicitado'
+                         && request.resource.data.cedula == resource.data.cedula
+                         && !('clave' in request.resource.data));
+       allow delete: if esPersonalDocente();
+     }
+      // Catálogo de carreras: público para el registro; lo edita Administración o Dirección académica.
       match /config_carreras/{configId} {
         allow read: if true;
-        allow write: if request.auth != null && [
-          'admin',
-          'administrador_plataforma',
-          'administracion_general',
-          'admin_general',
-          'administracion'
-        ].hasAny([rolActivo()]);
+        allow write: if isAdminOrPlatform() || isAcademico();
       }
     }
  }

@@ -90,7 +90,19 @@
             case 'admin_general':
             case 'administracion': return rootUrl('dashboard-admin.html');
             case 'admin_filial': return rootUrl('dashboard-admin.html');
-            case 'asistencia_estudiante': return rootUrl('atencion-estudiante.html');
+            case 'asistencia_estudiante':
+            case 'asistente_estudiante':
+            case 'atencion_estudiante': return rootUrl('atencion-estudiante.html');
+            // v2026-10-12: roles del catálogo RBAC
+            case 'direccion_academica':
+            case 'coordinador_carrera':
+            case 'calidad_academica':
+            case 'disenador_instruccional':
+            case 'academic': return rootUrl('academic/index.html');
+            case 'secretaria_academica':
+            case 'administrativo': return rootUrl('dashboard-admin.html');
+            case 'tesoreria':
+            case 'tesorero': return rootUrl('tesoreria.html');
             case 'alumno':
             default:          return rootUrl('dashboard.html');
         }

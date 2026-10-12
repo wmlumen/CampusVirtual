@@ -741,8 +741,13 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     // Si era el único rol o no tenía rol raíz, establecerlo
                     if (!d.rol || d.rol === 'alumno') updates.rol = rolNuevo;
                 }
+                // v2026-10-12: lista de roles activos que leen las reglas (una persona puede tener varios roles explícitos).
+                const principal = String(updates.rol || d.rol || '').toLowerCase();
+                updates.roles_activos = Array.from(new Set((updates.roles || rolesActuales)
+                    .filter(r => String(r.estado || 'activo').toLowerCase() === 'activo').map(r => String(r.rol || '').toLowerCase())
+                    .filter(r => r && r !== principal)));
                 await doc.ref.update(updates);
-                return { ok: true, roles: updates.roles || rolesActuales };
+                return { ok: true, roles: updates.roles || rolesActuales, roles_activos: updates.roles_activos };
             })();
 
             case 'desactivar_rol': return db.collection('usuarios').where('cedula', '==', data.cedula || '').limit(1).get().then(snap => {
@@ -1193,12 +1198,11 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 const pg = (await cvPagosUltimos(ced, 12)).resultados[ced] || { pagos: [] };
                 const verificada = cvFacturaEstado(pg.pagos, factura);
                 const base = { cedula: ced, examen_id: examenId, asignatura: asig, factura: factura, facturaverificada: verificada, email: cvT(data.email), nombre: cvT(data.nombre), actualizado: new Date().toISOString() };
-                if (verificada === 'Sí') {
-                    const clave = cvQuizClave();
-                    await ref.set(Object.assign({ estado: 'habilitado', clave: clave }, base), { merge: true });
-                    return { ok: true, estado: 'habilitado', clave: clave, mensaje: 'Factura verificada. Tu clave de acceso es ' + clave + ' (ingresá con tu mail y esta clave).' };
-                }
+                // v2026-10-12: el alumno ya no se habilita solo (la verificación corría en su navegador y se podía forzar).
+                // Queda «solicitado» con la factura marcada; el docente (o Atención) lo habilita y le da la clave.
+                if (prev.exists && cvT(prev.data().estado) === 'habilitado') return { ok: true, estado: 'habilitado', mensaje: 'Ya estás habilitado. Ingresá con tu mail y la clave que te dio el docente.' };
                 await ref.set(Object.assign({ estado: 'solicitado' }, base), { merge: true });
+                if (verificada === 'Sí') return { ok: true, estado: 'solicitado', mensaje: 'Factura verificada. Tu solicitud quedó registrada: el docente te habilitará y te dará la clave.' };
                 return { ok: true, estado: 'solicitado', mensaje: verificada === 'Pendiente' ? 'Tu factura figura con pago pendiente. El docente revisará tu solicitud.' : 'No pudimos verificar esa factura automáticamente. El docente revisará tu solicitud.' };
             })().catch(e => ({ ok: false, error: e.message }));
             case 'examen_resolver': return (async () => {
@@ -1225,8 +1229,12 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 const examenId = cvT(data.examen_id);
                 const email = cvT(data.email).toLowerCase(), clave = cvT(data.clave).toUpperCase();
                 if (!email || !clave) return { ok: false, motivo: 'datos', mensaje: 'Ingresá tu mail y la clave.' };
-                const snap = await db.collection('acceso_examen').where('examen_id', '==', examenId).get();
-                const rows = snap.docs.map(d => d.data());
+                // v2026-10-12: solo la solicitud del propio alumno (antes se leían las claves de todos).
+                const yo = await ensureAnonAuth();
+                const miCed = yo ? String(yo.email || '').split('@')[0] : '';
+                if (!miCed) return { ok: false, motivo: 'sesion', mensaje: 'Iniciá sesión en el Campus para rendir el examen.' };
+                const snap = await db.collection('acceso_examen').where('cedula', '==', miCed).get();
+                const rows = snap.docs.map(d => d.data()).filter(r => cvT(r.examen_id) === examenId);
                 const f = rows.filter(r => cvT(r.email).toLowerCase() === email && cvT(r.estado) === 'habilitado' && cvT(r.clave) === clave)[0];
                 if (!f) return { ok: false, motivo: 'clave', mensaje: 'Mail o clave incorrectos.' };
                 const ced = cvT(f.cedula), asig = cvT(f.asignatura);

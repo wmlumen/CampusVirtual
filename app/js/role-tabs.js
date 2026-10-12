@@ -27,7 +27,17 @@
         admin_filial: 'dashboard-admin.html',
         academico: 'academic/index.html',
         academic: 'academic/index.html',
-        asistencia_estudiante: 'atencion-estudiante.html'
+        asistencia_estudiante: 'atencion-estudiante.html',
+        asistente_estudiante: 'atencion-estudiante.html',
+        atencion_estudiante: 'atencion-estudiante.html',
+        direccion_academica: 'academic/index.html',
+        coordinador_carrera: 'academic/index.html',
+        calidad_academica: 'academic/index.html',
+        disenador_instruccional: 'academic/index.html',
+        secretaria_academica: 'dashboard-admin.html',
+        administrativo: 'dashboard-admin.html',
+        tesoreria: 'tesoreria.html',
+        tesorero: 'tesoreria.html'
     };
 
     var COLORES = {

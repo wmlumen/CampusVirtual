@@ -891,7 +891,7 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=21"></script>
+<script src="js/api.js?v=24"></script>
     <script src="js/session-guard.js?v=5"></script>
     <script>
         // ═══════════════════════════════════════════════════════════
@@ -1169,21 +1169,52 @@
             return examEvents;
         }
 
+        // v2026-10-11: clases y exámenes declarados por el docente (academic/clases.html).
+        // Alumno: las de sus materias habilitadas y su sección · docente: sus materias · personal: todas. Sin palabra clave.
+        async function loadClasesDeclaradas(inicio, fin) {
+            try {
+                if (typeof authListo === 'function') await authListo();
+                const snap = await getDb().collection('clases').where('fecha', '>=', inicio).where('fecha', '<=', fin).get();
+                const staff = ['admin','academico','administrador_plataforma','administracion_general','admin_general','administracion'].includes(userRole);
+                const codigos = (userHabilitados || []).map(h => String(h.codigo || h.id || '').toUpperCase()).filter(Boolean);
+                const sec = String(userSeccion || '').toUpperCase();
+                return snap.docs.map(d => Object.assign({ _id: d.id }, d.data()))
+                    .filter(c => c.estado !== 'suspendida')
+                    .filter(c => staff || codigos.includes(String(c.asignatura || '').toUpperCase()))
+                    .filter(c => staff || userRole !== 'alumno' || !sec || !(c.secciones || []).length || c.secciones.map(x => String(x).toUpperCase()).includes(sec))
+                    .map(c => {
+                        const ex = c.tipo === 'examen';
+                        const modo = c.modalidad === 'virtual' ? 'Virtual' : 'Presencial';
+                        return {
+                            id: 'CLA-' + c._id,
+                            title: (ex ? '📝 Examen ' + (c.examen_id || '') : (c.modalidad === 'virtual' ? '💻 Clase virtual' : '🏫 Clase presencial')) + ' — ' + c.asignatura,
+                            description: [modo, (c.secciones || []).length ? 'Secciones ' + c.secciones.join(', ') : '', c.unidad ? 'Unidad ' + c.unidad : '', c.tema || ''].filter(Boolean).join(' · '),
+                            date: c.fecha, start_time: c.hora_inicio || '', end_time: c.hora_fin || '',
+                            event_type: ex ? 'examen' : 'clase', asignatura: c.asignatura, seccion: (c.secciones || []).join(', '), modalidad: c.modalidad
+                        };
+                    });
+            } catch (err) {
+                console.warn('No se pudieron cargar las clases declaradas:', err);
+                return [];
+            }
+        }
+
         async function loadEvents() {
             try {
                 const mStr = String(currentMonth).padStart(2, '0');
                 const inicio = `${currentYear}-${mStr}-01`;
                 const fin = `${currentYear}-${mStr}-31`;
 
-                const [calRes, examRes] = await Promise.all([
+                const [calRes, examRes, clasesRes] = await Promise.all([
                     CenturiaAPI.calendar.list(inicio, fin).catch(() => ({ events: [] })),
-                    loadExamEventsForMonth(inicio, fin).catch(() => [])
+                    loadExamEventsForMonth(inicio, fin).catch(() => []),
+                    loadClasesDeclaradas(inicio, fin)
                 ]);
 
                 remoteEvents = ((calRes && (calRes.events || calRes.data || calRes.eventos)) || []).map(normalizarEventoRemoto);
                 
                 // Unir eventos de calendario institucional, exámenes programados y feriados
-                allEvents = [...FERIADOS_PARAGUAY_2026, ...remoteEvents, ...examRes];
+                allEvents = [...FERIADOS_PARAGUAY_2026, ...remoteEvents, ...examRes, ...clasesRes];
             } catch(e) {
                 remoteEvents = [];
                 allEvents = [...FERIADOS_PARAGUAY_2026];
@@ -1224,6 +1255,9 @@
                 const eTitle = (e.title || e.titulo || '').toLowerCase();
                 const eSubject = (e.asignatura || e.subject || e.codigo || '').toLowerCase();
                 const eDesc = (e.description || e.descripcion || '').toLowerCase();
+                // v2026-10-11: estas dos se usaban más abajo sin estar definidas (el calendario fallaba para alumnos y docentes).
+                const eCareer = (e.carrera || e.career || '').toLowerCase();
+                const eGrado = (e.grado || '').toLowerCase();
 
                 // Feriados nacionales siempre se muestran a menos que se filtre explícitamente por otro tipo de evento
                 if (eType === 'feriado') {

@@ -7,89 +7,167 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clases Dictadas — Centuria</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.bunny.net/css?family=montserrat:400,600,700,800" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
-        :root { --vosc:#007A33; --vmed:#00B140; --vcla:#E6F4EA; --txt:#2D2D2D; --gris:#64748b; --borde:#dfe7df; --rojo:#b91c1c; --ambar:#92400E }
+        /* Mismo lenguaje visual que dashboard.html */
+        :root { --verde-oscuro:#0d2c16; --verde-medio:#16813D; --verde-claro:#e8f5ec; --dorado:#d4a843; --dorado-claro:#e8c676; --blanco:#fff; --rosa:#D94172; --azul:#2563EB; --rojo:#ef5350 }
         * { box-sizing:border-box; margin:0; padding:0 }
-        body { font-family:'Montserrat',sans-serif; background:#f2f6f2; color:var(--txt); min-height:100vh; padding:16px }
-        .wrap { max-width:1300px; margin:0 auto }
-        .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:14px; overflow:hidden }
-        .head { background:linear-gradient(135deg,var(--vmed),var(--vosc)); color:#fff; padding:18px 22px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center }
-        .head h1 { font-size:1.1rem } .head p { font-size:.75rem; opacity:.9; margin-top:3px; max-width:760px }
-        .head a { color:#fff; font-size:.72rem; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,.5); border-radius:10px; padding:6px 12px }
-        .body { padding:16px 20px }
-        h2 { font-size:.9rem; color:var(--vosc); margin-bottom:10px }
-        label.l { display:block; font-size:.62rem; font-weight:700; color:var(--gris); text-transform:uppercase; margin-bottom:4px }
-        select, input[type=text], input[type=date], input[type=time], input[type=number] { padding:8px 10px; border:2px solid var(--borde); border-radius:9px; font-family:inherit; font-size:.8rem; width:100% }
-        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; align-items:end }
-        .btn { padding:9px 14px; border-radius:9px; border:none; font-family:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px }
-        .btn-p { background:var(--vmed); color:#fff } .btn-p:hover { background:var(--vosc) }
-        .btn-s { background:#f1f5f9; color:var(--txt) } .btn-r { background:#FEE2E2; color:#991B1B } .btn-a { background:#FEF3C7; color:var(--ambar) }
-        .btn-sm { padding:5px 9px; font-size:.66rem }
-        .chk { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; margin-right:10px }
-        table { width:100%; border-collapse:collapse; font-size:.74rem }
-        th { background:var(--vosc); color:#fff; padding:8px 6px; font-size:.64rem; text-align:left }
-        td { border-bottom:1px solid #eef2ee; padding:7px 6px; vertical-align:middle }
-        tr.susp td { opacity:.5 }
-        .pill { display:inline-block; font-size:.6rem; font-weight:700; border-radius:10px; padding:2px 8px; margin:1px }
-        .p-pres { background:#DBEAFE; color:#1E40AF } .p-virt { background:#EDE9FE; color:#5B21B6 } .p-exa { background:#FCE7F3; color:#9D174D }
-        .n-ok { color:var(--vosc); font-weight:800 } .n-obs { color:var(--ambar); font-weight:700 } .n-aus { color:var(--rojo); font-weight:700 }
-        .msg { font-size:.78rem; padding:6px 0 } .msg.err { color:var(--rojo) }
+        body { font-family:'Montserrat',sans-serif; min-height:100vh; color:var(--blanco); background-color:#060f09; overflow-x:hidden }
+        body::before { content:''; position:fixed; inset:0; z-index:-2;
+            background: radial-gradient(ellipse at 20% 50%, rgba(22,129,61,.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(212,168,67,.1) 0%, transparent 50%),
+                        linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%) }
+        body::after { content:''; position:fixed; inset:0; z-index:-1;
+            background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E") }
+        .dash-wrapper { max-width:1200px; margin:0 auto; padding:20px 16px 50px; animation:fadeInUp .7s cubic-bezier(.16,1,.3,1) }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
+        .dash-header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding:18px 22px; margin-bottom:18px;
+            background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:20px; backdrop-filter:blur(20px) }
+        .dash-header-left { display:flex; align-items:center; gap:14px }
+        .dash-avatar { width:54px; height:54px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.4rem;
+            background:linear-gradient(135deg,var(--verde-medio),var(--verde-oscuro)); border:2px solid var(--dorado); box-shadow:0 4px 14px rgba(0,0,0,.3) }
+        .dash-header-name { font-size:1.1rem; font-weight:800 }
+        .dash-header-sub { font-size:.7rem; color:var(--dorado); margin-top:3px; font-weight:500; max-width:640px; line-height:1.4 }
+        .dash-btn { padding:8px 14px; border-radius:12px; font-size:.7rem; font-family:inherit; font-weight:600; cursor:pointer; border:none; transition:.2s; text-decoration:none; display:inline-flex; align-items:center; gap:6px }
+        .dash-btn-primary { background:rgba(0,177,64,.25); color:#4ade80; border:1px solid rgba(0,177,64,.4) } .dash-btn-primary:hover { background:rgba(0,177,64,.4); color:#fff }
+        .dash-btn-gold { background:rgba(212,168,67,.2); color:var(--dorado-claro); border:1px solid rgba(212,168,67,.3) } .dash-btn-gold:hover { background:rgba(212,168,67,.3); color:#fff }
+        .dash-btn-ghost { background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15) } .dash-btn-ghost:hover { background:rgba(255,255,255,.14); color:#fff }
+        .dash-btn-danger { background:rgba(239,83,80,.2); color:#fca5a5; border:1px solid rgba(239,83,80,.3) } .dash-btn-danger:hover { background:rgba(239,83,80,.3); color:#fff }
+        .dash-btn-sm { padding:5px 9px; font-size:.64rem; border-radius:9px }
+        .dash-section { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:20px; backdrop-filter:blur(20px); margin-bottom:18px }
+        .dash-section-title { font-size:.8rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap }
+        .dash-section-title-left { display:flex; align-items:center; gap:10px } .dash-section-title-left i { color:var(--dorado); font-size:1.05rem }
+        .nota { font-size:.7rem; color:rgba(255,255,255,.6); line-height:1.45 }
+        .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px }
+        .kpi { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:14px 16px; backdrop-filter:blur(20px) }
+        .kpi .n { font-size:1.6rem; font-weight:800 } .kpi .t { font-size:.62rem; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.6); margin-top:2px }
+        .kpi.oro .n { color:var(--dorado-claro) } .kpi.verde .n { color:#4ade80 } .kpi.azul .n { color:#93c5fd } .kpi.violeta .n { color:#c4b5fd } .kpi.rosa .n { color:#f9a8d4 }
+        label.l { display:block; font-size:.6rem; font-weight:700; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px }
+        select, input[type=text], input[type=date], input[type=time], input[type=number] { width:100%; padding:9px 11px; border-radius:11px; font-family:inherit; font-size:.78rem;
+            background:rgba(0,0,0,.3); color:#fff; border:1px solid rgba(255,255,255,.15); outline:none }
+        select option { color:#111 } input:focus, select:focus { border-color:var(--dorado) }
+        input[type=date]::-webkit-calendar-picker-indicator, input[type=time]::-webkit-calendar-picker-indicator { filter:invert(1) }
+        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; align-items:end }
+        .chk { display:inline-flex; align-items:center; gap:6px; font-size:.75rem; margin:4px 12px 4px 0; cursor:pointer }
+        .chk input { accent-color:var(--verde-medio); width:15px; height:15px }
         .tabla-wrap { overflow-x:auto }
-        @media (max-width:700px) { body { padding:8px } }
+        table { width:100%; border-collapse:collapse; font-size:.74rem }
+        th { color:var(--dorado-claro); font-size:.6rem; text-transform:uppercase; letter-spacing:.7px; padding:8px 6px; text-align:left; border-bottom:1px solid rgba(255,255,255,.15); white-space:nowrap }
+        td { border-bottom:1px solid rgba(255,255,255,.06); padding:8px 6px; vertical-align:middle }
+        tr:hover td { background:rgba(255,255,255,.03) } tr.apagada td { opacity:.45 }
+        .mes { font-size:.68rem; font-weight:800; color:var(--dorado); letter-spacing:1px; text-transform:uppercase; padding:14px 6px 4px }
+        .pill { display:inline-block; font-size:.58rem; font-weight:700; border-radius:10px; padding:2px 8px; margin:1px 2px 1px 0; white-space:nowrap }
+        .p-pres { background:rgba(37,99,235,.25); color:#93c5fd } .p-virt { background:rgba(124,58,237,.25); color:#c4b5fd } .p-exa { background:rgba(217,65,114,.25); color:#f9a8d4 }
+        .p-susp { background:rgba(239,83,80,.2); color:#fca5a5 } .p-aviso { background:rgba(212,168,67,.18); color:var(--dorado-claro) }
+        .n-ok { color:#4ade80; font-weight:800 } .n-obs { color:var(--dorado-claro); font-weight:700 } .n-aus { color:#fca5a5; font-weight:700 }
+        .msg { font-size:.75rem; padding:6px 0; color:rgba(255,255,255,.75) } .msg.err { color:#fca5a5 } .msg.ok { color:#4ade80 }
+        /* Calendario del mes */
+        .cal-nav { display:flex; align-items:center; gap:8px }
+        .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:6px }
+        .cal .dow { font-size:.58rem; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.5); text-align:center; padding:4px 0 }
+        .cal .dia { min-height:78px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:5px; font-size:.6rem; display:flex; flex-direction:column; gap:3px }
+        .cal .dia.fuera { opacity:.3 } .cal .dia.hoy { border-color:var(--dorado) }
+        .cal .num { font-weight:800; font-size:.68rem; color:rgba(255,255,255,.75) }
+        .ev { border-radius:7px; padding:2px 5px; cursor:pointer; font-weight:700; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border:1px solid transparent }
+        .ev-clase { background:rgba(0,177,64,.25); color:#bbf7d0 } .ev-virtual { background:rgba(124,58,237,.3); color:#ddd6fe } .ev-examen { background:rgba(217,65,114,.3); color:#fbcfe8 }
+        .ev-susp { background:rgba(239,83,80,.15); color:#fca5a5; text-decoration:line-through }
+        .ev-det { background:transparent; color:var(--dorado-claro); border:1px dashed rgba(212,168,67,.6) }
+        .ley { display:flex; gap:12px; flex-wrap:wrap; font-size:.62rem; color:rgba(255,255,255,.65); margin-top:10px }
+        .ley span { display:inline-flex; align-items:center; gap:5px } .ley i.b { width:12px; height:12px; border-radius:4px; display:inline-block }
+        #card-form.destacada { box-shadow:0 0 0 2px var(--dorado) }
+        @media (max-width:760px) { .cal .dia { min-height:58px } .ev { font-size:.52rem } .dash-header-name { font-size:.95rem } }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <div class="card">
-        <div class="head">
-            <div><h1><i class="bi bi-calendar-check"></i> Clases dictadas</h1>
-                <p>El docente declara cada clase (presencial o virtual) y cada examen. La asistencia de los alumnos se calcula contra estas clases: presente si marcó asistencia ese día o, en un examen, si lo rindió.</p></div>
-            <a href="index.html"><i class="bi bi-arrow-left"></i> Volver</a>
-        </div>
-        <div class="body">
-            <div id="sin-acceso" class="msg err" style="display:none">Solo docentes, académicos y administración.</div>
-            <div class="grid" id="controles" style="max-width:520px">
-                <div><label class="l" for="sel-asig">Asignatura</label><select id="sel-asig"><option value="">Cargando…</option></select></div>
+<div class="dash-wrapper">
+    <div class="dash-header">
+        <div class="dash-header-left">
+            <div class="dash-avatar"><i class="bi bi-calendar-check"></i></div>
+            <div>
+                <div class="dash-header-name">Clases dictadas</div>
+                <div class="dash-header-sub">El docente declara cada clase (presencial o virtual) y cada examen. La asistencia se calcula contra estas clases: presente si marcó asistencia ese día o, en un examen, si lo rindió. Las clases declaradas aparecen en el calendario de alumnos y docentes.</div>
             </div>
-            <div id="msg" class="msg"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div style="min-width:260px"><select id="sel-asig" aria-label="Asignatura"><option value="">Cargando…</option></select></div>
+            <a class="dash-btn dash-btn-ghost" href="../calendario.html"><i class="bi bi-calendar3"></i> Calendario</a>
+            <a class="dash-btn dash-btn-ghost" href="index.html"><i class="bi bi-arrow-left"></i> Volver</a>
         </div>
     </div>
+    <div id="sin-acceso" class="dash-section msg err" style="display:none">Solo docentes, académicos y administración.</div>
+    <div id="msg" class="msg"></div>
 
-    <div class="card" id="card-form" style="display:none"><div class="body">
-        <h2 id="form-titulo"><i class="bi bi-plus-circle"></i> Declarar clase</h2>
-        <div class="grid">
-            <div><label class="l" for="f-fecha">Fecha *</label><input type="date" id="f-fecha"></div>
-            <div><label class="l" for="f-ini">Hora inicio</label><input type="time" id="f-ini"></div>
-            <div><label class="l" for="f-fin">Hora fin</label><input type="time" id="f-fin"></div>
-            <div><label class="l" for="f-mod">Modalidad *</label><select id="f-mod"><option value="presencial">Presencial</option><option value="virtual">Virtual</option></select></div>
-            <div><label class="l" for="f-tipo">Tipo *</label><select id="f-tipo" onchange="tipoCambio()"><option value="clase">Clase</option><option value="examen">Examen</option></select></div>
-            <div id="box-examen" style="display:none"><label class="l" for="f-examen">Examen online</label><select id="f-examen"></select></div>
-            <div><label class="l" for="f-unidad">Unidad</label><input type="number" min="1" id="f-unidad"></div>
-            <div><label class="l" for="f-palabra">Palabra clave</label><input type="text" id="f-palabra" placeholder="la que se dio en clase"></div>
+    <div id="contenido" style="display:none">
+        <div class="kpis">
+            <div class="kpi verde"><div class="n" id="k-decl">0</div><div class="t">Clases declaradas</div></div>
+            <div class="kpi azul"><div class="n" id="k-pres">0</div><div class="t">Presenciales</div></div>
+            <div class="kpi violeta"><div class="n" id="k-virt">0</div><div class="t">Virtuales</div></div>
+            <div class="kpi rosa"><div class="n" id="k-exa">0</div><div class="t">Exámenes</div></div>
+            <div class="kpi oro"><div class="n" id="k-pend">0</div><div class="t">Sin declarar</div></div>
         </div>
-        <div style="margin-top:10px"><label class="l">Secciones *</label><div id="f-secciones"></div></div>
-        <div class="grid" style="margin-top:10px">
-            <div style="grid-column:1/-1"><label class="l" for="f-tema">Tema / observación</label><input type="text" id="f-tema"></div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-p" onclick="guardarClase()"><i class="bi bi-check-lg"></i> <span id="btn-guardar-txt">Declarar clase</span></button>
-            <button class="btn btn-s" onclick="limpiarForm()">Limpiar</button>
-        </div>
-        <div id="form-msg" class="msg"></div>
-    </div></div>
 
-    <div class="card" id="card-lista" style="display:none"><div class="body">
-        <h2><i class="bi bi-list-check"></i> Clases declaradas <span id="resumen" style="font-weight:400;color:var(--gris);font-size:.72rem"></span></h2>
-        <div class="tabla-wrap" id="lista"></div>
-    </div></div>
+        <!-- Calendario del mes -->
+        <div class="dash-section">
+            <div class="dash-section-title">
+                <div class="dash-section-title-left"><i class="bi bi-calendar3"></i> <span id="cal-titulo">Calendario</span></div>
+                <div class="cal-nav">
+                    <button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="moverMes(-1)" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></button>
+                    <button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="irAMesConDatos()">Hoy / último con datos</button>
+                    <button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="moverMes(1)" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="cal" id="cal"></div>
+            <div class="ley">
+                <span><i class="b" style="background:rgba(0,177,64,.45)"></i> Clase presencial</span>
+                <span><i class="b" style="background:rgba(124,58,237,.5)"></i> Clase virtual</span>
+                <span><i class="b" style="background:rgba(217,65,114,.5)"></i> Examen</span>
+                <span><i class="b" style="border:1px dashed var(--dorado)"></i> Asistencias sin clase declarada (tocá para declarar)</span>
+            </div>
+        </div>
 
-    <div class="card" id="card-detectadas" style="display:none"><div class="body">
-        <h2><i class="bi bi-search"></i> Fechas con asistencias o exámenes sin clase declarada</h2>
-        <p style="font-size:.72rem;color:var(--gris);margin-bottom:8px">Mientras no se declaren, esas asistencias no cuentan. «Declarar» completa el formulario: revisá la modalidad y guardá.</p>
-        <div class="tabla-wrap" id="detectadas"></div>
-    </div></div>
+        <!-- Sin declarar -->
+        <div class="dash-section" id="card-detectadas">
+            <div class="dash-section-title">
+                <div class="dash-section-title-left"><i class="bi bi-search"></i> Fechas con asistencias o exámenes sin clase declarada</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="marcarTodas(true)">Marcar todas</button>
+                    <button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="marcarTodas(false)">Ninguna</button>
+                    <button class="dash-btn dash-btn-primary" onclick="declararSeleccionadas()"><i class="bi bi-check2-all"></i> Declarar seleccionadas</button>
+                </div>
+            </div>
+            <p class="nota" style="margin-bottom:8px">Mientras no se declaren, esas asistencias no cuentan. Elegí la modalidad de cada fila. Las fechas con menos de 2 presentes quedan sin marcar (suelen ser avisos de ausencia, no clases).</p>
+            <div class="tabla-wrap" id="detectadas"></div>
+            <div id="det-msg" class="msg"></div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="dash-section" id="card-form">
+            <div class="dash-section-title"><div class="dash-section-title-left"><i class="bi bi-plus-circle" id="form-icono"></i> <span id="form-titulo">Declarar clase</span></div></div>
+            <div class="grid">
+                <div><label class="l" for="f-fecha">Fecha *</label><input type="date" id="f-fecha"></div>
+                <div><label class="l" for="f-ini">Hora inicio</label><input type="time" id="f-ini"></div>
+                <div><label class="l" for="f-fin">Hora fin</label><input type="time" id="f-fin"></div>
+                <div><label class="l" for="f-mod">Modalidad *</label><select id="f-mod"><option value="presencial">Presencial</option><option value="virtual">Virtual</option></select></div>
+                <div><label class="l" for="f-tipo">Tipo *</label><select id="f-tipo" onchange="tipoCambio()"><option value="clase">Clase</option><option value="examen">Examen</option></select></div>
+                <div id="box-examen" style="display:none"><label class="l" for="f-examen">Examen online</label><select id="f-examen"></select></div>
+                <div><label class="l" for="f-unidad">Unidad</label><input type="number" min="1" id="f-unidad"></div>
+                <div><label class="l" for="f-palabra">Palabra clave <i class="bi bi-lock" title="Solo la ve el personal"></i></label><input type="text" id="f-palabra" placeholder="la que se dio en clase" autocomplete="off"></div>
+            </div>
+            <div style="margin-top:12px"><label class="l">Secciones *</label><div id="f-secciones"></div></div>
+            <div style="margin-top:10px"><label class="l" for="f-tema">Tema / observación</label><input type="text" id="f-tema"></div>
+            <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="dash-btn dash-btn-primary" onclick="guardarClase()"><i class="bi bi-check-lg"></i> <span id="btn-guardar-txt">Declarar clase</span></button>
+                <button class="dash-btn dash-btn-ghost" onclick="limpiarForm()">Limpiar</button>
+            </div>
+            <div id="form-msg" class="msg"></div>
+        </div>
+
+        <!-- Declaradas -->
+        <div class="dash-section">
+            <div class="dash-section-title"><div class="dash-section-title-left"><i class="bi bi-list-check"></i> Clases declaradas</div><span class="nota" id="resumen"></span></div>
+            <div class="tabla-wrap" id="lista"></div>
+        </div>
+    </div>
 </div>
 
 <script src="../js/api.js?v=24"></script>
@@ -100,14 +178,18 @@
     const PUEDE = ['docente', 'academico', 'academic', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(ROL);
     const MI_CED = sessionStorage.getItem('current_cedula') || '';
     const $ = (id) => document.getElementById(id);
-    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-    const fechaTxt = (f) => { const d = new Date(f + 'T12:00:00-03:00'); return DIAS[d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) + '/' + f.slice(0, 4); };
-    let A = null;   // { asig, clases, asistencia, intentos, secciones, examenes }
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const diaSemana = (f) => new Date(f + 'T12:00:00-03:00').getUTCDay();
+    const fechaTxt = (f) => DIAS[diaSemana(f)] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) + '/' + f.slice(0, 4);
+    const msg = (id, t, tipo) => { $(id).textContent = t || ''; $(id).className = 'msg' + (tipo ? ' ' + tipo : ''); };
+    let A = null;          // { asig, clases, asistencia, intentos, secciones, examenes }
     let editando = null;
+    let mesVista = null;   // 'aaaa-mm'
 
     document.addEventListener('DOMContentLoaded', async () => {
-        if (!PUEDE) { $('sin-acceso').style.display = 'block'; $('controles').style.display = 'none'; return; }
+        if (!PUEDE) { $('sin-acceso').style.display = 'block'; $('sel-asig').disabled = true; return; }
         try {
             await authListo();
             const snap = await getDb().collection('asignaturas').get();
@@ -116,15 +198,15 @@
             $('sel-asig').innerHTML = '<option value="">Elegí la asignatura…</option>' + lista.map(a => `<option value="${esc(a.codigo)}">${esc(a.codigo)} — ${esc(a.nombre)}${a.estado === 'activo' ? '' : ' (inactiva)'}</option>`).join('');
             const q = new URLSearchParams(location.search).get('asignatura');
             if (q) { $('sel-asig').value = q.toUpperCase(); await cargar(); }
-        } catch (e) { $('msg').textContent = 'No se pudieron cargar las asignaturas: ' + e.message; $('msg').className = 'msg err'; }
-        $('sel-asig').addEventListener('change', cargar);
+        } catch (e) { msg('msg', 'No se pudieron cargar las asignaturas: ' + e.message, 'err'); }
+        $('sel-asig').addEventListener('change', () => { mesVista = null; cargar(); });
     });
 
     async function cargar() {
         const cod = $('sel-asig').value;
-        ['card-form', 'card-lista', 'card-detectadas'].forEach(id => $(id).style.display = 'none');
+        $('contenido').style.display = 'none';
         if (!cod) return;
-        $('msg').textContent = 'Cargando…'; $('msg').className = 'msg';
+        msg('msg', 'Cargando…');
         try {
             const db = getDb();
             const datos = (s) => s.docs.map(d => Object.assign({ _id: d.id }, d.data()));
@@ -134,87 +216,149 @@
                 db.collection('asistencia').get().then(datos),
                 db.collection('intentos').get().then(datos)
             ]);
+            // Palabra clave: documento privado de cada clase (solo personal).
+            await Promise.all(cls.map(c => db.collection('clases').doc(c._id).collection('privado').doc('palabra').get()
+                .then(p => { c.palabra_clave = p.exists ? (p.data().palabra_clave || '') : ''; }).catch(() => { c.palabra_clave = ''; })));
             const asig = Object.assign({ codigo: cod }, a.data());
             const examenes = Array.from(new Set((asig.evaluaciones || []).map(e => e.examen_id).filter(Boolean)
                 .concat(ints.filter(i => String(i.asignatura || '').toUpperCase() === cod).map(i => i.examen_id))));
             const asistencia = asis.filter(r => CenturiaNotas.esDeAsignatura(r, asig));
             const intentos = ints.filter(i => examenes.includes(i.examen_id));
-            const secciones = Array.from(new Set(['LV026', 'MJ026', 'S026'].concat(asistencia.map(r => String(r.seccion || '').toUpperCase()), intentos.map(i => String(i.seccion || '').toUpperCase()))))
+            const secciones = Array.from(new Set((window.CV_SECCIONES || ['LV026', 'MJ026', 'S026']).concat(asistencia.map(r => String(r.seccion || '').toUpperCase()), intentos.map(i => String(i.seccion || '').toUpperCase()))))
                 .filter(s => /^[A-Z]{1,3}\d{3}$/.test(s)).sort();
             A = { asig, clases: cls.sort((x, y) => String(x.fecha).localeCompare(String(y.fecha))), asistencia, intentos, secciones, examenes };
             $('f-secciones').innerHTML = secciones.map(s => `<label class="chk"><input type="checkbox" value="${esc(s)}"> ${esc(s)}</label>`).join('');
             $('f-examen').innerHTML = '<option value="">—</option>' + examenes.map(x => `<option>${esc(x)}</option>`).join('');
             limpiarForm();
+            calcularDetectadas();
+            if (!mesVista) irAMesConDatos(true);
             pintar();
-            $('msg').textContent = '';
-            ['card-form', 'card-lista', 'card-detectadas'].forEach(id => $(id).style.display = 'block');
-        } catch (e) { $('msg').textContent = 'Error al cargar: ' + e.message; $('msg').className = 'msg err'; }
+            msg('msg', '');
+            $('contenido').style.display = 'block';
+        } catch (e) { msg('msg', 'Error al cargar: ' + (e.code === 'permission-denied' ? 'sin permiso.' : e.message), 'err'); }
     }
 
-    // Marcas de asistencia de un día en las secciones de la clase (o todas si la clase no indica sección).
+    // ── Contraste por clase ──
     function marcasDe(c) {
         const secs = (c.secciones || []).map(s => String(s).toUpperCase());
         return A.asistencia.filter(r => String(r.fecha || '').slice(0, 10) === c.fecha && (!secs.length || secs.includes(String(r.seccion || '').toUpperCase())));
     }
     function contraste(c) {
-        const m = marcasDe(c), cuenta = (e) => new Set(m.filter(r => r.estado === e).map(r => String(r.cedula))).size;
+        const m = marcasDe(c), cuenta = (e) => new Set(m.filter(r => r.estado === e || (e === 'ausente' && r.estado === 'justificado')).map(r => String(r.cedula))).size;
         const rindieron = c.tipo === 'examen' && c.examen_id ? A.intentos.filter(i => i.examen_id === c.examen_id && (!(c.secciones || []).length || c.secciones.includes(String(i.seccion || '').toUpperCase()))).length : null;
         return { presentes: cuenta('presente'), observados: cuenta('observado'), ausentes: cuenta('ausente'), rindieron };
     }
 
-    function pintar() {
-        const vigentes = A.clases.filter(c => c.estado !== 'suspendida');
-        $('resumen').textContent = '· ' + vigentes.length + ' dictada(s)' + (A.clases.length - vigentes.length ? ', ' + (A.clases.length - vigentes.length) + ' suspendida(s)' : '') +
-            ' · ' + A.secciones.map(s => s + ': ' + vigentes.filter(c => !(c.secciones || []).length || c.secciones.includes(s)).length).join(' · ');
-        $('lista').innerHTML = A.clases.length ? '<table><thead><tr><th>Fecha</th><th>Modalidad / tipo</th><th>Secciones</th><th>Unidad · tema</th><th>Palabra</th><th>Presentes</th><th>Observados</th><th>Ausentes</th><th>Examen rendido</th><th></th></tr></thead><tbody>' +
-            A.clases.map(c => {
-                const k = contraste(c);
-                return `<tr class="${c.estado === 'suspendida' ? 'susp' : ''}"><td><b>${fechaTxt(c.fecha)}</b>${c.hora_inicio ? '<br><small>' + esc(c.hora_inicio) + (c.hora_fin ? '–' + esc(c.hora_fin) : '') + '</small>' : ''}${c.estado === 'suspendida' ? '<br><small class="n-aus">suspendida</small>' : ''}</td>
-                <td><span class="pill ${c.modalidad === 'virtual' ? 'p-virt' : 'p-pres'}">${esc(c.modalidad)}</span>${c.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(c.examen_id || '') + '</span>' : ''}</td>
-                <td>${esc((c.secciones || []).join(', ') || 'todas')}</td><td>${c.unidad ? 'U' + esc(c.unidad) + ' ' : ''}${esc(c.tema || '')}</td><td>${esc(c.palabra_clave || '')}</td>
-                <td class="n-ok">${k.presentes}</td><td class="n-obs">${k.observados || ''}</td><td class="n-aus">${k.ausentes || ''}</td><td>${k.rindieron == null ? '' : '<b>' + k.rindieron + '</b>'}</td>
-                <td style="white-space:nowrap"><button class="btn btn-s btn-sm" onclick="editar('${esc(c._id)}')">Editar</button>
-                    <button class="btn btn-a btn-sm" onclick="suspender('${esc(c._id)}')">${c.estado === 'suspendida' ? 'Reactivar' : 'Suspender'}</button>
-                    <button class="btn btn-r btn-sm" onclick="borrar('${esc(c._id)}')" title="Borrar"><i class="bi bi-trash"></i></button></td></tr>`;
-            }).join('') + '</tbody></table>' : '<p style="font-size:.78rem;color:var(--gris)">Todavía no hay clases declaradas. Mientras tanto la asistencia se estima con las fechas en que hubo al menos 2 presentes.</p>';
-        pintarDetectadas();
-    }
-
-    // Fechas con marcas de asistencia o exámenes rendidos que no tienen una clase declarada ese día.
-    function pintarDetectadas() {
+    // ── Fechas sin declarar (asistencias y exámenes) ──
+    function calcularDetectadas() {
         const declaradas = new Set(A.clases.map(c => c.fecha));
         const porFecha = {};
         A.asistencia.forEach(r => {
             const f = String(r.fecha || '').slice(0, 10); if (!f || declaradas.has(f)) return;
-            const d = porFecha[f] = porFecha[f] || { fecha: f, secciones: {}, presentes: new Set(), otros: 0, palabras: {}, tipo: 'clase' };
+            const d = porFecha[f] = porFecha[f] || { fecha: f, tipo: 'clase', secciones: {}, presentes: new Set(), otros: 0, palabras: {} };
             if (r.seccion) d.secciones[String(r.seccion).toUpperCase()] = 1;
             if (r.estado === 'presente') d.presentes.add(String(r.cedula)); else d.otros++;
             if (r.palabra_clase) d.palabras[r.palabra_clase] = (d.palabras[r.palabra_clase] || 0) + 1;
         });
-        // Exámenes: el día en que más alumnos lo rindieron (primer intento).
-        const examenes = {};
+        const ex = {};
         A.intentos.forEach(i => {
-            const f = String(((i.intentos || [])[0] || {}).timestamp || '');
-            if (!f) return;
-            const loc = new Date(new Date(f).getTime() - 3 * 3600000).toISOString().slice(0, 10);
-            const e = examenes[i.examen_id] = examenes[i.examen_id] || { dias: {}, secciones: {} };
+            const t = String(((i.intentos || [])[0] || {}).timestamp || ''); if (!t) return;
+            const loc = new Date(new Date(t).getTime() - 3 * 3600000).toISOString().slice(0, 10);
+            const e = ex[i.examen_id] = ex[i.examen_id] || { dias: {}, secciones: {} };
             e.dias[loc] = (e.dias[loc] || 0) + 1; if (i.seccion) e.secciones[String(i.seccion).toUpperCase()] = 1;
         });
-        const filasEx = Object.entries(examenes).filter(([id]) => !A.clases.some(c => c.tipo === 'examen' && c.examen_id === id)).map(([id, e]) => {
+        const filasEx = Object.entries(ex).filter(([id]) => !A.clases.some(c => c.tipo === 'examen' && c.examen_id === id)).map(([id, e]) => {
             const [fecha, n] = Object.entries(e.dias).sort((a, b) => b[1] - a[1])[0];
             const total = Object.values(e.dias).reduce((s, x) => s + x, 0);
             return { fecha, tipo: 'examen', examen_id: id, secciones: e.secciones, presentes: { size: total }, otros: 0, palabras: {}, nota: n + ' de ' + total + ' lo rindieron ese día' };
         });
-        const filas = Object.values(porFecha).concat(filasEx).sort((a, b) => a.fecha.localeCompare(b.fecha));
-        A._detectadas = filas;
-        $('detectadas').innerHTML = filas.length ? '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Secciones en las marcas</th><th>Presentes</th><th>Otras marcas</th><th>Palabra más usada</th><th></th></tr></thead><tbody>' +
-            filas.map((d, i) => `<tr><td><b>${fechaTxt(d.fecha)}</b></td><td>${d.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(d.examen_id) + '</span><br><small>' + esc(d.nota) + '</small>' : 'clase'}</td>
-                <td>${esc(Object.keys(d.secciones).sort().join(', '))}</td><td class="n-ok">${d.presentes.size}</td><td>${d.otros || ''}</td>
-                <td>${esc((Object.entries(d.palabras).sort((a, b) => b[1] - a[1])[0] || [''])[0])}</td>
-                <td><button class="btn btn-p btn-sm" onclick="declararDetectada(${i})"><i class="bi bi-plus"></i> Declarar</button></td></tr>`).join('') + '</tbody></table>'
-            : '<p style="font-size:.78rem;color:var(--vosc)"><i class="bi bi-check2-circle"></i> Todas las asistencias y exámenes tienen su clase declarada.</p>';
+        A.detectadas = Object.values(porFecha).concat(filasEx).sort((a, b) => a.fecha.localeCompare(b.fecha))
+            .map(d => Object.assign(d, { palabra: (Object.entries(d.palabras).sort((a, b) => b[1] - a[1])[0] || [''])[0], probable: d.tipo === 'examen' || d.presentes.size >= 2 }));
     }
 
+    function pintar() {
+        const vig = A.clases.filter(c => c.estado !== 'suspendida');
+        $('k-decl').textContent = vig.filter(c => c.tipo !== 'examen').length;
+        $('k-pres').textContent = vig.filter(c => c.tipo !== 'examen' && c.modalidad !== 'virtual').length;
+        $('k-virt').textContent = vig.filter(c => c.tipo !== 'examen' && c.modalidad === 'virtual').length;
+        $('k-exa').textContent = vig.filter(c => c.tipo === 'examen').length;
+        $('k-pend').textContent = A.detectadas.filter(d => d.probable).length;
+        pintarCalendario(); pintarDetectadas(); pintarLista();
+    }
+
+    // ── Calendario del mes ──
+    function irAMesConDatos(sinPintar) {
+        const fechas = A.clases.map(c => c.fecha).concat(A.detectadas.map(d => d.fecha)).sort();
+        const hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 7);
+        mesVista = fechas.some(f => f.startsWith(hoy)) || !fechas.length ? hoy : fechas[fechas.length - 1].slice(0, 7);
+        if (!sinPintar) pintarCalendario();
+    }
+    function moverMes(n) {
+        const [y, m] = mesVista.split('-').map(Number), d = new Date(Date.UTC(y, m - 1 + n, 1));
+        mesVista = d.toISOString().slice(0, 7); pintarCalendario();
+    }
+    function pintarCalendario() {
+        const [y, m] = mesVista.split('-').map(Number);
+        $('cal-titulo').textContent = 'Calendario — ' + MESES[m - 1] + ' ' + y;
+        const primero = new Date(Date.UTC(y, m - 1, 1)), inicio = (primero.getUTCDay() + 6) % 7;   // lunes primero
+        const hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+        let h = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'].map(d => `<div class="dow">${d}</div>`).join('');
+        for (let i = 0; i < 42; i++) {
+            const d = new Date(Date.UTC(y, m - 1, 1 - inicio + i)), f = d.toISOString().slice(0, 10);
+            if (i >= 35 && d.getUTCMonth() !== m - 1) break;
+            const evs = A.clases.filter(c => c.fecha === f).map(c => {
+                const cls = c.estado === 'suspendida' ? 'ev-susp' : c.tipo === 'examen' ? 'ev-examen' : c.modalidad === 'virtual' ? 'ev-virtual' : 'ev-clase';
+                const k = contraste(c);
+                const txt = (c.tipo === 'examen' ? 'Examen ' + (c.examen_id || '') : (c.modalidad === 'virtual' ? 'Virtual' : 'Presencial')) + ' · ' + (c.secciones || []).join('/') + ' · ' + (k.rindieron != null ? k.rindieron : k.presentes);
+                return `<div class="ev ${cls}" title="${esc(txt)}" onclick="editar('${esc(c._id)}')">${esc(txt)}</div>`;
+            }).concat(A.detectadas.map((x, j) => x.fecha === f ? `<div class="ev ev-det" title="Sin declarar: ${x.presentes.size} presentes — tocá para declarar" onclick="declararDetectada(${j})">+ ${x.tipo === 'examen' ? 'Examen ' + esc(x.examen_id) : esc(Object.keys(x.secciones).join('/') || 'clase')} · ${x.presentes.size}</div>` : '').filter(Boolean)).join('');
+            h += `<div class="dia ${d.getUTCMonth() !== m - 1 ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''}"><span class="num">${d.getUTCDate()}</span>${evs}</div>`;
+        }
+        $('cal').innerHTML = h;
+    }
+
+    // ── Sin declarar ──
+    function pintarDetectadas() {
+        const D = A.detectadas;
+        $('card-detectadas').style.display = D.length ? '' : 'none';
+        $('detectadas').innerHTML = D.length ? '<table><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Secciones</th><th>Presentes</th><th>Otras marcas</th><th>Palabra</th><th>Modalidad</th><th></th></tr></thead><tbody>' +
+            D.map((d, i) => `<tr class="${d.probable ? '' : 'apagada'}">
+                <td><input type="checkbox" class="sel-det" data-i="${i}" ${d.probable ? 'checked' : ''} aria-label="Seleccionar ${esc(d.fecha)}" style="accent-color:#16813D;width:15px;height:15px"></td>
+                <td><b>${fechaTxt(d.fecha)}</b></td>
+                <td>${d.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(d.examen_id) + '</span><br><small class="nota">' + esc(d.nota) + '</small>' : 'clase'}${d.probable ? '' : ' <span class="pill p-aviso">probable aviso, no clase</span>'}</td>
+                <td>${esc(Object.keys(d.secciones).sort().join(', '))}</td><td class="n-ok">${d.presentes.size}</td><td>${d.otros || ''}</td><td>${esc(d.palabra)}</td>
+                <td><select class="mod-det" data-i="${i}" style="min-width:115px"><option value="presencial" ${d.tipo === 'examen' ? '' : 'selected'}>Presencial</option><option value="virtual" ${d.tipo === 'examen' ? 'selected' : ''}>Virtual</option></select></td>
+                <td><button class="dash-btn dash-btn-gold dash-btn-sm" onclick="declararDetectada(${i})" title="Completar el formulario para revisar"><i class="bi bi-pencil"></i></button></td></tr>`).join('') + '</tbody></table>' : '';
+    }
+    function marcarTodas(v) { document.querySelectorAll('.sel-det').forEach(c => c.checked = v); }
+    function datosDeDetectada(d, modalidad) {
+        return {
+            asignatura: A.asig.codigo, fecha: d.fecha, hora_inicio: '', hora_fin: '', modalidad: modalidad, tipo: d.tipo,
+            examen_id: d.tipo === 'examen' ? d.examen_id : '', secciones: Object.keys(d.secciones).sort(), unidad: null, tema: '',
+            estado: 'dictada', declarado_por: MI_CED, actualizado: new Date().toISOString()
+        };
+    }
+    async function declararSeleccionadas() {
+        const sel = Array.from(document.querySelectorAll('.sel-det:checked')).map(c => Number(c.dataset.i));
+        if (!sel.length) { msg('det-msg', 'No hay fechas seleccionadas.', 'err'); return; }
+        const sinSec = sel.filter(i => !Object.keys(A.detectadas[i].secciones).length);
+        if (sinSec.length) { msg('det-msg', 'Hay fechas sin sección en las marcas (' + sinSec.map(i => fechaTxt(A.detectadas[i].fecha)).join(', ') + '): declaralas con el lápiz.', 'err'); return; }
+        if (!confirm('¿Declarar ' + sel.length + ' clase(s)/examen(es) con la modalidad elegida en cada fila?')) return;
+        try {
+            const db = getDb(), lote = db.batch();
+            sel.forEach(i => {
+                const d = A.detectadas[i], mod = document.querySelector('.mod-det[data-i="' + i + '"]').value;
+                const id = 'CLA-' + A.asig.codigo + '-' + d.fecha.replace(/-/g, '') + '-' + (d.tipo === 'examen' ? 'EX' : '') + Math.random().toString(36).slice(2, 6);
+                lote.set(db.collection('clases').doc(id), datosDeDetectada(d, mod));
+                if (d.palabra) lote.set(db.collection('clases').doc(id).collection('privado').doc('palabra'), { palabra_clave: d.palabra });
+            });
+            await lote.commit();
+            await cargar();
+            msg('det-msg', sel.length + ' declarada(s).', 'ok');
+        } catch (e) { msg('det-msg', e.code === 'permission-denied' ? 'Sin permiso para declarar clases.' : 'Error: ' + e.message, 'err'); }
+    }
+
+    // ── Formulario ──
     function tipoCambio() { $('box-examen').style.display = $('f-tipo').value === 'examen' ? '' : 'none'; }
     function seccionesForm() { return Array.from(document.querySelectorAll('#f-secciones input:checked')).map(i => i.value); }
     function limpiarForm() {
@@ -222,7 +366,8 @@
         ['f-fecha', 'f-ini', 'f-fin', 'f-unidad', 'f-palabra', 'f-tema'].forEach(id => $(id).value = '');
         $('f-mod').value = 'presencial'; $('f-tipo').value = 'clase'; $('f-examen').value = ''; tipoCambio();
         document.querySelectorAll('#f-secciones input').forEach(i => i.checked = false);
-        $('form-titulo').innerHTML = '<i class="bi bi-plus-circle"></i> Declarar clase'; $('btn-guardar-txt').textContent = 'Declarar clase'; $('form-msg').textContent = '';
+        $('form-titulo').textContent = 'Declarar clase'; $('form-icono').className = 'bi bi-plus-circle'; $('btn-guardar-txt').textContent = 'Declarar clase';
+        $('card-form').classList.remove('destacada'); msg('form-msg', '');
     }
     function llenarForm(c) {
         $('f-fecha').value = c.fecha || ''; $('f-ini').value = c.hora_inicio || ''; $('f-fin').value = c.hora_fin || '';
@@ -230,40 +375,39 @@
         $('f-examen').value = c.examen_id || ''; $('f-unidad').value = c.unidad || ''; $('f-palabra').value = c.palabra_clave || ''; $('f-tema').value = c.tema || '';
         const secs = (c.secciones || []).map(s => String(s).toUpperCase());
         document.querySelectorAll('#f-secciones input').forEach(i => i.checked = secs.includes(i.value));
-        $('card-form').scrollIntoView({ behavior: 'smooth' });
+        $('card-form').classList.add('destacada');
+        $('card-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     function editar(id) {
         const c = A.clases.find(x => x._id === id); if (!c) return;
         limpiarForm(); editando = id; llenarForm(c);
-        $('form-titulo').innerHTML = '<i class="bi bi-pencil"></i> Editar clase'; $('btn-guardar-txt').textContent = 'Guardar cambios';
+        $('form-titulo').textContent = 'Editar clase del ' + fechaTxt(c.fecha); $('form-icono').className = 'bi bi-pencil'; $('btn-guardar-txt').textContent = 'Guardar cambios';
     }
     function declararDetectada(i) {
-        const d = A._detectadas[i]; limpiarForm();
-        llenarForm({ fecha: d.fecha, tipo: d.tipo, examen_id: d.examen_id || '', secciones: Object.keys(d.secciones), modalidad: d.tipo === 'examen' ? 'virtual' : 'presencial',
-            palabra_clave: (Object.entries(d.palabras).sort((a, b) => b[1] - a[1])[0] || [''])[0] });
-        $('form-msg').textContent = 'Revisá la modalidad y las secciones, y tocá «Declarar clase».'; $('form-msg').className = 'msg';
+        const d = A.detectadas[i]; limpiarForm();
+        llenarForm({ fecha: d.fecha, tipo: d.tipo, examen_id: d.examen_id || '', secciones: Object.keys(d.secciones), modalidad: d.tipo === 'examen' ? 'virtual' : 'presencial', palabra_clave: d.palabra });
+        msg('form-msg', 'Revisá modalidad, horario y secciones, y tocá «Declarar clase».');
     }
-
     async function guardarClase() {
         const fecha = $('f-fecha').value, secs = seccionesForm(), tipo = $('f-tipo').value;
-        const err = (t) => { $('form-msg').textContent = t; $('form-msg').className = 'msg err'; };
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return err('Indicá la fecha.');
-        if (!secs.length) return err('Marcá al menos una sección.');
-        if (tipo === 'examen' && !$('f-examen').value) return err('Elegí el examen online.');
-        const cod = A.asig.codigo;
-        const id = editando || ('CLA-' + cod + '-' + fecha.replace(/-/g, '') + '-' + Date.now().toString(36).slice(-4));
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return msg('form-msg', 'Indicá la fecha.', 'err');
+        if (!secs.length) return msg('form-msg', 'Marcá al menos una sección.', 'err');
+        if (tipo === 'examen' && !$('f-examen').value) return msg('form-msg', 'Elegí el examen online.', 'err');
+        const cod = A.asig.codigo, previa = editando ? A.clases.find(x => x._id === editando) : null;
+        const id = editando || ('CLA-' + cod + '-' + fecha.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6));
         const data = {
             asignatura: cod, fecha, hora_inicio: $('f-ini').value, hora_fin: $('f-fin').value, modalidad: $('f-mod').value, tipo,
             examen_id: tipo === 'examen' ? $('f-examen').value : '', secciones: secs, unidad: Number($('f-unidad').value) || null,
-            palabra_clave: $('f-palabra').value.trim(), tema: $('f-tema').value.trim(), estado: editando ? (A.clases.find(x => x._id === editando) || {}).estado || 'dictada' : 'dictada',
-            declarado_por: MI_CED, actualizado: new Date().toISOString()
+            tema: $('f-tema').value.trim(), estado: (previa && previa.estado) || 'dictada', declarado_por: MI_CED, actualizado: new Date().toISOString()
         };
         try {
-            await getDb().collection('clases').doc(id).set(data, { merge: true });
+            const db = getDb(), lote = db.batch();
+            lote.set(db.collection('clases').doc(id), data);
+            lote.set(db.collection('clases').doc(id).collection('privado').doc('palabra'), { palabra_clave: $('f-palabra').value.trim() });
+            await lote.commit();
             const ok = (editando ? 'Clase actualizada' : 'Clase declarada') + ': ' + fechaTxt(fecha) + '.';
-            await cargar();
-            $('form-msg').textContent = ok; $('form-msg').className = 'msg';
-        } catch (e) { err(e.code === 'permission-denied' ? 'Sin permiso para declarar clases.' : 'Error: ' + e.message); }
+            await cargar(); msg('form-msg', ok, 'ok');
+        } catch (e) { msg('form-msg', e.code === 'permission-denied' ? 'Sin permiso para declarar clases.' : 'Error: ' + e.message, 'err'); }
     }
     async function suspender(id) {
         const c = A.clases.find(x => x._id === id); if (!c) return;
@@ -274,9 +418,32 @@
     }
     async function borrar(id) {
         const c = A.clases.find(x => x._id === id); if (!c) return;
-        if (!confirm('¿Borrar la clase del ' + fechaTxt(c.fecha) + '? (las marcas de asistencia de los alumnos no se borran)')) return;
-        await getDb().collection('clases').doc(id).delete();
+        if (!confirm('¿Borrar la clase del ' + fechaTxt(c.fecha) + '? Las marcas de asistencia de los alumnos no se borran.')) return;
+        const db = getDb();
+        await db.collection('clases').doc(id).collection('privado').doc('palabra').delete().catch(() => {});
+        await db.collection('clases').doc(id).delete();
         await cargar();
+    }
+
+    // ── Lista agrupada por mes ──
+    function pintarLista() {
+        const vig = A.clases.filter(c => c.estado !== 'suspendida');
+        $('resumen').textContent = vig.length + ' vigente(s) · ' + A.secciones.map(s => s + ': ' + vig.filter(c => !(c.secciones || []).length || c.secciones.includes(s)).length).join(' · ');
+        if (!A.clases.length) { $('lista').innerHTML = '<p class="nota">Todavía no hay clases declaradas. Mientras tanto la asistencia se estima con las fechas en que hubo al menos 2 presentes.</p>'; return; }
+        let mes = '', h = '<table><thead><tr><th>Fecha</th><th>Modalidad / tipo</th><th>Secciones</th><th>Unidad · tema</th><th>Palabra</th><th>Presentes</th><th>Observados</th><th>Ausentes</th><th>Examen rendido</th><th></th></tr></thead><tbody>';
+        A.clases.forEach(c => {
+            const m = c.fecha.slice(0, 7);
+            if (m !== mes) { mes = m; h += `<tr><td colspan="10" class="mes">${MESES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}</td></tr>`; }
+            const k = contraste(c);
+            h += `<tr class="${c.estado === 'suspendida' ? 'apagada' : ''}"><td><b>${fechaTxt(c.fecha)}</b>${c.hora_inicio ? '<br><small class="nota">' + esc(c.hora_inicio) + (c.hora_fin ? '–' + esc(c.hora_fin) : '') + '</small>' : ''}</td>
+                <td><span class="pill ${c.modalidad === 'virtual' ? 'p-virt' : 'p-pres'}">${esc(c.modalidad)}</span>${c.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(c.examen_id || '') + '</span>' : ''}${c.estado === 'suspendida' ? '<span class="pill p-susp">suspendida</span>' : ''}</td>
+                <td>${esc((c.secciones || []).join(', ') || 'todas')}</td><td>${c.unidad ? 'U' + esc(c.unidad) + ' ' : ''}${esc(c.tema || '')}</td><td>${esc(c.palabra_clave || '')}</td>
+                <td class="n-ok">${k.presentes}</td><td class="n-obs">${k.observados || ''}</td><td class="n-aus">${k.ausentes || ''}</td><td>${k.rindieron == null ? '' : '<b>' + k.rindieron + '</b>'}</td>
+                <td style="white-space:nowrap"><button class="dash-btn dash-btn-ghost dash-btn-sm" onclick="editar('${esc(c._id)}')" title="Editar"><i class="bi bi-pencil"></i></button>
+                    <button class="dash-btn dash-btn-gold dash-btn-sm" onclick="suspender('${esc(c._id)}')">${c.estado === 'suspendida' ? 'Reactivar' : 'Suspender'}</button>
+                    <button class="dash-btn dash-btn-danger dash-btn-sm" onclick="borrar('${esc(c._id)}')" title="Borrar"><i class="bi bi-trash"></i></button></td></tr>`;
+        });
+        $('lista').innerHTML = h + '</tbody></table>';
     }
 </script>
 </body>

@@ -205,6 +205,10 @@ service cloud.firestore {
     match /clases/{id} {
       allow read: if isAuthenticated();
       allow write: if esPersonalDocente();
+      // La palabra clave verifica la asistencia: la ve solo el personal (nunca el alumno, ni en el calendario).
+      match /privado/{doc} {
+        allow read, write: if esPersonalDocente();
+      }
     }
 
     // Contenido publicado de cada unidad (aula/index.html). Lo lee cualquiera con sesión; lo escribe Publicar del Constructor.

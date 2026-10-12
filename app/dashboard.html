@@ -641,6 +641,10 @@
             line-height: 1.25;
         }
 
+        /* Obligaciones: ventana que se abre desde la tarjeta de accesos */
+        #sec-obligaciones-financieras.abierta { display:block !important; position:fixed; z-index:9998; inset:5vh 50% auto auto; transform:translateX(50%);
+            width:min(960px,94vw); max-height:90vh; overflow-y:auto; background:#0d2c16; border:1px solid var(--dorado); box-shadow:0 20px 60px rgba(0,0,0,.6) }
+        #oblig-fondo { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9997; display:none }
         /* ── Obligaciones Financieras y Curriculares del Alumno ── */
         .dash-fin-grid {
             display: grid;
@@ -827,7 +831,8 @@
                 <div id="dm-cuerpo"></div>
             </div>
 
-            <!-- Obligaciones Financieras y Curriculares (Visible al tener alta de matrícula) -->
+            <div id="oblig-fondo" onclick="cerrarObligaciones()"></div>
+            <!-- Obligaciones Financieras y Curriculares (se abre desde la tarjeta «Obligaciones») -->
             <div class="dash-section" id="sec-obligaciones-financieras" style="display:none;">
                 <div class="dash-section-title">
                     <div class="dash-section-title-left">
@@ -836,6 +841,7 @@
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span id="dash-fin-badge-nivel" class="dash-tag-fin dash-tag-modulo">PROGRAMA ACTIVO</span>
                         <a href="facturas.html" class="dash-btn dash-btn-primary" style="padding:4px 10px;font-size:.62rem"><i class="bi bi-receipt"></i> Mis Facturas</a>
+                        <button type="button" class="dash-btn dash-btn-ghost" style="padding:4px 10px;font-size:.62rem" onclick="cerrarObligaciones()" aria-label="Cerrar">✕</button>
                     </div>
                 </div>
                 <div style="font-size:.65rem;color:rgba(255,255,255,.65);margin-bottom:12px;line-height:1.5;">
@@ -1366,6 +1372,7 @@
                 { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
                 { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
                 { href: 'facturas.html', icon: 'bi-receipt', label: 'Mis Facturas' },
+                { href: '#obligaciones', icon: 'bi-wallet2', label: 'Obligaciones' },
                 { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
             ]},
             docente: { label: 'Docente', links: [
@@ -1828,6 +1835,22 @@
             };
         }
 
+        function abrirObligaciones() {
+            const s = document.getElementById('sec-obligaciones-financieras');
+            if (!s || s.dataset.listo !== '1') { showToast('Las obligaciones se muestran cuando tenés el alta de matrícula.', 'error'); return; }
+            s.classList.add('abierta'); document.getElementById('oblig-fondo').style.display = 'block';
+        }
+        function cerrarObligaciones() {
+            const s = document.getElementById('sec-obligaciones-financieras');
+            if (s) s.classList.remove('abierta');
+            const f = document.getElementById('oblig-fondo'); if (f) f.style.display = 'none';
+        }
+        document.addEventListener('click', (e) => {
+            const a = e.target.closest && e.target.closest('a[href="#obligaciones"]');
+            if (a) { e.preventDefault(); abrirObligaciones(); }
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarObligaciones(); });
+
         function renderObligacionesFinancierasDashboard(user) {
             const secFin = document.getElementById('sec-obligaciones-financieras');
             if (!secFin) return;
@@ -1839,7 +1862,8 @@
                 return;
             }
 
-            secFin.style.display = 'block';
+            // v2026-10-11: ya no se muestra en la parte principal; se abre desde la tarjeta «Obligaciones».
+            secFin.dataset.listo = '1';
 
             const config = determinarCargaAcademicaFinanciera(user.carrera, user.grado);
             

@@ -57,7 +57,7 @@ function getDb() {
 // identifican al usuario por ese correo (o por el claim "cedula" que pone la migración).
 const CV_AUTH_DOMINIO = 'campus-centuria.local';
 // Secciones del Instituto (v2026-10-07). Cualquier otra se escribe a mano ("Otra").
-const CV_SECCIONES = ['LV026', 'MJ026', 'S026'];
+const CV_SECCIONES = ['LV026', 'MJ026', 'S026', 'MAE026'];
 window.CV_SECCIONES = CV_SECCIONES;
 // Servicio de recuperación de contraseña (Apps Script recuperar_campus.gs). Vacío = desactivado.
 const RECUPERAR_URL = 'https://script.google.com/macros/s/AKfycbx8wwKp9sQ-KO_ieB9Og5QT_U4UgnGKSlheeHSDOmRgDNIW3R-3wDAbH5lRDr1jdvUnOA/exec';
@@ -559,20 +559,26 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
             case 'agregar_carrera': return (async () => {
                 const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
                 if (!ced) return { ok: false, error: 'Cédula requerida.' };
-                const rol = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(snap => {
-                    if (snap.empty) return '';
-                    return snap.docs[0].data().rol || '';
+                const roles = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get().then(snap => {
+                    if (snap.empty) return [];
+                    const u = snap.docs[0].data();
+                    return [u.rol].concat(Array.isArray(u.roles_activos) ? u.roles_activos : []).map(r => String(r || '').toLowerCase());
                 });
-                const allowedRoles = ['admin','administrador_plataforma','administracion_general','admin_general','administracion'];
-                if (!allowedRoles.includes(rol)) return { ok: false, error: 'Solo administradores pueden agregar carreras.' };
-                const id = 'CAR-' + Date.now().toString(36);
+                const allowedRoles = ['admin','administrador_plataforma','administracion_general','admin_general','administracion','direccion_academica','academico'];
+                if (!roles.some(r => allowedRoles.includes(r))) return { ok: false, error: 'Solo administración o Dirección Académica pueden agregar carreras.' };
+                const nombre = String(data.nombre || '').trim().replace(/\s+/g, ' ');
+                if (nombre.length < 4) return { ok: false, error: 'Escribí el nombre oficial de la carrera.' };
+                const clave = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+                const existentes = (await db.collection('config_carreras').get()).docs.map(d => d.data());
+                if (existentes.some(c => clave(c.nombre) === clave(nombre))) return { ok: false, error: 'Esa carrera ya existe en el catálogo.' };
+                const id = 'CAR-' + clave(nombre);
                 await db.collection('config_carreras').doc(id).set({
-                    nombre: String(data.nombre || '').trim(),
+                    nombre: nombre, codigo: clave(nombre),
                     grado: String(data.grado || 'GRADO').trim().toUpperCase(),
-                    activo: data.activo !== false,
-                    creado_en: new Date().toISOString()
+                    estado: data.activo === false ? 'INACTIVO' : 'ACTIVO', activo: data.activo !== false,
+                    origen: 'panel administrativo', creado_por: ced, creado_en: new Date().toISOString()
                 });
-                return { ok: true, carrera: { id, nombre: data.nombre || '' } };
+                return { ok: true, carrera: { id, nombre } };
             })();
             case 'listar_secciones': return Promise.resolve({ ok: true, secciones: CV_SECCIONES.map(c => ({ codigo: c })) });
             case 'listar_grados': return Promise.resolve({ ok: true, grados: ['GRADO','ESPECIALIZACIÓN','MAESTRÍA','DOCTORADO'].map(g => ({ nombre: g })) });
@@ -676,7 +682,9 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
 
             case 'guardar_asignatura': return (async () => {
                 const id = data.codigo || data.id || 'ASIG-' + Date.now().toString(36);
-                await db.collection('asignaturas').doc(id).set(Object.assign({}, data, { updated_at: new Date().toISOString() }));
+                // v2026-10-12: merge. Antes set() reemplazaba el documento entero y borraba el plan de evaluación,
+                // las reglas y el aula publicados por el Constructor al editar la cátedra desde el panel.
+                await db.collection('asignaturas').doc(id).set(Object.assign({}, data, { updated_at: new Date().toISOString() }), { merge: true });
                 return { ok: true, id: id };
             })();
             case 'eliminar_asignatura': return db.collection('asignaturas').doc(data.id).delete().then(() => ({ ok: true })).catch(() => ({ ok: false }));

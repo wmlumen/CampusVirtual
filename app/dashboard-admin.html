@@ -97,7 +97,8 @@
       window._fbCheck = function(){if(!window.firebase)console.error('[dashboard-admin] window.firebase UNDEFINED');else if(!window.firebase.apps||window.firebase.apps.length===0)console.warn('[dashboard-admin] Firebase exists but no apps');else console.log('[dashboard-admin] Firebase OK, apps:',window.firebase.apps.length)};
       window.require = window.require || function(mod){if(mod==='firebase-firestore'){return{collection:(db,coll)=>db.collection(coll),doc:(db,coll,id)=>db.collection(coll).doc(id),getDocs:(q)=>q.get().then(snap=>({empty:snap.empty,size:snap.size,docs:snap.docs.map(d=>({id:d.id,data:()=>d.data(),exists:true})),forEach:snap.forEach.bind(snap)})),getDoc:(ref)=>ref.get().then(s=>({exists:s.exists,id:s.id,data:()=>s.data()})),setDoc:(ref,data)=>ref.set(data),updateDoc:(ref,data)=>ref.update(data),deleteDoc:(ref)=>ref.delete(),query:(q,...conds)=>{let qq=q;for(const c of conds){if(!c)continue;if(c&&c.field&&c.op)qq=qq.where(c.field,c.op,c.value);else if(c&&c.fieldPath)qq=qq.orderBy(c.fieldPath,c.order==='ASCENDING'?'asc':'desc');else if(typeof c==='number')qq=qq.limit(c)}return qq},where:(field,op,value)=>({field,op,value}),limit:(n)=>n,orderBy:(field,dir)=>({fieldPath:field,order:dir})};}throw new Error('Cannot find module '+mod)};
     </script>
-    <script src="js/api.js?v=19"></script>
+    <script src="js/api.js?v=29"></script>
+    <script src="js/calificaciones.js?v=5"></script>
     <script src="js/logout.js?v=2"></script>
 <script src="js/role-tabs.js?v=1"></script>
 
@@ -401,6 +402,8 @@
                         </div>
                         <div class="col-md-6">
                             <label class="small fw-bold text-white mb-1"><i class="bi bi-people me-1 text-info"></i> Secciones Vinculadas</label>
+                            <label class="small fw-bold text-white mb-1 mt-2 d-block" for="catedra-periodo"><i class="bi bi-calendar-month me-1 text-warning"></i> Mes del grupo</label>
+                            <input type="month" id="catedra-periodo" class="form-control form-control-sm search-inp w-100 mb-2">
                             <input type="text" id="catedra-secciones-input" class="form-control form-control-sm search-inp w-100" placeholder="Ej: LV026, MJ026, S026, MAE026" style="text-transform:uppercase">
                             <div class="d-flex gap-1 mt-1 flex-wrap">
                                 <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 text-white-50" style="font-size:.65rem" onclick="toggleSeccionTag('LV026')">+ LV026</button>
@@ -801,6 +804,7 @@ async function abrirModalCrearAsignatura(){
   var m=document.getElementById('modal-editar-catedra'); if(!m) return;
   var msg=document.getElementById('catedra-msg'); if(msg) msg.style.display='none';
   m.style.display='flex';
+  var per=document.getElementById('catedra-periodo'); if(per&&!per.value){var hm=new Date();per.value=hm.getFullYear()+'-'+String(hm.getMonth()+1).padStart(2,'0');}
   await poblarFormularioCatedra({}, true);
 }
 
@@ -809,6 +813,7 @@ async function abrirModalEditarCatedra(id){
   var msg=document.getElementById('catedra-msg'); if(msg) msg.style.display='none';
   var a = (LISTA_ASIGNATURAS_CACHE||[]).find(function(x){ return (x.id||x.codigo)===id; }) || { id: id, codigo: id };
   m.style.display='flex';
+  var per=document.getElementById('catedra-periodo'); if(per&&!per.value){var hm=new Date();per.value=hm.getFullYear()+'-'+String(hm.getMonth()+1).padStart(2,'0');}
   await poblarFormularioCatedra(a, false);
 }
 
@@ -850,19 +855,29 @@ async function guardarCatedraModal(){
     carreras: selectedCars,
     carrera: selectedCars[0] || '',
     secciones: secciones,
-    seccion: secciones[0] || '',
-    docente_cedula: docCed,
-    docente_nombre: docNom,
-    docente: docNom || docCed || '',
-    docentes: docCed ? [{ cedula: docCed, nombre: docNom, secciones: secciones }] : []
+    seccion: secciones[0] || ''
   };
+  // Solo si se eligió docente: así guardar la ficha no borra al docente que ya tenía la materia.
+  if (docCed) Object.assign(payload, { docente_cedula: docCed, docente_nombre: docNom, docente: docNom || docCed,
+                                        docentes: [{ cedula: docCed, nombre: docNom, secciones: secciones }] });
+  var periodo = (document.getElementById('catedra-periodo') || {}).value || '';
 
   try{
     var r = await CenturiaAPI.asignaturas.save(payload);
     if(r && r.ok !== false){
+      // v2026-10-12: docente + carreras + secciones = grupos del docente para ese mes (lo que ve en su panel y su planilla).
+      var extra = '';
+      if (docCed && secciones.length && selectedCars.length) {
+        var grupos = [];
+        selectedCars.forEach(function(c){ secciones.forEach(function(s){ grupos.push({ grado: grd, carrera: c, seccion: s }); }); });
+        var ra = await CenturiaAPI.academico.saveAssignment({ academico_cedula: cvMiCedula(), docente_cedula: docCed, asignatura: cod, grupos: grupos, periodo: periodo, aprobar: false });
+        extra = (ra && ra.ok) ? '\n' + (ra.mensaje || 'Grupos del docente guardados.') : '\nOjo: la ficha se guardó pero los grupos del docente no (' + ((ra && ra.error) || 'sin respuesta') + ').';
+      } else if (docCed) {
+        extra = '\nPara que el docente vea la materia en su panel, marcá al menos una carrera y una sección.';
+      }
       cerrarModalCatedra();
       cargarAsignaturas();
-      alert('Asignatura / Cátedra '+cod+' guardada con éxito.');
+      alert('Asignatura / Cátedra '+cod+' guardada con éxito.' + extra);
     }else{
       mostrar((r && (r.error||r.mensaje))||'No se pudo guardar la asignatura.', true);
     }
@@ -876,23 +891,39 @@ async function cargarAsignaturas(){
     var list=(res&&res.asignaturas)?res.asignaturas:(res&&res.items)?res.items:(Array.isArray(res)?res:[]);
     LISTA_ASIGNATURAS_CACHE=list;
     if(!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}
+    // Grupos reales: asignaciones activas de cada docente (asignatura + carrera + sección + mes).
+    var grupos={};
+    try{
+      var rd=await CenturiaAPI.academico.listTeachers(cvMiCedula());
+      ((rd&&rd.docentes)||[]).forEach(function(d){(d.asignaciones||[]).filter(function(x){return x&&x.estado==='activo';}).forEach(function(x){
+        var k=String(x.asignatura||'').toUpperCase(),g=grupos[k]=grupos[k]||{secciones:[],docentes:[],carreras:[]};
+        if(x.seccion&&g.secciones.indexOf(x.seccion)<0)g.secciones.push(x.seccion);
+        if(x.carrera&&g.carreras.indexOf(x.carrera)<0)g.carreras.push(x.carrera);
+        if(!g.docentes.some(function(y){return y.cedula===d.cedula;}))g.docentes.push({cedula:d.cedula,nombre:d.nombre});
+      });});
+    }catch(eG){}
     tb.innerHTML=list.slice(0,200).map(function(a){
       var id=a.id||a.codigo||'',est=String(a.estado||'activo').toLowerCase(),activa=est==='activo'||est==='desarrollado';
       
       // Carreras formateadas
-      var cars = (Array.isArray(a.carreras) && a.carreras.length) ? a.carreras : (a.carrera ? [a.carrera] : []);
+      var gr = grupos[String(a.codigo||id).toUpperCase()] || {secciones:[],docentes:[],carreras:[]};
+      var cars = (Array.isArray(a.carreras) && a.carreras.length) ? a.carreras.slice() : (a.carrera ? [a.carrera] : []);
+      // Misma carrera con otro nombre («Aduanera» / «Administración Aduanera»): se muestra una sola vez.
+      var claveCar=function(c){return (window.CenturiaNotas&&CenturiaNotas.carreraClave)?CenturiaNotas.carreraClave(c):String(c||'').toUpperCase().trim();};
+      gr.carreras.forEach(function(c){ if(!cars.some(function(x){return claveCar(x)===claveCar(c);})) cars.push(c); });
       var carsHtml = cars.length ? cars.map(function(c){
         return '<span class="badge-role badge-role-admgen mb-1 me-1 d-inline-block text-truncate" style="max-width:210px;font-size:.65rem">'+esc(c)+'</span>';
       }).join('') : '<span class="text-white-50 small">—</span>';
 
       // Docente
-      var docNom = a.docente_nombre || a.docente || (a.docentes && a.docentes[0] && a.docentes[0].nombre) || '';
-      var docCed = a.docente_cedula || (a.docentes && a.docentes[0] && a.docentes[0].cedula) || '';
+      var docNom = (gr.docentes[0] && gr.docentes[0].nombre) || a.docente_nombre || a.docente || (a.docentes && a.docentes[0] && a.docentes[0].nombre) || '';
+      var docCed = (gr.docentes[0] && gr.docentes[0].cedula) || a.docente_cedula || (a.docentes && a.docentes[0] && a.docentes[0].cedula) || '';
+      if (gr.docentes.length > 1) docNom += ' (+' + (gr.docentes.length - 1) + ')';
       var docHtml = docNom ? '<div class="fw-bold text-white small">'+esc(docNom)+'</div>'+(docCed?'<div style="font-size:.65rem;color:#94a3b8">C.I. '+esc(docCed)+'</div>':'') :
                     (docCed ? '<div class="fw-bold text-white small">C.I. '+esc(docCed)+'</div>' : '<span class="text-white-50 small">Sin asignar</span>');
 
       // Secciones vinculadas
-      var secs = (Array.isArray(a.secciones) && a.secciones.length) ? a.secciones :
+      var secs = gr.secciones.length ? gr.secciones.slice().sort() : (Array.isArray(a.secciones) && a.secciones.length) ? a.secciones :
                  (a.docentes && a.docentes[0] && Array.isArray(a.docentes[0].secciones) && a.docentes[0].secciones.length) ? a.docentes[0].secciones :
                  (a.seccion ? [a.seccion] : []);
       var secsHtml = secs.length ? secs.map(function(s){

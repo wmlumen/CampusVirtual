@@ -318,7 +318,7 @@
         <button class="btn btn-p" onclick="exportarCSV()"><i class="bi bi-download"></i> Exportar CSV</button>
         <button class="btn btn-g" onclick="generarActa()"><i class="bi bi-file-earmark"></i> Generar Acta</button>
         <button class="btn btn-o" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
-        <button class="btn btn-s" onclick="cargarPanel()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+        <button class="btn btn-s" onclick="if (window.CenturiaPlan && CenturiaPlan.limpiarCache) CenturiaPlan.limpiarCache(); cargarPanel()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
     </div>
 
     <!-- Trabajos prácticos en PDF entregados por los alumnos (v2026-10-07) -->
@@ -768,11 +768,9 @@ async function cargarDatosAsignatura(codigo) {
             notasData = dN.data || dN.notas || [];
         } catch(e) { notasData = []; }
 
-        // 3. Cargar asistencia
-        try {
-            const dA = await CenturiaAPI.attendance.list({ asignatura: asigActual.codigo });
-            asistData = dA.data || dA.asistencias || [];
-        } catch(e) { asistData = []; }
+        // 3. Asistencia: la trae la planilla oficial (paso 4). Solo si no hay planilla se leen los registros sueltos
+        //    (leer toda la colección dos veces por carga agotaba la cuota diaria de Firestore).
+        asistData = [];
 
         // 4. Planilla oficial (la misma que academic/planilla_notas.html y la libreta del alumno):
         //    notas del plan publicado, exámenes en línea y asistencia contra las clases declaradas.
@@ -796,6 +794,12 @@ async function cargarDatosAsignatura(codigo) {
                 });
             }
         } catch (ePlan) { console.warn('Planilla del plan no disponible; se usan las notas cargadas a mano:', ePlan); }
+        if (!planFilas) {
+            try {
+                const dA = await CenturiaAPI.attendance.list({ asignatura: asigActual.codigo });
+                asistData = dA.data || dA.asistencias || [];
+            } catch (e) { asistData = []; }
+        }
 
         // Poblar selectores de filtro por Carrera y Sección encontrados en la nómina
         const carrerasUnicas = [...new Set(alumnosData.map(a => a.carrera).filter(Boolean))].sort();

@@ -19,6 +19,21 @@
     // Lleva una nota { obtenido, maximo } a la escala de la evaluación.
     const enEscala = (ev, n) => (n && n.obtenido != null) ? Math.round(n.obtenido / (n.maximo || escala(ev)) * escala(ev) * 100) / 100 : null;
 
+    // v2026-10-12: las colecciones completas (asistencia, intentos) se guardan 3 min en la sesión del navegador.
+    // Firestore limita/cobra por documento leído y cada recarga de la planilla leía ~1.200 documentos.
+    // Si la lectura falla (p. ej. cuota agotada) se informa el error: antes se mostraba la planilla vacía.
+    const CACHE_MS = 180000;
+    async function leerToda(nombre, consulta) {
+        const k = 'cv_cache_' + nombre;
+        try { const c = JSON.parse(sessionStorage.getItem(k) || 'null'); if (c && Date.now() - c.t < CACHE_MS) return c.d; } catch (e) {}
+        const d = datos(await consulta.get());
+        try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+        return d;
+    }
+    function limpiarCache() {
+        try { Object.keys(sessionStorage).filter(k => k.indexOf('cv_cache_') === 0).forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+    }
+
     async function plan(codigo) {
         await listo();
         const cod = String(codigo || '').toUpperCase();
@@ -83,9 +98,9 @@
         const db = getDb();
         const [usuarios, intentos, trabajos, asistencia, notas, cls] = await Promise.all([
             db.collection('usuarios').where('rol', '==', 'alumno').get().then(datos).catch(() => []),
-            db.collection('intentos').get().then(datos).catch(() => []),
+            leerToda('intentos', db.collection('intentos')),
             db.collection('trabajos').where('asignatura', '==', p.codigo).get().then(datos).catch(() => []),
-            db.collection('asistencia').get().then(datos).catch(() => []),
+            leerToda('asistencia', db.collection('asistencia')),
             db.collection('notas').where('asignatura', '==', p.codigo).get().then(datos).catch(() => []),
             clases(p.codigo)
         ]);
@@ -166,8 +181,9 @@
             ops.slice(i, i + 400).forEach(o => o[0] === 'del' ? lote.delete(db.collection('notas').doc(o[1])) : lote.set(db.collection('notas').doc(o[1]), o[2]));
             await lote.commit();
         }
+        limpiarCache();
         return { ok: true, guardadas: ops.filter(o => o[0] === 'set').length, borradas: ops.filter(o => o[0] === 'del').length };
     }
 
-    window.CenturiaPlan = { plan, alumno, planilla, guardar, escala, enEscala, clases };
+    window.CenturiaPlan = { plan, alumno, planilla, guardar, escala, enEscala, clases, limpiarCache };
 })();

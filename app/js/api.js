@@ -1269,7 +1269,7 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 if (usados >= cfg.intentos) return { ok: false, motivo: 'sin_intentos', mensaje: 'Ya usaste todos tus intentos (' + cfg.intentos + ').' };
                 return { ok: true, sesion_id: 's-' + Date.now().toString(36), intento: usados + 1, intentos_max: cfg.intentos, cierre_ms: cfg.cierre_ms, cedula: ced, nombre: cvT(f.nombre), asignatura: asig };
             })().catch(e => ({ ok: false, error: e.message }));
-            case 'cumple_mio': return Promise.resolve({ ok: true, cumpleano: false });
+            case 'cumple_mio': return cvCumpleMio(db).catch(e => ({ ok: false, cumple: false, error: cvErrorAtencion(e) }));
             case 'diagnostico': return Promise.resolve({ ok: true, diagnostico: {} });
             case 'qr_credencial': {
                 // Lote de códigos para las próximas ventanas (la cédula sale de la sesión).
@@ -1612,6 +1612,15 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
                 return { ok: true, data: regs, records: regs, asistencias: regs };
             })().catch(e => ({ ok: false, data: [], records: [], asistencias: [], error: cvErrorAsistencia(e) }));
+
+            // Atención al Alumno (consultas) y Asistencia al Estudiante: Firestore (v2026-10-12).
+            case 'con_crear': case 'con_listar': case 'con_ver': case 'con_responder': case 'con_estado':
+            case 'con_compartir': case 'con_quitar': case 'con_derivar': case 'con_pendientes':
+                return cvConsultas(db, F, action, data).catch(e => ({ ok: false, error: cvErrorAtencion(e) }));
+            case 'asist_catalogos': case 'asist_buscar': case 'asist_ficha': case 'asist_cumpleanos':
+            case 'asist_beneficio_otorgar': case 'asist_beneficio_estado':
+            case 'asist_queja_registrar': case 'asist_queja_listar': case 'asist_queja_enviar': case 'asist_queja_cerrar':
+                return cvAsistente(db, F, action, data).catch(e => ({ ok: false, error: cvErrorAtencion(e) }));
 
             default: return Promise.resolve({ ok: true, data: data || {} });
         }
@@ -2624,6 +2633,385 @@ API.credencial = {
     generar: () => callGas('qr_credencial', { token: API.getToken() }, 'POST'),
     verificar: (codigo) => callGas('qr_verificar', { token: API.getToken(), codigo }, 'POST')
 };
+
+// ── Atención al Alumno (consultas) y Asistencia al Estudiante (ficha, cumpleaños, beneficios, quejas) ──────────
+// v2026-10-12: antes estas acciones caían en el «default» de callGasCore y respondían ok sin guardar nada.
+// Todo vive en Firestore: consultas/{id} (+ consultas/{id}/notas solo personal), quejas/{id}, beneficios/{id}.
+const CV_ATIENDEN = ['administrador_plataforma', 'admin_plataforma', 'administracion_general', 'admin', 'administrador', 'admin_general', 'administracion',
+    'direccion_academica', 'academico', 'academic', 'coordinador_carrera', 'secretaria_academica', 'administrativo',
+    'atencion_estudiante', 'asistencia_estudiante', 'asistente_estudiante'];
+const CV_CON_AREAS = [
+    { id: 'atencion', nombre: 'Atención al Alumno' }, { id: 'academico', nombre: 'Gestión Académica' },
+    { id: 'secretaria', nombre: 'Secretaría Académica' }, { id: 'tesoreria', nombre: 'Tesorería' }, { id: 'direccion', nombre: 'Dirección Académica' }];
+const CV_CON_ESTADOS = { abierta: 'Abierta', en_proceso: 'En proceso', resuelta: 'Resuelta' };
+const CV_QJ_CATEGORIAS = ['Académica', 'Docente', 'Administrativa', 'Tesorería / pagos', 'Infraestructura', 'Plataforma virtual', 'Trato / convivencia', 'Otra'];
+const CV_QJ_DESTINOS = ['Gestión Académica', 'Dirección Académica', 'Coordinación de Carrera', 'Secretaría Académica', 'Tesorería', 'Administración General'];
+const CV_BEN_TIPOS = ['Descuento', 'Cupón de cantina', 'Obsequio', 'Otro'];
+
+function cvAhoraPy() { const f = cvFechaHoraPy(new Date()); return f.fecha + ' ' + f.hora.slice(0, 5); }
+function cvSinTilde(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+function cvErrorAtencion(e) {
+    if (e && e.code === 'permission-denied') return 'No tenés permiso para esta acción.';
+    if (e && e.code === 'SIN_SESION') return e.message;
+    return (e && e.message) || 'No se pudo completar la acción.';
+}
+
+// Quién soy: cédula de la sesión, nombre y roles (rol + roles_activos), leídos de mi documento de usuarios.
+async function cvYo(db) {
+    const u = await ensureAnonAuth();
+    const ced = cvCedulaDeAuth(u);
+    if (!ced) { const e = new Error('Tu sesión expiró. Volvé a ingresar.'); e.code = 'SIN_SESION'; throw e; }
+    let d = {};
+    try { const s = await db.collection('usuarios').doc(u.uid).get(); if (s.exists) d = s.data() || {}; } catch (_) {}
+    if (!d.rol) { try { const q = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get(); if (!q.empty) d = q.docs[0].data() || {}; } catch (_) {} }
+    const roles = [d.rol].concat(Array.isArray(d.roles_activos) ? d.roles_activos : []).map(r => String(r || '').toLowerCase()).filter(Boolean);
+    const nombre = [d.nombre, d.apellido].filter(Boolean).join(' ') || d.nombre_completo || cvNombreSesion();
+    const atiende = roles.some(r => CV_ATIENDEN.indexOf(r) >= 0);
+    const areas = roles.some(r => r === 'tesoreria' || r === 'tesorero') ? ['tesoreria'] : [];
+    return { ced, nombre, roles, rol: roles[0] || 'alumno', atiende, areas, datos: d };
+}
+
+// ═══ Consultas ═══
+function cvConItem(c, ced) {
+    const msgs = (c.mensajes || []).filter(m => m.tipo !== 'sistema');
+    return { id: c.id, asunto: c.asunto, categoria: c.categoria, estado: c.estado, nombre: c.nombre, cedula: c.alumno_cedula, carrera: c.carrera || '',
+             ultima_actividad: c.ultima_actividad, mensajes: msgs.length, pendiente_personal: !!c.pendiente_personal,
+             pendiente_alumno: !!c.pendiente_alumno && c.alumno_cedula === ced };
+}
+function cvConPuedeVer(c, yo) {
+    return c.alumno_cedula === yo.ced || yo.atiende || (c.participantes_ced || []).indexOf(yo.ced) >= 0
+        || yo.areas.some(a => (c.areas || []).indexOf(a) >= 0);
+}
+// Consultas que me tocan atender: todas si soy personal de atención; si no, donde me sumaron o derivaron a mi área.
+async function cvConParaAtender(db, yo) {
+    if (yo.atiende) return (await db.collection('consultas').get()).docs.map(d => Object.assign({ id: d.id }, d.data()));
+    const lotes = [db.collection('consultas').where('participantes_ced', 'array-contains', yo.ced).get()]
+        .concat(yo.areas.map(a => db.collection('consultas').where('areas', 'array-contains', a).get()));
+    const vistos = {};
+    (await Promise.all(lotes.map(p => p.catch(() => ({ docs: [] }))))).forEach(s => s.docs.forEach(d => { vistos[d.id] = Object.assign({ id: d.id }, d.data()); }));
+    return Object.values(vistos);
+}
+
+async function cvConsultas(db, F, action, data) {
+    const yo = await cvYo(db);
+    const FV = F.FieldValue;
+    const ref = (id) => db.collection('consultas').doc(String(id || ''));
+    const leer = async (id) => {
+        const s = await ref(id).get();
+        if (!s.exists) throw new Error('No se encontró la consulta.');
+        const c = Object.assign({ id: s.id }, s.data());
+        if (!cvConPuedeVer(c, yo)) { const e = new Error('No tenés acceso a esta consulta.'); e.code = 'permission-denied'; throw e; }
+        return c;
+    };
+    const sistema = (texto) => ({ tipo: 'sistema', texto, autor: yo.nombre, cedula: yo.ced, rol: yo.rol, fecha: cvAhoraPy(), id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
+    const soloAtencion = () => { if (!yo.atiende) { const e = new Error('Solo el personal de Atención al Alumno puede hacer esto.'); e.code = 'permission-denied'; throw e; } };
+
+    switch (action) {
+        case 'con_crear': {
+            const categoria = String(data.categoria || 'Otra').trim().slice(0, 60);
+            const asunto = String(data.asunto || '').trim().slice(0, 120), mensaje = String(data.mensaje || '').trim().slice(0, 4000);
+            if (asunto.length < 4) return { ok: false, error: 'Escribí un asunto.' };
+            if (mensaje.length < 10) return { ok: false, error: 'Contanos tu consulta con un poco más de detalle.' };
+            const mias = (await db.collection('consultas').where('alumno_cedula', '==', yo.ced).get()).docs.map(d => d.data());
+            if (mias.filter(c => c.estado !== 'resuelta').length >= 10) return { ok: false, error: 'Tenés 10 consultas abiertas. Esperá respuesta o cerrá alguna antes de abrir otra.' };
+            const f = cvFichaSesion(), d = yo.datos, ahora = cvAhoraPy();
+            const id = 'CON-' + yo.ced + '-' + Date.now().toString(36);
+            await ref(id).set({
+                id, alumno_cedula: yo.ced, nombre: yo.nombre, carrera: d.carrera || f.carrera || '', grado: d.grado || f.grado || '', seccion: d.seccion || f.seccion || '',
+                telefono: d.telefono || '', email: d.email || '', categoria, asunto, estado: 'abierta', creada: ahora, ultima_actividad: ahora,
+                mensajes: [{ tipo: 'mensaje', texto: mensaje, autor: yo.nombre, cedula: yo.ced, rol: 'alumno', fecha: ahora, id: Date.now().toString(36) }],
+                participantes: [], participantes_ced: [], areas: ['atencion'], pendiente_personal: true, pendiente_alumno: false,
+                fecha_resolucion: '', resuelta_por: '', creada_ts: FV.serverTimestamp()
+            });
+            return { ok: true, id, mensaje: 'Consulta enviada. Te avisamos acá cuando haya respuesta.' };
+        }
+        case 'con_listar':
+        case 'con_pendientes': {
+            const mias = (await db.collection('consultas').where('alumno_cedula', '==', yo.ced).get()).docs.map(d => Object.assign({ id: d.id }, d.data()));
+            const otras = (yo.atiende || yo.areas.length || action === 'con_listar' ? await cvConParaAtender(db, yo).catch(() => []) : []).filter(c => c.alumno_cedula !== yo.ced);
+            const sin_leer = mias.filter(c => c.pendiente_alumno).length;
+            if (action === 'con_pendientes')
+                return { ok: true, sin_leer, por_atender: otras.filter(c => c.estado !== 'resuelta' && c.pendiente_personal).length, es_personal: yo.atiende };
+            const q = cvSinTilde(data.q), cat = String(data.categoria || '');
+            const filtradas = otras.filter(c => (!cat || c.categoria === cat)
+                && (!q || cvSinTilde([c.asunto, c.nombre, c.alumno_cedula, c.carrera, c.id].join(' ')).indexOf(q) >= 0));
+            const conteo = { total: filtradas.length, abierta: 0, en_proceso: 0, resuelta: 0 };
+            filtradas.forEach(c => { if (conteo[c.estado] != null) conteo[c.estado]++; });
+            const orden = (a, b) => String(b.ultima_actividad || '').localeCompare(String(a.ultima_actividad || ''));
+            // Para atender: primero las que esperan respuesta.
+            const atender = filtradas.filter(c => !data.estado || c.estado === data.estado)
+                .sort((a, b) => (Number(!!b.pendiente_personal && b.estado !== 'resuelta') - Number(!!a.pendiente_personal && a.estado !== 'resuelta')) || orden(a, b));
+            return { ok: true, mias: mias.sort(orden).map(c => cvConItem(c, yo.ced)), atender: atender.map(c => cvConItem(c, yo.ced)),
+                     conteo, sin_leer, es_personal: yo.atiende };
+        }
+        case 'con_ver': {
+            const c = await leer(data.id);
+            const duenio = c.alumno_cedula === yo.ced;
+            let mensajes = (c.mensajes || []).slice();
+            if (!duenio) {
+                const notas = await ref(c.id).collection('notas').get().then(s => s.docs.map(d => d.data())).catch(() => []);
+                mensajes = mensajes.concat(notas.map(n => Object.assign({}, n, { tipo: 'nota' })));
+            }
+            mensajes.sort((a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')));
+            if (duenio && c.pendiente_alumno) await ref(c.id).update({ pendiente_alumno: false }).catch(() => {});
+            return {
+                ok: true,
+                consulta: { id: c.id, categoria: c.categoria, asunto: c.asunto, estado: c.estado, creada: c.creada, fecha_resolucion: c.fecha_resolucion || '', resuelta_por: c.resuelta_por || '' },
+                mensajes: mensajes.map(m => ({ tipo: m.tipo || 'mensaje', texto: m.texto, autor: m.autor, rol: m.rol, fecha: m.fecha, propio: m.cedula === yo.ced })),
+                estudiante: duenio ? null : { nombre: c.nombre, cedula: c.alumno_cedula, carrera: c.carrera, grado: c.grado, seccion: c.seccion, telefono: c.telefono, email: c.email },
+                permisos: { atencion: yo.atiende, areas_disponibles: CV_CON_AREAS },
+                participantes: c.participantes || [],
+                areas: (c.areas || []).map(id => CV_CON_AREAS.find(a => a.id === id) || { id, nombre: id })
+            };
+        }
+        case 'con_responder': {
+            const c = await leer(data.id);
+            const texto = String(data.texto || '').trim().slice(0, 4000);
+            if (texto.length < 2) return { ok: false, error: 'Escribí tu respuesta.' };
+            const duenio = c.alumno_cedula === yo.ced, ahora = cvAhoraPy();
+            const msg = { tipo: 'mensaje', texto, autor: yo.nombre, cedula: yo.ced, rol: duenio ? 'alumno' : yo.rol, fecha: ahora, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) };
+            if (data.interna && !duenio && yo.atiende) {
+                await ref(c.id).collection('notas').doc(msg.id).set(Object.assign({}, msg, { tipo: 'nota' }));
+                return { ok: true, mensaje: 'Nota interna guardada (no la ve el estudiante).' };
+            }
+            const cambios = { mensajes: FV.arrayUnion(msg), ultima_actividad: ahora };
+            if (duenio) {
+                Object.assign(cambios, { pendiente_personal: true, pendiente_alumno: false });
+                if (c.estado === 'resuelta') { cambios.estado = 'abierta'; cambios.mensajes = FV.arrayUnion(msg, sistema('El estudiante reabrió la consulta')); }
+            } else {
+                Object.assign(cambios, { pendiente_alumno: true, pendiente_personal: false });
+                if (c.estado === 'abierta') { cambios.estado = 'en_proceso'; cambios.mensajes = FV.arrayUnion(msg, sistema('Estado: En proceso')); }
+            }
+            await ref(c.id).update(cambios);
+            return { ok: true, mensaje: duenio ? 'Mensaje enviado.' : 'Respuesta enviada al estudiante.' };
+        }
+        case 'con_estado': {
+            soloAtencion();
+            const c = await leer(data.id), est = String(data.estado || '');
+            if (!CV_CON_ESTADOS[est]) return { ok: false, error: 'Estado inválido.' };
+            if (c.estado === est) return { ok: true };
+            const cambios = { estado: est, ultima_actividad: cvAhoraPy(), mensajes: FV.arrayUnion(sistema('Estado: ' + CV_CON_ESTADOS[est])) };
+            if (est === 'resuelta') Object.assign(cambios, { fecha_resolucion: cvAhoraPy(), resuelta_por: yo.nombre, pendiente_personal: false, pendiente_alumno: true });
+            await ref(c.id).update(cambios);
+            return { ok: true, mensaje: 'Consulta marcada como ' + CV_CON_ESTADOS[est].toLowerCase() + '.' };
+        }
+        case 'con_compartir': {
+            soloAtencion();
+            const c = await leer(data.id), ced = String(data.cedula || '').replace(/\D/g, '');
+            if (!ced) return { ok: false, error: 'Escribí la cédula.' };
+            if (ced === c.alumno_cedula) return { ok: false, error: 'Es el estudiante que hizo la consulta.' };
+            if ((c.participantes_ced || []).indexOf(ced) >= 0) return { ok: false, error: 'Esa persona ya está en la consulta.' };
+            const s = await db.collection('cedulas').doc(ced).get();
+            if (!s.exists) return { ok: false, error: 'No hay ninguna cuenta con la cédula ' + ced + '.' };
+            const p = s.data() || {}, nombre = [p.nombre, p.apellido].filter(Boolean).join(' ') || ced;
+            await ref(c.id).update({ participantes: FV.arrayUnion({ cedula: ced, nombre, rol: p.rol || '' }), participantes_ced: FV.arrayUnion(ced),
+                                     mensajes: FV.arrayUnion(sistema(yo.nombre + ' sumó a ' + nombre)), ultima_actividad: cvAhoraPy() });
+            return { ok: true, mensaje: nombre + ' ahora puede ver y responder la consulta.' };
+        }
+        case 'con_quitar': {
+            soloAtencion();
+            const c = await leer(data.id), ced = String(data.cedula || '');
+            const p = (c.participantes || []).find(x => x.cedula === ced);
+            if (!p) return { ok: true };
+            await ref(c.id).update({ participantes: FV.arrayRemove(p), participantes_ced: FV.arrayRemove(ced), mensajes: FV.arrayUnion(sistema(yo.nombre + ' quitó a ' + p.nombre)) });
+            return { ok: true, mensaje: 'Se quitó el acceso a ' + p.nombre + '.' };
+        }
+        case 'con_derivar': {
+            soloAtencion();
+            const c = await leer(data.id), area = CV_CON_AREAS.find(a => a.id === data.area);
+            if (!area) return { ok: false, error: 'Área inválida.' };
+            await ref(c.id).update(data.quitar
+                ? { areas: FV.arrayRemove(area.id), mensajes: FV.arrayUnion(sistema('Se quitó la derivación a ' + area.nombre)) }
+                : { areas: FV.arrayUnion(area.id), mensajes: FV.arrayUnion(sistema('Derivada a ' + area.nombre)), ultima_actividad: cvAhoraPy() });
+            return { ok: true, mensaje: data.quitar ? 'Derivación quitada.' : 'Derivada a ' + area.nombre + '.' };
+        }
+    }
+    return { ok: false, error: 'Acción no reconocida: ' + action };
+}
+
+// ═══ Asistencia al Estudiante ═══
+// Directorio de estudiantes armado con lo que hay en la base: índice de cédulas, fichas (usuarios), matrículas,
+// asistencia e intentos de examen (carrera/sección de quienes todavía no completaron su ficha). Se cachea 3 min.
+let cvDirCache = null;
+async function cvDirectorio(db) {
+    if (cvDirCache && Date.now() - cvDirCache.t < 180000) return cvDirCache.mapa;
+    const [ceds, usrs, mats, asis, ints] = await Promise.all(['cedulas', 'usuarios', 'matriculas', 'asistencia', 'intentos']
+        .map(c => db.collection(c).get().then(s => s.docs.map(d => Object.assign({ _id: d.id }, d.data()))).catch(() => [])));
+    const m = new Map();
+    const de = (ced) => { ced = String(ced || '').replace(/\D/g, ''); if (!ced) return null; if (!m.has(ced)) m.set(ced, { cedula: ced, nombre: '', apellido: '', carrera: '', seccion: '', grado: '', estado: '', email: '', telefono: '', fecha_nacimiento: '', rol: '' }); return m.get(ced); };
+    const llenar = (x, campos) => Object.keys(campos).forEach(k => { if (campos[k] && !x[k]) x[k] = String(campos[k]); });
+    ceds.forEach(c => { const x = de(c.cedula || c._id); if (x) llenar(x, { nombre: c.nombre, apellido: c.apellido, estado: c.estado, rol: c.rol }); });
+    usrs.forEach(u => { const x = de(u.cedula); if (!x) return;
+        Object.assign(x, { nombre: u.nombre || x.nombre, apellido: u.apellido || x.apellido, rol: u.rol || x.rol, estado: u.estado || x.estado });
+        llenar(x, { carrera: u.carrera, seccion: u.seccion, grado: u.grado, email: u.email, telefono: u.telefono, fecha_nacimiento: u.fecha_nacimiento }); });
+    mats.forEach(mt => { const x = de(mt.cedula || mt._id); if (!x) return; x.matricula = mt;
+        llenar(x, { nombre: mt.nombres, apellido: mt.apellidos, carrera: mt.carrera, seccion: mt.seccion, grado: mt.grado || mt.nivel, email: mt.correo_electronico, telefono: mt.telefono_movil, fecha_nacimiento: mt.fecha_nacimiento }); });
+    asis.concat(ints.map(i => Object.assign({ cedula: i.alumno_cedula }, i))).forEach(r => { const x = de(r.cedula); if (!x) return;
+        llenar(x, { carrera: r.carrera, seccion: r.seccion ? String(r.seccion).toUpperCase() : '' });
+        if (!x.nombre && r.nombre) x.nombre = String(r.nombre); x.tiene_actividad = true; });
+    // Solo estudiantes: rol alumno o sin rol pero con actividad académica (asistencia o exámenes).
+    Array.from(m.keys()).forEach(k => { const x = m.get(k); if (!(x.rol === 'alumno' || (!x.rol && x.tiene_actividad))) m.delete(k); });
+    cvDirCache = { t: Date.now(), mapa: m };
+    return m;
+}
+function cvNombreDir(x) { return ((x.nombre || '') + ' ' + (x.apellido || '')).trim() || ('C.I. ' + x.cedula); }
+function cvNacimiento(fecha) {
+    const mm = String(fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/) || String(fecha || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!mm) return null;
+    const [a, me, d] = mm[0].indexOf('/') > 0 ? [Number(mm[3]), Number(mm[2]), Number(mm[1])] : [Number(mm[1]), Number(mm[2]), Number(mm[3])];
+    if (!a || !me || !d) return null;
+    const hoyS = cvFechaHoraPy(new Date()).fecha, hoy = new Date(hoyS + 'T00:00:00Z');
+    let prox = new Date(Date.UTC(hoy.getUTCFullYear(), me - 1, d));
+    if (prox < hoy) prox = new Date(Date.UTC(hoy.getUTCFullYear() + 1, me - 1, d));
+    const dias = Math.round((prox - hoy) / 864e5);
+    const pad = (n) => String(n).padStart(2, '0');
+    const cumple = prox.getUTCFullYear() - a;
+    return { fecha: a + '-' + pad(me) + '-' + pad(d), edad: dias === 0 ? cumple : cumple - 1, proximo: pad(d) + '/' + pad(me), hoy: dias === 0, dias_para: dias, cumple_anios: cumple, mes: me };
+}
+function cvBenPublico(b) {
+    return { id: b.id, cedula: b.cedula, nombre: b.nombre, anio: b.anio, tipo: b.tipo, porcentaje: b.porcentaje || 0, detalle: b.detalle || '', vence: b.vence || '',
+             estado: b.estado, vencido: b.estado === 'otorgado' && !!b.vence && b.vence < cvFechaHoraPy(new Date()).fecha };
+}
+function cvQuejaPublica(q) {
+    return { id: q.id, cedula: q.cedula, nombre: q.nombre, carrera: q.carrera || '', categoria: q.categoria, prioridad: q.prioridad, descripcion: q.descripcion,
+             estado: q.estado, fecha: q.fecha, destino: q.destino || '', fecha_envio: q.fecha_envio || '', respuesta: q.respuesta || '' };
+}
+
+async function cvAsistente(db, F, action, data) {
+    const yo = await cvYo(db);
+    if (!yo.atiende) return { ok: false, error: 'Solo el personal de Asistencia al Estudiante o de administración puede usar este panel.' };
+    const hoy = cvFechaHoraPy(new Date()).fecha;
+    switch (action) {
+        case 'asist_catalogos':
+            return { ok: true, categorias: CV_QJ_CATEGORIAS, prioridades: ['baja', 'media', 'alta'], destinos: CV_QJ_DESTINOS, tipos_beneficio: CV_BEN_TIPOS };
+        case 'asist_buscar': {
+            const q = cvSinTilde(data.q);
+            if (q.length < 2) return { ok: true, estudiantes: [], total: 0 };
+            const dir = await cvDirectorio(db), digitos = q.replace(/\D/g, '');
+            const tokens = q.split(/\s+/).filter(Boolean);
+            const hallados = Array.from(dir.values()).filter(x => (digitos.length >= 2 && digitos === q.replace(/[.\s]/g, '') && x.cedula.indexOf(digitos) === 0)
+                || tokens.every(t => cvSinTilde(cvNombreDir(x)).indexOf(t) >= 0))
+                .sort((a, b) => cvNombreDir(a).localeCompare(cvNombreDir(b)));
+            return { ok: true, total: hallados.length, estudiantes: hallados.slice(0, 20).map(x => ({ cedula: x.cedula, nombre: cvNombreDir(x), carrera: x.carrera, seccion: x.seccion })) };
+        }
+        case 'asist_ficha': {
+            const ced = String(data.cedula || '').replace(/\D/g, '');
+            const dir = await cvDirectorio(db), x = dir.get(ced);
+            if (!x) return { ok: false, error: 'No se encontró al estudiante con C.I. ' + ced + '.' };
+            const [bens, qjs] = await Promise.all([
+                db.collection('beneficios').where('cedula', '==', ced).get().then(s => s.docs.map(d => Object.assign({ id: d.id }, d.data()))),
+                db.collection('quejas').where('cedula', '==', ced).get().then(s => s.docs.map(d => Object.assign({ id: d.id }, d.data())))
+            ]);
+            const mt = x.matricula || {};
+            const lista = (v) => Array.isArray(v) ? v.filter(Boolean).map(String) : String(v || '').split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+            const beca = lista(mt.beca || mt.becas || mt.beca_detalle);
+            return {
+                ok: true,
+                datos: { cedula: x.cedula, nombre: x.nombre, apellido: x.apellido, email: x.email, telefono: x.telefono, grado: x.grado, carrera: x.carrera, seccion: x.seccion, estado: x.estado },
+                academico: {
+                    tiene_matricula: !!x.matricula, matricula_estado: mt.estado || mt.estado_matricula || '', matricula_fecha: mt.fecha || mt.creada || mt.fecha_matricula || '',
+                    tipo_alumno: mt.tipo_alumno || '', plan_pago: mt.plan_pago || '', semestres_pendientes: mt.semestres_pendientes || '',
+                    asignaturas_pendientes: lista(mt.asignaturas_pendientes), becado: beca.length > 0 && !/^no$/i.test(beca[0]), beca_detalle: beca
+                },
+                nacimiento: cvNacimiento(x.fecha_nacimiento),
+                beneficios: bens.sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))).map(cvBenPublico),
+                quejas: qjs.sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))).map(cvQuejaPublica)
+            };
+        }
+        case 'asist_cumpleanos': {
+            const periodo = String(data.periodo || 'semana'), dir = await cvDirectorio(db);
+            const mesHoy = Number(hoy.slice(5, 7)), mes = periodo === 'mes' ? (Number(data.mes) || mesHoy) : mesHoy;
+            let sinFecha = 0;
+            const lista = [];
+            dir.forEach(x => {
+                const n = cvNacimiento(x.fecha_nacimiento);
+                if (!n) { sinFecha++; return; }
+                const entra = periodo === 'hoy' ? n.hoy : periodo === 'semana' ? n.dias_para <= 7 : n.mes === mes;
+                if (entra) lista.push(Object.assign({ cedula: x.cedula, nombre: cvNombreDir(x), carrera: x.carrera, seccion: x.seccion }, n));
+            });
+            const anio = Number(hoy.slice(0, 4));
+            const bens = lista.length ? (await db.collection('beneficios').where('anio', '==', anio).get()).docs.map(d => Object.assign({ id: d.id }, d.data())) : [];
+            lista.forEach(c => { c.beneficios = bens.filter(b => b.cedula === c.cedula && b.estado !== 'anulado').map(cvBenPublico); });
+            lista.sort((a, b) => periodo === 'mes' ? Number(a.proximo.slice(0, 2)) - Number(b.proximo.slice(0, 2)) : a.dias_para - b.dias_para);
+            return { ok: true, cumpleaneros: lista, sin_fecha: sinFecha, mes };
+        }
+        case 'asist_beneficio_otorgar': {
+            const ced = String(data.cedula || '').replace(/\D/g, ''), tipo = String(data.tipo || '');
+            if (CV_BEN_TIPOS.indexOf(tipo) < 0) return { ok: false, error: 'Elegí el tipo de beneficio.' };
+            const pct = tipo === 'Descuento' ? Number(data.porcentaje) : 0;
+            if (tipo === 'Descuento' && !(pct >= 1 && pct <= 100)) return { ok: false, error: 'El descuento va de 1 a 100%.' };
+            const detalle = String(data.detalle || '').trim().slice(0, 200);
+            if (tipo === 'Otro' && detalle.length < 3) return { ok: false, error: 'Describí el beneficio.' };
+            const vence = /^\d{4}-\d{2}-\d{2}$/.test(String(data.vence || '')) ? String(data.vence) : '';
+            if (vence && vence < hoy) return { ok: false, error: 'La fecha de vencimiento ya pasó.' };
+            const x = (await cvDirectorio(db)).get(ced);
+            if (!x) return { ok: false, error: 'No se encontró al estudiante.' };
+            const id = 'BEN-' + ced + '-' + Date.now().toString(36);
+            await db.collection('beneficios').doc(id).set({ id, cedula: ced, nombre: cvNombreDir(x), anio: Number(hoy.slice(0, 4)), tipo, porcentaje: pct, detalle, vence,
+                estado: 'otorgado', fecha: cvAhoraPy(), otorgado_por: yo.nombre, otorgado_por_cedula: yo.ced, canjeado: '', anulado: '' });
+            return { ok: true, id, mensaje: 'Beneficio otorgado a ' + cvNombreDir(x) + '.' };
+        }
+        case 'asist_beneficio_estado': {
+            const ref = db.collection('beneficios').doc(String(data.id || '')), s = await ref.get();
+            if (!s.exists) return { ok: false, error: 'No se encontró el beneficio.' };
+            if (s.data().estado !== 'otorgado') return { ok: false, error: 'El beneficio ya está ' + s.data().estado + '.' };
+            const canjear = data.accion === 'canjear';
+            await ref.update(canjear ? { estado: 'canjeado', canjeado: cvAhoraPy(), canjeado_por: yo.nombre } : { estado: 'anulado', anulado: cvAhoraPy(), anulado_por: yo.nombre });
+            return { ok: true };
+        }
+        case 'asist_queja_registrar': {
+            const ced = String(data.cedula || '').replace(/\D/g, ''), desc = String(data.descripcion || '').trim().slice(0, 2000);
+            if (!ced) return { ok: false, error: 'Elegí al estudiante.' };
+            if (desc.length < 10) return { ok: false, error: 'Describí la queja (mínimo 10 caracteres).' };
+            const categoria = CV_QJ_CATEGORIAS.indexOf(data.categoria) >= 0 ? data.categoria : 'Otra';
+            const prioridad = ['baja', 'media', 'alta'].indexOf(data.prioridad) >= 0 ? data.prioridad : 'media';
+            const x = (await cvDirectorio(db)).get(ced) || { cedula: ced };
+            const id = 'QJA-' + ced + '-' + Date.now().toString(36);
+            await db.collection('quejas').doc(id).set({ id, cedula: ced, nombre: cvNombreDir(x), carrera: x.carrera || '', categoria, prioridad, descripcion: desc,
+                estado: 'registrada', fecha: cvAhoraPy(), registrada_por: yo.nombre, registrada_por_cedula: yo.ced, destino: '', fecha_envio: '', nota_envio: '', respuesta: '' });
+            return { ok: true, id, mensaje: 'Queja registrada.' };
+        }
+        case 'asist_queja_listar': {
+            const todas = (await db.collection('quejas').get()).docs.map(d => Object.assign({ id: d.id }, d.data()))
+                .filter(q => !data.estado || q.estado === data.estado)
+                .sort((a, b) => ({ alta: 0, media: 1, baja: 2 }[a.prioridad] - { alta: 0, media: 1, baja: 2 }[b.prioridad]) * (data.estado === 'registrada' ? 1 : 0)
+                    || String(b.fecha || '').localeCompare(String(a.fecha || '')));
+            return { ok: true, total: todas.length, quejas: todas.slice(0, 100).map(cvQuejaPublica) };
+        }
+        case 'asist_queja_enviar':
+        case 'asist_queja_cerrar': {
+            const ref = db.collection('quejas').doc(String(data.id || '')), s = await ref.get();
+            if (!s.exists) return { ok: false, error: 'No se encontró la queja.' };
+            const q = s.data();
+            if (q.estado === 'resuelta' || q.estado === 'anulada') return { ok: false, error: 'La queja ya está ' + q.estado + '.' };
+            if (action === 'asist_queja_enviar') {
+                if (CV_QJ_DESTINOS.indexOf(data.destino) < 0) return { ok: false, error: 'Elegí a qué área enviarla.' };
+                await ref.update({ estado: 'enviada', destino: data.destino, fecha_envio: cvAhoraPy(), nota_envio: String(data.nota || '').slice(0, 500), enviada_por: yo.nombre });
+                return { ok: true, mensaje: 'Queja enviada a ' + data.destino + '.' };
+            }
+            if (data.accion === 'resolver') {
+                const resp = String(data.respuesta || '').trim().slice(0, 1000);
+                if (resp.length < 5) return { ok: false, error: 'Escribí cómo se resolvió.' };
+                await ref.update({ estado: 'resuelta', respuesta: resp, fecha_resolucion: cvAhoraPy(), resuelta_por: yo.nombre });
+            } else await ref.update({ estado: 'anulada', fecha_resolucion: cvAhoraPy(), resuelta_por: yo.nombre });
+            return { ok: true };
+        }
+    }
+    return { ok: false, error: 'Acción no reconocida: ' + action };
+}
+
+// Mensaje de cumpleaños del alumno: su fecha de nacimiento sale de SU ficha (usuarios) o matrícula, nunca de un parámetro.
+async function cvCumpleMio(db) {
+    const yo = await cvYo(db);
+    let fecha = yo.datos.fecha_nacimiento || '';
+    if (!fecha) { try { const m = await db.collection('matriculas').doc(yo.ced).get(); if (m.exists) fecha = (m.data() || {}).fecha_nacimiento || ''; } catch (_) {} }
+    const n = cvNacimiento(fecha);
+    if (!n || !n.hoy) return { ok: true, cumple: false, cumpleano: false };
+    const anio = Number(cvFechaHoraPy(new Date()).fecha.slice(0, 4));
+    const bens = await db.collection('beneficios').where('cedula', '==', yo.ced).get()
+        .then(s => s.docs.map(d => d.data()).filter(b => b.anio === anio && b.estado === 'otorgado').map(cvBenPublico)).catch(() => []);
+    return { ok: true, cumple: true, cumpleano: true, nombre: yo.nombre, edad: n.cumple_anios, beneficios: bens };
+}
 
 // Atención al Alumno: consultas con expediente (el alumno escribe; atención/académico responden; se puede sumar gente o derivar a un área).
 // Todo por POST con token de sesión.

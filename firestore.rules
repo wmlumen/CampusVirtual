@@ -112,7 +112,7 @@ service cloud.firestore {
     match /cedulas/{cedula} {
       allow get: if true;
       // Listar (p. ej. alumnos pre-registrados sin cuenta) solo para administración y académico.
-      allow list: if isAdminOrPlatform() || isAcademico();
+      allow list: if isAdminOrPlatform() || isAcademico() || isAtencion() || isSecretaria();
       allow create, update: if (getCedulaForUid() == cedula || isAdminOrPlatform())
                     && request.resource.data.keys().hasOnly(['cedula','nombre','apellido','estado','rol','uid','actualizado'])
                     && request.resource.data.cedula == cedula;
@@ -510,12 +510,40 @@ service cloud.firestore {
      }
 
      // Consultas de alumnos (v2026-10-12): cada alumno crea y ve las suyas; las atiende el personal.
+     // Atención al Alumno (v2026-10-12): el alumno ve y responde las suyas; el personal de atención todas;
+     // quien fue sumado (participantes_ced) o el área a la que se derivó (tesorería) ve y responde esa consulta.
+     function atiendeAlumnos() {
+       return tieneRol(ROL_ADMIN_TECNICO().concat(ROL_ADMIN_GENERAL()).concat(ROL_DIRECCION()).concat(ROL_COORDINACION()).concat(ROL_SECRETARIA()).concat(ROL_ATENCION()));
+     }
+     function participaConsulta(d) {
+       return isAuthenticated() && (getCedulaForUid() in d.get('participantes_ced', [])
+         || (isTesoreria() && 'tesoreria' in d.get('areas', [])));
+     }
+     // Lo que puede tocar quien no es personal de atención al escribir en el hilo.
+     function soloHilo() {
+       return request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['mensajes', 'ultima_actividad', 'pendiente_personal', 'pendiente_alumno', 'estado']);
+     }
      match /consultas/{conId} {
-       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.alumno_cedula || isStaff());
-       allow create: if isAuthenticated() && (request.resource.data.alumno_cedula == getCedulaForUid() || isStaff());
-       allow update: if isAuthenticated() && (isStaff()
-                     || (getCedulaForUid() == resource.data.alumno_cedula && request.resource.data.alumno_cedula == resource.data.alumno_cedula));
+       allow read: if isAuthenticated() && (getCedulaForUid() == resource.data.alumno_cedula || isStaff() || participaConsulta(resource.data));
+       allow create: if isAuthenticated() && (request.resource.data.alumno_cedula == getCedulaForUid() || atiendeAlumnos());
+       allow update: if isAuthenticated() && (atiendeAlumnos()
+                     || ((getCedulaForUid() == resource.data.alumno_cedula || participaConsulta(resource.data))
+                         && request.resource.data.alumno_cedula == resource.data.alumno_cedula && soloHilo()));
        allow delete: if isAdminOrPlatform();
+       // Notas internas: nunca las ve el estudiante.
+       match /notas/{notaId} {
+         allow read, write: if atiendeAlumnos() || participaConsulta(get(/databases/$(database)/documents/consultas/$(conId)).data);
+       }
+     }
+
+     // Asistencia al Estudiante: quejas que registra el personal y beneficios de cumpleaños (el alumno ve los suyos).
+     match /quejas/{qId} {
+       allow read, write: if atiendeAlumnos();
+     }
+     match /beneficios/{bId} {
+       allow read: if atiendeAlumnos() || (isAuthenticated() && resource.data.cedula == getCedulaForUid());
+       allow write: if atiendeAlumnos();
      }
 
      // Mensajes a alumnos: los envía el personal; el destinatario los lee y los borra.

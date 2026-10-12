@@ -831,6 +831,15 @@
                 <div id="dm-cuerpo"></div>
             </div>
 
+            <!-- v2026-10-12: Tus pendientes (alumno): matrícula, respuestas nuevas, próximas clases, evaluaciones y asistencia -->
+            <div class="dash-section" id="sec-pendientes" hidden>
+                <div class="dash-section-title">
+                    <div class="dash-section-title-left"><i class="bi bi-list-check"></i> Tus pendientes</div>
+                    <span id="pend-n" style="font-size:.62rem;color:rgba(255,255,255,.55);text-transform:none;letter-spacing:0"></span>
+                </div>
+                <div id="pend-lista" role="list"></div>
+            </div>
+
             <div id="oblig-fondo" onclick="cerrarObligaciones()"></div>
             <!-- Obligaciones Financieras y Curriculares (se abre desde la tarjeta «Obligaciones») -->
             <div class="dash-section" id="sec-obligaciones-financieras" style="display:none;">
@@ -1358,6 +1367,7 @@
 </script>
 <script src="js/api.js?v=28"></script>
 <script src="js/calificaciones.js?v=5"></script>
+<script src="js/notas-plan.js?v=4"></script>
     <script src="js/localidades-py.js?v=1"></script>
     <script src="js/catalogos-py.js?v=1"></script>
     <script src="js/session-guard.js?v=5"></script>
@@ -1576,6 +1586,7 @@
                 ]);
 
                 pintarAvisoProvisoria();
+                if (currentUserRole === 'alumno') cargarPendientesAlumno(user, cedula);
                 sincronizarFotoDrive(cedula);
                 generarQR(user, cedula);
 
@@ -2321,6 +2332,7 @@
         }
         function renderCursosAlumno(container, resp) {
             const cursos = resp.cursos || [];
+            window.cvCursosAlumno = cursos;   // los usa «Tus pendientes»
             const porGrado = {};
             const userCarrera = (currentUserData && currentUserData.carrera) || (resp.ficha && resp.ficha.carrera) || '';
             const userGrado = deducirGradoAcademico((currentUserData && currentUserData.grado) || (resp.ficha && resp.ficha.grado), userCarrera);
@@ -2419,6 +2431,76 @@
 
         // Atención al Alumno: mis consultas + insignia con respuestas nuevas (alumno) o consultas por atender (personal)
         function htmlEscape(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        // ═══ Tus pendientes (alumno) ═══
+        // Junta lo que el alumno tiene que hacer o mirar, con datos reales: ficha de matrícula, respuestas de Atención al Alumno,
+        // clases de los próximos 7 días de su sección (con enlace a la videollamada) y, por materia activa con plan publicado,
+        // evaluaciones pendientes y asistencia por debajo del mínimo para rendir el final.
+        async function cargarPendientesAlumno(user, cedula) {
+            const sec = document.getElementById('sec-pendientes'), lista = document.getElementById('pend-lista');
+            if (!sec || !lista) return;
+            const items = [];
+            const diaPy = (ms) => new Date(ms - 3 * 3600000).toISOString().slice(0, 10);
+            const hoy = diaPy(Date.now()), hasta = diaPy(Date.now() + 7 * 864e5);
+            const fechaCorta = (f) => { const d = new Date(f + 'T12:00:00Z'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7); };
+            if (window.cvMatriculaPendiente)
+                items.push({ prio: 0, icono: 'bi-file-earmark-person', color: '#fbbf24', titulo: 'Completá tu ficha de matrícula', sub: 'La necesitás para inscribirte y rendir.', href: 'formulario-matricula.html' });
+            try {
+                const d = await CenturiaAPI.consultas.pendientes();
+                if (d && d.ok && d.sin_leer) items.push({ prio: 0, icono: 'bi-chat-dots', color: '#3ddc6e', titulo: d.sin_leer + (d.sin_leer === 1 ? ' respuesta nueva' : ' respuestas nuevas') + ' en Atención al Alumno', sub: 'Abrí tus consultas para leerlas.', href: 'consultas.html' });
+            } catch (e) {}
+            const miSec = String((user && user.seccion) || sessionStorage.getItem('current_seccion') || '').toUpperCase();
+            const activos = (window.cvCursosAlumno || []).filter(c => c.estado === 'activo');
+            await Promise.all(activos.map(async (c) => {
+                const a = c.asignatura || {};
+                const cod = String(a.codigo || c.codigo || '').toUpperCase(), nom = a.nombre || c.nombre || cod;
+                if (!cod || !window.CenturiaPlan) return;
+                try {
+                    const cls = await CenturiaPlan.clases(cod);
+                    cls.filter(x => x.fecha >= hoy && x.fecha <= hasta && x.estado !== 'suspendida'
+                            && (!miSec || !(x.secciones || []).length || x.secciones.map(s => String(s).toUpperCase()).includes(miSec)))
+                        .forEach(x => items.push({
+                            prio: 2, fecha: x.fecha, icono: x.tipo === 'examen' ? 'bi-pencil-square' : x.modalidad === 'virtual' ? 'bi-camera-video' : 'bi-easel',
+                            color: x.tipo === 'examen' ? '#f9a8d4' : x.modalidad === 'virtual' ? '#c4b5fd' : '#93c5fd',
+                            titulo: (x.fecha === hoy ? 'HOY · ' : fechaCorta(x.fecha) + ' · ') + (x.tipo === 'examen' ? 'Examen' : x.modalidad === 'virtual' ? 'Clase virtual' : 'Clase presencial') + ' de ' + nom,
+                            sub: [x.hora_inicio ? x.hora_inicio + (x.hora_fin ? '–' + x.hora_fin : '') : '', !miSec && (x.secciones || []).length ? 'Secciones ' + x.secciones.join(', ') : '', x.tema || ''].filter(Boolean).join(' · '),
+                            href: x.enlace && /^https:\/\//.test(x.enlace) ? x.enlace : 'calendario.html', externo: !!x.enlace, accion: x.enlace ? 'Unirse' : ''
+                        }));
+                } catch (e) {}
+                try {
+                    const r = await CenturiaPlan.alumno(cod, cedula);
+                    const res = r && r.resultado;
+                    if (!res) return;
+                    const min = (res.reglas && res.reglas.asistencia_min_pct) || 80;
+                    if (r.asistencia_pct != null && r.asistencia_pct < min)
+                        items.push({ prio: 1, icono: 'bi-person-exclamation', color: '#fca5a5', titulo: 'Asistencia ' + Math.round(r.asistencia_pct) + '% en ' + nom, sub: 'Necesitás ' + min + '% para rendir el examen final.', href: 'libreta.html' });
+                    (res.evaluaciones || []).filter(e => e.pendiente && e.tipo !== 'asistencia' && e.tipo !== 'recuperatorio').forEach(e => items.push({
+                        prio: e.requisito ? 1 : 3, icono: e.examen_id ? 'bi-laptop' : 'bi-journal-check', color: e.requisito ? '#fbbf24' : 'rgba(255,255,255,.7)',
+                        titulo: e.nombre + ' — ' + nom,
+                        sub: [e.ponderacion ? e.ponderacion + '% de la nota' : '', e.requisito ? 'requisito para el final' : '', e.examen_id ? 'examen en línea' : ''].filter(Boolean).join(' · '),
+                        href: /^TIC026-P/.test(e.examen_id || '') ? 'academic/examen_parcial_tic026.html' : 'libreta.html'
+                    }));
+                } catch (e) {}
+            }));
+            items.sort((x, y) => x.prio - y.prio || String(x.fecha || '').localeCompare(String(y.fecha || '')));
+            sec.hidden = false;
+            document.getElementById('pend-n').textContent = items.length ? items.length + (items.length === 1 ? ' pendiente' : ' pendientes') : '';
+            if (!items.length) {
+                lista.innerHTML = '<div style="text-align:center;padding:14px;color:rgba(255,255,255,.55);font-size:.7rem"><i class="bi bi-check2-circle" style="color:#4ade80"></i> No tenés pendientes por ahora.</div>';
+                return;
+            }
+            const MAX = 8;
+            lista.innerHTML = items.map((it, i) => `<a role="listitem" href="${htmlEscape(it.href)}" ${it.externo ? 'target="_blank" rel="noopener"' : ''} class="profile-data-row pend-item" style="text-decoration:none;color:inherit;${i >= MAX ? 'display:none' : ''}">
+                    <div style="display:flex;gap:10px;align-items:center;min-width:0">
+                        <i class="bi ${it.icono}" style="color:${it.color};font-size:1rem;flex-shrink:0" aria-hidden="true"></i>
+                        <div style="min-width:0"><div style="font-weight:700;color:#fff;font-size:.72rem">${htmlEscape(it.titulo)}</div>
+                        ${it.sub ? `<div style="font-size:.58rem;color:rgba(255,255,255,.55)">${htmlEscape(it.sub)}</div>` : ''}</div>
+                    </div>
+                    <span style="font-size:.6rem;font-weight:700;color:var(--dorado);white-space:nowrap">${it.accion ? htmlEscape(it.accion) + ' ' : ''}<i class="bi bi-chevron-right"></i></span>
+                </a>`).join('') + (items.length > MAX ? `<button type="button" id="pend-ver-todos" class="dash-btn dash-btn-ghost" style="margin-top:8px;font-size:.62rem">Ver todos (${items.length})</button>` : '');
+            const verTodos = document.getElementById('pend-ver-todos');
+            if (verTodos) verTodos.onclick = () => { lista.querySelectorAll('.pend-item').forEach(e => { e.style.display = ''; }); verTodos.remove(); };
+        }
+
         async function cargarConsultas() {
             const list = document.getElementById('dash-consultas-list');
             const vacio = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.5);font-size:.7rem;line-height:1.6">Aún no tienes consultas.</div>';

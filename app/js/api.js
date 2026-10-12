@@ -290,7 +290,7 @@ function callGasCore(action, data, method) {
                  'contacto_emergencia','fecha_nacimiento','lugar_nacimiento','nacionalidad','pais',
                  'direccion_calle','barrio','ciudad','departamento','direccion','latitud','longitud',
                  'estado_civil','foto','foto_url','grupo_sanguineo','alergias','seguro_medico',
-                  'rol','estado','carrera','seccion','grado','must_change_password'
+                  'rol','estado','carrera','carrera_elegida','seccion','grado','must_change_password'
                 ].forEach(k => { if (data[k] !== undefined) updates[k] = data[k]; });
                 updates.updated_at = new Date().toISOString();
                 return ref.update(updates).then(async () => {
@@ -380,19 +380,50 @@ function callGasCore(action, data, method) {
 
             case 'listar_usuarios': return db.collection('usuarios').get().then(async snap => {
                 const usuarios = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
+                // Sincronizar estado de matrícula desde colección 'matriculas' si no está en el doc del usuario
+                try {
+                    const matSnap = await db.collection('matriculas').get().catch(() => null);
+                    if (matSnap && !matSnap.empty) {
+                        const matriculadosSet = new Set();
+                        matSnap.docs.forEach(md => {
+                            const mdData = md.data();
+                            if (mdData.matricula_completa || mdData.estado === 'completado' || mdData.estado === 'aprobado') {
+                                matriculadosSet.add(String(md.id).trim());
+                                if (mdData.cedula) matriculadosSet.add(String(mdData.cedula).trim());
+                            }
+                        });
+                        usuarios.forEach(u => {
+                            const ced = String(u.cedula || u.id || '').trim();
+                            if (matriculadosSet.has(ced)) {
+                                u.matricula_completa = true;
+                                if (!u.tipo_alumno) u.tipo_alumno = 'matriculado';
+                            }
+                        });
+                    }
+                } catch(eMat) {}
                 // Alumnos pre-registrados (con asistencia cargada, sin cuenta todavía). Solo el personal puede listarlos.
                 const conFicha = new Set(usuarios.map(u => String(u.cedula || u.id)));
                 const pre = await db.collection('cedulas').where('estado', '==', 'pre_registro').get().catch(() => null);
                 if (pre) pre.docs.forEach(d => {
                     if (conFicha.has(d.id)) return;
                     const x = d.data();
-                    usuarios.push({ id: d.id, cedula: d.id, nombre: x.nombre || '', apellido: x.apellido || '', rol: 'alumno', estado: 'pre_registro', sin_cuenta: true });
+                    usuarios.push({ id: d.id, cedula: d.id, nombre: x.nombre || '', apellido: x.apellido || '', rol: 'alumno', estado: 'pre_registro', sin_cuenta: true, matricula_completa: false });
                 });
                 return { ok: true, usuarios: usuarios };
             }).catch(() => ({ ok: true, usuarios: [] }));
             case 'listar_asignaturas': case 'materias.listar': return Promise.resolve().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, asignaturas: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             }))).catch(() => ({ ok: true, asignaturas: [] }));
+            case 'listar_programas': return db.collection('programas').get().then(snap => {
+                const normalizar = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                const nivel = normalizar(data.nivel);
+                const programas = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data())).filter(programa => {
+                    const estado = normalizar(programa.estado || programa.Estado);
+                    const nivelPrograma = normalizar(programa.nivel || programa.Nivel || programa.grado || programa.Grado);
+                    return estado === 'ACTIVO' && (!nivel || !nivelPrograma || nivelPrograma === nivel);
+                });
+                return { ok: true, programas, total: programas.length };
+            }).catch(e => ({ ok: false, programas: [], total: 0, error: e.message || 'No se pudo consultar el catálogo de programas.' }));
 case 'listar_carreras': return Promise.resolve().then(() => db.collection('config_carreras').get().then(snap => {
                 // Catálogo público (sin sesión): se usa en el registro y en "Solicitar Asignatura".
                 const normG = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
@@ -2164,6 +2195,7 @@ API.auth = {
     register: (d) => API.authRegister(d),
     verify: (cedula) => API.checkStudent(cedula).then(result => Object.assign({}, result, { valid: !!(result && result.ok && result.existe), user: result && result.estudiante ? mapUser(result.estudiante) : null })),
     login: (c, p) => API.authLogin(c, p),
+    ensureSession: () => ensureAnonAuth().then(() => true),
     validateSession: () => API.validateSession(),
     logout: () => API.logout(),
     getCurrentUser: () => API.getCurrentUser(),
@@ -2614,6 +2646,23 @@ API.roles = {
     update: (data) => callGas('asignar_rol', data, 'POST'),
     save: (data) => callGas('asignar_rol', data, 'POST'),
     delete: (id) => callGas('desactivar_rol', { id }, 'POST')
+};
+
+API.programas = {
+    list: (nivel = '') => callGas('listar_programas', { nivel }, 'GET').then(r => ({
+        ok: !!r && r.ok !== false,
+        programas: (r && Array.isArray(r.programas)) ? r.programas : [],
+        total: (r && r.total) || 0,
+        error: (r && r.error) || ''
+    })),
+    get: (id) => callGas('obtener_programa', { id }, 'GET').then(r => ({
+        ok: true,
+        programa: r.programa || {}
+    })),
+    create: (data) => callGas('crear_programa', data, 'POST'),
+    update: (id, data) => callGas('actualizar_programa', { id, data }, 'POST'),
+    delete: (id) => callGas('eliminar_programa', { id }, 'POST'),
+    toggleState: (id) => callGas('cambiar_estado_programa', { id }, 'POST')
 };
 
 API.teachers = {

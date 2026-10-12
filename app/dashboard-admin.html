@@ -87,6 +87,8 @@
         .badge-role-alumno{background:rgba(16,185,129,.25);color:#6ee7b7;border:1px solid #10b981}
         .badge-role-academico{background:rgba(139,92,246,.25);color:#c4b5fd;border:1px solid #8b5cf6}
         .badge-role-admgen{background:rgba(212,168,67,.25);color:#e8c676;border:1px solid #d4a843}
+        .badge-cond-matriculado{background:rgba(16,185,129,.22);color:#34d399;border:1px solid #10b981;font-weight:700}
+        .badge-cond-postulante{background:rgba(245,158,11,.22);color:#fbbf24;border:1px solid #f59e0b;font-weight:700}
         .spinner-custom{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
         .admin-section{display:none}
@@ -191,7 +193,7 @@
                 <div id="tab-pendientes" class="admin-section" style="display:block">
                     <div class="admin-card">
                         <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-person-check-fill text-warning me-2"></i>Solicitudes Pendientes</h2><p class="small text-white-50 mb-0">Cuentas que esperan habilitacion</p></div><button onclick="cargarPendientes()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button></div>
-                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre Completo</th><th>Email</th><th>Rol</th><th>Carrera / Seccion</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-pendientes-body"><tr><td colspan="6" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre Completo</th><th>Email</th><th>Rol</th><th>Condición</th><th>Carrera / Seccion</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-pendientes-body"><tr><td colspan="7" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
                     </div>
                 </div>
                 <div id="tab-usuarios" class="admin-section" style="display:none">
@@ -200,10 +202,11 @@
                         <div class="d-flex gap-2 flex-wrap">
                             <input type="text" id="filtro-user-busqueda" class="search-inp" placeholder="Buscar cedula, nombre..." oninput="filtrarUsuarios()">
                             <select id="filtro-user-rol" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos los Roles</option><option value="alumno">Alumnos</option><option value="docente">Docentes</option><option value="admin">Admins</option><option value="administracion_general">Administración General</option><option value="academico">Academicos</option><option value="asistencia_estudiante">Asist. al Estudiante</option></select>
+                            <select id="filtro-user-condicion" class="search-inp" onchange="filtrarUsuarios()"><option value="">Toda Matrícula</option><option value="matriculado">Matriculados</option><option value="postulante">Postulantes</option></select>
                             <select id="filtro-user-estado" class="search-inp" onchange="filtrarUsuarios()"><option value="">Todos</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="inactivo">Dados de baja</option><option value="pre_registro">Pre-registrados</option></select>
                             <button onclick="abrirModalCrear()" class="btn-act btn-act-primary"><i class="bi bi-plus-lg"></i> Nuevo usuario</button>
                         </div></div>
-                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre</th><th>Rol</th><th>Carrera</th><th>Seccion</th><th>Estado</th><th class="text-end">Opciones</th></tr></thead><tbody id="tabla-usuarios-body"><tr><td colspan="7" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
+                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Cedula</th><th>Nombre</th><th>Rol</th><th>Condición</th><th>Carrera</th><th>Seccion</th><th>Estado</th><th class="text-end">Opciones</th></tr></thead><tbody id="tabla-usuarios-body"><tr><td colspan="8" class="text-center py-4"><span class="spinner-custom me-2"></span> Cargando...</td></tr></tbody></table></div>
                     </div>
                 </div>
                 <div id="tab-calificaciones" class="admin-section" style="display:none">
@@ -269,12 +272,11 @@ function inicializarHeader(){var n=sessionStorage.getItem('current_nombre')||win
 function cambiarSeccion(tabId,btn){document.querySelectorAll('.admin-section').forEach(function(s){s.style.display='none';});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.side-btn').forEach(function(b){b.classList.remove('tab-active');b.classList.add('tab-inactive');});var t=document.getElementById(tabId);if(t)t.style.display='block';if(btn)btn.classList.add('active');var sb=document.querySelector('.side-btn[data-tab="'+tabId+'"]');if(sb){sb.classList.add('tab-active');sb.classList.remove('tab-inactive');}if(tabId==='tab-pendientes'&&LISTA_PENDIENTES_CACHE.length===0)cargarPendientes();else if(tabId==='tab-usuarios'&&LISTA_USUARIOS_CACHE.length===0)cargarUsuarios();else if(tabId==='tab-asignaturas'&&LISTA_ASIGNATURAS_CACHE.length===0)cargarAsignaturas();else if(tabId==='tab-calificaciones')cargarPanelCalificaciones();}
 async function cargarTodoElDashboard(){try{if(window._fbCheck)window._fbCheck();}catch(e){}await Promise.allSettled([cargarPendientes(),cargarUsuarios(),cargarAsignaturas(),cargarStatsTesoreria()]);}
 document.addEventListener('DOMContentLoaded',function(){inicializarHeader();cargarTodoElDashboard();});
-async function cargarPendientes(){var tb=document.getElementById('tabla-pendientes-body');if(!tb)return;tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';try{var res=await CenturiaAPI.usuarios.pendientes();var list=(res&&res.pendientes)?res.pendientes:(Array.isArray(res)?res:[]);LISTA_PENDIENTES_CACHE=list;var kpi=document.getElementById('kpi-pendientes');if(kpi)kpi.textContent=list.length;var b1=document.getElementById('badge-pendientes-tab');if(b1){b1.style.display=list.length>0?'inline-block':'none';b1.textContent=list.length;}var b2=document.getElementById('badge-pendientes-tab2');if(b2){b2.style.display=list.length>0?'inline-block':'none';b2.textContent=list.length;}if(!list.length){tb.innerHTML='<tr><td colspan="6" class="text-center py-4"><i class="bi bi-check-circle text-success me-2"></i>Sin solicitudes pendientes.</td></tr>';return;}tb.innerHTML=list.map(function(u){var rol=(u.rol||'alumno').toLowerCase();var nm=esc((u.nombre||'')+' '+(u.apellido||''));return '<tr><td class="fw-bold text-warning">'+esc(u.cedula)+'</td><td class="fw-bold">'+nm+'</td><td>'+esc(u.email||'Sin email')+'</td><td>'+badgeRol(rol)+'</td><td>'+esc(u.carrera||'---')+' / '+esc(u.seccion||'---')+'</td><td class="text-end"><button onclick="aprobarUsuarioRapido(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-success me-1">Aprobar</button><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ((u.nombre||'')+' '+(u.apellido||''))+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\'pendiente\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="6" class="text-center py-4 text-danger">Error al cargar pendientes.</td></tr>';}}
+async function cargarPendientes(){var tb=document.getElementById('tabla-pendientes-body');if(!tb)return;tb.innerHTML='<tr><td colspan="7" class="text-center py-4"><span class="spinner-custom me-2"></span> Verificando pendientes...</td></tr>';try{var res=await CenturiaAPI.usuarios.pendientes();var list=(res&&res.pendientes)?res.pendientes:(Array.isArray(res)?res:[]);LISTA_PENDIENTES_CACHE=list;var kpi=document.getElementById('kpi-pendientes');if(kpi)kpi.textContent=list.length;var b1=document.getElementById('badge-pendientes-tab');if(b1){b1.style.display=list.length>0?'inline-block':'none';b1.textContent=list.length;}var b2=document.getElementById('badge-pendientes-tab2');if(b2){b2.style.display=list.length>0?'inline-block':'none';b2.textContent=list.length;}if(!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4"><i class="bi bi-check-circle text-success me-2"></i>Sin solicitudes pendientes.</td></tr>';return;}tb.innerHTML=list.map(function(u){var rol=(u.rol||'alumno').toLowerCase();var nm=esc((u.nombre||'')+' '+(u.apellido||''));return '<tr><td class="fw-bold text-warning">'+esc(u.cedula)+'</td><td class="fw-bold">'+nm+'</td><td>'+esc(u.email||'Sin email')+'</td><td>'+badgeRol(rol)+'</td><td>'+badgeCondicion(u, rol)+'</td><td>'+esc(u.carrera||'---')+' / '+esc(u.seccion||'---')+'</td><td class="text-end"><button onclick="aprobarUsuarioRapido(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-success me-1">Aprobar</button><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ((u.nombre||'')+' '+(u.apellido||''))+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\'pendiente\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="7" class="text-center py-4 text-danger">Error al cargar pendientes.</td></tr>';}}
 async function aprobarUsuarioRapido(cedula){if(!confirm('Aprobar y habilitar a C.I. '+cedula+'?'))return;try{var r=await CenturiaAPI.usuarios.aprobar(cedula);if(r&&r.ok){alert('Usuario '+cedula+' aprobado.');cargarPendientes();cargarUsuarios();}else{alert((r&&(r.error||r.mensaje))||'No se pudo aprobar.');}}catch(e){alert('Error de conexion.');}}
-async function cargarUsuarios(){var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;try{var res=await CenturiaAPI.usuarios.list();var list=(res&&res.usuarios)?res.usuarios:(res&&res.data)?res.data:(Array.isArray(res)?res:[]);LISTA_USUARIOS_CACHE=list;var tot=list.length;var al=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='alumno';}).length;var dc=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='docente';}).length;var e1=document.getElementById('kpi-total-usuarios');if(e1)e1.textContent=tot;var e2=document.getElementById('kpi-alumnos');if(e2)e2.textContent=al;var e3=document.getElementById('kpi-docentes');if(e3)e3.textContent=dc;renderTablaUsuarios(list);}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="7" class="text-center py-4 text-danger">Error al consultar usuarios.</td></tr>';}}
+async function cargarUsuarios(){var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;try{var res=await CenturiaAPI.usuarios.list();var list=(res&&res.usuarios)?res.usuarios:(res&&res.data)?res.data:(Array.isArray(res)?res:[]);LISTA_USUARIOS_CACHE=list;var tot=list.length;var al=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='alumno';}).length;var dc=list.filter(function(u){var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();return r==='docente';}).length;var e1=document.getElementById('kpi-total-usuarios');if(e1)e1.textContent=tot;var e2=document.getElementById('kpi-alumnos');if(e2)e2.textContent=al;var e3=document.getElementById('kpi-docentes');if(e3)e3.textContent=dc;renderTablaUsuarios(list);}catch(err){console.error(err);tb.innerHTML='<tr><td colspan="8" class="text-center py-4 text-danger">Error al consultar usuarios.</td></tr>';}}
 function getRol(u){if(u.rol)return u.rol;if(u.roles&&u.roles.length)return u.roles[0].rol||'alumno';return 'alumno';}
 function getNombre(u){if(u.nombre||u.apellido)return (u.nombre||'')+' '+(u.apellido||'');return u.nombre_completo||u.firstname||'';}
-function renderTablaUsuarios(list){var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;if(!list||!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">No se encontraron usuarios.</td></tr>';return;}var f=((document.getElementById('filtro-user-busqueda')||{}).value||'').toLowerCase();var fr=(document.getElementById('filtro-user-rol')||{}).value||'';var fe=(document.getElementById('filtro-user-estado')||{}).value||'';var fl=list.filter(function(u){var nm=getNombre(u)+' '+(u.cedula||'');var m=!f||nm.toLowerCase().indexOf(f)>-1;var r=!fr||getRol(u).toLowerCase()===fr;var e=!fe||(u.estado||'').toLowerCase()===fe;return m&&r&&e;}).slice(0,200);if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin resultados para el filtro.</td></tr>';return;}tb.innerHTML=fl.map(function(u){var rol=getRol(u);var nm=getNombre(u);var estado=(u.estado||'activo');return '<tr><td class="fw-bold">'+esc(u.cedula)+'</td><td>'+esc(nm)+'</td><td>'+badgeRol(rol)+'</td><td>'+esc(u.carrera||'---')+'</td><td>'+esc(u.seccion||'---')+'</td><td>'+badgeEstado(estado)+'</td><td class="text-end"><button onclick="abrirModalEditar(\''+escQ(u.cedula)+'\',\''+escQ(nm)+'\',\''+escQ(rol)+'\',\''+escQ(u.carrera||'')+'\',\''+escQ(u.seccion||'')+'\',\''+escQ(estado)+'\')" class="btn-act btn-act-warning me-1">Editar</button><button onclick="bloquearUsuario(\''+escQ(u.cedula)+'\')" class="btn-act me-1" style="background:#64748b;color:#fff">Bloquear</button><button onclick="eliminarUsuario(\''+escQ(u.cedula)+'\')" class="btn-act btn-act-danger">Eliminar</button></td></tr>';}).join('');}
 function filtrarUsuarios(){renderTablaUsuarios(LISTA_USUARIOS_CACHE);}
 async function cargarAsignaturas(){var tb=document.getElementById('tabla-asignaturas-body');if(!tb)return;try{var res=await CenturiaAPI.asignaturas.list({estado:'todas'});var list=(res&&res.asignaturas)?res.asignaturas:(res&&res.items)?res.items:(Array.isArray(res)?res:[]);LISTA_ASIGNATURAS_CACHE=list;if(!list.length){tb.innerHTML='<tr><td colspan="5" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}tb.innerHTML=list.slice(0,200).map(function(a){return '<tr><td class="fw-bold">'+esc(a.codigo||a.nombre||'---')+'</td><td>'+esc(a.carrera||'---')+'</td><td>'+esc(a.docente||a.docente_nombre||'---')+'</td><td>'+esc(a.seccion||a.grado||'---')+'</td><td class="text-end"><a href="constructor/index.html" class="btn-act btn-act-primary text-decoration-none">Abrir</a></td></tr>';}).join('');}catch(e){tb.innerHTML='<tr><td colspan="5" class="text-center py-4">No se pudo cargar el catalogo.</td></tr>';}}
 async function cargarStatsTesoreria(){try{var r=await CenturiaAPI.tesoreria.listarEstudiantes();var d=r||{};var pend=d.total_pendiente||0;var p=document.getElementById('teso-total-pendiente');if(p)p.textContent='Gs. '+Number(pend).toLocaleString();var p2=document.getElementById('teso-total-pagado');if(p2)p2.textContent='Gs. --';var p3=document.getElementById('teso-total-vencido');if(p3)p3.textContent='Gs. --';}catch(e){console.error('tesoreria:',e);}}
@@ -298,11 +300,21 @@ function cvMiCedula(){try{var u=CenturiaAPI.getCurrentUser()||{};return String(u
 function cvAdminHeredado(u){return String(u.carrera||'').toUpperCase()==='ADMIN'||String(u.seccion||'').toUpperCase()==='ADMIN';}
 function badgeRol(rol){rol=(rol||'alumno').toLowerCase();var c=rol==='docente'?'badge-role-docente':CV_ROLES_ADMIN.indexOf(rol)>-1?'badge-role-admin':(rol==='academico'||rol==='academic')?'badge-role-academico':rol==='alumno'?'badge-role-alumno':'badge-role-admgen';return '<span class="badge-role '+c+'">'+esc(cvRolNombre(rol))+'</span>';}
 function badgeEstado(est){est=(est||'activo').toLowerCase();var c=est==='activo'?'badge-role-alumno':(est==='pendiente'||est==='pre_registro')?'badge-role-docente':'badge-role-admin';var t=est==='activo'?'Activo':est==='pendiente'?'Pendiente':est==='pre_registro'?'Pre-registro':est==='inactivo'?'De baja':est;return '<span class="badge-role '+c+'">'+esc(t)+'</span>';}
+function badgeCondicion(u, rol){
+  rol = String(rol || getRol(u) || 'alumno').toLowerCase();
+  if (rol !== 'alumno') return '<span class="text-white-50" style="font-size:.7rem">—</span>';
+  var esMatriculado = !!(u.matricula_completa || u.tipo_alumno === 'matriculado');
+  if (esMatriculado) {
+    return '<span class="badge-role badge-cond-matriculado"><i class="bi bi-check2-circle me-1"></i>Matriculado</span>';
+  }
+  return '<span class="badge-role badge-cond-postulante"><i class="bi bi-hourglass-split me-1"></i>Postulante</span>';
+}
 function renderTablaUsuarios(list){
   var tb=document.getElementById('tabla-usuarios-body');if(!tb)return;
-  if(!list||!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">No se encontraron usuarios.</td></tr>';return;}
+  if(!list||!list.length){tb.innerHTML='<tr><td colspan="8" class="text-center py-4">No se encontraron usuarios.</td></tr>';return;}
   var f=((document.getElementById('filtro-user-busqueda')||{}).value||'').toLowerCase().trim();
   var fr=(document.getElementById('filtro-user-rol')||{}).value||'';
+  var fc=((document.getElementById('filtro-user-condicion')||{}).value||'').toLowerCase();
   var fe=(document.getElementById('filtro-user-estado')||{}).value||'';
   var yo=cvMiCedula();
   var orden={pendiente:0,pre_registro:1,activo:2,inactivo:3};
@@ -310,13 +322,19 @@ function renderTablaUsuarios(list){
     var txt=(getNombre(u)+' '+(u.cedula||'')+' '+(u.email||'')+' '+(u.carrera||'')).toLowerCase();
     var r=getRol(u).toLowerCase();
     var rolOk=!fr||r===fr||(fr==='admin'&&CV_ROLES_ADMIN.indexOf(r)>-1);
-    return (!f||txt.indexOf(f)>-1)&&rolOk&&(!fe||String(u.estado||'activo').toLowerCase()===fe);
+    var condOk=true;
+    if(fc){
+      var esMat = !!(u.matricula_completa || u.tipo_alumno === 'matriculado');
+      if(fc === 'matriculado') condOk = (r === 'alumno' && esMat);
+      else if(fc === 'postulante') condOk = (r === 'alumno' && !esMat);
+    }
+    return (!f||txt.indexOf(f)>-1)&&rolOk&&condOk&&(!fe||String(u.estado||'activo').toLowerCase()===fe);
   }).sort(function(a,b){
     var ea=orden[String(a.estado||'activo').toLowerCase()],eb=orden[String(b.estado||'activo').toLowerCase()];
     if(ea!==eb)return (ea==null?3:ea)-(eb==null?3:eb);
     return getNombre(a).localeCompare(getNombre(b));
   });
-  if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin resultados para el filtro.</td></tr>';return;}
+  if(!fl.length){tb.innerHTML='<tr><td colspan="8" class="text-center py-4">Sin resultados para el filtro.</td></tr>';return;}
   var vis=fl.slice(0,200);
   tb.innerHTML=vis.map(function(u){
     var rol=getRol(u),nm=getNombre(u).trim()||'(sin nombre)',estado=String(u.estado||'activo').toLowerCase(),ced=String(u.cedula||'');
@@ -340,12 +358,13 @@ function renderTablaUsuarios(list){
       '<td class="fw-bold">'+esc(ced)+'</td>'+
       '<td><div style="font-weight:600">'+esc(nm.toUpperCase())+'</div>'+(u.email?'<div style="font-size:.62rem;color:#94a3b8">'+esc(u.email)+'</div>':'')+'</td>'+
       '<td>'+badgeRol(heredado?'alumno':rol)+avisoRol+'</td>'+
+      '<td>'+badgeCondicion(u, heredado?'alumno':rol)+'</td>'+
       '<td>'+esc(carrera)+(u.grado&&!heredado?'<div style="font-size:.6rem;color:#94a3b8">'+esc(u.grado)+'</div>':'')+'</td>'+
       '<td>'+esc(seccion)+'</td>'+
       '<td>'+badgeEstado(estado)+'</td>'+
       '<td class="text-end" style="white-space:nowrap">'+acciones+'</td></tr>';
   }).join('')+
-  '<tr><td colspan="7" style="font-size:.65rem;color:#94a3b8;text-align:right">Mostrando '+vis.length+' de '+fl.length+(fl.length!==list.length?' (filtrados de '+list.length+')':'')+' usuarios</td></tr>';
+  '<tr><td colspan="8" style="font-size:.65rem;color:#94a3b8;text-align:right">Mostrando '+vis.length+' de '+fl.length+(fl.length!==list.length?' (filtrados de '+list.length+')':'')+' usuarios</td></tr>';
 }
 async function guardarEdicionUsuario(){
   var ced=document.getElementById('modal-user-cedula').value,rol=document.getElementById('modal-user-rol').value,est=document.getElementById('modal-user-estado').value,car=document.getElementById('modal-user-carrera').value,sec=document.getElementById('modal-user-seccion').value;

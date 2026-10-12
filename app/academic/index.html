@@ -353,6 +353,8 @@
             <div class="decl" id="mdAsigDecl" style="display:none"></div>
             <label for="asigAsignatura">Asignatura</label>
             <div id="asigAsignaturaBox"></div>
+            <label for="asigPeriodo">Mes del grupo (módulo)</label>
+            <input type="month" id="asigPeriodo" style="width:100%">
             <label>Grupos (carrera + sección)</label>
             <div class="grupo-fila">
                 <div id="asigCarreraBox"></div>
@@ -568,8 +570,8 @@
                 var decl = [dcj.carrera, dcj.seccion].filter(Boolean).join(' · ') || '—';
                 var porCurso = {};
                 (d.asignaciones || []).forEach(function (a) {
-                    var k = (a.asignatura || '') + '|' + (a.seccion || '');
-                    if (!porCurso[k]) porCurso[k] = { asignatura: a.asignatura, seccion: a.seccion, filas: [], carreras: [] };
+                    var k = (a.asignatura || '') + '|' + (a.seccion || '') + '|' + (a.periodo || '');
+                    if (!porCurso[k]) porCurso[k] = { asignatura: a.asignatura, seccion: a.seccion, periodo: a.periodo || '', filas: [], carreras: [] };
                     porCurso[k].filas.push(a.fila);
                     porCurso[k].carreras.push(a.carrera);
                 });
@@ -580,16 +582,26 @@
                         return a && a.estado === 'inactivo';
                     });
                     var con = c.carreras.filter(Boolean);
-                    return '<span class="chip' + (off ? ' off' : '') + '" title="' + (off ? 'Curso revocado' : 'Asignado por ' + esc((d.asignaciones || []).filter(function (x) { return x.fila === c.filas[0]; })[0]?.asignado_por)) + '">' + esc(c.asignatura) + ' · Curso ' + esc(c.seccion) +
+                    return '<span class="chip' + (off ? ' off' : '') + '" title="' + (off ? 'Curso revocado' : 'Asignado por ' + esc((d.asignaciones || []).filter(function (x) { return x.fila === c.filas[0]; })[0]?.asignado_por)) + '">' + esc(c.asignatura) + ' · Curso ' + esc(c.seccion) + (c.periodo ? ' · ' + esc(nombreMes(c.periodo)) : '') +
                         (con.length ? ' <span style="opacity:.72;font-weight:500">(' + esc(con.join(' · ')) + ')</span>' : '') +
                         (off ? '' : '<button type="button" data-act="revocar" data-ced="' + esc(d.cedula) + '" data-fila="' + esc(c.filas.join(',')) + '" title="Quitar este curso" aria-label="Quitar curso">&times;</button>') + '</span>';
                 }).join('') || '<span class="muted">Sin grupos</span>';
+                var so = d.solicitud;
+                if (so) chips += '<div class="decl" style="margin-top:6px"><i class="bi bi-hourglass-split"></i> Pidió <b>' + esc(so.asignatura_nombre || so.asignatura) + '</b>'
+                    + (so.periodo ? ' · ' + esc(nombreMes(so.periodo)) : '') + ((so.secciones || []).length ? ' · ' + esc(so.secciones.join(', ')) : '') + (so.carrera ? ' · ' + esc(so.carrera) : '')
+                    + ' <button class="b g" type="button" data-act="asignar" data-ced="' + esc(d.cedula) + '">Asignar lo pedido</button></div>';
                 var acc = d.pendiente
                     ? '<button class="b g" data-act="asignar" data-ced="' + esc(d.cedula) + '">Aprobar y asignar</button><button class="b r" data-act="rechazar" data-ced="' + esc(d.cedula) + '">Rechazar</button>'
                     : (d.estado === 'inactivo' ? '<span class="muted">Cuenta inactiva</span>' : '<button class="b p" data-act="asignar" data-ced="' + esc(d.cedula) + '">Asignar grupos</button>');
                 return '<tr><td><strong>' + esc(d.nombre || d.cedula) + '</strong><div class="muted">C.I. ' + esc(d.cedula) + (d.email ? ' · ' + esc(d.email) : '') + '</div></td>' +
                     '<td><span class="pill ' + esc(d.estado) + '">' + esc(d.estado) + '</span></td><td class="muted">' + esc(decl) + '</td><td>' + chips + '</td><td>' + acc + '</td></tr>';
             }).join('');
+        }
+
+        // «2026-10» → «Octubre 2026» (el grupo es por mes)
+        function nombreMes(periodo) {
+            var m = /^(\d{4})-(\d{2})$/.exec(String(periodo || ''));
+            return m ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][Number(m[2]) - 1] + ' ' + m[1] : '';
         }
 
         // ── Modal de asignación ──
@@ -604,6 +616,16 @@
             $('asigAsignaturaBox').innerHTML = selectOTexto('asigAsignatura', AC.cat.asignaturas, 'Elegí la asignatura...');
             $('asigCarreraBox').innerHTML = selectOTexto('asigCarrera', AC.cat.carreras, 'Carrera...');
             $('asigSeccionBox').innerHTML = selectOTexto('asigSeccion', AC.cat.secciones, 'Sección');
+            var hoyM = new Date(); $('asigPeriodo').value = hoyM.getFullYear() + '-' + String(hoyM.getMonth() + 1).padStart(2, '0');
+            AC.solicitud = d.solicitud || null;
+            if (AC.solicitud) {
+                var so = AC.solicitud;
+                if (so.periodo) $('asigPeriodo').value = so.periodo;
+                if (so.asignatura) $('asigAsignatura').value = so.asignatura;
+                (so.secciones || []).forEach(function (sec) { if (so.carrera) AC.grupos.push({ grado: so.grado || '', carrera: so.carrera, seccion: sec }); });
+                $('mdAsigDecl').style.display = 'block';
+                $('mdAsigDecl').innerHTML = 'Solicitud del docente: <b>' + esc(so.asignatura_nombre || so.asignatura) + ' · ' + esc(nombreMes(so.periodo)) + ' · ' + esc((so.secciones || []).join(', ')) + (so.carrera ? ' · ' + esc(so.carrera) : '') + '</b>. Revisá y guardá.';
+            }
             $('lblAprobar').style.display = d.pendiente ? 'block' : 'none';
             $('asigAprobar').checked = true; $('asigAprobar').disabled = d.pendiente;
             pintarGrupos();
@@ -631,7 +653,10 @@
             if (!AC.grupos.length) { toast('Agregá al menos un grupo (carrera y sección).', true); return; }
             var btn = $('mdAsigGuardar'); btn.disabled = true;
             try {
-                var r = chk(await CenturiaAPI.academico.saveAssignment({ academico_cedula: AC.cedula, docente_cedula: d.cedula, asignatura: asig, grupos: AC.grupos, aprobar: d.pendiente ? true : $('asigAprobar').checked }));
+                var periodo = $('asigPeriodo').value;
+                if (!periodo) { toast('Elegí el mes del grupo.', true); btn.disabled = false; return; }
+                var r = chk(await CenturiaAPI.academico.saveAssignment({ academico_cedula: AC.cedula, docente_cedula: d.cedula, asignatura: asig, grupos: AC.grupos, periodo: periodo,
+                    solicitud_id: AC.solicitud && AC.solicitud.asignatura === asig ? AC.solicitud.id : '', aprobar: d.pendiente ? true : $('asigAprobar').checked }));
                 $('mdAsig').classList.remove('on'); toast(r.mensaje || 'Asignación guardada.');
                 await cargarDocentes();
             } catch (e) { toast(e.message, true); }

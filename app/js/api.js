@@ -812,8 +812,11 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     db.collection('usuarios').where('rol', '==', 'docente').limit(500).get(),
                     db.collection('usuarios').where('es_docente', '==', true).limit(500).get()
                 ];
+                qs.push(db.collection('solicitudes_docentes').where('estado', '==', 'pendiente').get());
                 return Promise.all(qs.map(p => p.catch(() => ({ docs: [] })))).then(function (resps) {
                     const mapa = {};
+                    const sols = {};
+                    (resps.pop().docs || []).forEach(doc => { const s = doc.data(); sols[s.cedula] = Object.assign({ id: doc.id }, s); });
                     resps.forEach(snap => snap.docs.forEach(doc => { mapa[doc.id] = doc.data(); }));
                     const docentes = Object.keys(mapa).map(function (id) {
                         const d = mapa[id];
@@ -828,8 +831,9 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                             declarado: { grado: d.grado || '', carrera: d.carrera || '', seccion: d.seccion || '' },
                             asignaciones: asgs.map(a => ({
                                 fila: a.fila, asignatura: a.asignatura, carrera: a.carrera, seccion: a.seccion,
-                                grado: a.grado || '', estado: a.estado, asignado_por: a.asignado_por || ''
+                                grado: a.grado || '', periodo: a.periodo || '', estado: a.estado, asignado_por: a.asignado_por || ''
                             })),
+                            solicitud: sols[d.cedula || id] || null,
                             activas: activas.length
                         };
                     });
@@ -854,18 +858,20 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 const vivos = curArr.filter(a => a.estado === 'activo');
                 const ahora = new Date().toISOString();
                 const quemados = {};
-                vivos.forEach(a => { quemados[(a.asignatura || '') + '|' + (a.carrera || '') + '|' + (a.seccion || '')] = 1; });
+                // v2026-10-12: el grupo normalmente es por mes (módulo): la misma materia/carrera/sección en otro mes es otro grupo.
+                const periodo = /^\d{4}-\d{2}$/.test(String(data.periodo || '')) ? String(data.periodo) : '';
+                vivos.forEach(a => { quemados[(a.asignatura || '') + '|' + (a.carrera || '') + '|' + (a.seccion || '') + '|' + (a.periodo || '')] = 1; });
                 const nuevos = [];
                 grupos.forEach(g => {
                     const carrera = String(g.carrera || '').trim();
                     const seccion = String(g.seccion || '').trim().toUpperCase();
                     if (!carrera || !seccion) return;
-                    const k = asig + '|' + carrera + '|' + seccion;
+                    const k = asig + '|' + carrera + '|' + seccion + '|' + periodo;
                     if (quemados[k]) return;
                     quemados[k] = 1;
                     nuevos.push({
                         fila: 'ASG-' + Date.now().toString(36) + '-' + (nuevos.length + 1) + Math.random().toString(36).substring(2, 4).toUpperCase(),
-                        asignatura: asig, carrera: carrera, seccion: seccion,
+                        asignatura: asig, carrera: carrera, seccion: seccion, periodo: periodo,
                         grado: String(g.grado || '').trim(),
                         estado: 'activo', asignado_por: String(data.academico_cedula || '').trim(), asignado_en: ahora
                     });
@@ -878,6 +884,9 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     if (!['admin', 'administrador_plataforma', 'academico', 'academic', 'administracion_general', 'admin_general', 'administracion'].includes(rolCur)) update.rol = 'docente';
                 }
                 await doc.ref.update(update);
+                // Si venía de una solicitud del docente, queda aprobada.
+                if (data.solicitud_id) await db.collection('solicitudes_docentes').doc(String(data.solicitud_id))
+                    .set({ estado: 'aprobada', resuelta_por: String(data.academico_cedula || ''), resuelta_en: ahora }, { merge: true }).catch(() => {});
                 return {
                     ok: true, mensaje: 'Asignación guardada (' + nuevos.length + ' grupo(s) en ' + asig + ').',
                     asignaciones: update.asignaciones.length, activas: vivos.length + nuevos.length
@@ -936,7 +945,7 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     return {
                         id: a.asignatura, codigo: a.asignatura,
                         nombre: base.nombre_completo || base.nombre || a.asignatura,
-                        seccion_asignada: a.seccion, seccion: a.seccion,
+                        seccion_asignada: a.seccion, seccion: a.seccion, periodo: a.periodo || '',
                         carrera: a.carrera || base.carrera || '',
                         color: base.color || '#2563EB', icono: base.icono || 'bi-book',
                         semestre: base.semestre || '', carga_horaria: base.carga_horaria || 0, unidades: base.unidades || 10
@@ -1612,6 +1621,34 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
                 return { ok: true, data: regs, records: regs, asistencias: regs };
             })().catch(e => ({ ok: false, data: [], records: [], asistencias: [], error: cvErrorAsistencia(e) }));
+
+            // Solicitud de asignatura del docente (v2026-10-12): una pendiente a la vez; incluye el mes del grupo y las secciones.
+            case 'docente_solicitud': return (async () => {
+                const u = await ensureAnonAuth(), ced = cvCedulaDeAuth(u);
+                if (!ced || (data.cedula && String(data.cedula) !== ced)) return { ok: false, error: 'Tu sesión no coincide. Volvé a ingresar.' };
+                const asig = String(data.asignatura || '').trim().toUpperCase();
+                const periodo = /^\d{4}-\d{2}$/.test(String(data.periodo || '')) ? String(data.periodo) : '';
+                const secciones = (Array.isArray(data.secciones) ? data.secciones : []).map(x => String(x).toUpperCase()).filter(x => CV_SECCIONES.indexOf(x) >= 0);
+                if (!asig) return { ok: false, error: 'Elegí la asignatura.' };
+                if (!periodo) return { ok: false, error: 'Elegí el mes del grupo.' };
+                if (!secciones.length) return { ok: false, error: 'Marcá al menos una sección.' };
+                const mias = (await db.collection('solicitudes_docentes').where('cedula', '==', ced).get()).docs.map(d => d.data());
+                if (mias.some(x => x.estado === 'pendiente')) return { ok: false, error: 'Ya tenés una solicitud pendiente: esperá la respuesta de Gestión Académica.' };
+                const yo = await cvYo(db).catch(() => ({ nombre: cvNombreSesion() }));
+                const id = u.uid + '__' + periodo + '__' + asig;
+                await db.collection('solicitudes_docentes').doc(id).set({
+                    id, cedula: ced, nombre: yo.nombre || '', asignatura: asig, asignatura_nombre: String(data.asignatura_nombre || ''),
+                    carrera: String(data.carrera || ''), grado: String(data.grado || ''), periodo, secciones, estado: 'pendiente', creada: new Date().toISOString()
+                });
+                const [a, m] = periodo.split('-');
+                return { ok: true, mensaje: 'Solicitud enviada: ' + asig + ' · ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][Number(m) - 1] + ' ' + a + ' · ' + secciones.join(', ') + '. Gestión Académica la revisa y te asigna el grupo.' };
+            })().catch(e => ({ ok: false, error: cvErrorAtencion(e) }));
+            case 'docente_estado': return (async () => {
+                const u = await ensureAnonAuth(), ced = cvCedulaDeAuth(u);
+                if (!ced) return { ok: true, solicitudes: [] };
+                const sols = (await db.collection('solicitudes_docentes').where('cedula', '==', ced).get()).docs.map(d => Object.assign({ id: d.id }, d.data()));
+                return { ok: true, solicitudes: sols.sort((x, y) => String(y.creada || '').localeCompare(String(x.creada || ''))) };
+            })().catch(e => ({ ok: true, solicitudes: [], error: cvErrorAtencion(e) }));
 
             // Atención al Alumno (consultas) y Asistencia al Estudiante: Firestore (v2026-10-12).
             case 'con_crear': case 'con_listar': case 'con_ver': case 'con_responder': case 'con_estado':
@@ -2348,7 +2385,7 @@ API.docente = {
     approveRequest: (cedula, adminKey) => callGas('docente_aprobar', { cedula, admin_key: adminKey }, 'POST'),
     rejectRequest: (cedula, motivo, adminKey) => callGas('docente_rechazar', { cedula, motivo, admin_key: adminKey }, 'POST'),
     getMyRequests: (cedula) => callGas('docente_estado', { cedula }, 'POST').then(r => ({ ok: true, solicitudes: r.solicitudes || [] })),
-    requestSubject: (cedula, asignatura) => callGas('docente_solicitud', { cedula, asignatura }, 'POST')
+    requestSubject: (cedula, asignatura, extra) => callGas('docente_solicitud', Object.assign({ cedula, asignatura }, extra || {}), 'POST')
 };
 
 // Acceso Académico: asignación de docentes a grupos (asignatura + carrera + sección)

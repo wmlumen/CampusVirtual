@@ -479,10 +479,15 @@ service cloud.firestore {
       allow delete: if isAdminOrPlatform();
     }
 
+    // Solicitud de asignatura del docente (id <uid>__<aaaa-mm>__<ASIG>): la crea el propio docente en estado pendiente;
+    // Gestión Académica la lee y la resuelve al asignar el grupo del mes.
     match /solicitudes_docentes/{solId} {
-      allow read: if isAuthenticated() && (isAdminOrPlatform() || isAcademico() || isOwner(solId));
-      allow create: if isOwner(solId) || isAdminOrPlatform();
-      allow update: if isAdminOrPlatform();
+      allow read: if isAuthenticated() && (isAdminOrPlatform() || isAcademico() || isOwner(solId)
+                    || resource.data.get('cedula', '') == getCedulaForUid());
+      allow create: if isAdminOrPlatform() || isOwner(solId)
+                    || (isAuthenticated() && solId.matches(request.auth.uid + '__[0-9]{4}-[0-9]{2}__.+')
+                        && request.resource.data.cedula == getCedulaForUid() && request.resource.data.estado == 'pendiente');
+      allow update: if isAdminOrPlatform() || isAcademico();
       allow delete: if false;
     }
 

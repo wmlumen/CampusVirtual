@@ -114,7 +114,7 @@
     <!-- Solicitar asignatura -->
     <div class="sec" id="sec-solicitar">
         <div class="sec-title"><i class="bi bi-plus-circle"></i> Solicitar Asignatura</div>
-        <p style="font-size:.62rem;color:#475569;margin-bottom:8px">Elegí <strong>una</strong> materia por módulo y pedila. Queda <strong>pendiente</strong> hasta que el administrador te asigne carrera y sección; ahí el sistema te muestra los nombres de tus alumnos.</p>
+        <p style="font-size:.62rem;color:#475569;margin-bottom:8px">Elegí <strong>una</strong> materia por módulo, el <strong>mes del grupo</strong> y las secciones. Queda <strong>pendiente</strong> hasta que Gestión Académica te asigne el grupo; ahí el sistema te muestra los nombres de tus alumnos.</p>
         <input id="inp-buscar-asig" placeholder="Filtrar por nombre o código..." oninput="filtrarDisponibles()"
             style="width:100%;padding:8px 12px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;margin-bottom:8px;outline:none">
         <!-- v2026-10-07: selección en cascada Grado → Carrera → Asignatura (una solicitud por módulo) -->
@@ -125,6 +125,14 @@
                 <select id="sel-carrera-solicitar" onchange="filtrarDisponibles('carrera')" style="width:100%;padding:8px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></select></div>
             <div><label for="sel-asig-solicitar" style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">3. Asignatura</label>
                 <select id="sel-asig-solicitar" onchange="actualizarBotonSolicitar()" style="width:100%;padding:8px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></select></div>
+            <div><label for="sol-periodo" style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">4. Mes del grupo</label>
+                <input type="month" id="sol-periodo" onchange="actualizarBotonSolicitar()" style="width:100%;padding:7px 10px;border:2px solid var(--bdr);border-radius:8px;font-size:.75rem;background:#fff;color:#0f172a"></div>
+            <div><span style="display:block;font-size:.58rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px">5. Secciones</span>
+                <div id="sol-secciones" style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0;font-size:.72rem">
+                    <label><input type="checkbox" value="LV026" onchange="actualizarBotonSolicitar()"> LV026</label>
+                    <label><input type="checkbox" value="MJ026" onchange="actualizarBotonSolicitar()"> MJ026</label>
+                    <label><input type="checkbox" value="S026" onchange="actualizarBotonSolicitar()"> S026</label>
+                </div></div>
             <button id="btn-solicitar-asig" onclick="solicitarSeleccionada()" disabled
                 style="padding:9px 16px;border-radius:8px;font-size:.7rem;font-weight:700;cursor:pointer;border:none;background:var(--azul);color:#fff;opacity:.5">
                 <i class="bi bi-send"></i> Solicitar</button>
@@ -618,11 +626,13 @@ async function cargarMisAsignaturas(cedula) {
                 catedrasMap.set(cod, {
                     ...s,
                     secciones_lista: s.seccion ? [s.seccion] : [],
+                    periodos_lista: s.periodo ? [s.periodo] : [],
                     carreras_lista: (s.carrera || s.carrera_asignada) ? [s.carrera || s.carrera_asignada] : []
                 });
             } else {
                 const item = catedrasMap.get(cod);
                 if (s.seccion && !item.secciones_lista.includes(s.seccion)) item.secciones_lista.push(s.seccion);
+                if (s.periodo && !item.periodos_lista.includes(s.periodo)) item.periodos_lista.push(s.periodo);
                 const car = s.carrera || s.carrera_asignada;
                 if (car && !item.carreras_lista.includes(car)) item.carreras_lista.push(car);
             }
@@ -642,6 +652,7 @@ async function cargarMisAsignaturas(cedula) {
             <div class="asig-tab ${i===0?'active':''}" onclick="seleccionarAsig('${s.codigo}', this, ${i})" data-cod="${s.codigo}">
                 <i class="bi ${s.icono||'bi-book'}"></i>
                 ${s.nombre||s.codigo}
+                ${(s.periodos_lista || []).length ? `<small style="opacity:.75;font-weight:500">· ${s.periodos_lista.sort().map(nombreMes).join(', ')}</small>` : ''}
                 <span class="count" id="count-${i}">—</span>
             </div>
         `).join('');
@@ -1108,7 +1119,7 @@ let disponiblesData = [];
 let pendientesData = [];
 
 async function cargarDisponibles() {
-    const cedula = sessionStorage.getItem('current_cedula');
+    const cedula = cedulaDocente();
     if (!cedula) return;
     const listEl = document.getElementById('lista-disponibles');
     const pendEl = document.getElementById('lista-pendientes');
@@ -1133,13 +1144,12 @@ async function cargarDisponibles() {
             } catch (e) {}
         }
         pendientesData = rP.solicitudes || [];
-        const asigCodigos = new Set(misAsignaturas.map(s => s.codigo));
         const pendCodigos = new Set(pendientesData.filter(p => p.estado === 'pendiente').map(p => p.asignatura));
-        disponiblesData = todas.filter(s => !asigCodigos.has(s.codigo) && !pendCodigos.has(s.codigo));
+        disponiblesData = todas.filter(s => !pendCodigos.has(s.codigo));   // v2026-10-12: el grupo es por mes
         filtrarDisponibles();
         pendEl.innerHTML = pendientesData.filter(p => p.estado === 'pendiente').map(p =>
             '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;font-size:.7rem;color:#92400E;margin-bottom:6px">' +
-            '<span><i class="bi bi-hourglass-split me-1"></i><strong>' + (p.asignatura_nombre || p.asignatura) + '</strong> (' + p.asignatura + ')</span>' +
+            '<span><i class="bi bi-hourglass-split me-1"></i><strong>' + escHtml(p.asignatura_nombre || p.asignatura) + '</strong> (' + escHtml(p.asignatura) + ')' + (p.periodo ? ' · ' + escHtml(nombreMes(p.periodo)) : '') + ((p.secciones || []).length ? ' · ' + escHtml(p.secciones.join(', ')) : '') + '</span>' +
             '<span class="badge">En espera del administrador</span></div>'
         ).join('');
     } catch (e) {
@@ -1202,10 +1212,20 @@ function filtrarDisponibles(nivel) {
     actualizarBotonSolicitar();
 }
 
+// «2026-10» → «Octubre 2026»
+function nombreMes(periodo) {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(periodo || ''));
+    return m ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][Number(m[2]) - 1] + ' ' + m[1] : '';
+}
+function seccionesSolicitud() {
+    return Array.from(document.querySelectorAll('#sol-secciones input:checked')).map(i => i.value);
+}
 function actualizarBotonSolicitar() {
     const sel = document.getElementById('sel-asig-solicitar');
     const btn = document.getElementById('btn-solicitar-asig');
-    const ok = !!sel.value && !sel.disabled;
+    const per = document.getElementById('sol-periodo');
+    if (per && !per.value) { const d = new Date(); per.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+    const ok = !!sel.value && !sel.disabled && !!(per && per.value) && seccionesSolicitud().length > 0;
     btn.disabled = !ok;
     btn.style.opacity = ok ? '1' : '.5';
 }
@@ -1216,17 +1236,23 @@ function solicitarSeleccionada() {
 }
 
 async function solicitarAsignatura(codigo) {
-    const cedula = sessionStorage.getItem('current_cedula');
+    const cedula = cedulaDocente();
     if (!cedula || !codigo) return;
     if (tienePendiente()) { alert('Ya tenés una solicitud pendiente. Solo se puede pedir una asignatura por módulo.'); return; }
     const elegida = disponiblesData.find(s => s.codigo === codigo);
-    if (!confirm('¿Solicitar ' + (elegida ? elegida.nombre + ' (' + codigo + ')' : codigo) + '? Solo podés pedir una asignatura por módulo y quedará pendiente de aprobación.')) return;
+    const periodo = (document.getElementById('sol-periodo') || {}).value || '';
+    const secciones = seccionesSolicitud();
+    if (!periodo || !secciones.length) { alert('Elegí el mes del grupo y al menos una sección.'); return; }
+    if (!confirm('¿Solicitar ' + (elegida ? elegida.nombre + ' (' + codigo + ')' : codigo) + ' para ' + nombreMes(periodo) + ' · ' + secciones.join(', ') + '? Solo podés pedir una asignatura por módulo y quedará pendiente de aprobación.')) return;
     try {
-        const d = await CenturiaAPI.docente.requestSubject(cedula, codigo);
-        alert(d.mensaje || d.error || 'Solicitud enviada');
+        const d = await CenturiaAPI.docente.requestSubject(cedula, codigo, {
+            periodo, secciones, asignatura_nombre: elegida ? elegida.nombre : '',
+            carrera: (document.getElementById('sel-carrera-solicitar') || {}).value || '', grado: (document.getElementById('sel-grado-solicitar') || {}).value || ''
+        });
+        alert(d && d.ok ? (d.mensaje || 'Solicitud enviada.') : ('No se pudo enviar la solicitud: ' + ((d && d.error) || 'error desconocido')));
         await cargarDisponibles();
     } catch (e) {
-        alert('Sin conexión con el Servidor Cloud: pide al administrador que registre tu solicitud de ' + codigo);
+        alert('Sin conexión: no se pudo enviar la solicitud de ' + codigo + '. Probá de nuevo.');
     }
 }
 
@@ -1424,7 +1450,7 @@ async function guardarCodigoExamen(examId) {
     const codigo = (inpEl.value || '').trim().toUpperCase();
     if (!codigo) { msgEl.textContent = '⚠️ Ingresá un código'; msgEl.style.color = '#fbbf24'; msgEl.style.display = 'block'; return; }
     try {
-        const cedula = sessionStorage.getItem('current_cedula');
+        const cedula = cedulaDocente();
         const res = await CenturiaAPI.exams.setAccessCode(examId, codigo, cedula);
         if (res.ok) {
             msgEl.textContent = '✓ Código guardado'; msgEl.style.color = '#4ade80'; msgEl.style.display = 'block';

@@ -234,9 +234,12 @@
     function carreraClave(s) {
         const t = sinTilde(s);
         if (!t) return '';
+        if (t.includes('MAESTRIA') || t.includes('MASTER') || t.includes('MBA')) return 'MAESTRIA: ' + t.replace(/^(MAESTRIA|MASTER|MBA)\s+(EN\s+)?/, '');
+        if (t.includes('DOCTORADO') || t.includes('PHD')) return 'DOCTORADO: ' + t.replace(/^(DOCTORADO|PHD)\s+(EN\s+)?/, '');
+        if (t.includes('ESPECIALIZACION') || t.includes('DIPLOMADO')) return 'ESPECIALIZACION: ' + t.replace(/^(ESPECIALIZACION|DIPLOMADO)\s+(EN\s+)?/, '');
         if (t.includes('ADUANER')) return 'ADUANERA';
         if (t.includes('GESTION PUBLICA') || t.includes('GESTION Y POLITICAS') || /GESTION\s*$/.test(t)) return 'GESTION PUBLICA';
-        if (t.includes('EMPRESA') && !t.includes('MAESTRIA')) return 'ADMINISTRACION DE EMPRESAS';
+        if (t.includes('EMPRESA')) return 'ADMINISTRACION DE EMPRESAS';
         if (t.includes('COMERCIAL') && !t.includes('INTERNACIONAL')) return 'INGENIERIA COMERCIAL';
         if (t.includes('CONTAB') || t.includes('CONTABLES')) return 'CONTABILIDAD';
         return t.replace(/^(LICENCIATURA|LIC\.?)\s+EN\s+/, '');

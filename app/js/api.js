@@ -509,12 +509,18 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 // v2026-10-11: una asignatura puede ser de varias carreras (campo carreras[]) y se compara sin tildes.
                 // Con calificaciones.js cargado se usa carreraClave (reconoce «Lic. en …», singular/plural, etc.).
                 var sinTilde = (window.CenturiaNotas && CenturiaNotas.carreraClave) || function(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim(); };
-                var filtradas = carrera
-                    ? todas.filter(function(a) {
-                        var lista = (Array.isArray(a.carreras) && a.carreras.length ? a.carreras : [a.carrera]).map(sinTilde).filter(Boolean);
-                        return !lista.length || lista.indexOf(sinTilde(carrera)) >= 0;
-                    })
-                    : todas;
+                var filtradas = todas.filter(function(a) {
+                    var asigGrado = deducirNivel(a.grado, a.carrera);
+                    if (grado && grado !== 'GRADO' && asigGrado !== grado) {
+                        return false;
+                    }
+                    if (grado === 'GRADO' && asigGrado !== 'GRADO') {
+                        return false;
+                    }
+                    if (!carrera) return true;
+                    var lista = (Array.isArray(a.carreras) && a.carreras.length ? a.carreras : [a.carrera]).map(sinTilde).filter(Boolean);
+                    return !lista.length || lista.indexOf(sinTilde(carrera)) >= 0;
+                });
                 // Construir cursos con la estructura que espera renderCursosAlumno
                 var materiales = [];
                 var cursos = filtradas.map(function(a) {

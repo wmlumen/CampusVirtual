@@ -1386,7 +1386,6 @@
                 { href: 'calendario.html', icon: 'bi-calendar3', label: 'Calendario' },
                 { href: 'academic/asistencia_presencial.html', icon: 'bi-clipboard-check', label: 'Asist. Presencial' },
                 { href: 'academic/examen_virtual.html', icon: 'bi-pencil-square', label: 'Exámenes' },
-                { href: 'academic/examen_parcial_tic026.html', icon: 'bi-file-earmark-text', label: 'Parcial TIC026' },
                 { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Matrícula' },
                 { href: 'libreta.html', icon: 'bi-journal-text', label: 'Libreta' },
                 { href: 'facturas.html', icon: 'bi-receipt', label: 'Mis Facturas' },
@@ -2477,7 +2476,7 @@
                         prio: e.requisito ? 1 : 3, icono: e.examen_id ? 'bi-laptop' : 'bi-journal-check', color: e.requisito ? '#fbbf24' : 'rgba(255,255,255,.7)',
                         titulo: e.nombre + ' — ' + nom,
                         sub: [e.ponderacion ? e.ponderacion + '% de la nota' : '', e.requisito ? 'requisito para el final' : '', e.examen_id ? 'examen en línea' : ''].filter(Boolean).join(' · '),
-                        href: /^TIC026-P/.test(e.examen_id || '') ? 'academic/examen_parcial_tic026.html' : 'libreta.html'
+                        href: /^TIC026-P/.test(e.examen_id || '') ? 'academic/examen_virtual.html' : 'libreta.html'
                     }));
                 } catch (e) {}
             }));

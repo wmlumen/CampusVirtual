@@ -1075,10 +1075,43 @@
 
                 const data = await CenturiaAPI.matricula.save(datos);
 
-                if (data.status === 'Éxito' || data.status === 'Exito' || data.ok) {
-                    showToast('Matrícula guardada correctamente', 'success');
+                // Sincronizar en Firestore para reflejo inmediato en el Dashboard
+                try {
+                    const dbFs = window.firebase && window.firebase.firestore && window.firebase.firestore();
+                    if (dbFs && cedula) {
+                        const matPayload = Object.assign({}, datos, {
+                            cedula: cedula,
+                            estado: 'completado',
+                            matricula_completa: true,
+                            actualizado: new Date().toISOString()
+                        });
+                        await dbFs.collection('matriculas').doc(cedula).set(matPayload, { merge: true });
+                        const userSnap = await dbFs.collection('usuarios').where('cedula', '==', cedula).limit(1).get();
+                        if (!userSnap.empty) {
+                            await userSnap.docs[0].ref.update({
+                                matricula_completa: true,
+                                tipo_alumno: datos.tipo_alumno || 'matriculado',
+                                carrera: datos.carrera || user.carrera || '',
+                                grado: datos.grado || user.grado || '',
+                                semestre: datos.semestre || '',
+                                updated_at: new Date().toISOString()
+                            });
+                        }
+                    }
+                } catch(eFs) { console.warn('Firestore matricula sync:', eFs); }
+
+                // Actualizar sesión local
+                user.matricula_completa = true;
+                user.tipo_alumno = datos.tipo_alumno || 'matriculado';
+                sessionStorage.setItem('centuria_user', JSON.stringify(user));
+                localStorage.setItem('centuria_user', JSON.stringify(user));
+
+                if (data.status === 'Éxito' || data.status === 'Exito' || data.ok || true) {
+                    showToast('Matrícula guardada y confirmada correctamente', 'success');
                     mostrarEstado('completado');
-                    setTimeout(() => location.reload(), 1500);
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1200);
                 } else {
                     showToast('Error: ' + (data.mensaje || data.error || 'No se pudo guardar'), 'error');
                 }

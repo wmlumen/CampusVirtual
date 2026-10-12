@@ -903,6 +903,13 @@
                 </div>
             </div>
 
+            <div class="dash-section" id="programas-disponibles-section" style="display:none">
+                <div class="dash-section-title">
+                    <div class="dash-section-title-left"><i class="bi bi-mortarboard"></i> Programas disponibles para tu nivel</div>
+                </div>
+                <div id="programas-disponibles" aria-live="polite" aria-busy="false"></div>
+            </div>
+
             <!-- Historial de Intentos de Exámenes -->
             <div class="dash-section" id="sec-historial-intentos">
                 <div class="dash-section-title">
@@ -968,7 +975,7 @@
                         </div>
                         <h4 id="p-display-name" style="font-size:1.1rem;font-weight:800;margin-bottom:2px">Usuario</h4>
                         <p id="p-display-role" style="font-size:.65rem;color:var(--dorado);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Estudiante</p>
-                        
+
                         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
                             <label class="dash-btn dash-btn-primary" for="foto-input" style="cursor:pointer">
                                 <i class="bi bi-cloud-upload"></i> Subir Foto
@@ -1500,11 +1507,22 @@
                 currentUserData = user;
                 userId = user.id || cedula;
 
-                // Sincronizar datos con la ficha de matrícula si existen
+// Sincronizar datos con la ficha de matrícula si existen
                 try {
+                    let m = null;
                     const matData = await CenturiaAPI.matricula.my(cedula);
                     if (matData && (matData.matricula || matData.data)) {
-                        const m = matData.matricula || matData.data;
+                        m = matData.matricula || matData.data;
+                    }
+                    if (!m) {
+                        const dbFs = window.firebase && window.firebase.firestore && window.firebase.firestore();
+                        if (dbFs) {
+                            const snapM = await dbFs.collection('matriculas').doc(cedula).get();
+                            if (snapM.exists) m = snapM.data();
+                        }
+                    }
+
+                    if (m) {
                         user.firstname = user.firstname || user.nombre || m.nombres || m.Nombres || '';
                         user.lastname = user.lastname || user.apellido || m.apellidos || m.Apellidos || '';
                         user.email = user.email || m.correo_electronico || m.CorreoElectronico || '';
@@ -1527,6 +1545,11 @@
                         user.fecha_inscripcion = user.fecha_inscripcion || m.fecha_inscripcion || m.FechaInscripcion || '';
                         user.plan_pago = user.plan_pago || m.plan_pago || m.PlanPago || '';
                         user.matricula_completa = true;
+
+                        // Conservar el nivel registrado; si falta, deducirlo de la carrera matriculada.
+                        const nivelClave = deducirGradoAcademico(user.nivel || user.grado, user.carrera);
+                        user.nivel = ({ MAESTRIA: 'MAESTRÍA', ESPECIALIZACION: 'ESPECIALIZACIÓN' })[nivelClave] || nivelClave;
+                        user.programa_id = user.carrera_elegida || user.programa_id || '';
 
                         if (String(user.carrera || '').toUpperCase() === 'ADMIN' || String(user.seccion || '').toUpperCase() === 'ADMIN') {
                             user.rol = user.rol || 'admin';
@@ -1567,6 +1590,59 @@
 
             } catch (e) {
                 console.error('Error cargando dashboard:', e);
+            }
+        }
+
+        async function cargarProgramasDisponibles(user, esPostulante, esAlumnoConMatricula) {
+            const section = document.getElementById('programas-disponibles-section');
+            const container = document.getElementById('programas-disponibles');
+            if (!section || !container) return;
+            if (currentUserRole !== 'alumno') {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = '';
+            container.setAttribute('aria-busy', 'true');
+            if (esPostulante || !esAlumnoConMatricula) {
+                container.innerHTML = '<div class="grado-vacio">Completa tu matrícula para consultar los programas disponibles para tu nivel.</div>';
+                container.setAttribute('aria-busy', 'false');
+                return;
+            }
+            container.innerHTML = '<div class="grado-vacio">Cargando programas disponibles…</div>';
+            try {
+                const result = await CenturiaAPI.programas.list(user.nivel || user.grado || '');
+                if (!result || result.ok === false) throw new Error((result && result.error) || 'No se pudieron cargar los programas.');
+                const programas = (result.programas || []).filter(p =>
+                    String(p.estado || p.Estado || '').trim().toUpperCase() === 'ACTIVO'
+                );
+                if (!programas.length) {
+                    container.innerHTML = '<div class="grado-vacio">Aún no hay programas activos autorizados para tu nivel. Consulta con Acceso Académico.</div>';
+                    return;
+                }
+                container.innerHTML = '<div class="courses-grid">' + programas.map(p => {
+                    const codigo = p.codigo || p.Codigo || '';
+                    const nombre = p.nombre || p.Nombre || p.nombre_programa || 'Programa académico';
+                    const nivel = p.nivel || p.Nivel || user.nivel || '';
+                    const duracion = p.duracion_horas || p.DuracionHoras || p.duracion || '';
+                    const carreras = p.carreras_relacionadas || p.carreras || [];
+                    const carrerasTexto = Array.isArray(carreras) ? carreras.join(', ') : String(carreras || '');
+                    const seleccionado = codigo && codigo === (user.programa_id || user.carrera_elegida);
+                    return `<article class="course-card">
+                        <div class="course-card-title"><i class="bi bi-mortarboard" style="color:var(--dorado);margin-right:6px"></i>${escHtml(nombre)}</div>
+                        <div class="course-card-meta">
+                            ${codigo ? `<span><i class="bi bi-tag"></i> ${escHtml(codigo)}</span>` : ''}
+                            ${nivel ? `<span><i class="bi bi-layers"></i> ${escHtml(nivel)}</span>` : ''}
+                            ${duracion ? `<span><i class="bi bi-clock"></i> ${escHtml(duracion)} horas</span>` : ''}
+                            ${carrerasTexto ? `<span><i class="bi bi-diagram-3"></i> ${escHtml(carrerasTexto)}</span>` : ''}
+                            ${seleccionado ? '<span class="grado-badge">Tu programa</span>' : ''}
+                        </div>
+                    </article>`;
+                }).join('') + '</div>';
+            } catch (error) {
+                console.error('Error cargando programas:', error);
+                container.innerHTML = '<div class="grado-vacio">No se pudieron cargar los programas. <button type="button" class="dash-btn" onclick="cargarProgramasDisponibles(CenturiaAPI.getCurrentUser() || {}, false, true)"><i class="bi bi-arrow-repeat"></i> Reintentar</button></div>';
+            } finally {
+                container.setAttribute('aria-busy', 'false');
             }
         }
 
@@ -1611,9 +1687,12 @@
                 const becas = user.becas || user.becas_solicitadas || localStorage.getItem('centuria_becas') || '';
                 const beneficios = user.beneficios_institucionales || user.beneficios || localStorage.getItem('centuria_beneficios_institucionales') || '';
 
-                // Determinar si es postulante (nuevo ingreso sin matrícula completa)
-                const esPostulante = (user.tipo_alumno === 'nuevo' || user.tipo_alumno === 'nuevo_ingreso') && !user.matricula_completa;
-                const esAlumnoConMatricula = user.matricula_completa || (!!user.matricula && !!user.carrera);
+                // Determinar si es postulante o matriculado
+                const estaMatriculado = !!user.matricula_completa;
+                const esPostulante = !estaMatriculado;
+                const esAlumnoConMatricula = estaMatriculado;
+
+                cargarProgramasDisponibles(user, esPostulante, esAlumnoConMatricula);
 
                 document.getElementById('dash-user-name').textContent = n + ' ' + a;
                 
@@ -1627,25 +1706,24 @@
                 // Filtrar enlaces del alumno basándose en el estado de matrícula
                 let roleInfoOriginal = roleConfig[currentUserRole] || roleConfig.alumno;
                 let roleInfo;
-                if (currentUserRole === 'alumno' && esPostulante) {
-                    // Solo mostrar ofertas de carreras para postulante
-                    roleInfo = {
-                        label: 'Alumno',
-                        links: [
-                            { href: '../ofertas-carreras.html', icon: 'bi-grid-3x3-gap', label: 'Ofertas de Carreras a Seguir' }
-                        ]
-                    };
-                } else if (currentUserRole === 'alumno' && esAlumnoConMatricula) {
-                    // Alumno con matrícula completa: mostrar todos los enlaces
-                    roleInfo = roleInfoOriginal;
+                if (currentUserRole === 'alumno') {
+                    if (esPostulante) {
+                        roleInfo = {
+                            label: 'Postulante',
+                            links: [
+                                { href: 'ofertas-carreras.html', icon: 'bi-grid-3x3-gap', label: 'Ofertas de Carreras a Seguir' },
+                                { href: 'formulario-matricula.html', icon: 'bi-file-earmark-text', label: 'Completar Matrícula' },
+                                { href: 'consultas.html', icon: 'bi-headset', label: 'Atención al Alumno', badge: true }
+                            ]
+                        };
+                    } else {
+                        roleInfo = {
+                            label: 'Matriculado',
+                            links: roleInfoOriginal.links
+                        };
+                    }
                 } else {
-                    // Estado intermedio o desconocido: links básicos
-                    roleInfo = {
-                        label: 'Alumno',
-                        links: [
-                            { href: '../ofertas-carreras.html', icon: 'bi-grid-3x3-gap', label: 'Ofertas de Carreras a Seguir' }
-                        ]
-                    };
+                    roleInfo = roleInfoOriginal;
                 }
                 badge.textContent = roleInfo.label.toUpperCase();
 
@@ -1769,7 +1847,7 @@
             document.getElementById('p-carrera').textContent = carrera || 'No asignado';
             document.getElementById('p-seccion').textContent = seccion || 'No asignada';
             document.getElementById('p-estado').textContent = estado || 'ACTIVO';
-            document.getElementById('p-rol').textContent = (user.role || user.rol || currentUserRole || 'ACTIVO').toUpperCase();
+            document.getElementById('p-rol').textContent = currentUserRole === 'alumno' ? roleInfo.label.toUpperCase() : (user.role || user.rol || currentUserRole || 'ACTIVO').toUpperCase();
             document.getElementById('p-legajo').textContent = legajo || '-';
             document.getElementById('p-fecha-inscripcion').textContent = fechaInscripcion || '-';
             document.getElementById('p-matricula').textContent = matricula || '-';

@@ -111,7 +111,7 @@
         const sesiones = {};
         Object.values(roster).forEach(a => {
             if (sesiones[a.seccion] != null) return;
-            const decl = cls.filter(c => c.estado !== 'suspendida' && (!(c.secciones || []).length || c.secciones.map(x => String(x).toUpperCase()).indexOf(a.seccion) >= 0)).length;
+            const decl = cls.filter(c => c.estado !== 'suspendida' && c.estado !== 'programada' && (!(c.secciones || []).length || c.secciones.map(x => String(x).toUpperCase()).indexOf(a.seccion) >= 0)).length;
             sesiones[a.seccion] = cls.length ? decl : (N().sesionesDictadas(asisAsig.filter(r => String(r.seccion || '').toUpperCase() === a.seccion), p) || null);
         });
         const secciones = Array.from(new Set(Object.values(roster).map(a => a.seccion))).filter(Boolean).sort();

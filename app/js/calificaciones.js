@@ -169,7 +169,7 @@
      */
     function asistenciaPorClases(registros, intentos, clases, seccion, asig) {
         const sec = String(seccion || '').toUpperCase();
-        const dictadas = (clases || []).filter(c => c.estado !== 'suspendida' && (!sec || !(c.secciones || []).length || (c.secciones || []).map(s => String(s).toUpperCase()).indexOf(sec) >= 0))
+        const dictadas = (clases || []).filter(c => c.estado !== 'suspendida' && c.estado !== 'programada' && (!sec || !(c.secciones || []).length || (c.secciones || []).map(s => String(s).toUpperCase()).indexOf(sec) >= 0))
             .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
         if (!dictadas.length) return null;
         const diasPresente = new Set((registros || []).filter(r => esDeAsignatura(r, asig) && PRESENTE.indexOf(String(r.estado || r.status || '').toLowerCase()) >= 0)

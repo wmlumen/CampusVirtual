@@ -440,7 +440,9 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=22"></script>
+<script src="js/api.js?v=29"></script>
+<script src="js/calificaciones.js?v=5"></script>
+<script src="js/notas-plan.js?v=4"></script>
 <script src="js/trabajos.js?v=1"></script>
 <script>document.addEventListener('DOMContentLoaded', function () { CenturiaTrabajos.montarDocente(document.getElementById('trabajos-docente'), {}); });</script>
 <script src="js/session-guard.js?v=5"></script>
@@ -453,6 +455,7 @@ let asigActual = null;
 let alumnosData = [];
 let notasData = [];
 let asistData = [];
+let planFilas = null;   // v2026-10-12: filas de la planilla oficial (plan publicado + exámenes + clases declaradas), por cédula
 
 // ═══ CARGAR PANEL ═══
 async function cargarPanel() {
@@ -607,6 +610,8 @@ async function cargarMisAsignaturas(cedula) {
         // Agrupar asignaturas por cátedra única (código base):
         // Un docente puede tener la misma materia dictada a varias carreras/secciones a la vez.
         const catedrasMap = new Map();
+        // v2026-10-12: se había perdido esta definición al unificar cátedras (ReferenceError → panel vacío).
+        const docenteAsig = subjects.filter(s => assignments.some(a => a.asignatura === s.codigo && ['docente', 'teacher'].includes(a.rol) && a.estado === 'activo'));
         docenteAsig.forEach(s => {
             const cod = s.codigo;
             if (!catedrasMap.has(cod)) {
@@ -745,6 +750,22 @@ async function cargarDatosAsignatura(codigo) {
             asistData = dA.data || dA.asistencias || [];
         } catch(e) { asistData = []; }
 
+        // 4. Planilla oficial (la misma que academic/planilla_notas.html y la libreta del alumno):
+        //    notas del plan publicado, exámenes en línea y asistencia contra las clases declaradas.
+        planFilas = null;
+        try {
+            const pl = window.CenturiaPlan ? await CenturiaPlan.planilla(asigActual.codigo) : null;
+            if (pl && Array.isArray(pl.filas)) {
+                planFilas = {};
+                pl.filas.forEach(f => { planFilas[String(f.cedula).replace(/[\.\s]/g, '')] = f; });
+                // Quienes rindieron o tienen asistencia en la materia aunque no estén en la nómina de usuarios.
+                pl.filas.forEach(f => {
+                    if (!alumnosData.some(a => String(a.cedula || '').replace(/[\.\s]/g, '') === String(f.cedula)))
+                        alumnosData.push({ cedula: String(f.cedula), nombre: f.nombre || '', carrera: f.carrera || '', seccion: f.seccion || '', roles: [{ rol: 'alumno' }] });
+                });
+            }
+        } catch (ePlan) { console.warn('Planilla del plan no disponible; se usan las notas cargadas a mano:', ePlan); }
+
         // Poblar selectores de filtro por Carrera y Sección encontrados en la nómina
         const carrerasUnicas = [...new Set(alumnosData.map(a => a.carrera).filter(Boolean))].sort();
         const seccionesUnicas = [...new Set(alumnosData.map(a => a.seccion).filter(Boolean))].sort();
@@ -819,8 +840,29 @@ function renderTabla() {
             if (fin === null && nDirecta.final !== undefined && nDirecta.final !== '') fin = parseFloat(nDirecta.final);
         }
 
+        // Con plan publicado mandan sus resultados (% de cada evaluación y acumulado ponderado).
+        const pf = planFilas && planFilas[String(cedula).replace(/[\.\s]/g, '')];
+        const resPlan = pf && pf.resultado;
+        if (resPlan) {
+            const pctDe = (e) => (e && e.pct != null ? Math.round(e.pct) : null);
+            const parciales = (resPlan.evaluaciones || []).filter(e => e.tipo === 'parcial');
+            const efinal = (resPlan.evaluaciones || []).find(e => e.tipo === 'final');
+            if (pctDe(parciales[0]) !== null) p1 = pctDe(parciales[0]);
+            if (pctDe(parciales[1]) !== null) p2 = pctDe(parciales[1]);
+            if (pctDe(efinal) !== null) fin = pctDe(efinal);
+        }
+
         let prom = '-';
-        if (p1 !== null && p2 !== null && fin !== null && !isNaN(p1) && !isNaN(p2) && !isNaN(fin)) {
+        if (resPlan) {
+            if (p1 !== null) { totalP1 += p1; cntP1++; }
+            if (p2 !== null) { totalP2 += p2; cntP2++; }
+            if (fin !== null) { totalFin += fin; cntFin++; }
+            if (resPlan.completo) {
+                prom = Number(resPlan.acumulado_pct).toFixed(1);
+                totalProm += parseFloat(prom); cntProm++;
+                if (resPlan.aprobado) aprobados++; else reprobados++;
+            }
+        } else if (p1 !== null && p2 !== null && fin !== null && !isNaN(p1) && !isNaN(p2) && !isNaN(fin)) {
             prom = ((p1 + p2 + fin) / 3).toFixed(1);
             totalP1 += p1; cntP1++;
             totalP2 += p2; cntP2++;
@@ -837,11 +879,13 @@ function renderTabla() {
         });
         const totalA = asist.length;
         const presente = asist.filter(a => (a.estado||'').toLowerCase() === 'presente').length;
-        const pctAsist = totalA > 0 ? Math.round(presente / totalA * 100) : null;
+        let pctAsist = totalA > 0 ? Math.round(presente / totalA * 100) : null;
+        if (pf && pf.asistencia_pct != null) pctAsist = Math.round(pf.asistencia_pct);   // contra clases declaradas
         if (pctAsist !== null) todasAsist.push(pctAsist);
 
-        const estado = prom !== '-' ? (parseFloat(prom) >= 70 ? 'Aprobado' : 'Reprobado') : 'En Proceso';
-        const estClass = prom !== '-' ? (parseFloat(prom) >= 70 ? 'est-ap' : 'est-re') : 'est-pen';
+        const aprobo = resPlan ? !!resPlan.aprobado : parseFloat(prom) >= 70;
+        const estado = prom !== '-' ? (aprobo ? 'Aprobado' : 'Reprobado') : 'En Proceso';
+        const estClass = prom !== '-' ? (aprobo ? 'est-ap' : 'est-re') : 'est-pen';
 
         const carBusq = ((document.getElementById('filtro-doc-carrera') || {}).value || '').trim();
         const secBusq = ((document.getElementById('filtro-doc-seccion') || {}).value || '').trim();

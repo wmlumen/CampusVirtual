@@ -1188,9 +1188,9 @@
                         return {
                             id: 'CLA-' + c._id,
                             title: (ex ? '📝 Examen ' + (c.examen_id || '') : (c.modalidad === 'virtual' ? '💻 Clase virtual' : '🏫 Clase presencial')) + ' — ' + c.asignatura,
-                            description: [modo, (c.secciones || []).length ? 'Secciones ' + c.secciones.join(', ') : '', c.unidad ? 'Unidad ' + c.unidad : '', c.tema || ''].filter(Boolean).join(' · '),
+                            description: [modo + (c.estado === 'programada' ? ' (programada)' : ''), (c.secciones || []).length ? 'Secciones ' + c.secciones.join(', ') : '', c.unidad ? 'Unidad ' + c.unidad : '', c.tema || ''].filter(Boolean).join(' · '),
                             date: c.fecha, start_time: c.hora_inicio || '', end_time: c.hora_fin || '',
-                            event_type: ex ? 'examen' : 'clase', asignatura: c.asignatura, seccion: (c.secciones || []).join(', '), modalidad: c.modalidad
+                            event_type: ex ? 'examen' : 'clase', asignatura: c.asignatura, seccion: (c.secciones || []).join(', '), modalidad: c.modalidad, enlace: c.enlace || ''
                         };
                     });
             } catch (err) {
@@ -1449,6 +1449,7 @@
                             ${e.start_time ? `<span><i class="bi bi-clock-fill"></i> ${e.start_time} ${e.end_time ? ' - ' + e.end_time : ''}</span>` : ''}
                             ${e.description ? `<span><i class="bi bi-info-circle-fill"></i> ${e.description}</span>` : ''}
                         </div>
+                        ${e.enlace && /^https:\/\//.test(e.enlace) ? `<a class="day-card-link" href="${encodeURI(e.enlace)}" target="_blank" rel="noopener"><i class="bi bi-camera-video-fill"></i> Unirse a la clase virtual</a>` : ''}
                         ${t === 'evento' && /^EVT-/.test(String(e.id || '')) ? `<a class="day-card-link" href="eventos.html?id=${encodeURIComponent(e.id)}"><i class="bi bi-box-arrow-up-right"></i> Ver evento y asistencia</a>` : ''}
                         ${t === 'examen' && (e.exam_url || /^EXAM-/.test(String(e.id || ''))) ? `<a class="day-card-exam-btn" href="${e.exam_url || 'academic/examen_virtual.html'}"><i class="bi bi-pencil-square"></i> Rendir / Ver Examen</a>` : ''}
                     </div>

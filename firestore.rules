@@ -200,6 +200,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Clases dictadas declaradas por el docente (academic/clases.html): base del % de asistencia.
+    // Las lee cualquiera con sesión (la libreta del alumno calcula su asistencia); las escribe el personal docente.
+    match /clases/{id} {
+      allow read: if isAuthenticated();
+      allow write: if esPersonalDocente();
+    }
+
     // Contenido publicado de cada unidad (aula/index.html). Lo lee cualquiera con sesión; lo escribe Publicar del Constructor.
     match /contenidos/{id} {
       allow read: if isAuthenticated();

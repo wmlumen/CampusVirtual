@@ -161,6 +161,30 @@
     }
 
     /**
+     * Asistencia contra las clases DECLARADAS por el docente (colección clases).
+     * clases: [{ fecha:'aaaa-mm-dd', secciones:[...], modalidad, tipo:'clase'|'examen', examen_id, estado }]
+     * Cuentan las clases dictadas de la sección del alumno; está presente si tiene una marca «presente» ese día
+     * (presencial o virtual) o, si la clase es un examen, si rindió ese examen (tiene intentos).
+     * Devuelve { pct, presentes, total, detalle:[{ fecha, modalidad, tipo, presente, por }] } o null si no hay clases.
+     */
+    function asistenciaPorClases(registros, intentos, clases, seccion, asig) {
+        const sec = String(seccion || '').toUpperCase();
+        const dictadas = (clases || []).filter(c => c.estado !== 'suspendida' && (!sec || !(c.secciones || []).length || (c.secciones || []).map(s => String(s).toUpperCase()).indexOf(sec) >= 0))
+            .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+        if (!dictadas.length) return null;
+        const diasPresente = new Set((registros || []).filter(r => esDeAsignatura(r, asig) && PRESENTE.indexOf(String(r.estado || r.status || '').toLowerCase()) >= 0)
+            .map(r => String(r.fecha || r.timestamp || r.created_at || '').slice(0, 10)).filter(Boolean));
+        const rindio = new Set((intentos || []).filter(i => Array.isArray(i.intentos) && i.intentos.length).map(i => i.examen_id));
+        const detalle = dictadas.map(c => {
+            const porExamen = c.tipo === 'examen' && c.examen_id && rindio.has(c.examen_id);
+            const porMarca = diasPresente.has(String(c.fecha).slice(0, 10));
+            return { fecha: c.fecha, modalidad: c.modalidad || '', tipo: c.tipo || 'clase', presente: porMarca || porExamen, por: porMarca ? 'asistencia' : (porExamen ? 'examen' : '') };
+        });
+        const presentes = detalle.filter(d => d.presente).length;
+        return { pct: red(presentes / dictadas.length * 100, 0), presentes: presentes, total: dictadas.length, detalle: detalle };
+    }
+
+    /**
      * Notas de un alumno para cada evaluación del plan, tomadas de sus fuentes.
      * fuentes: { intentos:[docs intentos], trabajos:[docs trabajos], guardadas:[docs notas], asistencia_pct }
      * Prioridad: nota guardada por el docente (planilla) > fuente automática.
@@ -222,7 +246,7 @@
     const idNota = (cedula, codigo, evalId) => [cedula, String(codigo).toUpperCase(), evalId].join('__');
 
     const api = { TIPOS, ORIGENES, ORIGEN_DE_TIPO, ESCALA, REGLAS, normalizarTipo, escalaDe, calcular, validarPlan,
-        sesionDe, esDeAsignatura, asistenciaPct, sesionesDictadas, notasDesdeFuentes, idNota, sinTilde, carreraClave };
+        sesionDe, esDeAsignatura, asistenciaPct, sesionesDictadas, asistenciaPorClases, notasDesdeFuentes, idNota, sinTilde, carreraClave };
     if (typeof module === 'object' && module.exports) module.exports = api;
     else raiz.CenturiaNotas = api;
 })(typeof window !== 'undefined' ? window : this);

@@ -39,24 +39,40 @@
         return { notas: r.notas, fuente: r.fuente, resultado: N().calcular(p, r.notas, fuentes.asistencia_pct) };
     }
 
+    // Clases dictadas declaradas por el docente (academic/clases.html).
+    async function clases(codigo) {
+        await listo();
+        return getDb().collection('clases').where('asignatura', '==', String(codigo || '').toUpperCase()).get().then(datos).catch(() => []);
+    }
+    // % de asistencia: contra las clases declaradas si las hay; si no, como antes (sesiones con ≥2 presentes / unidades).
+    function asistenciaDe(p, registros, intentos, cls, seccion, sesionesFallback) {
+        const r = cls.length ? N().asistenciaPorClases(registros, intentos, cls, seccion, p) : null;
+        if (r) return { pct: r.pct, detalle: r };
+        return { pct: N().asistenciaPct(registros, p, sesionesFallback || null), detalle: null };
+    }
+
     // Libreta: el alumno solo puede leer lo suyo (las reglas filtran por cédula).
     async function alumno(codigo, cedula) {
         const p = await plan(codigo);
         if (!p) return null;
         const db = getDb(), ced = String(cedula);
-        const [intentos, trabajos, asistencia, notas] = await Promise.all([
+        const [intentos, trabajos, asistencia, notas, cls] = await Promise.all([
             db.collection('intentos').where('alumno_cedula', '==', ced).get().then(datos).catch(() => []),
             db.collection('trabajos').where('cedula', '==', ced).get().then(datos).catch(() => []),
             db.collection('asistencia').where('cedula', '==', ced).get().then(datos).catch(() => []),
-            db.collection('notas').where('cedula', '==', ced).get().then(datos).catch(() => [])
+            db.collection('notas').where('cedula', '==', ced).get().then(datos).catch(() => []),
+            clases(p.codigo)
         ]);
         const guardadas = notas.filter(n => String(n.asignatura || '').toUpperCase() === p.codigo && n.evaluacion_id);
         // Clases dictadas en su sección: las registra la planilla del docente al guardar (asignaturas.sesiones_por_seccion);
         // si todavía no hay dato, se usa la cantidad de unidades. La asistencia guardada por el docente manda.
         const mias = asistencia.filter(r => N().esDeAsignatura(r, p));
         const sec = (mias.find(r => r.seccion) || {}).seccion || '';
-        const fuentes = { intentos, trabajos, guardadas, asistencia_pct: N().asistenciaPct(mias, p, p.sesiones_por_seccion[String(sec).toUpperCase()] || null) };
-        return Object.assign({ plan: p, cedula: ced, asistencia_pct: fuentes.asistencia_pct }, resolver(p, fuentes));
+        const misIntentos = intentos.filter(i => String(i.asignatura || '').toUpperCase() === p.codigo || p.evaluaciones.some(e => e.examen_id && e.examen_id === i.examen_id));
+        const secAl = sec || (misIntentos.find(i => i.seccion) || {}).seccion || '';
+        const as = asistenciaDe(p, mias, misIntentos, cls, secAl, p.sesiones_por_seccion[String(secAl).toUpperCase()]);
+        const fuentes = { intentos, trabajos, guardadas, asistencia_pct: as.pct };
+        return Object.assign({ plan: p, cedula: ced, asistencia_pct: as.pct, asistencia_detalle: as.detalle }, resolver(p, fuentes));
     }
 
     // Planilla: alumnos de las carreras de la asignatura (fichas) y quienes tienen asistencia en ella.
@@ -65,12 +81,13 @@
         const p = await plan(codigo);
         if (!p) return null;
         const db = getDb();
-        const [usuarios, intentos, trabajos, asistencia, notas] = await Promise.all([
+        const [usuarios, intentos, trabajos, asistencia, notas, cls] = await Promise.all([
             db.collection('usuarios').where('rol', '==', 'alumno').get().then(datos).catch(() => []),
             db.collection('intentos').get().then(datos).catch(() => []),
             db.collection('trabajos').where('asignatura', '==', p.codigo).get().then(datos).catch(() => []),
             db.collection('asistencia').get().then(datos).catch(() => []),
-            db.collection('notas').where('asignatura', '==', p.codigo).get().then(datos).catch(() => [])
+            db.collection('notas').where('asignatura', '==', p.codigo).get().then(datos).catch(() => []),
+            clases(p.codigo)
         ]);
         const carreras = p.carreras.map(N().carreraClave);
         const asisAsig = asistencia.filter(r => N().esDeAsignatura(r, p));
@@ -90,25 +107,29 @@
             if (!roster[c]) roster[c] = { cedula: c, nombre: i.nombre || '', seccion: String(i.seccion || '').toUpperCase(), carrera: i.carrera || '' };
             else { if (!roster[c].seccion && i.seccion) roster[c].seccion = String(i.seccion).toUpperCase(); if (!roster[c].carrera && i.carrera) roster[c].carrera = i.carrera; }
         });
-        // Clases dictadas por sección (sesiones distintas con alguna presencia).
+        // Clases dictadas por sección: las declaradas por el docente o, si no declaró ninguna, las sesiones con ≥2 presentes.
         const sesiones = {};
         Object.values(roster).forEach(a => {
-            if (sesiones[a.seccion] == null) sesiones[a.seccion] = N().sesionesDictadas(asisAsig.filter(r => String(r.seccion || '').toUpperCase() === a.seccion), p) || null;
+            if (sesiones[a.seccion] != null) return;
+            const decl = cls.filter(c => c.estado !== 'suspendida' && (!(c.secciones || []).length || c.secciones.map(x => String(x).toUpperCase()).indexOf(a.seccion) >= 0)).length;
+            sesiones[a.seccion] = cls.length ? decl : (N().sesionesDictadas(asisAsig.filter(r => String(r.seccion || '').toUpperCase() === a.seccion), p) || null);
         });
         const secciones = Array.from(new Set(Object.values(roster).map(a => a.seccion))).filter(Boolean).sort();
         const filas = Object.values(roster)
             .filter(a => !opts.seccion || a.seccion === String(opts.seccion).toUpperCase())
             .sort((x, y) => x.nombre.localeCompare(y.nombre))
             .map(a => {
+                const susIntentos = intentos.filter(i => String(i.alumno_cedula) === a.cedula);
+                const as = asistenciaDe(p, asisAsig.filter(r => String(r.cedula) === a.cedula), susIntentos.filter(i => examenes.has(i.examen_id)), cls, a.seccion, sesiones[a.seccion]);
                 const fuentes = {
-                    intentos: intentos.filter(i => String(i.alumno_cedula) === a.cedula),
+                    intentos: susIntentos,
                     trabajos: trabajos.filter(t => String(t.cedula) === a.cedula),
                     guardadas: notas.filter(n => String(n.cedula) === a.cedula),
-                    asistencia_pct: N().asistenciaPct(asisAsig.filter(r => String(r.cedula) === a.cedula), p, sesiones[a.seccion])
+                    asistencia_pct: as.pct
                 };
-                return Object.assign({}, a, { asistencia_pct: fuentes.asistencia_pct, sesiones: sesiones[a.seccion] }, resolver(p, fuentes));
+                return Object.assign({}, a, { asistencia_pct: as.pct, asistencia_detalle: as.detalle, sesiones: sesiones[a.seccion] }, resolver(p, fuentes));
             });
-        return { plan: p, filas: filas, secciones: secciones, sesiones: sesiones };
+        return { plan: p, filas: filas, secciones: secciones, sesiones: sesiones, clases_declaradas: cls.length };
     }
 
     /**
@@ -148,5 +169,5 @@
         return { ok: true, guardadas: ops.filter(o => o[0] === 'set').length, borradas: ops.filter(o => o[0] === 'del').length };
     }
 
-    window.CenturiaPlan = { plan, alumno, planilla, guardar, escala, enEscala };
+    window.CenturiaPlan = { plan, alumno, planilla, guardar, escala, enEscala, clases };
 })();

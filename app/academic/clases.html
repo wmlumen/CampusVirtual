@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="../js/session-guard.js?v=5"></script>
+    <script>CenturiaSession.protect();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clases Dictadas — Centuria</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,600,700,800" rel="stylesheet">
+    <style>
+        :root { --vosc:#007A33; --vmed:#00B140; --vcla:#E6F4EA; --txt:#2D2D2D; --gris:#64748b; --borde:#dfe7df; --rojo:#b91c1c; --ambar:#92400E }
+        * { box-sizing:border-box; margin:0; padding:0 }
+        body { font-family:'Montserrat',sans-serif; background:#f2f6f2; color:var(--txt); min-height:100vh; padding:16px }
+        .wrap { max-width:1300px; margin:0 auto }
+        .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:14px; overflow:hidden }
+        .head { background:linear-gradient(135deg,var(--vmed),var(--vosc)); color:#fff; padding:18px 22px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center }
+        .head h1 { font-size:1.1rem } .head p { font-size:.75rem; opacity:.9; margin-top:3px; max-width:760px }
+        .head a { color:#fff; font-size:.72rem; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,.5); border-radius:10px; padding:6px 12px }
+        .body { padding:16px 20px }
+        h2 { font-size:.9rem; color:var(--vosc); margin-bottom:10px }
+        label.l { display:block; font-size:.62rem; font-weight:700; color:var(--gris); text-transform:uppercase; margin-bottom:4px }
+        select, input[type=text], input[type=date], input[type=time], input[type=number] { padding:8px 10px; border:2px solid var(--borde); border-radius:9px; font-family:inherit; font-size:.8rem; width:100% }
+        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; align-items:end }
+        .btn { padding:9px 14px; border-radius:9px; border:none; font-family:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px }
+        .btn-p { background:var(--vmed); color:#fff } .btn-p:hover { background:var(--vosc) }
+        .btn-s { background:#f1f5f9; color:var(--txt) } .btn-r { background:#FEE2E2; color:#991B1B } .btn-a { background:#FEF3C7; color:var(--ambar) }
+        .btn-sm { padding:5px 9px; font-size:.66rem }
+        .chk { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; margin-right:10px }
+        table { width:100%; border-collapse:collapse; font-size:.74rem }
+        th { background:var(--vosc); color:#fff; padding:8px 6px; font-size:.64rem; text-align:left }
+        td { border-bottom:1px solid #eef2ee; padding:7px 6px; vertical-align:middle }
+        tr.susp td { opacity:.5 }
+        .pill { display:inline-block; font-size:.6rem; font-weight:700; border-radius:10px; padding:2px 8px; margin:1px }
+        .p-pres { background:#DBEAFE; color:#1E40AF } .p-virt { background:#EDE9FE; color:#5B21B6 } .p-exa { background:#FCE7F3; color:#9D174D }
+        .n-ok { color:var(--vosc); font-weight:800 } .n-obs { color:var(--ambar); font-weight:700 } .n-aus { color:var(--rojo); font-weight:700 }
+        .msg { font-size:.78rem; padding:6px 0 } .msg.err { color:var(--rojo) }
+        .tabla-wrap { overflow-x:auto }
+        @media (max-width:700px) { body { padding:8px } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <div class="head">
+            <div><h1><i class="bi bi-calendar-check"></i> Clases dictadas</h1>
+                <p>El docente declara cada clase (presencial o virtual) y cada examen. La asistencia de los alumnos se calcula contra estas clases: presente si marcó asistencia ese día o, en un examen, si lo rindió.</p></div>
+            <a href="index.html"><i class="bi bi-arrow-left"></i> Volver</a>
+        </div>
+        <div class="body">
+            <div id="sin-acceso" class="msg err" style="display:none">Solo docentes, académicos y administración.</div>
+            <div class="grid" id="controles" style="max-width:520px">
+                <div><label class="l" for="sel-asig">Asignatura</label><select id="sel-asig"><option value="">Cargando…</option></select></div>
+            </div>
+            <div id="msg" class="msg"></div>
+        </div>
+    </div>
+
+    <div class="card" id="card-form" style="display:none"><div class="body">
+        <h2 id="form-titulo"><i class="bi bi-plus-circle"></i> Declarar clase</h2>
+        <div class="grid">
+            <div><label class="l" for="f-fecha">Fecha *</label><input type="date" id="f-fecha"></div>
+            <div><label class="l" for="f-ini">Hora inicio</label><input type="time" id="f-ini"></div>
+            <div><label class="l" for="f-fin">Hora fin</label><input type="time" id="f-fin"></div>
+            <div><label class="l" for="f-mod">Modalidad *</label><select id="f-mod"><option value="presencial">Presencial</option><option value="virtual">Virtual</option></select></div>
+            <div><label class="l" for="f-tipo">Tipo *</label><select id="f-tipo" onchange="tipoCambio()"><option value="clase">Clase</option><option value="examen">Examen</option></select></div>
+            <div id="box-examen" style="display:none"><label class="l" for="f-examen">Examen online</label><select id="f-examen"></select></div>
+            <div><label class="l" for="f-unidad">Unidad</label><input type="number" min="1" id="f-unidad"></div>
+            <div><label class="l" for="f-palabra">Palabra clave</label><input type="text" id="f-palabra" placeholder="la que se dio en clase"></div>
+        </div>
+        <div style="margin-top:10px"><label class="l">Secciones *</label><div id="f-secciones"></div></div>
+        <div class="grid" style="margin-top:10px">
+            <div style="grid-column:1/-1"><label class="l" for="f-tema">Tema / observación</label><input type="text" id="f-tema"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-p" onclick="guardarClase()"><i class="bi bi-check-lg"></i> <span id="btn-guardar-txt">Declarar clase</span></button>
+            <button class="btn btn-s" onclick="limpiarForm()">Limpiar</button>
+        </div>
+        <div id="form-msg" class="msg"></div>
+    </div></div>
+
+    <div class="card" id="card-lista" style="display:none"><div class="body">
+        <h2><i class="bi bi-list-check"></i> Clases declaradas <span id="resumen" style="font-weight:400;color:var(--gris);font-size:.72rem"></span></h2>
+        <div class="tabla-wrap" id="lista"></div>
+    </div></div>
+
+    <div class="card" id="card-detectadas" style="display:none"><div class="body">
+        <h2><i class="bi bi-search"></i> Fechas con asistencias o exámenes sin clase declarada</h2>
+        <p style="font-size:.72rem;color:var(--gris);margin-bottom:8px">Mientras no se declaren, esas asistencias no cuentan. «Declarar» completa el formulario: revisá la modalidad y guardá.</p>
+        <div class="tabla-wrap" id="detectadas"></div>
+    </div></div>
+</div>
+
+<script src="../js/api.js?v=24"></script>
+<script src="../js/logout.js?v=3"></script>
+<script src="../js/calificaciones.js?v=4"></script>
+<script>
+    const ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
+    const PUEDE = ['docente', 'academico', 'academic', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(ROL);
+    const MI_CED = sessionStorage.getItem('current_cedula') || '';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+    const fechaTxt = (f) => { const d = new Date(f + 'T12:00:00-03:00'); return DIAS[d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) + '/' + f.slice(0, 4); };
+    let A = null;   // { asig, clases, asistencia, intentos, secciones, examenes }
+    let editando = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!PUEDE) { $('sin-acceso').style.display = 'block'; $('controles').style.display = 'none'; return; }
+        try {
+            await authListo();
+            const snap = await getDb().collection('asignaturas').get();
+            const lista = snap.docs.map(d => Object.assign({ codigo: d.id }, d.data()))
+                .sort((a, b) => (b.estado === 'activo') - (a.estado === 'activo') || String(a.nombre).localeCompare(String(b.nombre)));
+            $('sel-asig').innerHTML = '<option value="">Elegí la asignatura…</option>' + lista.map(a => `<option value="${esc(a.codigo)}">${esc(a.codigo)} — ${esc(a.nombre)}${a.estado === 'activo' ? '' : ' (inactiva)'}</option>`).join('');
+            const q = new URLSearchParams(location.search).get('asignatura');
+            if (q) { $('sel-asig').value = q.toUpperCase(); await cargar(); }
+        } catch (e) { $('msg').textContent = 'No se pudieron cargar las asignaturas: ' + e.message; $('msg').className = 'msg err'; }
+        $('sel-asig').addEventListener('change', cargar);
+    });
+
+    async function cargar() {
+        const cod = $('sel-asig').value;
+        ['card-form', 'card-lista', 'card-detectadas'].forEach(id => $(id).style.display = 'none');
+        if (!cod) return;
+        $('msg').textContent = 'Cargando…'; $('msg').className = 'msg';
+        try {
+            const db = getDb();
+            const datos = (s) => s.docs.map(d => Object.assign({ _id: d.id }, d.data()));
+            const [a, cls, asis, ints] = await Promise.all([
+                db.collection('asignaturas').doc(cod).get(),
+                db.collection('clases').where('asignatura', '==', cod).get().then(datos),
+                db.collection('asistencia').get().then(datos),
+                db.collection('intentos').get().then(datos)
+            ]);
+            const asig = Object.assign({ codigo: cod }, a.data());
+            const examenes = Array.from(new Set((asig.evaluaciones || []).map(e => e.examen_id).filter(Boolean)
+                .concat(ints.filter(i => String(i.asignatura || '').toUpperCase() === cod).map(i => i.examen_id))));
+            const asistencia = asis.filter(r => CenturiaNotas.esDeAsignatura(r, asig));
+            const intentos = ints.filter(i => examenes.includes(i.examen_id));
+            const secciones = Array.from(new Set(['LV026', 'MJ026', 'S026'].concat(asistencia.map(r => String(r.seccion || '').toUpperCase()), intentos.map(i => String(i.seccion || '').toUpperCase()))))
+                .filter(s => /^[A-Z]{1,3}\d{3}$/.test(s)).sort();
+            A = { asig, clases: cls.sort((x, y) => String(x.fecha).localeCompare(String(y.fecha))), asistencia, intentos, secciones, examenes };
+            $('f-secciones').innerHTML = secciones.map(s => `<label class="chk"><input type="checkbox" value="${esc(s)}"> ${esc(s)}</label>`).join('');
+            $('f-examen').innerHTML = '<option value="">—</option>' + examenes.map(x => `<option>${esc(x)}</option>`).join('');
+            limpiarForm();
+            pintar();
+            $('msg').textContent = '';
+            ['card-form', 'card-lista', 'card-detectadas'].forEach(id => $(id).style.display = 'block');
+        } catch (e) { $('msg').textContent = 'Error al cargar: ' + e.message; $('msg').className = 'msg err'; }
+    }
+
+    // Marcas de asistencia de un día en las secciones de la clase (o todas si la clase no indica sección).
+    function marcasDe(c) {
+        const secs = (c.secciones || []).map(s => String(s).toUpperCase());
+        return A.asistencia.filter(r => String(r.fecha || '').slice(0, 10) === c.fecha && (!secs.length || secs.includes(String(r.seccion || '').toUpperCase())));
+    }
+    function contraste(c) {
+        const m = marcasDe(c), cuenta = (e) => new Set(m.filter(r => r.estado === e).map(r => String(r.cedula))).size;
+        const rindieron = c.tipo === 'examen' && c.examen_id ? A.intentos.filter(i => i.examen_id === c.examen_id && (!(c.secciones || []).length || c.secciones.includes(String(i.seccion || '').toUpperCase()))).length : null;
+        return { presentes: cuenta('presente'), observados: cuenta('observado'), ausentes: cuenta('ausente'), rindieron };
+    }
+
+    function pintar() {
+        const vigentes = A.clases.filter(c => c.estado !== 'suspendida');
+        $('resumen').textContent = '· ' + vigentes.length + ' dictada(s)' + (A.clases.length - vigentes.length ? ', ' + (A.clases.length - vigentes.length) + ' suspendida(s)' : '') +
+            ' · ' + A.secciones.map(s => s + ': ' + vigentes.filter(c => !(c.secciones || []).length || c.secciones.includes(s)).length).join(' · ');
+        $('lista').innerHTML = A.clases.length ? '<table><thead><tr><th>Fecha</th><th>Modalidad / tipo</th><th>Secciones</th><th>Unidad · tema</th><th>Palabra</th><th>Presentes</th><th>Observados</th><th>Ausentes</th><th>Examen rendido</th><th></th></tr></thead><tbody>' +
+            A.clases.map(c => {
+                const k = contraste(c);
+                return `<tr class="${c.estado === 'suspendida' ? 'susp' : ''}"><td><b>${fechaTxt(c.fecha)}</b>${c.hora_inicio ? '<br><small>' + esc(c.hora_inicio) + (c.hora_fin ? '–' + esc(c.hora_fin) : '') + '</small>' : ''}${c.estado === 'suspendida' ? '<br><small class="n-aus">suspendida</small>' : ''}</td>
+                <td><span class="pill ${c.modalidad === 'virtual' ? 'p-virt' : 'p-pres'}">${esc(c.modalidad)}</span>${c.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(c.examen_id || '') + '</span>' : ''}</td>
+                <td>${esc((c.secciones || []).join(', ') || 'todas')}</td><td>${c.unidad ? 'U' + esc(c.unidad) + ' ' : ''}${esc(c.tema || '')}</td><td>${esc(c.palabra_clave || '')}</td>
+                <td class="n-ok">${k.presentes}</td><td class="n-obs">${k.observados || ''}</td><td class="n-aus">${k.ausentes || ''}</td><td>${k.rindieron == null ? '' : '<b>' + k.rindieron + '</b>'}</td>
+                <td style="white-space:nowrap"><button class="btn btn-s btn-sm" onclick="editar('${esc(c._id)}')">Editar</button>
+                    <button class="btn btn-a btn-sm" onclick="suspender('${esc(c._id)}')">${c.estado === 'suspendida' ? 'Reactivar' : 'Suspender'}</button>
+                    <button class="btn btn-r btn-sm" onclick="borrar('${esc(c._id)}')" title="Borrar"><i class="bi bi-trash"></i></button></td></tr>`;
+            }).join('') + '</tbody></table>' : '<p style="font-size:.78rem;color:var(--gris)">Todavía no hay clases declaradas. Mientras tanto la asistencia se estima con las fechas en que hubo al menos 2 presentes.</p>';
+        pintarDetectadas();
+    }
+
+    // Fechas con marcas de asistencia o exámenes rendidos que no tienen una clase declarada ese día.
+    function pintarDetectadas() {
+        const declaradas = new Set(A.clases.map(c => c.fecha));
+        const porFecha = {};
+        A.asistencia.forEach(r => {
+            const f = String(r.fecha || '').slice(0, 10); if (!f || declaradas.has(f)) return;
+            const d = porFecha[f] = porFecha[f] || { fecha: f, secciones: {}, presentes: new Set(), otros: 0, palabras: {}, tipo: 'clase' };
+            if (r.seccion) d.secciones[String(r.seccion).toUpperCase()] = 1;
+            if (r.estado === 'presente') d.presentes.add(String(r.cedula)); else d.otros++;
+            if (r.palabra_clase) d.palabras[r.palabra_clase] = (d.palabras[r.palabra_clase] || 0) + 1;
+        });
+        // Exámenes: el día en que más alumnos lo rindieron (primer intento).
+        const examenes = {};
+        A.intentos.forEach(i => {
+            const f = String(((i.intentos || [])[0] || {}).timestamp || '');
+            if (!f) return;
+            const loc = new Date(new Date(f).getTime() - 3 * 3600000).toISOString().slice(0, 10);
+            const e = examenes[i.examen_id] = examenes[i.examen_id] || { dias: {}, secciones: {} };
+            e.dias[loc] = (e.dias[loc] || 0) + 1; if (i.seccion) e.secciones[String(i.seccion).toUpperCase()] = 1;
+        });
+        const filasEx = Object.entries(examenes).filter(([id]) => !A.clases.some(c => c.tipo === 'examen' && c.examen_id === id)).map(([id, e]) => {
+            const [fecha, n] = Object.entries(e.dias).sort((a, b) => b[1] - a[1])[0];
+            const total = Object.values(e.dias).reduce((s, x) => s + x, 0);
+            return { fecha, tipo: 'examen', examen_id: id, secciones: e.secciones, presentes: { size: total }, otros: 0, palabras: {}, nota: n + ' de ' + total + ' lo rindieron ese día' };
+        });
+        const filas = Object.values(porFecha).concat(filasEx).sort((a, b) => a.fecha.localeCompare(b.fecha));
+        A._detectadas = filas;
+        $('detectadas').innerHTML = filas.length ? '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Secciones en las marcas</th><th>Presentes</th><th>Otras marcas</th><th>Palabra más usada</th><th></th></tr></thead><tbody>' +
+            filas.map((d, i) => `<tr><td><b>${fechaTxt(d.fecha)}</b></td><td>${d.tipo === 'examen' ? '<span class="pill p-exa">examen ' + esc(d.examen_id) + '</span><br><small>' + esc(d.nota) + '</small>' : 'clase'}</td>
+                <td>${esc(Object.keys(d.secciones).sort().join(', '))}</td><td class="n-ok">${d.presentes.size}</td><td>${d.otros || ''}</td>
+                <td>${esc((Object.entries(d.palabras).sort((a, b) => b[1] - a[1])[0] || [''])[0])}</td>
+                <td><button class="btn btn-p btn-sm" onclick="declararDetectada(${i})"><i class="bi bi-plus"></i> Declarar</button></td></tr>`).join('') + '</tbody></table>'
+            : '<p style="font-size:.78rem;color:var(--vosc)"><i class="bi bi-check2-circle"></i> Todas las asistencias y exámenes tienen su clase declarada.</p>';
+    }
+
+    function tipoCambio() { $('box-examen').style.display = $('f-tipo').value === 'examen' ? '' : 'none'; }
+    function seccionesForm() { return Array.from(document.querySelectorAll('#f-secciones input:checked')).map(i => i.value); }
+    function limpiarForm() {
+        editando = null;
+        ['f-fecha', 'f-ini', 'f-fin', 'f-unidad', 'f-palabra', 'f-tema'].forEach(id => $(id).value = '');
+        $('f-mod').value = 'presencial'; $('f-tipo').value = 'clase'; $('f-examen').value = ''; tipoCambio();
+        document.querySelectorAll('#f-secciones input').forEach(i => i.checked = false);
+        $('form-titulo').innerHTML = '<i class="bi bi-plus-circle"></i> Declarar clase'; $('btn-guardar-txt').textContent = 'Declarar clase'; $('form-msg').textContent = '';
+    }
+    function llenarForm(c) {
+        $('f-fecha').value = c.fecha || ''; $('f-ini').value = c.hora_inicio || ''; $('f-fin').value = c.hora_fin || '';
+        $('f-mod').value = c.modalidad || 'presencial'; $('f-tipo').value = c.tipo || 'clase'; tipoCambio();
+        $('f-examen').value = c.examen_id || ''; $('f-unidad').value = c.unidad || ''; $('f-palabra').value = c.palabra_clave || ''; $('f-tema').value = c.tema || '';
+        const secs = (c.secciones || []).map(s => String(s).toUpperCase());
+        document.querySelectorAll('#f-secciones input').forEach(i => i.checked = secs.includes(i.value));
+        $('card-form').scrollIntoView({ behavior: 'smooth' });
+    }
+    function editar(id) {
+        const c = A.clases.find(x => x._id === id); if (!c) return;
+        limpiarForm(); editando = id; llenarForm(c);
+        $('form-titulo').innerHTML = '<i class="bi bi-pencil"></i> Editar clase'; $('btn-guardar-txt').textContent = 'Guardar cambios';
+    }
+    function declararDetectada(i) {
+        const d = A._detectadas[i]; limpiarForm();
+        llenarForm({ fecha: d.fecha, tipo: d.tipo, examen_id: d.examen_id || '', secciones: Object.keys(d.secciones), modalidad: d.tipo === 'examen' ? 'virtual' : 'presencial',
+            palabra_clave: (Object.entries(d.palabras).sort((a, b) => b[1] - a[1])[0] || [''])[0] });
+        $('form-msg').textContent = 'Revisá la modalidad y las secciones, y tocá «Declarar clase».'; $('form-msg').className = 'msg';
+    }
+
+    async function guardarClase() {
+        const fecha = $('f-fecha').value, secs = seccionesForm(), tipo = $('f-tipo').value;
+        const err = (t) => { $('form-msg').textContent = t; $('form-msg').className = 'msg err'; };
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return err('Indicá la fecha.');
+        if (!secs.length) return err('Marcá al menos una sección.');
+        if (tipo === 'examen' && !$('f-examen').value) return err('Elegí el examen online.');
+        const cod = A.asig.codigo;
+        const id = editando || ('CLA-' + cod + '-' + fecha.replace(/-/g, '') + '-' + Date.now().toString(36).slice(-4));
+        const data = {
+            asignatura: cod, fecha, hora_inicio: $('f-ini').value, hora_fin: $('f-fin').value, modalidad: $('f-mod').value, tipo,
+            examen_id: tipo === 'examen' ? $('f-examen').value : '', secciones: secs, unidad: Number($('f-unidad').value) || null,
+            palabra_clave: $('f-palabra').value.trim(), tema: $('f-tema').value.trim(), estado: editando ? (A.clases.find(x => x._id === editando) || {}).estado || 'dictada' : 'dictada',
+            declarado_por: MI_CED, actualizado: new Date().toISOString()
+        };
+        try {
+            await getDb().collection('clases').doc(id).set(data, { merge: true });
+            const ok = (editando ? 'Clase actualizada' : 'Clase declarada') + ': ' + fechaTxt(fecha) + '.';
+            await cargar();
+            $('form-msg').textContent = ok; $('form-msg').className = 'msg';
+        } catch (e) { err(e.code === 'permission-denied' ? 'Sin permiso para declarar clases.' : 'Error: ' + e.message); }
+    }
+    async function suspender(id) {
+        const c = A.clases.find(x => x._id === id); if (!c) return;
+        const nuevo = c.estado === 'suspendida' ? 'dictada' : 'suspendida';
+        if (!confirm((nuevo === 'suspendida' ? 'Marcar como suspendida' : 'Reactivar') + ' la clase del ' + fechaTxt(c.fecha) + '? Una clase suspendida no cuenta para la asistencia.')) return;
+        await getDb().collection('clases').doc(id).set({ estado: nuevo, actualizado: new Date().toISOString() }, { merge: true });
+        await cargar();
+    }
+    async function borrar(id) {
+        const c = A.clases.find(x => x._id === id); if (!c) return;
+        if (!confirm('¿Borrar la clase del ' + fechaTxt(c.fecha) + '? (las marcas de asistencia de los alumnos no se borran)')) return;
+        await getDb().collection('clases').doc(id).delete();
+        await cargar();
+    }
+</script>
+</body>
+</html>

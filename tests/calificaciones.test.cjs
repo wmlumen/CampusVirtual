@@ -103,6 +103,27 @@ test('trabajo sin calificar no cuenta', () => {
   assert.strictEqual(r.notas.tp, undefined);
 });
 
+test('asistencia contra clases declaradas: presencial, virtual, examen, otra sección y suspendida', () => {
+  const clases = [
+    { fecha: '2026-09-05', secciones: ['S026'], modalidad: 'presencial', tipo: 'clase' },
+    { fecha: '2026-09-15', secciones: ['S026', 'LV026'], modalidad: 'virtual', tipo: 'clase' },        // conjunta
+    { fecha: '2026-09-22', secciones: ['S026', 'LV026'], modalidad: 'virtual', tipo: 'examen', examen_id: 'TIC026-P1' },
+    { fecha: '2026-09-26', secciones: ['S026'], modalidad: 'presencial', tipo: 'clase', estado: 'suspendida' },
+    { fecha: '2026-09-14', secciones: ['LV026'], modalidad: 'presencial', tipo: 'clase' }             // no es de su sección
+  ];
+  const regs = [
+    { asignatura: 'TIC', fecha: '2026-09-05', estado: 'presente' },
+    { asignatura: 'TIC', fecha: '2026-09-15', estado: 'observado' },      // palabra incorrecta: no cuenta
+    { asignatura: 'TIC', fecha: '2026-09-14', estado: 'presente' }        // clase de otra sección: no suma
+  ];
+  const r = N.asistenciaPorClases(regs, [{ examen_id: 'TIC026-P1', intentos: [{ puntaje: 9 }] }], clases, 'S026', { codigo: 'TIC', nombre: 'Tecnología' });
+  assert.strictEqual(r.total, 3);
+  assert.strictEqual(r.presentes, 2);
+  assert.strictEqual(r.pct, 67);
+  assert.deepStrictEqual(r.detalle.map(d => d.por), ['asistencia', '', 'examen']);
+  assert.strictEqual(N.asistenciaPorClases(regs, [], [], 'S026', { codigo: 'TIC' }), null);
+});
+
 test('carreraClave unifica las formas de escribir una carrera', () => {
   const k = N.carreraClave;
   assert.strictEqual(k('Administración de Empresa'), k('Licenciatura en Administración de Empresas'));

@@ -222,8 +222,36 @@
                 </div>
                 <div id="tab-asignaturas" class="admin-section" style="display:none">
                     <div class="admin-card">
-                        <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Catedras</h2><p class="small text-white-50 mb-0">Materias del plan curricular — activar o dar de baja</p></div><div class="d-flex gap-2"><a href="constructor/index.html" class="btn btn-sm btn-act-primary text-decoration-none"><i class="bi bi-plus-circle me-1"></i> Constructor</a><button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
-                        <div class="table-admin-wrap"><table class="table-admin"><thead><tr><th>Codigo / Materia</th><th>Carrera</th><th>Docente</th><th>Grado / Semestre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody id="tabla-asignaturas-body"><tr><td colspan="6" class="text-center py-4">Cargando...</td></tr></tbody></table></div>
+                        <div class="admin-card-header">
+                            <div>
+                                <h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-book-half text-info me-2"></i>Asignaturas y Cátedras</h2>
+                                <p class="small text-white-50 mb-0">Gestión de carreras, planes curriculares, asignación de docentes y secciones</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button onclick="abrirModalCarreras()" class="btn btn-sm btn-outline-warning rounded-pill px-3"><i class="bi bi-mortarboard me-1"></i> Gestionar Carreras</button>
+                                <button onclick="abrirModalCrearAsignatura()" class="btn btn-sm btn-act-primary rounded-pill px-3"><i class="bi bi-plus-lg me-1"></i> Nueva Asignatura</button>
+                                <a href="constructor/index.html" class="btn btn-sm btn-outline-info rounded-pill px-3 text-decoration-none"><i class="bi bi-tools me-1"></i> Constructor</a>
+                                <button onclick="cargarAsignaturas()" class="btn btn-sm btn-outline-light rounded-pill px-3"><i class="bi bi-arrow-clockwise me-1"></i> Refrescar</button>
+                            </div>
+                        </div>
+                        <div class="table-admin-wrap">
+                            <table class="table-admin">
+                                <thead>
+                                    <tr>
+                                        <th>Código / Materia</th>
+                                        <th>Carrera(s) Vinculada(s)</th>
+                                        <th>Docente Asignado</th>
+                                        <th>Sección(es)</th>
+                                        <th>Nivel / Semestre</th>
+                                        <th>Estado</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-asignaturas-body">
+                                    <tr><td colspan="7" class="text-center py-4">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div id="tab-tesoreria" class="admin-section" style="display:none">
@@ -254,9 +282,135 @@
                     <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 fw-bold text-success mb-0"><i class="bi bi-person-plus me-2"></i>Pre-registrar usuario</h3><button type="button" class="btn-close btn-close-white" onclick="cerrarModalCrear()"></button></div>
                     <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Nombre *</label><input type="text" id="crear-user-nombre" class="form-control form-control-sm search-inp w-100"></div><div class="col-6"><label class="small text-white-50 mb-1">Apellido *</label><input type="text" id="crear-user-apellido" class="form-control form-control-sm search-inp w-100"></div></div>
                     <div class="row g-2 mb-3"><div class="col-6"><label class="small text-white-50 mb-1">Cedula *</label><input type="text" id="crear-user-cedula" class="form-control form-control-sm search-inp w-100"></div></div>
-                    <p class="small text-white-50 mb-3"><i class="bi bi-info-circle me-1"></i>Se pre-registra la cédula: la persona entra a «Registrarse», busca su cédula y elige su contraseña. Después le asignás rol, carrera y sección desde «Editar».</p><datalist id="cv-lista-secciones"><option value="LV026"><option value="MJ026"><option value="S026"></datalist>
+                    <p class="small text-white-50 mb-3"><i class="bi bi-info-circle me-1"></i>Se pre-registra la cédula: la persona entra a «Registrarse», busca su cédula y elige su contraseña. Después le asignás rol, carrera y sección desde «Editar».</p><datalist id="cv-lista-secciones"><option value="LV026"><option value="MJ026"><option value="S026"><option value="MAE026"><option value="DOC026"></datalist>
                     <div id="crear-user-msg" class="small mb-3" style="display:none"></div>
                     <div class="d-flex justify-content-end gap-2 mt-4"><button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalCrear()">Cancelar</button><button type="button" class="btn btn-sm btn-act-primary px-4" onclick="crearUsuario()"><i class="bi bi-check-lg me-1"></i> Crear</button></div>
+                </div>
+            </div>
+
+            <!-- MODAL: GESTIONAR CARRERAS -->
+            <div id="modal-gestionar-carreras" class="modal-centuria-backdrop" style="display:none">
+                <div class="modal-centuria-box" style="max-width:700px">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 fw-bold text-warning mb-0"><i class="bi bi-mortarboard-fill me-2"></i>Gestión de Carreras y Programas</h3>
+                        <button type="button" class="btn-close btn-close-white" onclick="cerrarModalCarreras()"></button>
+                    </div>
+                    <div class="p-3 mb-3 rounded-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+                        <h4 class="small fw-bold text-white mb-2"><i class="bi bi-plus-circle-fill text-success me-1"></i> Crear Nueva Carrera o Programa</h4>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-8">
+                                <label class="small text-white-50 mb-1">Nombre Oficial de la Carrera / Programa *</label>
+                                <input type="text" id="nueva-carrera-nombre" class="form-control form-control-sm search-inp w-100" placeholder="Ej. Licenciatura en Marketing Digital">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-white-50 mb-1">Grado / Nivel Académico *</label>
+                                <select id="nueva-carrera-grado" class="form-select form-select-sm search-inp w-100">
+                                    <option value="GRADO">GRADO</option>
+                                    <option value="ESPECIALIZACIÓN">ESPECIALIZACIÓN</option>
+                                    <option value="MAESTRÍA">MAESTRÍA</option>
+                                    <option value="DOCTORADO">DOCTORADO</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" onclick="guardarNuevaCarrera()" class="btn btn-sm btn-act-success px-3">
+                                <i class="bi bi-check-lg me-1"></i> Registrar Carrera
+                            </button>
+                        </div>
+                        <div id="nueva-carrera-msg" class="small mt-2" style="display:none"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-white-50 font-monospace">Carreras disponibles en el sistema:</span>
+                        <input type="text" id="filtro-modal-carreras" placeholder="Buscar carrera..." oninput="filtrarCarrerasModal()" class="search-inp py-1 px-2" style="font-size:.75rem;max-width:220px">
+                    </div>
+                    <div style="max-height:260px;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);border-radius:10px" id="lista-carreras-box">
+                        <div class="p-3 text-center text-white-50 small"><span class="spinner-custom me-2"></span> Cargando catálogo...</div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalCarreras()">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CREAR / EDITAR ASIGNATURA Y VINCULAR CÁTEDRA -->
+            <div id="modal-editar-catedra" class="modal-centuria-backdrop" style="display:none">
+                <div class="modal-centuria-box" style="max-width:720px">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 fw-bold text-warning mb-0" id="modal-catedra-titulo"><i class="bi bi-book-half me-2"></i>Editar Asignatura / Cátedra</h3>
+                        <button type="button" class="btn-close btn-close-white" onclick="cerrarModalCatedra()"></button>
+                    </div>
+                    <input type="hidden" id="catedra-modo" value="editar">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-3">
+                            <label class="small text-white-50 mb-1">Código *</label>
+                            <input type="text" id="catedra-codigo" class="form-control form-control-sm search-inp w-100" style="text-transform:uppercase" placeholder="Ej: TIC, ADM, MAE01">
+                        </div>
+                        <div class="col-md-9">
+                            <label class="small text-white-50 mb-1">Nombre de la Asignatura *</label>
+                            <input type="text" id="catedra-nombre" class="form-control form-control-sm search-inp w-100" placeholder="Ej: Tecnología de la Información y Comunicación">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Grado / Nivel</label>
+                            <select id="catedra-grado" class="form-select form-select-sm search-inp w-100">
+                                <option value="GRADO">GRADO</option>
+                                <option value="ESPECIALIZACIÓN">ESPECIALIZACIÓN</option>
+                                <option value="MAESTRÍA">MAESTRÍA</option>
+                                <option value="DOCTORADO">DOCTORADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Semestre / Módulo</label>
+                            <input type="text" id="catedra-semestre" class="form-control form-control-sm search-inp w-100" placeholder="Ej: 1er Semestre, Módulo 2">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Estado</label>
+                            <select id="catedra-estado" class="form-select form-select-sm search-inp w-100">
+                                <option value="activo">Activo (Visible en Mis Cursos)</option>
+                                <option value="inactivo">De baja (Oculto)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- VINCULACIÓN A CARRERA(S) -->
+                    <div class="mb-3 p-3 rounded-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08)">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="small fw-bold text-white mb-0"><i class="bi bi-mortarboard me-1 text-warning"></i> Carrera(s) Vinculada(s)</label>
+                            <span class="text-white-50" style="font-size:.68rem">Seleccioná una o varias carreras</span>
+                        </div>
+                        <p class="text-white-50 mb-2" style="font-size:.7rem">Los alumnos de estas carreras tendrán esta materia autorizada en su plan de estudios.</p>
+                        <div id="catedra-carreras-checks" style="max-height:130px;overflow-y:auto;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;background:rgba(0,0,0,0.2)">
+                            <div class="text-white-50 small">Cargando carreras...</div>
+                        </div>
+                    </div>
+
+                    <!-- VINCULACIÓN DOCENTE Y SECCIONES -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-white mb-1"><i class="bi bi-person-badge me-1 text-info"></i> Docente Asignado</label>
+                            <select id="catedra-docente-select" class="form-select form-select-sm search-inp w-100">
+                                <option value="">-- Sin docente asignado --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-white mb-1"><i class="bi bi-people me-1 text-info"></i> Secciones Vinculadas</label>
+                            <input type="text" id="catedra-secciones-input" class="form-control form-control-sm search-inp w-100" placeholder="Ej: LV026, MJ026, S026, MAE026" style="text-transform:uppercase">
+                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 text-white-50" style="font-size:.65rem" onclick="toggleSeccionTag('LV026')">+ LV026</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 text-white-50" style="font-size:.65rem" onclick="toggleSeccionTag('MJ026')">+ MJ026</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 text-white-50" style="font-size:.65rem" onclick="toggleSeccionTag('S026')">+ S026</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 text-white-50" style="font-size:.65rem" onclick="toggleSeccionTag('MAE026')">+ MAE026</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="catedra-msg" class="small mb-3" style="display:none"></div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-white px-3" onclick="cerrarModalCatedra()">Cancelar</button>
+                        <button type="button" class="btn btn-sm btn-act-primary px-4" onclick="guardarCatedraModal()"><i class="bi bi-check-lg me-1"></i> Guardar Cátedra</button>
+                    </div>
                 </div>
             </div>
             </div>
@@ -433,20 +587,290 @@ async function crearUsuario(){
     else mostrar((r&&r.error)||'No se pudo pre-registrar.');
   }catch(e){mostrar('Error de conexion.');}
 }
+var LISTA_CARRERAS_CACHE=[];
+var LISTA_DOCENTES_CACHE=[];
+
+// Helper para cerrar modales de cátedras y carreras
+function cerrarModalCarreras(){ var m=document.getElementById('modal-gestionar-carreras'); if(m) m.style.display='none'; }
+function cerrarModalCatedra(){ var m=document.getElementById('modal-editar-catedra'); if(m) m.style.display='none'; }
+
+// ── GESTIÓN DE CARRERAS ──
+async function cargarCatalogoCarreras(){
+  try{
+    var res=await CenturiaAPI.catalogos.getCarreras();
+    var cars=(res&&res.carreras)?res.carreras:[];
+    LISTA_CARRERAS_CACHE=cars;
+    return cars;
+  }catch(e){ return []; }
+}
+
+async function abrirModalCarreras(){
+  var m=document.getElementById('modal-gestionar-carreras'); if(!m) return;
+  m.style.display='flex';
+  var msg=document.getElementById('nueva-carrera-msg'); if(msg) msg.style.display='none';
+  document.getElementById('nueva-carrera-nombre').value='';
+  await renderListaCarrerasModal();
+}
+
+async function renderListaCarrerasModal(){
+  var box=document.getElementById('lista-carreras-box'); if(!box) return;
+  box.innerHTML='<div class="p-3 text-center text-white-50 small"><span class="spinner-custom me-2"></span> Cargando catálogo...</div>';
+  var cars=await cargarCatalogoCarreras();
+  var filtro=((document.getElementById('filtro-modal-carreras')||{}).value||'').toLowerCase().trim();
+  var filtradas=cars.filter(function(c){
+    var nom=typeof c==='string'?c:(c.nombre||'');
+    var grd=typeof c==='string'?'':(c.grado||'');
+    return !filtro || nom.toLowerCase().indexOf(filtro)>-1 || grd.toLowerCase().indexOf(filtro)>-1;
+  });
+  if(!filtradas.length){
+    box.innerHTML='<div class="p-3 text-center text-white-50 small">No se encontraron carreras.</div>';
+    return;
+  }
+  box.innerHTML='<table class="table-admin mb-0"><thead><tr><th>Nombre de Carrera / Programa</th><th>Nivel</th></tr></thead><tbody>'+
+    filtradas.map(function(c){
+      var nom=typeof c==='string'?c:(c.nombre||'');
+      var grd=typeof c==='string'?'GRADO':(c.grado||'GRADO');
+      return '<tr><td class="fw-bold text-white">'+esc(nom)+'</td><td><span class="badge-role badge-role-admgen">'+esc(grd)+'</span></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+function filtrarCarrerasModal(){
+  renderListaCarrerasModal();
+}
+
+async function guardarNuevaCarrera(){
+  var nom=(document.getElementById('nueva-carrera-nombre').value||'').trim();
+  var grd=(document.getElementById('nueva-carrera-grado').value||'GRADO').trim().toUpperCase();
+  var msg=document.getElementById('nueva-carrera-msg');
+  var mostrar=function(t,err){if(msg){msg.textContent=t;msg.style.color=err?'#f87171':'#4ade80';msg.style.display='block';}else alert(t);};
+  if(msg) msg.style.display='none';
+  if(!nom){ mostrar('Ingresá el nombre oficial de la carrera.', true); return; }
+  try{
+    var yo=cvMiCedula();
+    var r=await CenturiaAPI.request('agregar_carrera', { cedula: yo, nombre: nom, grado: grd }, 'POST');
+    if(r&&r.ok){
+      document.getElementById('nueva-carrera-nombre').value='';
+      mostrar('Carrera "'+nom+'" registrada con éxito.', false);
+      await cargarCatalogoCarreras();
+      await renderListaCarrerasModal();
+      cargarAsignaturas();
+    }else{
+      mostrar((r&&(r.error||r.mensaje))||'No se pudo registrar la carrera.', true);
+    }
+  }catch(e){ mostrar('Error al registrar carrera: '+(e.message||e), true); }
+}
+
+// ── VINCULACIÓN Y EDICIÓN DE ASIGNATURAS / CÁTEDRAS ──
+async function cargarDocentesParaSelect(){
+  if(LISTA_DOCENTES_CACHE.length) return LISTA_DOCENTES_CACHE;
+  try{
+    var res=await CenturiaAPI.usuarios.list();
+    var list=(res&&res.usuarios)?res.usuarios:(res&&res.data)?res.data:(Array.isArray(res)?res:[]);
+    var docs=list.filter(function(u){
+      var r=((u.rol||((u.roles||[])[0]||{}).rol)||'').toLowerCase();
+      return r==='docente';
+    });
+    LISTA_DOCENTES_CACHE=docs;
+    return docs;
+  }catch(e){ return []; }
+}
+
+function toggleSeccionTag(tag){
+  var inp=document.getElementById('catedra-secciones-input'); if(!inp) return;
+  var actual=(inp.value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean);
+  var idx=actual.indexOf(tag.toUpperCase());
+  if(idx<0) actual.push(tag.toUpperCase());
+  else actual.splice(idx, 1);
+  inp.value=actual.join(', ');
+}
+
+async function poblarFormularioCatedra(a, esNuevo){
+  document.getElementById('catedra-modo').value = esNuevo ? 'nuevo' : 'editar';
+  document.getElementById('modal-catedra-titulo').innerHTML = esNuevo ?
+    '<i class="bi bi-plus-circle me-2"></i>Nueva Asignatura / Cátedra' :
+    '<i class="bi bi-pencil-square me-2"></i>Editar Asignatura / Cátedra ('+esc(a.codigo||a.id)+')';
+  
+  var codInp=document.getElementById('catedra-codigo');
+  codInp.value = esNuevo ? '' : (a.codigo || a.id || '');
+  codInp.readOnly = !esNuevo;
+  
+  document.getElementById('catedra-nombre').value = esNuevo ? '' : (a.nombre || '');
+  document.getElementById('catedra-grado').value = esNuevo ? 'GRADO' : (a.grado || 'GRADO');
+  document.getElementById('catedra-semestre').value = esNuevo ? '' : (a.semestre || '');
+  document.getElementById('catedra-estado').value = esNuevo ? 'activo' : ((a.estado || 'activo').toLowerCase());
+  
+  // Secciones
+  var secList = [];
+  if(a && Array.isArray(a.secciones)) secList = a.secciones;
+  else if(a && a.seccion) secList = [a.seccion];
+  else if(a && Array.isArray(a.docentes) && a.docentes[0] && Array.isArray(a.docentes[0].secciones)) secList = a.docentes[0].secciones;
+  document.getElementById('catedra-secciones-input').value = secList.join(', ');
+
+  // Docente
+  var selDoc=document.getElementById('catedra-docente-select');
+  selDoc.innerHTML='<option value="">-- Sin docente asignado --</option>';
+  var docs=await cargarDocentesParaSelect();
+  var docActualCed = (a && (a.docente_cedula || (a.docentes && a.docentes[0] && a.docentes[0].cedula))) || '';
+  var docActualNom = (a && (a.docente_nombre || a.docente || (a.docentes && a.docentes[0] && a.docentes[0].nombre))) || '';
+  
+  docs.forEach(function(d){
+    var opt=document.createElement('option');
+    opt.value=d.cedula;
+    opt.textContent=d.cedula+' — '+((d.nombre||'')+' '+(d.apellido||'')).toUpperCase();
+    if(String(d.cedula)===String(docActualCed)) opt.selected=true;
+    selDoc.appendChild(opt);
+  });
+  // Si el docente asignado no figura en docs activos, agregarlo como opción seleccionada
+  if(docActualCed && !docs.some(function(d){return String(d.cedula)===String(docActualCed);})){
+    var opt=document.createElement('option');
+    opt.value=docActualCed;
+    opt.textContent=docActualCed+' — '+(docActualNom || 'Docente asignado');
+    opt.selected=true;
+    selDoc.appendChild(opt);
+  }
+
+  // Carreras vinculadas (checkboxes)
+  var carsBox=document.getElementById('catedra-carreras-checks');
+  carsBox.innerHTML='<div class="text-white-50 small"><span class="spinner-custom me-2"></span> Cargando catálogo...</div>';
+  var allCars=await cargarCatalogoCarreras();
+  var carrerasVinculadas = [];
+  if(a && Array.isArray(a.carreras) && a.carreras.length) carrerasVinculadas = a.carreras;
+  else if(a && a.carrera) carrerasVinculadas = [a.carrera];
+
+  var normC = function(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim(); };
+  var vincNorm = carrerasVinculadas.map(normC);
+
+  carsBox.innerHTML = allCars.map(function(c, i){
+    var nom = typeof c==='string'?c:(c.nombre||'');
+    var grd = typeof c==='string'?'':(c.grado||'');
+    var isChecked = vincNorm.indexOf(normC(nom)) >= 0;
+    return '<div class="form-check form-check-inline me-3 mb-1">'+
+      '<input class="form-check-input catedra-car-chk" type="checkbox" id="car-chk-'+i+'" value="'+esc(nom)+'" '+(isChecked?'checked':'')+'>'+
+      '<label class="form-check-label text-white small" for="car-chk-'+i+'">'+esc(nom)+(grd?' <span style="font-size:.65rem;color:#94a3b8">('+esc(grd)+')</span>':'')+'</label>'+
+      '</div>';
+  }).join('');
+}
+
+async function abrirModalCrearAsignatura(){
+  var m=document.getElementById('modal-editar-catedra'); if(!m) return;
+  var msg=document.getElementById('catedra-msg'); if(msg) msg.style.display='none';
+  m.style.display='flex';
+  await poblarFormularioCatedra({}, true);
+}
+
+async function abrirModalEditarCatedra(id){
+  var m=document.getElementById('modal-editar-catedra'); if(!m) return;
+  var msg=document.getElementById('catedra-msg'); if(msg) msg.style.display='none';
+  var a = (LISTA_ASIGNATURAS_CACHE||[]).find(function(x){ return (x.id||x.codigo)===id; }) || { id: id, codigo: id };
+  m.style.display='flex';
+  await poblarFormularioCatedra(a, false);
+}
+
+async function guardarCatedraModal(){
+  var cod=(document.getElementById('catedra-codigo').value||'').trim().toUpperCase().replace(/[^A-Z0-9_\-]/g,'');
+  var nom=(document.getElementById('catedra-nombre').value||'').trim();
+  var grd=(document.getElementById('catedra-grado').value||'GRADO').trim().toUpperCase();
+  var sem=(document.getElementById('catedra-semestre').value||'').trim();
+  var est=(document.getElementById('catedra-estado').value||'activo').toLowerCase();
+  var msg=document.getElementById('catedra-msg');
+  var mostrar=function(t,err){if(msg){msg.textContent=t;msg.style.color=err?'#f87171':'#4ade80';msg.style.display='block';}else alert(t);};
+  if(msg) msg.style.display='none';
+
+  if(!cod){ mostrar('El código de la asignatura es obligatorio.', true); return; }
+  if(!nom){ mostrar('El nombre de la asignatura es obligatorio.', true); return; }
+
+  // Recoger carreras seleccionadas
+  var selectedCars = [];
+  document.querySelectorAll('.catedra-car-chk:checked').forEach(function(chk){
+    if(chk.value) selectedCars.push(chk.value.trim());
+  });
+
+  // Recoger secciones
+  var secRaw = (document.getElementById('catedra-secciones-input').value||'').trim();
+  var secciones = secRaw ? secRaw.split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean) : [];
+
+  // Recoger docente
+  var selDoc = document.getElementById('catedra-docente-select');
+  var docCed = selDoc.value || '';
+  var docNom = docCed && selDoc.selectedOptions[0] ? (selDoc.selectedOptions[0].text.split('—')[1]||'').trim() : '';
+
+  var payload = {
+    id: cod,
+    codigo: cod,
+    nombre: nom,
+    grado: grd,
+    semestre: sem,
+    estado: est,
+    carreras: selectedCars,
+    carrera: selectedCars[0] || '',
+    secciones: secciones,
+    seccion: secciones[0] || '',
+    docente_cedula: docCed,
+    docente_nombre: docNom,
+    docente: docNom || docCed || '',
+    docentes: docCed ? [{ cedula: docCed, nombre: docNom, secciones: secciones }] : []
+  };
+
+  try{
+    var r = await CenturiaAPI.asignaturas.save(payload);
+    if(r && r.ok !== false){
+      cerrarModalCatedra();
+      cargarAsignaturas();
+      alert('Asignatura / Cátedra '+cod+' guardada con éxito.');
+    }else{
+      mostrar((r && (r.error||r.mensaje))||'No se pudo guardar la asignatura.', true);
+    }
+  }catch(e){ mostrar('Error al guardar: '+(e.message||e), true); }
+}
+
 async function cargarAsignaturas(){
   var tb=document.getElementById('tabla-asignaturas-body');if(!tb)return;
-  try{var res=await CenturiaAPI.asignaturas.list({estado:'todas'});
+  try{
+    var res=await CenturiaAPI.asignaturas.list({estado:'todas'});
     var list=(res&&res.asignaturas)?res.asignaturas:(res&&res.items)?res.items:(Array.isArray(res)?res:[]);
     LISTA_ASIGNATURAS_CACHE=list;
-    if(!list.length){tb.innerHTML='<tr><td colspan="6" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}
+    if(!list.length){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">Sin asignaturas registradas.</td></tr>';return;}
     tb.innerHTML=list.slice(0,200).map(function(a){
       var id=a.id||a.codigo||'',est=String(a.estado||'activo').toLowerCase(),activa=est==='activo'||est==='desarrollado';
-      var boton=activa?'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'inactivo\')" class="btn-act me-1" style="background:#64748b;color:#fff" title="Los alumnos dejan de verla"><i class="bi bi-slash-circle"></i> Dar de baja</button>'
-                      :'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'activo\')" class="btn-act btn-act-success me-1" title="Los alumnos la ven en Mis Cursos"><i class="bi bi-check-lg"></i> Activar</button>';
-      return '<tr><td class="fw-bold">'+esc(a.codigo||id)+'<div style="font-size:.65rem;color:#94a3b8;font-weight:400">'+esc(a.nombre||'')+'</div></td><td>'+esc(a.carrera||'---')+'</td><td>'+esc(a.docente||a.docente_nombre||a.docente_cedula||'---')+'</td><td>'+esc(a.grado||'---')+(a.semestre?' · '+esc(a.semestre):'')+'</td><td>'+badgeEstado(activa?'activo':'inactivo')+'</td><td class="text-end" style="white-space:nowrap">'+boton+'<a href="constructor/index.html" class="btn-act btn-act-primary text-decoration-none">Abrir</a></td></tr>';
+      
+      // Carreras formateadas
+      var cars = (Array.isArray(a.carreras) && a.carreras.length) ? a.carreras : (a.carrera ? [a.carrera] : []);
+      var carsHtml = cars.length ? cars.map(function(c){
+        return '<span class="badge-role badge-role-admgen mb-1 me-1 d-inline-block text-truncate" style="max-width:210px;font-size:.65rem">'+esc(c)+'</span>';
+      }).join('') : '<span class="text-white-50 small">—</span>';
+
+      // Docente
+      var docNom = a.docente_nombre || a.docente || (a.docentes && a.docentes[0] && a.docentes[0].nombre) || '';
+      var docCed = a.docente_cedula || (a.docentes && a.docentes[0] && a.docentes[0].cedula) || '';
+      var docHtml = docNom ? '<div class="fw-bold text-white small">'+esc(docNom)+'</div>'+(docCed?'<div style="font-size:.65rem;color:#94a3b8">C.I. '+esc(docCed)+'</div>':'') :
+                    (docCed ? '<div class="fw-bold text-white small">C.I. '+esc(docCed)+'</div>' : '<span class="text-white-50 small">Sin asignar</span>');
+
+      // Secciones vinculadas
+      var secs = (Array.isArray(a.secciones) && a.secciones.length) ? a.secciones :
+                 (a.docentes && a.docentes[0] && Array.isArray(a.docentes[0].secciones) && a.docentes[0].secciones.length) ? a.docentes[0].secciones :
+                 (a.seccion ? [a.seccion] : []);
+      var secsHtml = secs.length ? secs.map(function(s){
+        return '<span class="badge-role badge-role-docente me-1 d-inline-block" style="font-size:.65rem">'+esc(s)+'</span>';
+      }).join('') : '<span class="text-white-50 small">—</span>';
+
+      var botonEstado=activa?'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'inactivo\')" class="btn-act me-1" style="background:#64748b;color:#fff" title="Los alumnos dejan de verla"><i class="bi bi-slash-circle"></i> Baja</button>'
+                            :'<button onclick="cvEstadoAsignatura(\''+escQ(id)+'\',\'activo\')" class="btn-act btn-act-success me-1" title="Los alumnos la ven en Mis Cursos"><i class="bi bi-check-lg"></i> Activar</button>';
+      
+      var botonEditar='<button onclick="abrirModalEditarCatedra(\''+escQ(id)+'\')" class="btn-act btn-act-warning me-1" title="Vincular docente, carreras y secciones"><i class="bi bi-pencil-square"></i> Cátedra</button>';
+
+      return '<tr>'+
+        '<td class="fw-bold text-warning">'+esc(a.codigo||id)+'<div style="font-size:.68rem;color:#cbd5e1;font-weight:500">'+esc(a.nombre||'')+'</div></td>'+
+        '<td>'+carsHtml+'</td>'+
+        '<td>'+docHtml+'</td>'+
+        '<td>'+secsHtml+'</td>'+
+        '<td class="small">'+esc(a.grado||'GRADO')+(a.semestre?' · <span class="text-white-50">'+esc(a.semestre)+'</span>':'')+'</td>'+
+        '<td>'+badgeEstado(activa?'activo':'inactivo')+'</td>'+
+        '<td class="text-end" style="white-space:nowrap">'+botonEditar+botonEstado+'<a href="constructor/index.html" class="btn-act btn-act-primary text-decoration-none" title="Abrir en Constructor"><i class="bi bi-tools"></i></a></td>'+
+        '</tr>';
     }).join('');
-  }catch(e){tb.innerHTML='<tr><td colspan="6" class="text-center py-4">No se pudo cargar el catalogo.</td></tr>';}
+  }catch(e){tb.innerHTML='<tr><td colspan="7" class="text-center py-4">No se pudo cargar el catálogo de asignaturas.</td></tr>';}
 }
+
 async function cvEstadoAsignatura(id,estado){
   if(!confirm((estado==='activo'?'Activar':'Dar de baja')+' la asignatura '+id+'?'))return;
   var r=await CenturiaAPI.asignaturas.setEstado(id,estado);

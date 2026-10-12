@@ -151,9 +151,13 @@
         if (!total) return null;
         return red(Math.min(100, mias.size / total * 100), 0);
     }
-    // Sesiones dictadas en una sección: todas las sesiones distintas en las que alguien estuvo presente.
+    // Clases dictadas en una sección: sesiones con al menos 2 alumnos presentes
+    // (un aviso de ausencia aislado o una prueba de una sola persona no es una clase).
     function sesionesDictadas(registrosSeccion, asig) {
-        return new Set((registrosSeccion || []).filter(r => esDeAsignatura(r, asig)).map(sesionDe).filter(Boolean)).size;
+        const n = {};
+        (registrosSeccion || []).filter(r => esDeAsignatura(r, asig) && PRESENTE.indexOf(String(r.estado || r.status || '').toLowerCase()) >= 0)
+            .forEach(r => { const s = sesionDe(r); if (s) (n[s] = n[s] || new Set()).add(String(r.cedula)); });
+        return Object.values(n).filter(c => c.size >= 2).length;
     }
 
     /**
@@ -201,11 +205,24 @@
         return { notas: notas, fuente: fuente };
     }
 
+    // Clave de carrera para comparar: la misma carrera llega escrita de muchas formas
+    // («Administración de Empresa», «Licenciatura en Administración de Empresas», «ADMINISTRACION DE EMPRESAS»…).
+    function carreraClave(s) {
+        const t = sinTilde(s);
+        if (!t) return '';
+        if (t.includes('ADUANER')) return 'ADUANERA';
+        if (t.includes('GESTION PUBLICA') || t.includes('GESTION Y POLITICAS') || /GESTION\s*$/.test(t)) return 'GESTION PUBLICA';
+        if (t.includes('EMPRESA') && !t.includes('MAESTRIA')) return 'ADMINISTRACION DE EMPRESAS';
+        if (t.includes('COMERCIAL') && !t.includes('INTERNACIONAL')) return 'INGENIERIA COMERCIAL';
+        if (t.includes('CONTAB') || t.includes('CONTABLES')) return 'CONTABILIDAD';
+        return t.replace(/^(LICENCIATURA|LIC\.?)\s+EN\s+/, '');
+    }
+
     // ID del documento de una nota: una por alumno, asignatura y evaluación del plan.
     const idNota = (cedula, codigo, evalId) => [cedula, String(codigo).toUpperCase(), evalId].join('__');
 
     const api = { TIPOS, ORIGENES, ORIGEN_DE_TIPO, ESCALA, REGLAS, normalizarTipo, escalaDe, calcular, validarPlan,
-        sesionDe, esDeAsignatura, asistenciaPct, sesionesDictadas, notasDesdeFuentes, idNota, sinTilde };
+        sesionDe, esDeAsignatura, asistenciaPct, sesionesDictadas, notasDesdeFuentes, idNota, sinTilde, carreraClave };
     if (typeof module === 'object' && module.exports) module.exports = api;
     else raiz.CenturiaNotas = api;
 })(typeof window !== 'undefined' ? window : this);

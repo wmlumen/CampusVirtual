@@ -81,7 +81,7 @@ const carrerasDe = (s) => String(s || '').split(/\s*[\/,;]\s*/).map(x => x.trim(
     const eid = nuevoId('EVA');
     evalIds.push({ id: eid, e: e });
     await db.collection(C.evals).doc(eid).set({
-      SubjectID: sid, Nombre: e.nombre, Tipo: e.tipo || 'parcial', Origen: e.origen || '', Unidad: Number(e.unidad) || null, Requisito: !!e.requisito,
+      SubjectID: sid, Nombre: e.nombre, Tipo: e.tipo || 'parcial', Origen: e.origen || '', Unidad: Number(e.unidad) || null, Requisito: !!e.requisito, ExamenId: e.examen_id || '',
       PuntajeMax: Number(e.puntaje_max) || 0, Ponderacion: Number(e.ponderacion) || 0,
       FechaApertura: '', FechaCierre: '', DuracionMin: 0, IntentosMax: 1, Modalidad: 'presencial', Aleatorizar: false, PublicarResultados: false
     });
@@ -103,7 +103,7 @@ const carrerasDe = (s) => String(s || '').split(/\s*[\/,;]\s*/).map(x => x.trim(
     // Mismo formato que publica el Constructor (planDe en app/js/constructor-api.js), leído por app/js/calificaciones.js.
     evaluaciones: evalIds.map(({ id, e }) => ({
       id: id, nombre: e.nombre, tipo: e.tipo || 'parcial', origen: e.origen || '', unidad: Number(e.unidad) || null,
-      puntaje_max: Number(e.puntaje_max) || null, ponderacion: Number(e.ponderacion) || 0, requisito: !!e.requisito, fecha_apertura: '', fecha_cierre: ''
+      puntaje_max: Number(e.puntaje_max) || null, ponderacion: Number(e.ponderacion) || 0, requisito: !!e.requisito, examen_id: e.examen_id || '', fecha_apertura: '', fecha_cierre: ''
     })),
     reglas: Object.assign({ aprobacion_pct: 70, asistencia_min_pct: 80 }, A.reglas || {}),
     estado: p.estado || 'inactivo', docente_cedula: p.docente_cedula || '',

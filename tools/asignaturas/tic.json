@@ -1,0 +1,41 @@
+{
+  "_fuente": "app/Materiales_Clases/programa.html (programa oficial y sistema de evaluación) y títulos de app/Materiales_Clases/Unidad_01..10.html. Exámenes en línea: TIC026-P1 y TIC026-P2 (importados de la planilla de respuestas).",
+  "_competencias_capacidades": "Redactadas a partir de los objetivos y contenidos del programa oficial (no las trae). Pendiente de validación académica.",
+  "_criterios_evaluacion": "app/academic/criterios_evaluacion.html tiene otra ponderación (25% final, 10 actividades); se usa la del programa oficial, que coincide con los exámenes de 10 puntos.",
+  "codigo": "TIC",
+  "nombre": "Tecnología de la Información y Comunicación",
+  "carrera": "Administración de Empresas / Administración Aduanera / Administración y Gestión Pública",
+  "grado": "Grado",
+  "curso": "",
+  "semestre": "3er Semestre",
+  "carga_horaria": 120,
+  "programa": {
+    "fundamentacion": "La combinación entre la tecnología informática con los sistemas de información se convierte en un factor estratégico. La gestión eficaz y eficiente de la información es sinónimo de éxito. El programa busca sistematizar estas variables para brindar al futuro administrador las herramientas teóricas y prácticas que exigen los negocios actuales.",
+    "objetivo_general": "Brindar al futuro administrador las herramientas teóricas y prácticas de las tecnologías de la información y comunicación que exigen los negocios actuales.",
+    "objetivos_especificos": "Conocer la perspectiva conceptual y estratégica de las TIC.\nSeñalar la infraestructura de vanguardia organizacional.\nAnalizar herramientas tecnológicas para la toma de decisiones.\nExplicar enfoques basados en TI y nuevos paradigmas.",
+    "competencias": "Integra las tecnologías de la información en la estrategia y la gestión de la organización.\nSelecciona y evalúa soluciones tecnológicas (hardware, software, redes, ERP) con criterios técnicos y financieros.\nUtiliza la información y los sistemas de apoyo a la decisión para resolver problemas de gestión.\nActúa con ética y responsabilidad en el uso de la información, el comercio electrónico y la firma digital.\nSe actualiza ante las tendencias tecnológicas y los nuevos modelos de negocio en internet.",
+    "capacidades": "Distingue los tipos de sistemas de información (TPS, MIS, DSS, EIS) y su ciclo de vida (Unidad I).\nAplica las cinco fuerzas de Porter y la matriz DESTEP para alinear la estrategia con las TIC (Unidad II).\nDiseña un modelo relacional normalizado y formula consultas SQL básicas (Unidad III).\nCompara sistemas ERP y estima su costo total de propiedad (Unidad IV).\nDescribe la arquitectura de una computadora y clasifica el software y sus licencias (Unidad V).\nExplica los tipos de redes y protocolos de internet, intranet y extranet (Unidad VI).\nUsa indicadores (KPI) y tableros para apoyar decisiones (Unidad VII).\nDefine las características y los factores de éxito de un sistema de apoyo a ejecutivos (Unidad VIII).\nAnaliza modelos de negocio en internet, medios de pago y aspectos legales (Unidad IX).\nIdentifica tendencias como big data, nube y blockchain y su impacto en la empresa (Unidad X).",
+    "metodologia": "Clases magistrales con apoyo audiovisual.\nAnálisis de material bibliográfico y videos.\nEstudios de caso en laboratorio.\nTalleres individuales y grupales.\nPlataformas virtuales.",
+    "requisitos": "Para rendir el examen final se requiere como mínimo 80% de asistencia.\nSistema de evaluación: Entregas y asistencia 10% (5 pts) · Primer parcial 20% (10 pts) · Segundo parcial 20% (10 pts) · Examen final 50% (25 pts).",
+    "bibliografia": "Cohen Kare, Daniel y Asín Lares, Enrique. Tecnología de información en los negocios. McGraw-Hill, 2009.\nAmor, D. La revolución e-business. Prentice Hall, 2000."
+  },
+  "unidades": [
+    { "numero": 1, "titulo": "Introducción a los Sistemas de Información Computarizados", "temas": ["Definiciones y clasificación de los sistemas de información", "Tipos: TPS, MIS, DSS, EIS", "Ciclo de vida y métodos de adquisición", "Herramientas CASE", "Modelado: DFD y diagramas entidad-relación", "SI, TI, dato e información"] },
+    { "numero": 2, "titulo": "La Estrategia de Negocios a través de Tecnologías de Información", "temas": ["Estrategia y ventajas competitivas", "Las cinco fuerzas de Porter", "Matriz DESTEP", "Reingeniería de procesos", "Tecnologías de vanguardia", "Estrategia TIC alineada al negocio"] },
+    { "numero": 3, "titulo": "Fundamentos de Administración de Bases de Datos", "temas": ["Archivos convencionales y DBMS", "Administrador de base de datos (DBA)", "Modelos de datos y modelo relacional", "Normalización (1FN a 3FN)", "SQL y sistemas gestores", "Bases distribuidas y data warehouse"] },
+    { "numero": 4, "titulo": "Sistemas Integrados de Gestión", "temas": ["Sistemas ERP y sus módulos", "Costos de las TIC y costo total de propiedad (TCO)", "Requerimientos del sistema", "Evaluación técnica y financiera de propuestas", "Comparativa ERP: SAP, Oracle y otros"] },
+    { "numero": 5, "titulo": "Tecnologías de la Información. Hardware y Software", "temas": ["La computadora y sus componentes (CPU, RAM, ROM)", "Clasificación: PC y servidores", "Sistemas operativos", "Aplicaciones informáticas", "Licencias de software y SaaS"] },
+    { "numero": 6, "titulo": "Infraestructura de Redes y Sistemas Empresariales", "temas": ["Comunicación de datos", "Redes LAN, WAN y WiFi", "Internet, intranet y extranet", "Protocolos TCP/IP, DNS y DHCP", "VPN e internet de las cosas"] },
+    { "numero": 7, "titulo": "Tecnologías de Apoyo a la Toma de Decisiones", "temas": ["Sistemas de apoyo a decisiones (DSS) y grupales (GDSS)", "Inteligencia artificial y sistemas expertos", "Indicadores clave (KPI)", "Tableros ejecutivos"] },
+    { "numero": 8, "titulo": "Sistemas de Apoyo a Ejecutivos (EIS)", "temas": ["Concepto y características de los EIS", "Factores de éxito", "Proceso de desarrollo e implantación", "Cuadro de mando ejecutivo"] },
+    { "numero": 9, "titulo": "Paradigmas Contemporáneos de Negocios en Internet", "temas": ["Negocios en línea y comercio electrónico", "Modelos B2B y B2C", "Medios de pago", "Aspectos legales y firma digital", "Gobierno electrónico"] },
+    { "numero": 10, "titulo": "Futuro de las TIC", "temas": ["Tendencias tecnológicas", "Big data, nube y blockchain", "Cubos de datos", "Bases de datos post-relacionales", "Redes de alta velocidad"] }
+  ],
+  "reglas": { "aprobacion_pct": 70, "asistencia_min_pct": 80 },
+  "evaluaciones": [
+    { "nombre": "Primer parcial", "tipo": "parcial", "origen": "examen_online", "examen_id": "TIC026-P1", "puntaje_max": 10, "ponderacion": 20 },
+    { "nombre": "Segundo parcial", "tipo": "parcial", "origen": "examen_online", "examen_id": "TIC026-P2", "puntaje_max": 10, "ponderacion": 20 },
+    { "nombre": "Entregas y asistencia", "tipo": "asistencia", "origen": "asistencia", "puntaje_max": 5, "ponderacion": 10 },
+    { "nombre": "Examen final", "tipo": "final", "origen": "manual", "puntaje_max": 25, "ponderacion": 50 }
+  ]
+}

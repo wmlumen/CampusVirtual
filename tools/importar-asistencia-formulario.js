@@ -29,7 +29,9 @@ function lev(a, b) {
 }
 const AVISO_AUSENCIA = /(\bausen|no vino|no pude|no podre|no podré|no puedo asistir|no asist|\bfalt[eé]\b|enferm|salud|guardia)/i;
 // Correcciones de cédula ya verificadas a mano en tools/importar-asistencia.js (mismo alumno, dígito cambiado).
-const CORRECCIONES = { '629374': '6293724', '4935985': '4935984', '4821499': '4821399', '6181944': '6181954', '3625672': '3525672' };
+const CORRECCIONES = { '629374': '6293724', '4935985': '4935984', '4821499': '4821399', '6181944': '6181954', '3625672': '3525672',
+  // Detectadas en el formulario TIC (mismo correo/nombre; la correcta es la que aparece en exámenes y asistencias anteriores).
+  '4090949': '4090940', '591072': '5910772', '6046954': '6046953' };
 
 function seccionCanonica(s) {
   const t = sinTildes(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -53,9 +55,17 @@ function carreraCanonica(c) {
   if (!archivo || !ASIG) throw new Error('Uso: node tools/importar-asistencia-formulario.js ARCHIVO.json --asignatura=TIC [--aplicar]');
   const D = JSON.parse(fs.readFileSync(archivo, 'utf8'));
   const avisos = [];
+  // Cédula por correo: si una fila no trae cédula válida, se toma la de otra respuesta con el mismo correo.
+  const cedPorCorreo = {};
+  D.respuestas.forEach(r => {
+    const c = normalizarCedula(String(r.cedula_original).replace(/-\d$/, '')), e = String(r.email || '').trim().toLowerCase();
+    if (/@/.test(e) && /^\d{5,9}$/.test(c)) cedPorCorreo[e] = CORRECCIONES[c] || c;
+  });
   const filas = D.respuestas.map(r => {
     let ced = normalizarCedula(String(r.cedula_original).replace(/-\d$/, ''));
     if (CORRECCIONES[ced]) { avisos.push('Fila ' + r.fila + ': cédula corregida ' + ced + ' → ' + CORRECCIONES[ced] + ' (' + r.nombre.trim() + ')'); ced = CORRECCIONES[ced]; }
+    const porCorreo = cedPorCorreo[String(r.email || '').trim().toLowerCase()];
+    if (!/^\d{5,9}$/.test(ced) && porCorreo) { avisos.push('Fila ' + r.fila + ': «' + r.cedula_original + '» no es una cédula; se toma ' + porCorreo + ' por el correo (' + r.nombre.trim() + ')'); ced = porCorreo; }
     return Object.assign({}, r, {
       cedula: /^\d{5,9}$/.test(ced) ? ced : '', fecha: String(r.marca_temporal).slice(0, 10), hora: String(r.marca_temporal).slice(11, 19),
       seccion_n: seccionCanonica(r.seccion), carrera_n: carreraCanonica(r.carrera), k: clave(r.observacion)
@@ -165,5 +175,11 @@ function carreraCanonica(c) {
     ops.slice(i, i + 400).forEach(([col, id, data]) => lote.set(db.collection(col).doc(id), data));
     await lote.commit();
   }
-  console.log('\nGuardado: ' + filas.length + ' respuesta(s) del formulario y ' + lista.length + ' marca(s) de asistencia.');
+  // Marcas de una importación anterior de este formulario que ya no corresponden (cédula corregida).
+  const vigentes = new Set(lista.map(x => x.id));
+  const viejas = (await db.collection('asistencia').where('origen', '==', 'formulario').get()).docs
+    .filter(d => String(d.data().fuente || '').startsWith(fuente + ':') && !vigentes.has(d.id));
+  for (const d of viejas) await d.ref.delete();
+  console.log('\nGuardado: ' + filas.length + ' respuesta(s) del formulario y ' + lista.length + ' marca(s) de asistencia.' +
+    (viejas.length ? ' Borradas ' + viejas.length + ' marca(s) con cédula corregida: ' + viejas.map(d => d.id).join(', ') : ''));
 })().catch(e => { console.error('ERROR:', e.message || e); process.exit(1); });

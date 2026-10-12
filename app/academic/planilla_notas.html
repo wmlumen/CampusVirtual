@@ -73,8 +73,8 @@
 
 <script src="../js/api.js?v=23"></script>
 <script src="../js/logout.js?v=3"></script>
-<script src="../js/calificaciones.js?v=2"></script>
-<script src="../js/notas-plan.js?v=1"></script>
+<script src="../js/calificaciones.js?v=3"></script>
+<script src="../js/notas-plan.js?v=2"></script>
 <script>
     const ROL = (sessionStorage.getItem('rol') || '').toLowerCase();
     const PUEDE = ['docente', 'academico', 'academic', 'admin', 'administrador_plataforma', 'administracion_general', 'admin_general', 'administracion'].includes(ROL);
@@ -186,7 +186,7 @@
         if (!confirm('¿Guardar las notas de ' + filas.length + ' alumno(s)? Las automáticas quedan confirmadas y el alumno las ve en su libreta.')) return;
         $('btn-guardar').disabled = true; msg('Guardando…');
         try {
-            const r = await CenturiaPlan.guardar(DATOS.plan.codigo, filas, MI_CED);
+            const r = await CenturiaPlan.guardar(DATOS.plan.codigo, filas, MI_CED, { sesiones: DATOS.sesiones });
             if (!r.ok) { msg(r.error, true); $('btn-guardar').disabled = false; return; }
             CAMBIOS = false;
             await cargar();

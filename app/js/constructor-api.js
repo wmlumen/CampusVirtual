@@ -138,7 +138,22 @@
         (await db.collection('contenidos').where('asignatura', '==', codigo).get()).docs
             .forEach(d => { if (!vigentes.has(d.id)) lote.delete(d.ref); });
         await lote.commit();
-        await ref.update({ aula: todo.units.length > 0 });
+        // El aula reemplaza a los materiales solo si las unidades tienen desarrollo propio (no solo la lista de temas):
+        // así una materia con páginas propias (TIC → Materiales_Clases) las sigue usando.
+        const conDesarrollo = todo.units.some(u => (u.blocks || []).some(b => b.Formato === 'html' || (b.Tipo && b.Tipo !== 'lista')));
+        // Docentes asignados (Dirección Académica → asignaciones activas de esta materia), para mostrar en el aula.
+        const docentes = [];
+        try {
+            (await db.collection('usuarios').get()).docs.forEach(d => {
+                const x = d.data();
+                const secs = (Array.isArray(x.asignaciones) ? x.asignaciones : [])
+                    .filter(a => a && a.estado === 'activo' && String(a.asignatura || '').toUpperCase() === codigo).map(a => a.seccion);
+                if (secs.length) docentes.push({ cedula: String(x.cedula || d.id), nombre: ((x.nombre || '') + ' ' + (x.apellido || '')).trim(), secciones: Array.from(new Set(secs)) });
+            });
+        } catch (e) { console.warn('[constructor] docentes:', e.message); }
+        const upd = { aula: conDesarrollo, docentes: docentes };
+        if (docentes.length) upd.docente_nombre = docentes.map(x => x.nombre).join(' / ');
+        await ref.update(upd);
         const r = await cambiarEstado(db, id, 'publicado', data, quien);
         return Object.assign(r, { codigo: codigo, mensaje: 'Publicada en asignaturas/' + codigo + ' (estado: ' + (p.estado || 'inactivo') + ').' });
     }

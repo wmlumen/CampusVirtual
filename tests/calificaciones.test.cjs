@@ -76,7 +76,9 @@ test('asistencia: sesiones del alumno sobre sesiones dictadas, por código o nom
   ];
   assert.strictEqual(N.asistenciaPct(regs, ASIG, 4), 50);
   assert.strictEqual(N.asistenciaPct(regs, ASIG, null), 33);              // sin dato del docente: 6 unidades
-  assert.strictEqual(N.sesionesDictadas(regs, ASIG), 2);
+  assert.strictEqual(N.sesionesDictadas(regs, ASIG), 0);   // cada sesión tiene un solo presente
+  const dos = regs.concat([{ asignatura: 'SOC', fecha: '2026-05-01', estado: 'presente', cedula: 'B' }, { asignatura: 'SOC', fecha: '2026-05-29', estado: 'ausente', cedula: 'C' }]);
+  assert.strictEqual(N.sesionesDictadas(dos.map((r, i) => Object.assign({ cedula: r.cedula || 'A' }, r)), ASIG), 1);
 });
 
 test('notas desde fuentes: mejor intento, trabajo calificado, asistencia y prioridad de la guardada', () => {
@@ -99,6 +101,17 @@ test('notas desde fuentes: mejor intento, trabajo calificado, asistencia y prior
 test('trabajo sin calificar no cuenta', () => {
   const r = N.notasDesdeFuentes(PLAN, { trabajos: [{ asignatura: 'SOC', unidad: 4, estado: 'entregado', calificacion: null }] }, 'SOC');
   assert.strictEqual(r.notas.tp, undefined);
+});
+
+test('carreraClave unifica las formas de escribir una carrera', () => {
+  const k = N.carreraClave;
+  assert.strictEqual(k('Administración de Empresa'), k('Licenciatura en Administración de Empresas'));
+  assert.strictEqual(k('ADMINISTRACION DE EMPRESAS'), 'ADMINISTRACION DE EMPRESAS');
+  assert.strictEqual(k('Gestión Pública'), k('Licenciatura en Administración y Gestión Pública'));
+  assert.strictEqual(k('Administración Aduanera'), k('Licenciatura en Administración Aduanera'));
+  assert.strictEqual(k('Licenciatura en Ciencias Contables'), 'CONTABILIDAD');
+  assert.notStrictEqual(k('Licenciatura en Comercio Internacional'), k('Ingeniería Comercial'));
+  assert.strictEqual(k(''), '');
 });
 
 test('validarPlan avisa ponderación incompleta y falta de final', () => {

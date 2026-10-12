@@ -29,7 +29,8 @@
         if (!Array.isArray(a.evaluaciones) || !a.evaluaciones.length || !a.evaluaciones[0].id) return null;
         return {
             codigo: cod, nombre: a.nombre || cod, carreras: Array.isArray(a.carreras) && a.carreras.length ? a.carreras : (a.carrera ? [a.carrera] : []),
-            unidades: a.unidades || [], evaluaciones: a.evaluaciones, reglas: a.reglas || {}, docente_cedula: a.docente_cedula || ''
+            unidades: a.unidades || [], evaluaciones: a.evaluaciones, reglas: a.reglas || {}, docente_cedula: a.docente_cedula || '',
+            sesiones_por_seccion: a.sesiones_por_seccion || {}
         };
     }
 
@@ -50,8 +51,11 @@
             db.collection('notas').where('cedula', '==', ced).get().then(datos).catch(() => [])
         ]);
         const guardadas = notas.filter(n => String(n.asignatura || '').toUpperCase() === p.codigo && n.evaluacion_id);
-        // Sin dato de la sección, el total de clases es la cantidad de unidades; la asistencia guardada por el docente manda.
-        const fuentes = { intentos, trabajos, guardadas, asistencia_pct: N().asistenciaPct(asistencia, p, null) };
+        // Clases dictadas en su sección: las registra la planilla del docente al guardar (asignaturas.sesiones_por_seccion);
+        // si todavía no hay dato, se usa la cantidad de unidades. La asistencia guardada por el docente manda.
+        const mias = asistencia.filter(r => N().esDeAsignatura(r, p));
+        const sec = (mias.find(r => r.seccion) || {}).seccion || '';
+        const fuentes = { intentos, trabajos, guardadas, asistencia_pct: N().asistenciaPct(mias, p, p.sesiones_por_seccion[String(sec).toUpperCase()] || null) };
         return Object.assign({ plan: p, cedula: ced, asistencia_pct: fuentes.asistencia_pct }, resolver(p, fuentes));
     }
 
@@ -68,10 +72,10 @@
             db.collection('asistencia').get().then(datos).catch(() => []),
             db.collection('notas').where('asignatura', '==', p.codigo).get().then(datos).catch(() => [])
         ]);
-        const carreras = p.carreras.map(N().sinTilde);
+        const carreras = p.carreras.map(N().carreraClave);
         const asisAsig = asistencia.filter(r => N().esDeAsignatura(r, p));
         const roster = {};
-        usuarios.filter(u => carreras.indexOf(N().sinTilde(u.carrera)) >= 0 && String(u.estado || 'activo') === 'activo').forEach(u => {
+        usuarios.filter(u => carreras.indexOf(N().carreraClave(u.carrera)) >= 0 && String(u.estado || 'activo') === 'activo').forEach(u => {
             roster[u.cedula] = { cedula: String(u.cedula), nombre: ((u.nombre || '') + ' ' + (u.apellido || '')).trim(), seccion: String(u.seccion || '').toUpperCase(), carrera: u.carrera || '' };
         });
         asisAsig.forEach(r => {
@@ -79,6 +83,13 @@
             else if (!roster[r.cedula].seccion && r.seccion) roster[r.cedula].seccion = String(r.seccion).toUpperCase();
         });
         notas.forEach(n => { if (!roster[n.cedula]) roster[n.cedula] = { cedula: String(n.cedula), nombre: n.nombre || '', seccion: String(n.seccion || '').toUpperCase(), carrera: '' }; });
+        // Quienes rindieron un examen enlazado al plan (aunque no tengan asistencia ni ficha).
+        const examenes = new Set(p.evaluaciones.map(e => e.examen_id).filter(Boolean));
+        intentos.filter(i => examenes.has(i.examen_id)).forEach(i => {
+            const c = String(i.alumno_cedula);
+            if (!roster[c]) roster[c] = { cedula: c, nombre: i.nombre || '', seccion: String(i.seccion || '').toUpperCase(), carrera: i.carrera || '' };
+            else { if (!roster[c].seccion && i.seccion) roster[c].seccion = String(i.seccion).toUpperCase(); if (!roster[c].carrera && i.carrera) roster[c].carrera = i.carrera; }
+        });
         // Clases dictadas por sección (sesiones distintas con alguna presencia).
         const sesiones = {};
         Object.values(roster).forEach(a => {
@@ -97,14 +108,14 @@
                 };
                 return Object.assign({}, a, { asistencia_pct: fuentes.asistencia_pct, sesiones: sesiones[a.seccion] }, resolver(p, fuentes));
             });
-        return { plan: p, filas: filas, secciones: secciones };
+        return { plan: p, filas: filas, secciones: secciones, sesiones: sesiones };
     }
 
     /**
      * filas: [{ cedula, nombre, seccion, valores: { evalId: número | null }, fuente: { evalId } }]
      * Número → se guarda (queda como nota confirmada). null en una nota que existía → se borra.
      */
-    async function guardar(codigo, filas, quien) {
+    async function guardar(codigo, filas, quien, opts) {
         await listo();
         const p = await plan(codigo);
         if (!p) return { ok: false, error: 'La asignatura no tiene plan de evaluación publicado.' };
@@ -122,6 +133,12 @@
                 origen: (f.fuente && f.fuente[ev.id]) || 'manual', guardado_por: quien || '', updated_at: ahora
             }]);
         }));
+        // Clases dictadas por sección (las usa la libreta del alumno para su % de asistencia).
+        if (opts && opts.sesiones) {
+            const ses = {};
+            Object.entries(opts.sesiones).forEach(([k, v]) => { if (k && v) ses[k] = v; });
+            if (Object.keys(ses).length) await db.collection('asignaturas').doc(p.codigo).set({ sesiones_por_seccion: Object.assign({}, p.sesiones_por_seccion, ses) }, { merge: true });
+        }
         // Lotes de 400 escrituras (límite de Firestore: 500).
         for (let i = 0; i < ops.length; i += 400) {
             const lote = db.batch();

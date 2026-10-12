@@ -1343,7 +1343,8 @@
     throw new Error('Cannot find module '+mod);
   };
 </script>
-<script src="js/api.js?v=21"></script>
+<script src="js/api.js?v=24"></script>
+<script src="js/calificaciones.js?v=3"></script>
     <script src="js/localidades-py.js?v=1"></script>
     <script src="js/catalogos-py.js?v=1"></script>
     <script src="js/session-guard.js?v=5"></script>
@@ -2402,7 +2403,23 @@
                 video.srcObject = _camStream;
             } catch (err) {
                 console.error('Error al abrir cámara:', err);
-                errEl.textContent = 'No se pudo activar la cámara: ' + (err.message || 'Permiso denegado.');
+                // v2026-10-11: mensaje según la causa + alternativa de subir una imagen (en el celular abre su cámara).
+                const n = err && err.name;
+                const motivo = n === 'NotAllowedError' || n === 'SecurityError'
+                    ? 'El navegador no tiene permiso para usar la cámara. Tocá el candado junto a la dirección del sitio → Cámara → Permitir y volvé a intentar. En Windows revisá también Configuración → Privacidad → Cámara.'
+                    : n === 'NotFoundError' || n === 'OverconstrainedError' ? 'No se encontró ninguna cámara en este dispositivo.'
+                    : n === 'NotReadableError' ? 'La cámara está siendo usada por otra aplicación (Zoom, Meet, WhatsApp…). Cerrala y volvé a intentar.'
+                    : 'No se pudo activar la cámara (' + ((err && err.message) || 'error desconocido') + ').';
+                errEl.innerHTML = '';
+                errEl.appendChild(document.createTextNode(motivo));
+                const alt = document.createElement('label');
+                alt.htmlFor = 'foto-input';
+                alt.className = 'dash-btn dash-btn-primary';
+                alt.style.cssText = 'cursor:pointer;margin-top:10px;display:inline-flex';
+                alt.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir una foto';
+                alt.addEventListener('click', () => setTimeout(cerrarCamaraFoto, 300));
+                errEl.appendChild(document.createElement('br'));
+                errEl.appendChild(alt);
                 errEl.style.display = 'block';
             }
         }

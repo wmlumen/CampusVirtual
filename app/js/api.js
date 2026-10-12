@@ -395,13 +395,24 @@ function callGasCore(action, data, method) {
                                 rol:     String(r.rol     || 'alumno').toLowerCase(),
                                 estado:  String(r.estado  || 'activo').toLowerCase(),
                                 carrera: r.carrera || d.carrera || '',
-                                seccion: r.seccion || d.seccion || ''
+                                seccion: r.seccion || d.seccion || '',
+                                asignatura: r.asignatura || ''
                             };
                         });
                     } else {
                         // Compatibilidad legacy: solo campo rol raíz
                         roles = [{ rol: d.rol || 'alumno', estado: d.estado || 'activo', carrera: d.carrera || '', seccion: d.seccion || '' }];
                     }
+                    // v2026-10-12: también el rol principal y los roles adicionales (roles_activos) que no estén en roles[].
+                    const usuarioActivo = String(d.estado || 'activo').toLowerCase() === 'activo';
+                    [d.rol].concat(Array.isArray(d.roles_activos) ? d.roles_activos : []).forEach(function (r) {
+                        r = String(r || '').toLowerCase();
+                        if (r && !roles.some(function (x) { return x.rol === r; }))
+                            roles.push({ rol: r, estado: usuarioActivo ? 'activo' : 'inactivo', carrera: d.carrera || '', seccion: d.seccion || '', asignatura: '' });
+                    });
+                    // Docente: sus materias y secciones salen de las asignaciones vigentes.
+                    const asigs = (Array.isArray(d.asignaciones) ? d.asignaciones : []).filter(function (a) { return a && a.estado !== 'inactivo' && a.asignatura; });
+                    if (asigs.length) roles.forEach(function (r) { if (r.rol === 'docente') r.asignaciones = asigs.map(function (a) { return { asignatura: a.asignatura, carrera: a.carrera || '', seccion: a.seccion || '' }; }); });
                     return { ok: true, roles: roles, rol: d.rol || '' };
                 }
                 const users = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
@@ -1033,26 +1044,36 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                     correctas: data.correctas !== undefined ? data.correctas : resp.filter(r => r && r.correcta === true).length,
                     respuestas: resp
                 };
+                // v2026-10-12: id del envío (examen TIC026 vía Apps Script): reintentar no duplica el intento.
+                if (data.id_envio) intento.id_envio = String(data.id_envio);
+                if (data.intento) intento.intento = Number(data.intento) || undefined;
+                if (data.origen) intento.tipo = String(data.origen);
                 const docId = examId + '__' + ced;
                 const ref = db.collection('intentos').doc(docId);
                 const curr = await ref.get();
                 let intentos = [];
-                if (curr.exists) {
-                    const d = curr.data() || {};
-                    intentos = Array.isArray(d.intentos) ? d.intentos : [];
+                const previo = curr.exists ? (curr.data() || {}) : {};
+                intentos = Array.isArray(previo.intentos) ? previo.intentos : [];
+                if (intento.id_envio && intentos.some(i => i && i.id_envio === intento.id_envio)) {
+                    return { ok: true, duplicado: true, intentos: intentos, mejor_intento: previo.mejor_intento };
                 }
+                if (intento.intento === undefined) delete intento.intento;
                 intentos.push(intento);
                 const mejor = intentos.reduce((m, i) => Math.max(m, Number(i.puntaje) || 0), 0);
-                await ref.set({
+                const doc = {
                     examen_id: examId,
                     alumno_cedula: ced,
-                    nombre: data.nombre || '',
-                    asignatura: data.asignatura || '',
-                    evaluacion: ev,
+                    nombre: data.nombre || previo.nombre || '',
+                    asignatura: data.asignatura || previo.asignatura || '',
+                    evaluacion: ev || previo.evaluacion || '',
                     intentos: intentos,
                     mejor_intento: mejor,
                     updated_at: new Date().toISOString()
-                });
+                };
+                // Se conservan carrera/sección (las usan la planilla y el calendario) y el % del mejor intento.
+                ['carrera', 'seccion', 'fuente'].forEach(k => { const v = data[k] || previo[k]; if (v) doc[k] = String(v); });
+                doc.mejor_pct = intentos.reduce((m, i) => Math.max(m, Number(i.pct) || 0), 0);
+                await ref.set(doc);
                 return { ok: true, intentos: intentos, mejor_intento: mejor };
             })().catch(e => ({ ok: false, error: e.message }));
             case 'examen_obtener_intentos': return (async () => {
@@ -2427,7 +2448,9 @@ API.exams = {
         total: data.total,
         pct: data.pct,
         correctas: data.correctas,
-        timestamp: new Date().toISOString()
+        id_envio: data.id_envio || '', intento: data.intento || '', origen: data.origen || '',
+        carrera: data.carrera || '', seccion: data.seccion || '',
+        timestamp: data.timestamp || new Date().toISOString()
     }, 'POST'),
     
     getAttempts: (examenId, alumnoCedula) => callGas('examen_obtener_intentos', {

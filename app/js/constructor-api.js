@@ -232,9 +232,15 @@
                 [['fundamentacion', 'Fundamentacion'], ['objetivo_general', 'ObjetivoGeneral'], ['objetivos_especificos', 'ObjetivosEspecificos'],
                  ['competencias', 'Competencias'], ['capacidades', 'Capacidades'], ['metodologia', 'Metodologia'],
                  ['requisitos', 'Requisitos'], ['bibliografia', 'Bibliografia']].forEach(([k, K]) => { P[K] = txt(data[k]); });
+                // Nuevos campos de programa (nivel, estado, modalidad, duracion)
+                const programaData = {
+                    nivel: txt(data.nivel), estado: txt(data.estado), modalidad: txt(data.modalidad),
+                    duracion_horas: num(data.duracion_horas), carga_horaria: num(data.carga_horaria),
+                    semestre: txt(data.semestre), carrera: txt(data.carrera)
+                };
                 // Reglas de aprobación del plan de evaluación (por defecto las del programa oficial: 70% y 80% de asistencia).
                 const Reglas = { aprobacion_pct: num(data.aprobacion_pct) || 70, asistencia_min_pct: data.asistencia_min_pct === '' || data.asistencia_min_pct == null ? 80 : num(data.asistencia_min_pct) };
-                await db.collection(C.asig).doc(id).set({ Program: P, Reglas: Reglas, Fundamentacion: P.Fundamentacion, UpdatedAt: ahora() }, { merge: true });
+                await db.collection(C.asig).doc(id).set({ Program: P, Reglas: Reglas, Fundamentacion: P.Fundamentacion, Programa: programaData, UpdatedAt: ahora() }, { merge: true });
                 return { ok: true, id: id };
             }
             case 'constructor_save_unit': {

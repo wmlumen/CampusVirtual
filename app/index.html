@@ -1650,19 +1650,62 @@ function regPaso3(){
 }
 
 // ═══ ROLES ═══
+// v2026-10-12: selector de acceso. Une roles que llevan al mismo panel (admin / administrador_plataforma…),
+// junta las secciones del docente en una sola tarjeta y nombra todos los roles del catálogo RBAC.
+const CV_ACCESOS={
+    admin:{grupo:'admin',orden:1,etiqueta:'Administración de la plataforma',desc:'Usuarios, asignaturas, roles y configuración',icono:'bi-gear-wide-connected',color:'#7C3AED,#5B21B6',panel:'dashboard-admin.html'},
+    direccion_academica:{orden:2,etiqueta:'Dirección Académica',desc:'Supervisión académica e indicadores',icono:'bi-bank',color:'#0F766E,#115E59',panel:'academic/index.html'},
+    academico:{orden:3,etiqueta:'Gestión Académica',desc:'Planes, planillas, docentes y calendario',icono:'bi-building',color:'#D94172,#9F1239',panel:'academic/index.html'},
+    coordinador_carrera:{orden:4,etiqueta:'Coordinación de Carrera',desc:'Seguimiento de la carrera y sus secciones',icono:'bi-diagram-3',color:'#0891B2,#0E7490',panel:'academic/index.html'},
+    calidad_academica:{orden:5,etiqueta:'Calidad Académica',desc:'Evidencias e indicadores ANEAES',icono:'bi-patch-check',color:'#65A30D,#3F6212',panel:'academic/index.html'},
+    disenador_instruccional:{orden:6,etiqueta:'Diseño Instruccional',desc:'Constructor de asignaturas y contenidos',icono:'bi-bricks',color:'#EA580C,#C2410C',panel:'academic/index.html'},
+    secretaria_academica:{orden:7,etiqueta:'Secretaría Académica',desc:'Matrículas, legajos y certificados',icono:'bi-folder2-open',color:'#4F46E5,#3730A3',panel:'dashboard-admin.html'},
+    tesoreria:{orden:8,etiqueta:'Tesorería',desc:'Pagos, aranceles y facturas',icono:'bi-cash-coin',color:'#CA8A04,#854D0E',panel:'tesoreria.html'},
+    asistencia_estudiante:{orden:9,etiqueta:'Atención al Alumno',desc:'Consultas, beneficios y reclamos',icono:'bi-headset',color:'#DB2777,#9D174D',panel:'atencion-estudiante.html'},
+    admin_filial:{orden:10,etiqueta:'Administración de Filial',desc:'Gestión de la sede',icono:'bi-geo-alt',color:'#475569,#1E293B',panel:'dashboard-admin.html'},
+    docente:{orden:11,etiqueta:'Docente',desc:'Mis clases, planillas y asistencia',icono:'bi-easel',color:'#2563EB,#1D4ED8',panel:'docente.html'},
+    alumno:{orden:12,etiqueta:'Alumno',desc:'Mis materias, notas y trámites',icono:'bi-mortarboard',color:'#16813D,#0D5C2A',panel:'dashboard.html'}
+};
+// Sinónimos que abren el mismo panel.
+const CV_ALIAS_ROL={administrador_plataforma:'admin',administrador:'admin',administracion_general:'admin',admin_general:'admin',administracion:'admin',
+    asistente_estudiante:'asistencia_estudiante',atencion_estudiante:'asistencia_estudiante',academic:'academico',tesorero:'tesoreria',administrativo:'secretaria_academica'};
+function cvAcceso(rol){rol=String(rol||'').toLowerCase();const k=CV_ALIAS_ROL[rol]||rol;
+    return CV_ACCESOS[k]||{orden:50,etiqueta:k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())||'Acceso',desc:'Panel del Campus',icono:'bi-person-badge',color:'#64748B,#334155',panel:'dashboard.html'}}
+function cvEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+// Agrupa por panel: un acceso por rol canónico; el docente junta asignaturas, secciones y carreras.
+function cvAgruparAccesos(roles){
+    const m=new Map();
+    (roles||[]).forEach(r=>{if(!r||!r.rol)return;const k=CV_ALIAS_ROL[String(r.rol).toLowerCase()]||String(r.rol).toLowerCase();
+        let g=m.get(k);if(!g){g=Object.assign({},r,{clave:k,asigs:[]});m.set(k,g)}
+        // Para administración se conserva el rol más alto que tenga (administrador_plataforma > admin).
+        if(k==='admin'&&String(r.rol).toLowerCase()==='administrador_plataforma')g.rol=r.rol;
+        (r.asignaciones&&r.asignaciones.length?r.asignaciones:(r.asignatura||r.seccion?[{asignatura:r.asignatura||'',carrera:r.carrera||'',seccion:r.seccion||''}]:[])).forEach(a=>{if(!g.asigs.some(x=>x.asignatura===a.asignatura&&x.carrera===a.carrera&&x.seccion===a.seccion))g.asigs.push(a)})});
+    return Array.from(m.values()).sort((a,b)=>cvAcceso(a.clave).orden-cvAcceso(b.clave).orden)}
+function cvDetalleAcceso(g){
+    if(!g.asigs.length)return g.carrera?cvEsc(g.carrera):'';
+    const uniq=(f)=>Array.from(new Set(g.asigs.map(f).filter(Boolean)));
+    const mats=uniq(a=>a.asignatura),secs=uniq(a=>a.seccion),cars=uniq(a=>a.carrera);
+    return [mats.join(', '),secs.length?(secs.length>1?'Secciones ':'Sección ')+secs.join(' · '):'',cars.length?cars.length+(cars.length>1?' carreras':' carrera'):''].filter(Boolean).map(cvEsc).join(' • ')}
 function mostrarSelectorRoles(roles){
     document.getElementById('step-1-cedula').style.display='none';document.getElementById('step-2-register').style.display='none';document.getElementById('step-3-cursos').style.display='none';
+    const accesos=cvAgruparAccesos(roles);
+    if(accesos.length===1){seleccionarRol(accesos[0]);return}
     let p=document.getElementById('step-2-roles');
-    if(!p){p=document.createElement('div');p.id='step-2-roles';p.innerHTML='<div class="greeting"><h2><i class="bi bi-person-gear" style="color:var(--dorado);margin-right:6px"></i>Selecciona tu acceso</h2><p id="roles-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.88rem"></p><p style="font-size:0.68rem;color:#64748b;margin-top:4px">Tu cédula tiene múltiples roles. Elige con cuál deseas ingresar:</p></div><div id="lista-roles" class="d-grid gap-2 mb-3"></div><button class="btn-ghost" onclick="cerrarSesionRoles()"><i class="bi bi-arrow-left me-1"></i>Cambiar de usuario</button>';document.querySelector('.login-body').appendChild(p)}
+    if(!p){p=document.createElement('div');p.id='step-2-roles';p.innerHTML='<div class="greeting"><h2><i class="bi bi-person-gear" style="color:var(--dorado);margin-right:6px"></i>¿Con qué perfil entrás?</h2><p id="roles-nombre-alumno" style="font-weight:700;color:#0d2c16;font-size:0.88rem"></p><p style="font-size:0.68rem;color:#64748b;margin-top:4px">Tenés más de un perfil. Podés cambiar de perfil después cerrando sesión.</p></div><div id="lista-roles" class="d-grid gap-2 mb-3" role="list"></div><button class="btn-ghost" onclick="cerrarSesionRoles()"><i class="bi bi-arrow-left me-1"></i>Cambiar de usuario</button>';document.querySelector('.login-body').appendChild(p)}
     p.style.display='block';document.getElementById('roles-nombre-alumno').textContent=sessionStorage.getItem('current_nombre')||'';
-    const colores={alumno:'linear-gradient(135deg,#16813D,#0D5C2A)',docente:'linear-gradient(135deg,#2563EB,#1d4ed8)',admin:'linear-gradient(135deg,#7C3AED,#5B21B6)',academico:'linear-gradient(135deg,#D94172,#9F1239)',administracion_general:'linear-gradient(135deg,#C28A2C,#8A5A14)'};
-    const iconos={alumno:'bi-mortarboard',docente:'bi-easel',admin:'bi-gear-wide-connected',academico:'bi-building',administracion_general:'bi-shield-lock'};
-    const etiquetas={alumno:'Alumno',docente:'Docente',admin:'Administrador',academico:'Académico',administracion_general:'Administración General'};
     const lista=document.getElementById('lista-roles');lista.innerHTML='';
-    roles.forEach(r=>{const btn=document.createElement('button');btn.className='curso-btn';
-    btn.innerHTML='<div class="curso-icon" style="background:'+colores[r.rol]+'"><i class="bi '+iconos[r.rol]+'"></i></div><div class="curso-info"><div class="curso-name">'+etiquetas[r.rol]+'</div><div class="curso-meta">'+(r.asignatura||r.carrera||'Instituto')+(r.seccion?' • Sección '+r.seccion:'')+'</div></div><i class="bi bi-chevron-right" style="color:#94a3b8"></i>';
-    btn.onclick=()=>seleccionarRol(r);lista.appendChild(btn)})}
-function seleccionarRol(r){sessionStorage.setItem('rol',r.rol);guardarSesionExamen(sessionStorage.getItem('current_cedula'),r.rol);sessionStorage.setItem('current_carrera',r.carrera||'');sessionStorage.setItem('current_seccion',r.seccion||'');sessionStorage.setItem('current_asignatura',r.asignatura||'');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';if(r.rol==='academico'){window.location.href='academic/index.html';return}if(r.rol==='admin'||r.rol==='administrador_plataforma'||r.rol==='administracion_general'||r.rol==='admin_general'||r.rol==='administracion'){window.location.href='dashboard-admin.html';return}if(r.rol==='asistencia_estudiante'){window.location.href='atencion-estudiante.html';return}if(r.rol==='docente'){window.location.href='docente.html';return}if(r.rol==='alumno'){window.location.href='dashboard.html';return}mostrarCursos(null,r.rol,r.carrera)}
+    accesos.forEach((g,i)=>{const a=cvAcceso(g.clave),det=cvDetalleAcceso(g);const btn=document.createElement('button');btn.type='button';btn.className='curso-btn';btn.setAttribute('role','listitem');
+        btn.setAttribute('aria-label',a.etiqueta+'. '+a.desc+(det?'. '+det.replace(/<[^>]+>/g,''):''));
+        btn.innerHTML='<div class="curso-icon" style="background:linear-gradient(135deg,'+a.color+')"><i class="bi '+a.icono+'"></i></div><div class="curso-info"><div class="curso-name">'+cvEsc(a.etiqueta)+'</div><div class="curso-meta">'+cvEsc(a.desc)+'</div>'+(det?'<div class="curso-meta" style="color:#0f5132;font-weight:600">'+det+'</div>':'')+'</div><i class="bi bi-chevron-right" style="color:#94a3b8" aria-hidden="true"></i>';
+        btn.onclick=()=>seleccionarRol(g);lista.appendChild(btn);if(i===0)setTimeout(()=>btn.focus(),50)})}
+function seleccionarRol(r){
+    const asigs=r.asigs||[];const uno=asigs.length===1?asigs[0]:null;
+    sessionStorage.setItem('rol',r.rol);guardarSesionExamen(sessionStorage.getItem('current_cedula'),r.rol);
+    sessionStorage.setItem('current_carrera',(uno&&uno.carrera)||r.carrera||'');sessionStorage.setItem('current_seccion',(uno&&uno.seccion)||(asigs.length?'':r.seccion||''));sessionStorage.setItem('current_asignatura',(uno&&uno.asignatura)||(asigs.length?'':r.asignatura||''));
+    const p=document.getElementById('step-2-roles');if(p)p.style.display='none';
+    const clave=CV_ALIAS_ROL[String(r.rol).toLowerCase()]||String(r.rol).toLowerCase();
+    if(CV_ACCESOS[clave]){window.location.href=CV_ACCESOS[clave].panel;return}
+    mostrarCursos(null,r.rol,r.carrera)}
 function cerrarSesionRoles(){try{CenturiaAPI.logout();}catch(e){}sessionStorage.clear();localStorage.removeItem('centuria_exam_session');localStorage.removeItem('centuria_remember');localStorage.removeItem('centuria_token');const p=document.getElementById('step-2-roles');if(p)p.style.display='none';document.getElementById('step-1-cedula').style.display='block';document.getElementById('inp-cedula').value='';rolesActuales=[];resetLoginFase()}
 
 // ═══ CURSOS ═══

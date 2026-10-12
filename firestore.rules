@@ -558,7 +558,9 @@ service cloud.firestore {
          && intentoId == request.resource.data.examen_id + '__' + getCedulaForUid()
          && request.resource.data.keys().hasOnly([
            'examen_id', 'alumno_cedula', 'nombre', 'asignatura', 'evaluacion',
-           'intentos', 'mejor_intento', 'updated_at'
+           'intentos', 'mejor_intento', 'updated_at',
+           // v2026-10-12: datos del alumno que trae el examen TIC026 (los usan la planilla y el calendario)
+           'carrera', 'seccion', 'mejor_pct', 'fuente'
          ])
          && request.resource.data.nombre is string
          && request.resource.data.nombre.size() <= 100

@@ -10,50 +10,75 @@
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600,700,800,900" rel="stylesheet">
     <style>
-        :root{--verde:#00B140;--verde-dark:#007A33;--verde-card:#E6F4EA;--dorado:#d4a843;--txt2:#2D2D2D;--txt3:#64748b;--border:#C8E6C9}
+        /* v2026-10-12: mismo lenguaje visual que dashboard.html (fondo verde profundo, paneles de vidrio, acentos dorados). */
+        :root{--verde:#16813D;--verde-dark:#0d2c16;--verde-hover:#1ebb4d;--verde-card:rgba(0,177,64,.14);--dorado:#d4a843;--dorado-claro:#e8c676;
+              --txt:#fff;--txt2:rgba(255,255,255,.88);--txt3:rgba(255,255,255,.6);--border:rgba(255,255,255,.14);--vidrio:rgba(255,255,255,.06)}
         *{box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0fdf4;color:var(--txt2);margin:0;min-height:100vh}
-        .topbar{background:var(--verde-dark);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-        .topbar a{color:#fff;text-decoration:none;font-size:.7rem;font-weight:600}
-        .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 80px}
-        h1{font-size:1.05rem;font-weight:800;color:var(--verde-dark)}
-        .sub{font-size:.7rem;color:var(--txt3);margin-bottom:14px}
-        .cardx{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:18px;margin-bottom:14px}
-        .cardx h2{font-size:.85rem;font-weight:800;color:var(--verde-dark);margin-bottom:10px}
+        body{font-family:'Montserrat',sans-serif;color:var(--txt2);margin:0;min-height:100vh;background-color:#060f09;overflow-x:hidden}
+        body::before{content:'';position:fixed;inset:0;z-index:-2;
+            background:radial-gradient(ellipse at 20% 50%,rgba(22,129,61,.18) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(212,168,67,.1) 0%,transparent 50%),
+                       linear-gradient(160deg,#060f09 0%,#0d2c16 35%,#0f3820 65%,#060f09 100%)}
+        body::after{content:'';position:fixed;inset:0;z-index:-1;
+            background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,.03)'/%3E%3C/svg%3E")}
+        .topbar{color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:10px;z-index:100;
+            max-width:1200px;margin:10px auto 0;background:rgba(13,44,22,.75);border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(20px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+        .topbar a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.7rem;font-weight:600;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);transition:.2s}
+        .topbar a:hover{background:rgba(212,168,67,.2);color:#fff;border-color:rgba(212,168,67,.35)}
+        .wrap{max-width:1200px;margin:0 auto;padding:20px 16px 80px;animation:fadeInUp .7s cubic-bezier(.16,1,.3,1)}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+        h1{font-size:1.15rem;font-weight:800;color:#fff}
+        h1 .bi{color:var(--dorado)}
+        h1 small,.text-muted{color:var(--txt3)!important}
+        h3,h4,h5,h6,b,strong{color:#fff}
+        .sub{font-size:.7rem;color:var(--dorado);margin-bottom:14px;font-weight:500}
+        .cardx{background:var(--vidrio);border:1px solid rgba(255,255,255,.1);border-radius:20px;backdrop-filter:blur(20px);padding:20px;margin-bottom:16px}
+        .cardx h2{font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:12px}
+        .cardx h2 .bi{color:var(--dorado)}
         .fld{margin-bottom:10px}
-        .fld label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-bottom:4px}
-        .fld input,.fld select,.fld textarea{width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:.78rem;outline:none;font-family:inherit}
-        .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--verde)}
+        .fld label{display:block;font-size:.6rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+        .fld input,.fld select,.fld textarea{width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,.15);border-radius:11px;font-size:.78rem;outline:none;font-family:inherit;background:rgba(0,0,0,.3);color:#fff}
+        .fld input::placeholder,.fld textarea::placeholder{color:rgba(255,255,255,.35)}
+        .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--dorado);box-shadow:0 0 0 3px rgba(212,168,67,.15)}
+        .fld select option{color:#111}
         .fld textarea{min-height:70px;resize:vertical}
-        .btn{padding:9px 16px;border-radius:9px;font-size:.7rem;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
-        .btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:var(--verde-dark)}
-        .btn-g{background:var(--verde-card);color:var(--verde-dark);border:1px solid var(--verde)}
-        .btn-r{background:#FEE2E2;color:#991B1B}.btn-r:hover{background:#fca5a5}
-        .btn-a{background:#FEF3C7;color:#92400E}
-        .btn-s{background:#F1F5F9;color:var(--txt2)}
+        input[type=checkbox]{accent-color:var(--verde);width:15px;height:15px;vertical-align:-2px}
+        input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
+        .btn{padding:8px 14px;border-radius:12px;font-size:.7rem;font-weight:600;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;font-family:inherit;transition:.2s}
+        .btn-p{background:rgba(0,177,64,.25);color:#4ade80;border-color:rgba(0,177,64,.4)}.btn-p:hover{background:rgba(0,177,64,.4);color:#fff}
+        .btn-g{background:rgba(212,168,67,.2);color:var(--dorado-claro);border-color:rgba(212,168,67,.3)}.btn-g:hover{background:rgba(212,168,67,.3);color:#fff}
+        .btn-r{background:rgba(239,83,80,.2);color:#fca5a5;border-color:rgba(239,83,80,.3)}.btn-r:hover{background:rgba(239,83,80,.35);color:#fff}
+        .btn-a{background:rgba(217,119,6,.2);color:#fcd34d;border-color:rgba(217,119,6,.35)}.btn-a:hover{background:rgba(217,119,6,.35);color:#fff}
+        .btn-s{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.15)}.btn-s:hover{background:rgba(255,255,255,.14);color:#fff}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
         .badge{padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700}
-        .b-borrador{background:#F1F5F9;color:#475569}.b-en_revision{background:#FEF3C7;color:#92400E}
-        .b-observado{background:#FEE2E2;color:#991B1B}.b-corregido{background:#E0F2FE;color:#075985}
-        .b-aprobado{background:#D1FAE5;color:#065F46}.b-publicado{background:#007A33;color:#fff}
-        .b-archivado{background:#e2e8f0;color:#64748b}
-        .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-        .tab{padding:8px 14px;border-radius:9px;font-size:.68rem;font-weight:700;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--txt3)}
-        .tab.active{background:var(--verde-dark);color:#fff;border-color:var(--verde-dark)}
-        .draft{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.72rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
-        .toast-error{background:#FEE2E2;color:#991B1B;border-color:#fca5a5}
-        .pondbar{height:10px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin:6px 0}
-        .pondbar div{height:100%;background:var(--verde);transition:width .3s}
-        .block{border:1px solid var(--border);border-left:4px solid var(--verde);border-radius:8px;padding:10px;margin-bottom:8px;background:#fbfefb}
-        .pv-sidebar{background:#007A33;color:#fff;border-radius:10px;padding:14px}
-        .pv-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--verde);border-radius:8px;padding:12px;margin-bottom:10px}
-        .footer{text-align:center;padding:8px;background:var(--verde-dark);color:rgba(255,255,255,.6);font-size:.55rem;position:fixed;bottom:0;left:0;right:0}
+        .b-borrador{background:rgba(255,255,255,.12);color:#e2e8f0}.b-en_revision{background:rgba(217,119,6,.25);color:#fcd34d}
+        .b-observado{background:rgba(239,83,80,.25);color:#fca5a5}.b-corregido{background:rgba(37,99,235,.25);color:#93c5fd}
+        .b-aprobado{background:rgba(0,177,64,.25);color:#86efac}.b-publicado{background:var(--dorado);color:#0d2c16}
+        .b-archivado{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)}
+        .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+        .tab{padding:8px 14px;border-radius:12px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--txt3);transition:.2s}
+        .tab:hover{color:#fff;background:rgba(255,255,255,.12)}
+        .tab.active{background:rgba(212,168,67,.22);color:var(--dorado-claro);border-color:rgba(212,168,67,.45)}
+        .draft{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;transition:.2s}
+        .draft:hover{background:rgba(255,255,255,.08);border-color:rgba(212,168,67,.3)}
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:12px;font-size:.72rem;font-weight:600;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);background:#0f3820;color:#86efac;border:1px solid rgba(0,177,64,.5)}
+        .toast-error{background:#3b0d0d;color:#fca5a5;border-color:rgba(239,83,80,.5)}
+        .pondbar{height:10px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin:6px 0}
+        .pondbar div{height:100%;background:linear-gradient(90deg,var(--verde),var(--dorado));transition:width .3s}
+        .block{border:1px solid rgba(255,255,255,.1);border-left:4px solid var(--verde-hover);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,.04)}
+        .block.aviso{border-left-color:#d97706;background:rgba(217,119,6,.12)}
+        .pv-sidebar{background:linear-gradient(160deg,#16813D,#0d2c16);color:#fff;border:1px solid rgba(212,168,67,.3);border-radius:14px;padding:14px}
+        .pv-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-left:4px solid var(--dorado);border-radius:12px;padding:12px;margin-bottom:10px}
+        .table{--bs-table-bg:transparent;--bs-table-color:var(--txt2);--bs-table-border-color:rgba(255,255,255,.1);--bs-table-hover-bg:rgba(255,255,255,.04)}
+        .footer{text-align:center;padding:8px;background:rgba(6,15,9,.85);color:rgba(255,255,255,.5);font-size:.55rem;position:fixed;bottom:0;left:0;right:0;backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08)}
+        @media (max-width:576px){.topbar{margin:8px 8px 0;top:8px;padding:10px 14px}.cardx{padding:14px;border-radius:16px}}
     </style>
 </head>
 <body>
     <div class="topbar">
-        <div style="font-weight:800;font-size:.85rem">🏗 Constructor Académico</div>
+        <div style="font-weight:800;font-size:.9rem;letter-spacing:.3px"><i class="bi bi-bricks" style="color:var(--dorado);margin-right:6px"></i>Constructor Académico <span style="font-size:.62rem;font-weight:500;color:var(--dorado-claro);margin-left:6px">Instituto Superior Centuria</span></div>
         <div class="d-flex gap-3">
             <a href="../dashboard.html">Dashboard</a>
             <a href="../docente.html">Panel docente</a>
@@ -65,7 +90,7 @@
         <div class="sub" id="fuente-datos">Conectando…</div>
 
         <div id="sin-acceso" style="display:none" class="cardx text-center">
-            <p style="color:#991B1B;font-weight:700">Solo docentes y administración.</p>
+            <p style="color:#fca5a5;font-weight:700">Solo docentes y administración.</p>
             <a href="../dashboard.html" class="btn btn-g">Volver</a>
         </div>
 
@@ -92,6 +117,7 @@
                     <div class="tab" data-t="bank" onclick="tabEditor('bank',this)">Banco</div>
                     <div class="tab" data-t="flow" onclick="tabEditor('flow',this)">Flujo</div>
                     <div class="tab" data-t="prev" onclick="tabEditor('prev',this)">Vista previa</div>
+                    <div class="tab" data-t="progs" onclick="tabEditor('progs',this)">Programas</div>
                 </div>
 
                 <div id="tab-prog" class="cardx">
@@ -102,9 +128,17 @@
                     </div>
                     <div class="row g-2">
                         <div class="col-md-4"><div class="fld"><label>Carrera</label><input id="p-carrera"></div></div>
-                        <div class="col-md-2"><div class="fld"><label>Grado</label><input id="p-grado"></div></div>
-                        <div class="col-md-3"><div class="fld"><label>Semestre</label><input id="p-semestre"></div></div>
+                        <div class="col-md-2"><div class="fld"><label>Grado</label><input id="p-grado" list="lista-grados"></div></div>
+                        <div class="col-md-3"><div class="fld"><label>Semestre</label><input id="p-semestre" type="number" min="1"></div></div>
                         <div class="col-md-3"><div class="fld"><label>Carga horaria</label><input id="p-carga" type="number" min="0"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Modalidad</label><select id="p-modalidad"><option value="presencial">Presencial</option><option value="semipresencial">Semipresencial</option><option value="a distancia">A distancia</option></select></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Duración (horas)</label><input id="p-duracion" type="number" min="0"></div></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><div class="fld"><label>Nivel</label><select id="p-nivel"><option value="GRADO">GRADO</option><option value="ESPECIALIZACIÓN">ESPECIALIZACIÓN</option><option value="MAESTRÍA">MAESTRÍA</option><option value="DOCTORADO">DOCTORADO</option></select></div></div>
+                        <div class="col-md-6"><div class="fld"><label>Estado</label><select id="p-estado"><option value="ACTIVO">ACTIVO</option><option value="INACTIVO">INACTIVO</option></select></div></div>
                     </div>
                     <div class="fld"><label>Fundamentación</label><textarea id="p-fund"></textarea></div>
                     <div class="fld"><label>Objetivo general</label><textarea id="p-objg"></textarea></div>
@@ -338,7 +372,7 @@
             const { fuente, d } = await api('list_drafts', {});
             if (!d || d.ok === false) {
                 document.getElementById('fuente-datos').textContent = 'Fuente: ' + fuente;
-                document.getElementById('lista-drafts').innerHTML = '<p style="color:#991B1B;font-weight:700">No se pudieron cargar las asignaturas: ' + ((d && d.error) || 'error desconocido') + '</p>';
+                document.getElementById('lista-drafts').innerHTML = '<p style="color:#fca5a5;font-weight:700">No se pudieron cargar las asignaturas: ' + ((d && d.error) || 'error desconocido') + '</p>';
                 return [];
             }
             const drafts = d.drafts || [];
@@ -421,8 +455,10 @@
         function tabEditor(t, el) {
             document.querySelectorAll('#ed-tabs .tab').forEach(x => x.classList.remove('active'));
             if (el) el.classList.add('active');
-            ['prog', 'units', 'acts', 'evals', 'bank', 'flow', 'prev'].forEach(k => {
-                document.getElementById('tab-' + k).style.display = k === t ? 'block' : 'none';
+            ['prog', 'units', 'acts', 'evals', 'bank', 'flow', 'prev','progs'].forEach(k => {
+                const panel = document.getElementById('tab-' + k);
+                if (panel) panel.style.display = k === t ? 'block' : 'none';
+                else document.querySelectorAll('#ed-tabs .tab[data-t="' + k + '"]').forEach(x => { x.style.display = 'none'; });
             });
             if (t === 'prev') pintarPreview();
             if (t === 'flow') pintarFlujo();
@@ -450,7 +486,7 @@
                 const det = [(N && N.TIPOS[e.tipo]) || e.tipo, e.unidad ? 'Unidad ' + e.unidad : '',
                     e.tipo === 'recuperatorio' ? 'reemplaza al parcial más bajo' : e.ponderacion + '%',
                     e.puntaje_max ? 'sobre ' + e.puntaje_max + ' pts' : '', 'nota: ' + ((N && N.ORIGENES[e.origen]) || e.origen),
-                    e.origen === 'examen_online' ? (e.examen_id ? 'examen «' + e.examen_id + '»' : '<span style="color:#92400E">sin examen enlazado (la nota la carga el docente)</span>') : ''].filter(Boolean).join(' · ');
+                    e.origen === 'examen_online' ? (e.examen_id ? 'examen «' + e.examen_id + '»' : '<span style="color:#fcd34d">sin examen enlazado (la nota la carga el docente)</span>') : ''].filter(Boolean).join(' · ');
                 return `<div class="block"><b>${e.nombre}</b> ${e.requisito ? '<span class="badge b-en_revision">requisito para el final</span>' : ''}<br><small class="text-muted">${det}</small>
                     <div class="mt-1 d-flex gap-1">
                         <button class="btn btn-s btn-sm" onclick="editarEvaluacion('${eid}')">Editar</button>
@@ -466,7 +502,7 @@
             document.getElementById('pond-txt').textContent = suma + '% asignado' + (suma > 100 ? ' (EXCEDE)' : '');
             const prob = cur.problemas || [];
             document.getElementById('plan-problemas').innerHTML = prob.length
-                ? '<div class="block" style="border-left-color:#d97706;background:#FFFBEB"><b>Antes de publicar:</b><br>' + prob.map(x => '• ' + x).join('<br>') + '</div>'
+                ? '<div class="block aviso"><b>Antes de publicar:</b><br>' + prob.map(x => '• ' + x).join('<br>') + '</div>'
                 : (evs.length ? '<div class="block"><b>Plan de evaluación completo.</b> <small class="text-muted">Se usa para la libreta, la planilla del docente y los paneles.</small></div>' : '');
         }
 
@@ -479,6 +515,10 @@
                 grado: document.getElementById('p-grado').value.trim(),
                 semestre: document.getElementById('p-semestre').value.trim(),
                 carga_horaria: document.getElementById('p-carga').value || 0,
+                modalidad: document.getElementById('p-modalidad').value,
+                duracion_horas: document.getElementById('p-duracion').value || 0,
+                nivel: document.getElementById('p-nivel').value,
+                estado: document.getElementById('p-estado').value,
                 docente_cedula: MI_CEDULA,
                 fundamentacion: document.getElementById('p-fund').value,
                 objetivo_general: document.getElementById('p-objg').value,
@@ -745,7 +785,7 @@
             if (est === 'aprobado' && esPub) h += B('Publicar', 'flujoPublicar', 'btn-p');
             // Tras corregir el plan de una asignatura ya publicada se vuelve a publicar sin repetir la revisión.
             if (est === 'publicado' && esPub) h += B('Volver a publicar', 'flujoPublicar', 'btn-g');
-            if ((cur.problemas || []).length && ['aprobado', 'publicado'].includes(est)) h += '<div class="w-100"><small style="color:#92400E">No se puede publicar hasta corregir el plan de evaluación (pestaña Evaluaciones).</small></div>';
+            if ((cur.problemas || []).length && ['aprobado', 'publicado'].includes(est)) h += '<div class="w-100"><small style="color:#fcd34d">No se puede publicar hasta corregir el plan de evaluación (pestaña Evaluaciones).</small></div>';
             document.getElementById('flujo-btns').innerHTML = h || '<small class="text-muted">Sin acciones para tu rol en este estado.</small>';
             document.getElementById('lista-reviews').innerHTML = (cur.reviews || []).map(r =>
                 `<div class="block"><b>${r.DeEstado} → ${r.AEstado}</b> <small class="text-muted">${r.PorRol || ''} ${r.PorCedula || ''} · ${r.CreatedAt || ''}</small><br>${r.Comentario || ''}</div>`

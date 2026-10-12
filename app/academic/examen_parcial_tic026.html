@@ -429,7 +429,7 @@
                     type="text"
                     id="consultaCedula"
                     class="form-control"
-                    placeholder="Ej: 1340125"
+                    placeholder="Ingresa tu número de cédula"
                     minlength="6"
                     maxlength="20"
                 >
@@ -599,6 +599,7 @@
 
     <!-- SCRIPTS -->
 
+    <script src="../js/api.js?v=29"></script>
     <script>
         // ===== CONFIGURACIÓN =====
         const VERSION_CLIENTE = 11;
@@ -689,6 +690,66 @@
                 document.getElementById('codigoAcceso').value = '';
             }
         }
+        // ═══ Integración con el Campus (v2026-10-12) — opcional: el examen funciona igual sin sesión ═══
+        // Cédula de la sesión de Firebase del Campus (correo interno <cedula>@campus-centuria.local), o '' si no hay.
+        async function cedulaCampusActiva() {
+            try {
+                if (!window.CenturiaAPI || !window.CenturiaAPI.auth) return '';
+                const ok = await Promise.race([
+                    window.CenturiaAPI.auth.ensureSession().then(() => true, () => false),
+                    new Promise(r => setTimeout(() => r(false), 4000))
+                ]);
+                if (!ok || !window.firebase || !window.firebase.auth) return '';
+                const u = window.firebase.auth().currentUser;
+                return u && u.email && !u.isAnonymous ? normalizarCedula(String(u.email).split('@')[0]) : '';
+            } catch (e) { return ''; }
+        }
+        const CLAVE_PENDIENTES = 'tic026_sync_pendiente';
+        function syncPendientes() { try { return JSON.parse(localStorage.getItem(CLAVE_PENDIENTES) || '[]'); } catch (e) { return []; } }
+        function guardarSyncPendientes(l) {
+            try { l.length ? localStorage.setItem(CLAVE_PENDIENTES, JSON.stringify(l.slice(-10))) : localStorage.removeItem(CLAVE_PENDIENTES); } catch (e) {}
+        }
+        function avisoSync(texto, ok) {
+            let el = document.getElementById('aviso-sync-campus');
+            const destino = document.getElementById('resultadoFinal') || document.getElementById('paso4') || document.body;
+            if (!el) {
+                el = document.createElement('p'); el.id = 'aviso-sync-campus'; el.setAttribute('role', 'status');
+                el.style.cssText = 'font-size:.8rem;margin:12px 0;padding:8px 12px;border-radius:8px';
+                destino.appendChild(el);
+            }
+            el.style.background = ok ? 'rgba(22,163,74,.12)' : 'rgba(217,119,6,.12)';
+            el.style.color = ok ? '#15803d' : '#b45309';
+            el.innerHTML = texto;
+        }
+        // Guarda el intento en el Campus si el alumno tiene sesión con la misma cédula; si falla, queda pendiente y se reintenta.
+        async function sincronizarConCampus(envio) {
+            const ced = estadoExamen.cedulaCampus || await cedulaCampusActiva();
+            if (!ced || ced !== normalizarCedula(envio.alumno_cedula)) {
+                avisoSync('<i class="bi bi-info-circle"></i> Tu examen quedó registrado. Se incorpora a tu libreta del Campus cuando el docente sincronice los resultados.', true);
+                return;
+            }
+            try {
+                const r = await window.CenturiaAPI.exams.saveAttempt(envio);
+                if (!r || r.ok !== true) throw new Error((r && r.error) || 'sin confirmación');
+                guardarSyncPendientes(syncPendientes().filter(p => p.id_envio !== envio.id_envio));
+                avisoSync('<i class="bi bi-check2-circle"></i> Resultado guardado también en tu libreta del Campus.', true);
+            } catch (e) {
+                guardarSyncPendientes(syncPendientes().filter(p => p.id_envio !== envio.id_envio).concat([envio]));
+                avisoSync('<i class="bi bi-cloud-arrow-up"></i> Tu examen quedó registrado, pero no se pudo copiar al Campus ahora (' + escaparHtml(e.message || '') + '). Se reintenta solo la próxima vez que abras esta página.', false);
+            }
+        }
+        // Reintento de envíos pendientes al abrir la página (solo los de la cédula con sesión).
+        window.addEventListener('load', async () => {
+            const lista = syncPendientes(); if (!lista.length) return;
+            const ced = await cedulaCampusActiva(); if (!ced) return;
+            const quedan = [];
+            for (const p of lista) {
+                if (normalizarCedula(p.alumno_cedula) !== ced) { quedan.push(p); continue; }
+                try { const r = await window.CenturiaAPI.exams.saveAttempt(p); if (!r || r.ok !== true) quedan.push(p); } catch (e) { quedan.push(p); }
+            }
+            guardarSyncPendientes(quedan);
+        });
+
         function obtenerCedulaSesion() {
             try {
                 const token = sessionStorage.getItem('centuria_auth_token') || localStorage.getItem('centuria_auth_token') || '';
@@ -1095,6 +1156,14 @@
             const seccion = document.querySelector('input[name="seccion"]:checked')?.value;
             const mensajeError = document.getElementById('mensajeError2');
             mensajeError.classList.add('hidden');
+            // v2026-10-12: la sesión del Campus es OPCIONAL. Sin sesión el examen funciona igual (independiente, vía Apps Script);
+            // con sesión, el resultado además se guarda en el Campus (libreta, planilla y asistencia a exámenes).
+            estadoExamen.cedulaCampus = await cedulaCampusActiva();
+            if (estadoExamen.cedulaCampus && cedula && normalizarCedula(cedula) !== estadoExamen.cedulaCampus) {
+                mensajeError.classList.remove('hidden');
+                mensajeError.innerHTML = '<i class="bi bi-person-exclamation"></i> La cédula no coincide con tu sesión del Campus (' + escaparHtml(estadoExamen.cedulaCampus) + '). Usá tu cédula o cerrá sesión.';
+                return;
+            }
             if (!nombre || !cedula || !carrera || !seccion) {
                 mensajeError.classList.remove('hidden');
                 mensajeError.innerHTML = '<i class="bi bi-exclamation-circle"></i> Completa todos los campos obligatorios.';
@@ -1265,14 +1334,36 @@
                 estadoExamen.puntaje = puntaje;
                 estadoExamen.intento = Number(respuestaServer.intentos_realizados || estadoExamen.intento);
                 estadoExamen.intentosPermitidos = Number(respuestaServer.intentos_permitidos || estadoExamen.intentosPermitidos);
+                // El examen ya quedó registrado en Apps Script (registro oficial): el alumno ve su resultado sí o sí.
+                const envio = {
+                    examen_id: 'TIC026-P' + estadoExamen.parcial,          // mismo ID que el plan de TIC y los resultados importados
+                    alumno_cedula: estadoExamen.datosPersonales.cedula,
+                    nombre: estadoExamen.datosPersonales.nombre,
+                    asignatura: 'TIC',
+                    evaluacion: 'parcial' + estadoExamen.parcial,
+                    carrera: estadoExamen.datosPersonales.carrera || '',
+                    seccion: estadoExamen.datosPersonales.seccion || '',
+                    respuestas: Object.keys(estadoExamen.respuestas).sort((a, b) => Number(a) - Number(b))
+                        .map(numero => ({ numero: Number(numero), respuesta: estadoExamen.respuestas[numero] })),
+                    puntaje: puntaje,
+                    total: estadoExamen.totalPreguntas,
+                    pct: Math.round(puntaje / estadoExamen.totalPreguntas * 1000) / 10,
+                    correctas: Number(respuestaServer.correctas ?? puntaje),
+                    id_envio: estadoExamen.idEnvio, intento: estadoExamen.intento, origen: 'examen_tic026',
+                    timestamp: new Date().toISOString()
+                };
                 estadoExamen.idEnvio = '';
                 mostrarResultado(respuestaServer, puntaje);
+                sincronizarConCampus(envio);
             } catch (error) {
                 console.error('Error:', error);
                 btnEnviar.disabled = false;
                 btnEnviar.innerHTML = '<i class="bi bi-check-circle"></i> ENVIAR';
                 mensaje.classList.remove('hidden');
-                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> No se pudo guardar el examen. ' +
+                mensaje.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' +
+                    (error.codigo === 'ERROR_SINCRONIZACION_DB'
+                        ? 'El examen ya fue recibido por el servidor, pero falta confirmarlo en la base de datos del Campus. Pulsa ENVIAR nuevamente para reintentar la sincronización. '
+                        : 'No se pudo guardar el examen. ') +
                     escaparHtml(error && error.message ? 'Detalle: ' + error.message : 'Intenta de nuevo.') +
                     (error.codigo === 'INTENTOS_AGOTADOS' ? crearBloqueHabilitar('envio') : '');
             }

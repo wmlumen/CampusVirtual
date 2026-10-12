@@ -211,6 +211,26 @@ service cloud.firestore {
       }
     }
 
+    // Ficha de matrícula (formulario-matricula.html), una por cédula. El alumno lee y guarda la suya
+    // (no puede aprobarse a sí mismo); el personal la ve y la aprueba. Se sincroniza con usuarios/ (perfil).
+    match /matriculas/{cedula} {
+      allow read: if isAuthenticated() && (getCedulaForUid() == cedula || isStaff());
+      allow create, update: if isAuthenticated() && (
+        isStaff() ||
+        (getCedulaForUid() == cedula
+          && request.resource.data.cedula == cedula
+          && (request.resource.data.get('estado', 'completado') in ['borrador', 'completado']
+              || (resource != null && request.resource.data.get('estado', '') == resource.data.get('estado', ''))))
+      );
+      allow delete: if isAdminOrPlatform();
+    }
+
+    // Oferta académica (ofertas-carreras.html): catálogo público; lo administra Administración.
+    match /programas/{id} {
+      allow read: if true;
+      allow write: if isAdminOrPlatform();
+    }
+
     // Contenido publicado de cada unidad (aula/index.html). Lo lee cualquiera con sesión; lo escribe Publicar del Constructor.
     match /contenidos/{id} {
       allow read: if isAuthenticated();
@@ -503,11 +523,27 @@ service cloud.firestore {
       allow write: if isAuthenticated() && isStaff();
     }
 
-     // Intentos/resultados de exámenes por alumno (doc por examen + cédula: "examen__cedula").
-     // La lectura actual del historial permanece pública; escrituras limitadas al dueño del ID.
+     // Intentos/resultados: el alumno solo accede a su documento; personal autorizado puede revisar.
      match /intentos/{intentoId} {
-       allow read: if true;
-       allow create, update: if request.resource.data.alumno_cedula == intentoId.split('__')[1];
+       allow read: if isAuthenticated() && (
+         getCedulaForUid() == resource.data.alumno_cedula || isStaff()
+       );
+       allow create, update: if isAuthenticated()
+         && getCedulaForUid() != null
+         && request.resource.data.alumno_cedula == getCedulaForUid()
+         && request.resource.data.examen_id is string
+         && intentoId == request.resource.data.examen_id + '__' + getCedulaForUid()
+         && request.resource.data.keys().hasOnly([
+           'examen_id', 'alumno_cedula', 'nombre', 'asignatura', 'evaluacion',
+           'intentos', 'mejor_intento', 'updated_at'
+         ])
+         && request.resource.data.nombre is string
+         && request.resource.data.nombre.size() <= 100
+         && request.resource.data.asignatura is string
+         && request.resource.data.evaluacion is string
+         && request.resource.data.intentos is list
+         && request.resource.data.intentos.size() <= 20
+         && request.resource.data.mejor_intento is number;
        allow delete: if false;
      }
 

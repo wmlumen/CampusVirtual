@@ -122,6 +122,28 @@ function cvErrorAuth(e, contexto) {
     if (c === 'auth/network-request-failed') return 'Sin conexión. Revisá tu internet e intentá de nuevo.';
     return 'Error: ' + (c || (e && e.message) || 'desconocido');
 }
+// ── Perfil (usuarios) ↔ ficha de matrícula (matriculas): mismos datos con distinto nombre de campo. ──
+// v2026-10-11: lo que se carga en el perfil del panel aparece en la matrícula y viceversa.
+const CV_PERFIL_A_MATRICULA = {
+    nombre: 'nombres', apellido: 'apellidos', email: 'correo_electronico', telefono: 'telefono_movil', telefono_fijo: 'telefono_fijo',
+    fecha_nacimiento: 'fecha_nacimiento', lugar_nacimiento: 'lugar_nacimiento', nacionalidad: 'nacionalidad', pais: 'pais',
+    estado_civil: 'estado_civil', departamento: 'departamento', ciudad: 'ciudad', barrio: 'barrio_compania', direccion_calle: 'direccion',
+    carrera: 'carrera', grado: 'grado', semestre: 'semestre'
+};
+const cvVacio = (v) => v === undefined || v === null || String(v).trim() === '' || String(v).trim() === '-';
+function cvPerfilAMatricula(u) {
+    const m = {};
+    Object.entries(CV_PERFIL_A_MATRICULA).forEach(([p, k]) => { if (!cvVacio(u && u[p])) m[k] = u[p]; });
+    if (cvVacio(m.direccion) && u && !cvVacio(u.direccion)) m.direccion = u.direccion;
+    return m;
+}
+function cvMatriculaAPerfil(m) {
+    const u = {};
+    Object.entries(CV_PERFIL_A_MATRICULA).forEach(([p, k]) => { if (!cvVacio(m && m[k])) u[p] = m[k]; });
+    if (u.direccion_calle) u.direccion = u.direccion_calle;
+    return u;
+}
+
 // Ficha del usuario logueado: primero por ID (= uid tras la migración), si no, por cédula.
 function cvCargarFicha(db, authUser, ced) {
     return db.collection('usuarios').doc(authUser.uid).get().then(function (snap) {
@@ -300,6 +322,14 @@ function callGasCore(action, data, method) {
                         await db.collection('cedulas').doc(String(d.cedula)).set({ cedula: String(d.cedula), rol: String(d.rol || 'alumno'),
                             estado: String(d.estado || 'activo'), actualizado: updates.updated_at }, { merge: true }).catch(() => {});
                     }
+                    // v2026-10-11: el perfil también actualiza la ficha de matrícula, si existe (y viceversa en guardar_matricula).
+                    const ced = String(snap.docs[0].data().cedula || data.cedula || '');
+                    const mref = ced && db.collection('matriculas').doc(ced);
+                    const mdoc = mref && await mref.get().catch(() => null);
+                    const mapeados = cvPerfilAMatricula(updates);
+                    if (mdoc && mdoc.exists && Object.keys(mapeados).length) {
+                        await mref.set(Object.assign(mapeados, { cedula: ced, actualizado: updates.updated_at }), { merge: true }).catch(e => console.warn('[perfil→matrícula]', e.message));
+                    }
                     return { ok: true, user: Object.assign({}, snap.docs[0].data(), updates) };
                 });
             }).catch(e => ({ ok: false, error: e.message }));
@@ -414,16 +444,62 @@ function callGasCore(action, data, method) {
             case 'listar_asignaturas': case 'materias.listar': return Promise.resolve().then(() => db.collection('asignaturas').get().then(snap => ({
                 ok: true, asignaturas: snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()))
             }))).catch(() => ({ ok: true, asignaturas: [] }));
-            case 'listar_programas': return db.collection('programas').get().then(snap => {
-                const normalizar = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+            // v2026-10-11: ficha de matrícula guardada en Firestore y completada con el perfil (y viceversa).
+            case 'obtener_matricula': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                const [m, u] = await Promise.all([
+                    db.collection('matriculas').doc(ced).get().catch(() => null),
+                    db.collection('usuarios').where('cedula', '==', ced).limit(1).get().catch(() => null)
+                ]);
+                const ficha = u && !u.empty ? u.docs[0].data() : {};
+                const guardada = m && m.exists ? m.data() : null;
+                // Lo del perfil completa lo que la matrícula no tenga (o tenga vacío); lo más reciente gana.
+                const desdePerfil = cvPerfilAMatricula(ficha);
+                const masNuevoPerfil = guardada && String(ficha.updated_at || '') > String(guardada.actualizado || '');
+                const mat = Object.assign({ cedula: ced }, guardada ? {} : desdePerfil, guardada || {});
+                Object.entries(desdePerfil).forEach(([k, v]) => { if (cvVacio(mat[k]) || masNuevoPerfil) mat[k] = v; });
+                return { ok: true, existe: !!guardada, matricula: mat, data: mat };
+            })().catch(e => ({ ok: false, error: e.message }));
+            case 'guardar_matricula': return (async () => {
+                const ced = String(data.cedula || '').replace(/[\.\s\-]/g, '').trim();
+                if (!ced) return { ok: false, error: 'Cédula requerida.' };
+                const ahora = new Date().toISOString();
+                const mat = Object.assign({}, data, { cedula: ced, estado: 'completado', matricula_completa: true, actualizado: ahora });
+                delete mat.action;
+                await db.collection('matriculas').doc(ced).set(mat, { merge: true });
+                // El perfil (usuarios) recibe los mismos datos.
+                const u = await db.collection('usuarios').where('cedula', '==', ced).limit(1).get();
+                if (!u.empty) {
+                    const upd = Object.assign(cvMatriculaAPerfil(mat), { matricula_completa: true, updated_at: ahora });
+                    if (data.tipo_alumno) upd.tipo_alumno = data.tipo_alumno;
+                    await u.docs[0].ref.update(upd);
+                }
+                return { ok: true, status: 'Éxito', matricula: mat };
+            })().catch(e => ({ ok: false, error: e.code === 'permission-denied' ? 'Sin permiso para guardar la matrícula.' : e.message }));
+
+            // v2026-10-11: la oferta académica nunca queda vacía: programas cargados + catálogo de carreras
+            // (config_carreras o, si está vacío, el catálogo oficial de respaldo de listar_carreras).
+            case 'listar_programas': return (async () => {
+                const normalizar = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase();
                 const nivel = normalizar(data.nivel);
-                const programas = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data())).filter(programa => {
-                    const estado = normalizar(programa.estado || programa.Estado);
-                    const nivelPrograma = normalizar(programa.nivel || programa.Nivel || programa.grado || programa.Grado);
-                    return estado === 'ACTIVO' && (!nivel || !nivelPrograma || nivelPrograma === nivel);
-                });
+                const delNivel = (n) => !nivel || !normalizar(n) || normalizar(n) === nivel;
+                const snap = await db.collection('programas').get().catch(() => null);
+                const cargados = (snap ? snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data())) : []).filter(programa =>
+                    normalizar(programa.estado || programa.Estado || 'ACTIVO') === 'ACTIVO' && delNivel(programa.nivel || programa.Nivel || programa.grado || programa.Grado));
+                const cat = await callGasCore('listar_carreras', {}, 'GET').catch(() => ({ carreras: [] }));
+                const vistos = new Set(cargados.map(p => normalizar(p.nombre || p.Nombre)));
+                const delCatalogo = ((cat && cat.carreras) || []).filter(c => delNivel(c.grado) && !vistos.has(normalizar(c.nombre))).map(c => ({
+                    id: c.codigo || normalizar(c.nombre).replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40),
+                    codigo: c.codigo || normalizar(c.nombre).replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40),
+                    nombre: c.nombre, nivel: c.grado, estado: 'ACTIVO', descripcion: c.descripcion || ('Programa de ' + String(c.grado || '').toLowerCase() + ' del Instituto Superior Centuria.'),
+                    origen: 'catalogo'
+                }));
+                const ORDEN = ['GRADO', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'];
+                const rango = (p) => { const i = ORDEN.indexOf(normalizar(p.nivel || p.Nivel || p.grado || p.Grado)); return i < 0 ? 9 : i; };
+                const programas = cargados.concat(delCatalogo).sort((x, y) => rango(x) - rango(y) || String(x.nombre || x.Nombre).localeCompare(String(y.nombre || y.Nombre)));
                 return { ok: true, programas, total: programas.length };
-            }).catch(e => ({ ok: false, programas: [], total: 0, error: e.message || 'No se pudo consultar el catálogo de programas.' }));
+            })().catch(e => ({ ok: false, programas: [], total: 0, error: e.message || 'No se pudo consultar el catálogo de programas.' }));
 case 'listar_carreras': return Promise.resolve().then(() => db.collection('config_carreras').get().then(snap => {
                 // Catálogo público (sin sesión): se usa en el registro y en "Solicitar Asignatura".
                 const normG = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();

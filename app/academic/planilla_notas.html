@@ -99,7 +99,13 @@
                 ? '<option value="">Elegí la asignatura…</option>' + conPlan.map(a => `<option value="${esc(a.codigo)}">${esc(a.codigo)} — ${esc(a.nombre)}</option>`).join('')
                 : '<option value="">Ninguna asignatura tiene plan publicado</option>';
             const q = new URLSearchParams(location.search).get('asignatura');
-            if (q && conPlan.some(a => a.codigo === q.toUpperCase())) { $('sel-asig').value = q.toUpperCase(); await cargar(); }
+            if (q && conPlan.some(a => a.codigo === q.toUpperCase())) {
+                $('sel-asig').value = q.toUpperCase();
+                // Desde el panel docente se llega con el grupo elegido (?seccion=S026).
+                const qs = String(new URLSearchParams(location.search).get('seccion') || '').toUpperCase();
+                if (/^[A-Z0-9]{2,10}$/.test(qs)) { $('sel-sec').innerHTML = `<option>${esc(qs)}</option>`; $('sel-sec').value = qs; }
+                await cargar();
+            }
         } catch (e) { msg('No se pudieron cargar las asignaturas: ' + e.message, true); }
         $('sel-asig').addEventListener('change', () => { if (confirmarDescarte()) { $('sel-sec').value = ''; cargar(); } });
         $('sel-sec').addEventListener('change', () => { if (confirmarDescarte()) cargar(); });

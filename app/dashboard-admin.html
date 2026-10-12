@@ -184,6 +184,9 @@
                             <a href="formulario-matricula.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(99,102,241,0.2);color:#818cf8;"><i class="bi bi-file-earmark-medical"></i></div><div><div class="fw-bold text-white small">Matricula</div><div class="text-white-50" style="font-size:.7rem">Inscripcion digital</div></div></a>
                             <a href="libreta.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(249,115,22,0.2);color:#fb923c;"><i class="bi bi-journal-bookmark-fill"></i></div><div><div class="fw-bold text-white small">Libreta</div><div class="text-white-50" style="font-size:.7rem">Notas generales</div></div></a>
                             <a href="asignar-rol-utilidad.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(212,168,67,0.2);color:#e8c676;"><i class="bi bi-shield-lock"></i></div><div><div class="fw-bold text-white small">Asignar Rol Admin</div><div class="text-white-50" style="font-size:.7rem">Elevar usuarios</div></div></a>
+                            <a href="academic/planilla_notas.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(0,177,64,0.2);color:#4ade80;"><i class="bi bi-table"></i></div><div><div class="fw-bold text-white small">Planilla de Notas</div><div class="text-white-50" style="font-size:.7rem">Según el plan de cada materia</div></div></a>
+                            <a href="academic/clases.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(212,168,67,0.2);color:#e8c676;"><i class="bi bi-calendar-check"></i></div><div><div class="fw-bold text-white small">Clases Dictadas</div><div class="text-white-50" style="font-size:.7rem">Base de la asistencia</div></div></a>
+                            <a href="ofertas-carreras.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(37,99,235,0.2);color:#93c5fd;"><i class="bi bi-mortarboard-fill"></i></div><div><div class="fw-bold text-white small">Oferta Académica</div><div class="text-white-50" style="font-size:.7rem">Carreras por nivel</div></div></a>
                             <a href="constructor/index.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(20,184,166,0.2);color:#2dd4bf;"><i class="bi bi-tools"></i></div><div><div class="fw-bold text-white small">Constructor</div><div class="text-white-50" style="font-size:.7rem">Materias y unidades</div></div></a>
                             <a href="academic/index.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(139,92,246,0.2);color:#a78bfa;"><i class="bi bi-mortarboard"></i></div><div><div class="fw-bold text-white small">Dir. Academica</div><div class="text-white-50" style="font-size:.7rem">Indicadores y actas</div></div></a>
                             <a href="atencion-estudiante.html" class="app-tile"><div class="app-tile-icon" style="background:rgba(236,72,153,0.2);color:#f472b6;"><i class="bi bi-person-heart"></i></div><div><div class="fw-bold text-white small">Atencion Estudiante</div><div class="text-white-50" style="font-size:.7rem">Fichas y beneficios</div></div></a>
@@ -213,7 +216,8 @@
                 <div id="tab-calificaciones" class="admin-section" style="display:none">
                     <div class="admin-card">
                         <div class="admin-card-header"><div><h2 class="h6 fw-bold text-white mb-1"><i class="bi bi-file-text me-2"></i>Panel de Calificaciones</h2><p class="small text-white-50 mb-0">Gestión y visualización de notas del curso</p></div>
-                        <!-- Contenido cargado por JavaScript -->
+                        </div>
+                        <div id="panel-calif-body" class="small text-white-50">Cargando…</div>
                     </div>
                 </div>
                 <div id="tab-asignaturas" class="admin-section" style="display:none">
@@ -447,6 +451,33 @@ async function cvEstadoAsignatura(id,estado){
   if(!confirm((estado==='activo'?'Activar':'Dar de baja')+' la asignatura '+id+'?'))return;
   var r=await CenturiaAPI.asignaturas.setEstado(id,estado);
   if(r&&r.ok)cargarAsignaturas();else alert((r&&r.error)||'No se pudo cambiar el estado.');
+}
+</script>
+<script>
+// ═══ v2026-10-12: Panel de Calificaciones con datos reales (antes la función no existía) ═══
+async function cargarPanelCalificaciones(){
+  var box=document.getElementById('panel-calif-body'); if(!box) return;
+  box.innerHTML='<span class="spinner-custom me-2"></span> Cargando…';
+  try{
+    await authListo(); var db=getDb();
+    var r=await Promise.all([db.collection('asignaturas').get(), db.collection('notas').get(), db.collection('clases').get()]);
+    var asigs=r[0].docs.map(function(d){return Object.assign({codigo:d.id},d.data());});
+    var notas=r[1].docs.map(function(d){return d.data();}), clases=r[2].docs.map(function(d){return d.data();});
+    var conPlan=asigs.filter(function(a){return Array.isArray(a.evaluaciones)&&a.evaluaciones.length&&a.evaluaciones[0].id;});
+    var sinPlan=asigs.filter(function(a){return conPlan.indexOf(a)<0;});
+    var fila=function(a){
+      var n=notas.filter(function(x){return String(x.asignatura).toUpperCase()===a.codigo;});
+      var c=clases.filter(function(x){return String(x.asignatura).toUpperCase()===a.codigo&&x.estado!=='suspendida';});
+      var plan=a.evaluaciones.map(function(e){return esc(e.nombre)+' '+(e.tipo==='recuperatorio'?'(rec.)':e.ponderacion+'%');}).join(' · ');
+      return '<tr><td class="fw-bold">'+esc(a.codigo)+'<div style="font-size:.65rem;color:#94a3b8;font-weight:400">'+esc(a.nombre||'')+'</div></td><td>'+badgeEstado(a.estado==='activo'?'activo':'inactivo')+'</td><td style="font-size:.7rem">'+plan+'</td>'+
+        '<td class="text-center">'+(n.length?'<b>'+n.length+'</b> <span style="font-size:.6rem;color:#94a3b8">de '+new Set(n.map(function(x){return x.cedula;})).size+' alumno(s)</span>':'<span style="color:#94a3b8">Sin notas guardadas</span>')+'</td>'+
+        '<td class="text-center">'+(c.length?c.length:'<span style="color:#fbbf24">Sin declarar</span>')+'</td>'+
+        '<td class="text-end" style="white-space:nowrap"><a class="btn-act btn-act-primary text-decoration-none me-1" href="academic/planilla_notas.html?asignatura='+encodeURIComponent(a.codigo)+'">Planilla</a><a class="btn-act btn-act-warning text-decoration-none" href="academic/clases.html?asignatura='+encodeURIComponent(a.codigo)+'">Clases</a></td></tr>';
+    };
+    box.innerHTML=(conPlan.length?'<div class="table-admin-wrap mb-3"><table class="table-admin"><thead><tr><th>Asignatura</th><th>Estado</th><th>Plan de evaluación</th><th class="text-center">Notas confirmadas</th><th class="text-center">Clases declaradas</th><th class="text-end">Abrir</th></tr></thead><tbody>'+conPlan.map(fila).join('')+'</tbody></table></div>':'<p>Ninguna asignatura tiene plan de evaluación publicado.</p>')+
+      (sinPlan.length?'<p style="font-size:.72rem">Sin plan de evaluación (se cargan en el Constructor): '+sinPlan.map(function(a){return esc(a.codigo);}).join(', ')+'. <a href="constructor/index.html" style="color:#4ade80">Abrir Constructor</a></p>':'')+
+      '<p style="font-size:.68rem;margin-top:6px">Las notas automáticas (exámenes online, trabajos y asistencia) se ven en la planilla aunque todavía no estén confirmadas.</p>';
+  }catch(e){ box.innerHTML='<span class="text-danger">No se pudo cargar: '+esc(e.message||e)+'</span>'; }
 }
 </script>
 </body>

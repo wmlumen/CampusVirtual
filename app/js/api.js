@@ -491,7 +491,17 @@ case 'listar_carreras': return Promise.resolve().then(() => db.collection('confi
                 }
                 var carrera  = (fichaAlumno.carrera  || '').toUpperCase().trim();
                 var seccion  = (fichaAlumno.seccion  || '').toUpperCase().trim();
-                var grado    = (fichaAlumno.grado    || 'GRADO').toUpperCase().trim();
+                var rawGrado = (fichaAlumno.grado    || '').toUpperCase().trim();
+                var deducirNivel = function(g, c) {
+                    var gn = String(g || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                    if (['GRADO', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'].indexOf(gn) >= 0) return gn;
+                    var cn = String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                    if (/DOCTOR|PHD/.test(cn)) return 'DOCTORADO';
+                    if (/MAESTR|MBA|MASTER/.test(cn)) return 'MAESTRIA';
+                    if (/ESPECIALI|DIPLO|DIDACTICA/.test(cn)) return 'ESPECIALIZACION';
+                    return 'GRADO';
+                };
+                var grado = deducirNivel(rawGrado, carrera);
                 // ── Obtener asignaturas y filtrar ──────────────────────────────────────
                 var snap = await db.collection('asignaturas').get();
                 var todas = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });

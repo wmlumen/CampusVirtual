@@ -692,7 +692,11 @@
         document.getElementById('firma').value = ((user.firstname || '') + ' ' + (user.lastname || '')).trim();
 
         if (user.telefono) document.getElementById('telefono_movil').value = user.telefono;
-        if (user.grado) document.getElementById('semestre').value = user.grado;
+        if (user.semestre) {
+            document.getElementById('semestre').value = String(user.semestre).replace(/[^\d]/g, '') || user.semestre;
+        } else if (user.grado && /^\d+$/.test(String(user.grado).trim())) {
+            document.getElementById('semestre').value = String(user.grado).trim();
+        }
 
         // ═══ v08.6: Motor de Obligaciones Financieras y Académicas ═══
         function determinarCargaPrograma(carreraTexto, semestreTexto) {
@@ -1061,6 +1065,8 @@
                 // Guardar en el Servidor Cloud mediante CenturiaAPI
                 const datos = {};
                 campos.forEach(c => { datos[c] = valorCampo(c); });
+                const cfgNivel = determinarCargaPrograma(datos.carrera, datos.semestre);
+                datos.grado = cfgNivel.nivel;
                 datos.departamento_codigo = codigoCampo('departamento');
                 datos.ciudad_codigo = codigoCampo('ciudad');
                 datos.barrio_codigo = codigoCampo('barrio_compania');

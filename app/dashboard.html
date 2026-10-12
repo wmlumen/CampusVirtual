@@ -1521,7 +1521,8 @@
                         user.departamento = user.departamento || m.departamento || m.Departamento || '';
                         user.estado_civil = user.estado_civil || m.estado_civil || m.EstadoCivil || '';
                         user.carrera = user.carrera || m.carrera || m.Carrera || '';
-                        user.grado = user.grado || m.semestre || m.Semestre || '';
+                        user.semestre = user.semestre || m.semestre || m.Semestre || '';
+                        user.grado = deducirGradoAcademico(user.grado || m.grado || m.Grado, user.carrera || m.carrera);
                         user.legajo_numero = user.legajo_numero || m.legajo_numero || m.LegajoNumero || '';
                         user.fecha_inscripcion = user.fecha_inscripcion || m.fecha_inscripcion || m.FechaInscripcion || '';
                         user.plan_pago = user.plan_pago || m.plan_pago || m.PlanPago || '';
@@ -1574,7 +1575,8 @@
             const a = user.lastname || user.apellido || localStorage.getItem('centuria_apellido') || '';
             const c = cedula || user.username || user.cedula || '';
             const carrera = user.carrera || localStorage.getItem('centuria_carrera') || '';
-            const grado = user.grado || localStorage.getItem('centuria_grado') || '';
+            const gradoClave = deducirGradoAcademico(user.grado || localStorage.getItem('centuria_grado'), carrera);
+            const grado = GRADOS_ETIQUETA[gradoClave] || user.grado || localStorage.getItem('centuria_grado') || 'Grado';
             const seccion = user.seccion || localStorage.getItem('centuria_seccion') || '';
             const email = user.email || localStorage.getItem('centuria_email') || 'No registrado';
             const tel = user.telefono || user.telefono_movil || user.celular || localStorage.getItem('centuria_telefono') || 'No registrado';
@@ -2074,6 +2076,15 @@
         function normTxt(v) {
             return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase().replace(/\s+/g, ' ');
         }
+        function deducirGradoAcademico(grado, carrera) {
+            const gNorm = normTxt(grado);
+            if (GRADOS_ORDEN.includes(gNorm)) return gNorm;
+            const cNorm = normTxt(carrera);
+            if (/DOCTOR|PHD/.test(cNorm)) return 'DOCTORADO';
+            if (/MAESTR|MBA|MASTER/.test(cNorm)) return 'MAESTRIA';
+            if (/ESPECIALI|DIPLO|DIDACTICA/.test(cNorm)) return 'ESPECIALIZACION';
+            return 'GRADO';
+        }
         function escHtml(v) {
             return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
@@ -2118,11 +2129,11 @@
                 </div>`;
         }
         function renderCursosPorGrado(container, lista, user, esDocente) {
-            const miGrado = normTxt(user.grado);
+            const miGrado = deducirGradoAcademico(user.grado, user.carrera);
             const porGrado = {};
             const vistos = new Set();
             lista.forEach(a => {
-                const g = normTxt(a.grado) || (esDocente ? 'GRADO' : miGrado);
+                const g = deducirGradoAcademico(a.grado || (!esDocente ? miGrado : ''), a.carrera || user.carrera);
                 // Una asignatura no se repite; al docente se le permite la misma asignatura en otra carrera/sección.
                 const clave = [g, normTxt(a.codigo || a.nombre), esDocente ? normTxt(a.carrera) + '|' + normTxt(a.seccion) : ''].join('|');
                 if (vistos.has(clave)) return;
@@ -2192,7 +2203,13 @@
         function renderCursosAlumno(container, resp) {
             const cursos = resp.cursos || [];
             const porGrado = {};
-            cursos.forEach(c => { const g = normTxt(c.grado) || 'GRADO'; (porGrado[g] = porGrado[g] || []).push(c); });
+            const userCarrera = (currentUserData && currentUserData.carrera) || (resp.ficha && resp.ficha.carrera) || '';
+            const userGrado = (currentUserData && currentUserData.grado) || (resp.ficha && resp.ficha.grado) || '';
+            cursos.forEach(c => {
+                const a = c.asignatura || {};
+                const g = deducirGradoAcademico(c.grado || userGrado, a.carrera || c.carrera || userCarrera);
+                (porGrado[g] = porGrado[g] || []).push(c);
+            });
             // Solo se muestran los niveles que tienen cursos (activos, desarrollados o pendientes); ningún «No inscripto»
             const orden = GRADOS_ORDEN.concat(Object.keys(porGrado).filter(g => !GRADOS_ORDEN.includes(g)));
             let html = '';
